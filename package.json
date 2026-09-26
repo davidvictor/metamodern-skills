@@ -1,0 +1,15 @@
+{
+  "name": "metamodern-skills",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "validate:collection": "node scripts/validate-skill-collection.mjs",
+    "validate:packages": "node scripts/validate-skill-package.mjs",
+    "validate": "npm run validate:collection && npm run validate:packages"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

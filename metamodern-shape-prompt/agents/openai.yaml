@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Prompt"
+  short_description: "Clarify, expand, combine, and prepare prompts"
+  default_prompt: "Use $metamodern-shape-prompt to shape this intention into a useful prompt, choosing the mode that fits my request."

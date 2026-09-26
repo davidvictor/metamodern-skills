@@ -1,0 +1,6 @@
+interface:
+  display_name: "Metamodern: Prepare Project"
+  short_description: "Start or adopt a portable project workspace"
+  default_prompt: "Use $metamodern-prepare-project to prepare this project for portable agent work."
+policy:
+  allow_implicit_invocation: false

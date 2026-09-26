@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Prepare Proposal"
+  short_description: "Scope and draft client proposals"
+  default_prompt: "Use $metamodern-prepare-proposal to scope this engagement and prepare the internal and client proposal artifacts."

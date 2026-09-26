@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "collectionVersion": "1.0.0",
+  "skills": [
+    {
+      "name": "metamodern-bootstrap-app",
+      "path": "metamodern-bootstrap-app",
+      "version": "0.1.1",
+      "category": "delivery-and-engineering",
+      "summary": "Prepare a current MakerKit application with a focused interview, starter cleanup, and verified local setup."
+    },
+    {
+      "name": "metamodern-build-brand-world",
+      "path": "metamodern-build-brand-world",
+      "version": "0.4.1",
+      "category": "brand-and-design",
+      "summary": "Develop a brand's visual world through director-approved gates on Higgsfield."
+    },
+    {
+      "name": "metamodern-develop-brand",
+      "path": "metamodern-develop-brand",
+      "version": "0.2.3",
+      "category": "brand-and-design",
+      "summary": "Guide evidence-led brand strategy, identity, and Brand System development."
+    },
+    {
+      "name": "metamodern-explore-brand-expression",
+      "path": "metamodern-explore-brand-expression",
+      "version": "0.3.1",
+      "category": "brand-and-design",
+      "summary": "Vary, refine, expand, and lock a brand's visual expression from a fixed identity on Higgsfield."
+    },
+    {
+      "name": "metamodern-initiate-engineering",
+      "path": "metamodern-initiate-engineering",
+      "version": "0.1.1",
+      "category": "delivery-and-engineering",
+      "summary": "Establish proportional engineering instructions and a verified first-task handoff for web apps, mobile apps, and websites."
+    },
+    {
+      "name": "metamodern-midjourney",
+      "path": "metamodern-midjourney",
+      "version": "0.2.1",
+      "category": "brand-and-design",
+      "summary": "Turn an accepted brand into a Midjourney look kit, recipes, a calibration run, and screened sets."
+    },
+    {
+      "name": "metamodern-prepare-project",
+      "path": "metamodern-prepare-project",
+      "version": "0.3.1",
+      "category": "project-and-evidence",
+      "summary": "Prepare or adopt a portable project workspace with correct source boundaries."
+    },
+    {
+      "name": "metamodern-prepare-proposal",
+      "path": "metamodern-prepare-proposal",
+      "version": "0.1.2",
+      "category": "commercial",
+      "summary": "Scope and prepare evidence-backed, Bonsai-ready Metamodern proposals."
+    },
+    {
+      "name": "metamodern-process-meeting",
+      "path": "metamodern-process-meeting",
+      "version": "0.1.2",
+      "category": "project-and-evidence",
+      "summary": "Reconcile meeting evidence into current project context and requested actions."
+    },
+    {
+      "name": "metamodern-refine-writing",
+      "path": "metamodern-refine-writing",
+      "version": "0.1.3",
+      "category": "communication",
+      "summary": "Refine existing drafts without changing meaning or flattening the author's voice."
+    },
+    {
+      "name": "metamodern-setup-form-delivery",
+      "path": "metamodern-setup-form-delivery",
+      "version": "0.1.4",
+      "category": "delivery-and-engineering",
+      "summary": "Build durable database-first form delivery to Google Sheets and Slack."
+    },
+    {
+      "name": "metamodern-shape-prompt",
+      "path": "metamodern-shape-prompt",
+      "version": "1.0.0",
+      "category": "communication",
+      "summary": "Clarify, expand, combine, and prepare faithful, useful prompts."
+    },
+    {
+      "name": "metamodern-work-in-figma",
+      "path": "metamodern-work-in-figma",
+      "version": "0.1.2",
+      "category": "brand-and-design",
+      "summary": "Inspect, build, revise, verify, and hand off editable Figma work."
+    }
+  ]
+}

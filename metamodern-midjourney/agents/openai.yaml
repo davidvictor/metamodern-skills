@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Midjourney"
+  short_description: "Turn an accepted brand into a Midjourney look kit, recipes, a calibration run, and screened sets"
+  default_prompt: "Use $metamodern-midjourney to complete the requested Midjourney outcome from the relevant evidence."

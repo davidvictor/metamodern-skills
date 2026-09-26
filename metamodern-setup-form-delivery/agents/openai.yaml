@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Form Delivery"
+  short_description: "Set up durable website form delivery"
+  default_prompt: "Use $metamodern-setup-form-delivery to set up this website's tested database, Google Sheets, and Slack form delivery."

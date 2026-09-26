@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Develop Brand"
+  short_description: "Guide adaptive brand creation and completion"
+  default_prompt: "Use $metamodern-develop-brand to assess the current brand evidence and complete the requested brand outcome."

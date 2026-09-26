@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Work in Figma"
+  short_description: "Apply Metamodern's working style in Figma"
+  default_prompt: "Use $metamodern-work-in-figma to handle this Figma request in its authorized mode and return evidence-backed findings or verified changes."

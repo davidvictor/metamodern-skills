@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Build Brand World"
+  short_description: "Develop a brand's visual world through director-approved gates"
+  default_prompt: "Use $metamodern-build-brand-world to assess the current evidence and complete the requested brand-world outcome."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Process Meeting"
+  short_description: "Turn meetings into current project context"
+  default_prompt: "Use $metamodern-process-meeting to turn these meeting sources into current project context and prepare only the project-record changes I request."

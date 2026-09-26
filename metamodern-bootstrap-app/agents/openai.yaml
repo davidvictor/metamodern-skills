@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Bootstrap App"
+  short_description: "Prepare a current MakerKit Turbo application"
+  default_prompt: "Use $metamodern-bootstrap-app to prepare this MakerKit Turbo application for its named development task."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Refine Writing"
+  short_description: "Clarify drafts without flattening voice"
+  default_prompt: "Use $metamodern-refine-writing to refine this draft while preserving its meaning and voice."

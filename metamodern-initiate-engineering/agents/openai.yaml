@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Initiate Engineering"
+  short_description: "Prepare a named web, mobile, or website task"
+  default_prompt: "Use $metamodern-initiate-engineering to prepare this project for its first meaningful engineering task."

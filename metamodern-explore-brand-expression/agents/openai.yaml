@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Explore Brand Expression"
+  short_description: "Vary, refine, expand, and lock a brand's visual expression from a fixed identity"
+  default_prompt: "Use $metamodern-explore-brand-expression to assess the current brand expression and complete the requested outcome."
