@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "skillVersion": "1.1.0",
+  "description": "Behavioral evaluation requests and review criteria. These are not recorded model outputs; automated fixture checks do not establish behavioral success.",
+  "cases": [
+    {
+      "id": "ui-clarify-visible-settings",
+      "mode": "Clarify",
+      "domains": ["ui-design"],
+      "request": "Clarify this prompt: our settings screen feels crowded, but I need every setting to remain visible. I suspect the grouping or hierarchy could be clearer. I want an assessment first, not a redesign.",
+      "reviewCriteria": ["Keep all settings visible and assessment-only scope.", "Keep weak grouping or hierarchy as possible explanations, not established causes.", "Do not prescribe hiding settings or execute a UI assessment."]
+    },
+    {
+      "id": "frontend-prepare-existing-stack",
+      "mode": "Prepare",
+      "domains": ["front-end-development"],
+      "request": "Prepare a prompt to implement our supplied signup design in the existing front-end stack. Keep its fields and flow, support keyboard use and narrow screens, and show loading, validation errors, and success. Do not add dependencies or deploy anything.",
+      "reviewCriteria": ["Preserve the stack, fields, flow, no new dependencies and no deployment.", "Include proportionate browser-behavior evidence for the requested states.", "Do not select a framework, change the flow, or begin implementation."]
+    },
+    {
+      "id": "api-data-combine-direct-access",
+      "mode": "Combine",
+      "domains": ["back-end-and-api-design", "domain-and-data-modeling"],
+      "request": "Combine these into one planning prompt. A: map booking-screen actions to our existing direct-table API and explain permissions and failures. B: clarify booking ownership, tenant boundaries, and change history in the current data model. Keep direct-table access; do not introduce microservices, redesign the UI, or implement anything yet.",
+      "reviewCriteria": ["Retain both the API behavior and data-model requirements.", "Preserve explicitly selected direct-table architecture and planning-only scope.", "Connect workflows and contracts without assuming schemas must be identical or replacing the architecture."]
+    },
+    {
+      "id": "data-clarify-unknown-history",
+      "mode": "Clarify",
+      "domains": ["domain-and-data-modeling"],
+      "request": "Clarify this: a booking with an unknown duration is different from a booking lasting zero minutes. When someone changes the duration, we need to distinguish the original submitted value from the current one. I have not chosen how to store that history.",
+      "reviewCriteria": ["Preserve unknown versus zero and original versus current values.", "Leave the history storage mechanism undecided.", "Do not silently select event sourcing, soft deletion, tables, or retention periods."]
+    },
+    {
+      "id": "frontend-expand-speed-uncertainty",
+      "mode": "Expand",
+      "domains": ["front-end-development", "back-end-and-api-design"],
+      "request": "Expand this into three possible investigation prompts: the dashboard feels slow after I press Save. I do not know whether the delay is the browser, the server, or the feedback. Keep this diagnostic; do not add caching or rewrite the service yet.",
+      "reviewCriteria": ["Produce three distinct investigation directions.", "Preserve causal uncertainty and the exclusions in each standalone direction.", "Do not claim a bottleneck or prescribe caching, a framework, or a service rewrite."]
+    },
+    {
+      "id": "automotive-design-expand-fixed-package",
+      "mode": "Expand",
+      "domains": ["automotive-design"],
+      "request": "Expand this into three exterior design directions for a compact electric coupe. I want it to look more athletic, while keeping the supplied wheelbase, roof height, and rear-seat space. We have no aerodynamic or handling test results. Keep this to concept prompts.",
+      "reviewCriteria": ["Produce distinct visual directions with the fixed packaging constraints retained.", "Separate athletic appearance from aerodynamic or handling performance.", "Do not invent dimensions, test results, or production readiness."]
+    },
+    {
+      "id": "automotive-engineering-clarify-ride",
+      "mode": "Clarify",
+      "domains": ["automotive-engineering"],
+      "request": "Clarify this engineering prompt: I want the prototype to respond more precisely in corners without making the ride harsher on broken roads. We have not established the cause or agreed a numeric target. I want an investigation plan, not tuning instructions.",
+      "reviewCriteria": ["Keep response and ride comfort together as a tradeoff.", "Preserve missing cause and target as unknowns.", "Do not invent spring rates, tire pressures, validated performance, or a tuning prescription."]
+    },
+    {
+      "id": "copywriting-prepare-supported-offer",
+      "mode": "Prepare",
+      "domains": ["copywriting"],
+      "request": "Prepare a prompt for three short launch emails for independent consultants. The product organizes client notes. Use a calm, direct voice and invite readers to try the demo. We have no testimonials or measured time savings. Do not send anything.",
+      "reviewCriteria": ["Return a prompt for the requested emails, not the emails themselves.", "Preserve audience, supported product statement, voice, CTA and no-send boundary.", "Do not add testimonials, quantified savings, unsupported benefits, or a new brand personality."]
+    },
+    {
+      "id": "marketing-copy-combine-planning",
+      "mode": "Combine",
+      "domains": ["marketing", "copywriting"],
+      "request": "Combine these directions into one research-and-planning prompt: compare referral and search acquisition for our existing audience, define which demo requests would count as qualified, and develop message hypotheses using only our supplied product facts. We have no channel performance data or approved ad budget. Do not write or launch ads yet.",
+      "reviewCriteria": ["Retain channel comparison, qualification definition and message hypotheses.", "Keep missing data and budget explicit and preserve research/planning scope.", "Do not select a winning channel, invent conversion forecasts, or draft or launch ads."]
+    },
+    {
+      "id": "cross-domain-combine-conflict",
+      "mode": "Combine",
+      "domains": ["ui-design", "back-end-and-api-design", "domain-and-data-modeling"],
+      "request": "Combine these into one definitive implementation prompt: the UI direction allows guests to book without providing an email; the server direction requires a verified email before any booking exists. Both are mandatory and I have not chosen between them. Do not silently weaken either requirement.",
+      "reviewCriteria": ["Identify the consequential conflict and ask a focused decision question.", "Do not invent a compromise, verification state, or priority that erases either mandatory requirement.", "Do not produce falsely settled implementation instructions."]
+    }
+  ]
+}

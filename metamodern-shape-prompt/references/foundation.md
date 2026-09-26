@@ -21,15 +21,33 @@ Read [Domain Language and Boundaries](domain-language.md) when a domain distinct
 
 | Subject | Reference |
 | --- | --- |
-| Product, UX, software, data, brand, visual communication | Domain Language and Boundaries above |
+| Broad product, UX, brand, and visual-communication distinctions | Domain Language and Boundaries above |
+| Interface hierarchy, controls, interaction states, navigation, accessibility, UX writing | [UI Design](domains/ui-design.md) |
+| Browser implementation, semantic controls, responsive behavior, client state, performance | [Front-end Development](domains/front-end-development.md) |
+| Server behavior, business operations, API contracts, permissions, retries, integrations | [Back-end and API Design](domains/back-end-and-api-design.md) |
+| Domain concepts, entity identity, relationships, invariants, persistence, history | [Domain and Data Modeling](domains/domain-and-data-modeling.md) |
+| Vehicle form, proportion, stance, packaging, interior, materials, driver interfaces | [Automotive Design](domains/automotive-design.md) |
+| Vehicle systems, dynamics, structure, energy, thermal behavior, production, validation | [Automotive Engineering](domains/automotive-engineering.md) |
+| Persuasive messages, offers, proof, voice, tone, calls to action | [Copywriting](domains/copywriting.md) |
+| Audiences, positioning, acquisition, conversion, retention, channels, measurement | [Marketing](domains/marketing.md) |
 | Apparel, merchandise, materials, construction, sourcing | [Apparel, Merch, and Production](domains/apparel-merch-and-production.md) |
 | Furniture, seating, tables, cabinetry, shelving, built-ins, upholstery, joinery, finishes | [Furniture Design](domains/furniture-design.md) |
-| Business, marketing, pricing concepts, operations, organizational decisions | [Business and Operations](domains/business-and-operations.md) |
+| Business, pricing concepts, operations, organizational decisions | [Business and Operations](domains/business-and-operations.md) |
 | Evidence, research, writing, learning, relationships and personal meaning | [Research and Human Context](domains/research-and-human-context.md) |
 
 For exact design terms beyond these references, use the separately installed `vocabulary` skill when available: consult its terms index and relevant definitions. It is optional; do not assume it exists, copy its whole corpus, or silently treat a missing reference as consulted. For an uncovered subject, use established general terminology conservatively and keep unresolved meaning visible.
 
 Read [Examples](examples.md) when calibrating the difference between the modes, or when the output is becoming a paraphrase, diagnosis, or larger project. The examples demonstrate judgment rather than prescribing reusable wording.
+
+## Connect domains only when the intention crosses them
+
+For a selected software workflow spanning design and implementation, trace the relevant connections: user task, interface state, API operation, business rule, data change, and visible result. This is a consistency aid, not a required architecture or a reason to add unrequested deliverables. UI intent does not automatically authorize code, and an API representation need not mirror stored records.
+
+For a vehicle concept spanning design and engineering, connect expressive intent with package constraints, coupled tradeoffs, and the evidence needed to assess feasibility. Keep appearance, predicted behavior, and tested performance distinct.
+
+For a marketing brief spanning strategy and copy, preserve the selected audience, objective, offer, supported claims, and desired action across the handoff. Interface instructions serve task completion; persuasive language serves the specified communication aim. A prompt about writing stays here; actually editing reader-facing prose belongs to `metamodern-refine-writing` when available.
+
+Read the smallest relevant set of guides. Combine retains every selected contribution and surfaces conflicts; it does not automatically choose an API style, physical specification, channel, or message claim. Prepare adds only the output and evidence structure justified by the user's request.
 
 ## Move from words to meaning
 

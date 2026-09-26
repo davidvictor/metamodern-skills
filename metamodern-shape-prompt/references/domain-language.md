@@ -25,9 +25,13 @@ Useful distinctions:
 - For digital products, `Product design` can include UX and UI; use it as the primary label when the thought concerns how the product works as an experience. For physical objects, use the furniture and physical-object distinctions below.
 - `Information architecture` concerns structure and findability; `visual hierarchy` concerns perceived emphasis on a screen or composition.
 
+For interface and interaction detail, read [UI Design](domains/ui-design.md). For implementation detail, use [Front-end Development](domains/front-end-development.md). The same screen can raise both kinds of questions; load both only when the intended work includes both.
+
 ## Furniture and physical objects
 
 For furniture form, proportions, comfort, materials, joinery, upholstery, cabinetry, or production, read the [Furniture Design dictionary](domains/furniture-design.md). Furniture design concerns the piece; interior design and space planning concern its setting and arrangement. Physical product design is broader than the digital product and experience terms above.
+
+For vehicles, use [Automotive Design](domains/automotive-design.md) for form, interior, CMF, and package-aware expression, and [Automotive Engineering](domains/automotive-engineering.md) for systems, feasibility, performance, and verification. A performance aesthetic does not establish engineering performance.
 
 ## Software and systems
 
@@ -50,6 +54,8 @@ Useful distinctions:
 - "Save first, then deliver elsewhere" expresses durable persistence and decoupled downstream delivery. Do not prescribe a queue, database, or provider unless the user did.
 - "Do not send it twice" expresses idempotent behavior or deduplication. Use the exact term only when it clarifies the requirement.
 
+For server operations and consumer contracts, read [Back-end and API Design](domains/back-end-and-api-design.md). For information meaning, lifecycle, relationships, and integrity, read [Domain and Data Modeling](domains/domain-and-data-modeling.md). A service contract and its storage model are connected but distinct artifacts.
+
 ## Brand and visual communication
 
 | Work area | Use when the intent concerns |
@@ -69,6 +75,8 @@ Useful distinctions:
 - A logo concern may be evidence of a wider visual-identity problem. Do not automatically expand it unless the user says the issue is broader.
 - `Art direction` guides the visual world; `graphic design` composes a specific communication artifact within it.
 - `Brand strategy` is not the same as marketing strategy. Strategy describes what the brand means and how it is positioned; marketing concerns reaching and converting audiences.
+
+For persuasive messages and calls to action, read [Copywriting](domains/copywriting.md). For audience, channel, growth, or measurement questions, read [Marketing](domains/marketing.md). Product labels, instructions, and error messages belong with UI content design; editing an existing piece of prose is a separate production task from shaping its prompt.
 
 ## Translation rules
 

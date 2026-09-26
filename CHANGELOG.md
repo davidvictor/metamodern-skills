@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 — 2026-09-26
+
+- Expand Prompt to version 1.1.0 with eight source-backed domain references: UI design, front-end development, back-end/API design, domain and data modeling, automotive design, automotive engineering, copywriting, and marketing.
+- Add selective domain routing and connections between interface behavior, APIs, data rules, vehicle design/engineering, and marketing/copy.
+- Preserve the four existing prompt modes and their scope boundaries. Writing remains at version 0.1.3.
+- Add domain evaluation cases and package-discovery checks.
+
 ## 1.0.0 — 2026-09-26
 
 First public release of the 13 Metamodern skills.

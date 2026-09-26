@@ -2,6 +2,8 @@
 
 Use this reference when a rough thought concerns commercial choices, organizational work, or agreements. For Clarify, make the existing thought clearer and keep its scope. For Expand, use the distinctions and questions to develop three meaningfully different prompt directions. Neither mode authorizes carrying out the resulting work.
 
+For deeper audience, positioning, channel, growth, and measurement distinctions, use [Marketing](marketing.md). For persuasive message choices, use [Copywriting](copywriting.md). This reference retains the business, money, process, and authority distinctions that may constrain either task.
+
 ## Market meaning and customer behavior
 
 Positioning concerns who an offer is for, what it means relative to alternatives, and why someone would choose it. Acquisition concerns gaining customers. Conversion concerns a specified transition, such as inquiry to purchase. Retention concerns continuing a relationship or use over time. Awareness, purchase, and continued use differ.

@@ -26,6 +26,8 @@ Preserve my constraints and flag any conflicting choices.
 
 You can also **review, focus, split, or shorten** a prompt. Modes can compose. Preparing a prompt does not execute the task inside it.
 
+Prompt includes focused domain references for UI design, front-end development, back-end/API design, domain and data modeling, automotive design, automotive engineering, copywriting, and marketing, alongside the existing apparel, furniture, business, and research references. It consults only the guides relevant to your idea; naming a domain does not start the underlying design, coding, or campaign work. See the [domain guide index](metamodern-shape-prompt/references/foundation.md#select-only-relevant-references).
+
 ## Install only what you need
 
 Requires Node.js 22+ with npm and either Codex or Claude Code. The examples pin the tested [Skills CLI](https://github.com/vercel-labs/skills) version. They install for both agents; omit either `--agent` option if you use only one.
