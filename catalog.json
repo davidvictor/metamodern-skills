@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.1.0",
+  "collectionVersion": "1.2.0",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -82,9 +82,9 @@
     {
       "name": "metamodern-shape-prompt",
       "path": "metamodern-shape-prompt",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "category": "communication",
-      "summary": "Clarify, expand, combine, and prepare faithful, useful prompts."
+      "summary": "Shape faithful prompts and learn reusable local domain knowledge."
     },
     {
       "name": "metamodern-work-in-figma",

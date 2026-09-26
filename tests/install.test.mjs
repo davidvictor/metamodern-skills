@@ -71,7 +71,7 @@ async function writeCatalog() {
 
 function runInstaller(args = [], options = {}) {
   return spawnSync("bash", [installer, ...args], {
-    cwd: collectionRoot,
+    cwd: options.cwd ?? collectionRoot,
     encoding: "utf8",
     env: {
       ...process.env,
@@ -97,6 +97,59 @@ test("installs a selected package only and preserves Codex-Claude parity", async
   assert.equal(await fs.readFile(path.join(shared, "PACKAGE_ID"), "utf8"), "metamodern-two:metamodern-agency\n")
   assert.equal(await fs.realpath(path.join(installHome, ".claude", "skills", "metamodern-two")), await fs.realpath(shared))
   await assert.rejects(fs.stat(path.join(installHome, ".agents", "skills", "metamodern-one")), /ENOENT/)
+})
+
+test("local install, update, and reinstall preserve external personal and project prompt knowledge", async () => {
+  const name = "metamodern-shape-prompt"
+  await ready(name)
+  const project = path.join(root, "project")
+  const knowledgeRoots = [installHome, project].map((base) => path.join(base, ".metamodern", "prompt-knowledge"))
+  const snapshots = []
+  for (const [scope, knowledgeRoot] of knowledgeRoots.entries()) {
+    const files = new Map([
+      ["index.md", Buffer.from(`# Knowledge ${scope}\r\n\r\nKeep exact whitespace.  \r\n`)],
+      [path.join("domains", "writing.md"), Buffer.from(`# Writing ${scope}\n\nPreserve café and “quoted” text.\n`)],
+      [path.join("domains", "research.md"), Buffer.from(`# Research ${scope}\nNo final newline`)],
+    ])
+    await fs.mkdir(path.join(knowledgeRoot, "domains"), { recursive: true })
+    for (const [relativePath, bytes] of files) await fs.writeFile(path.join(knowledgeRoot, relativePath), bytes)
+    snapshots.push({ knowledgeRoot, files, entries: (await fs.readdir(knowledgeRoot, { recursive: true })).sort() })
+  }
+
+  const source = path.join(sourceRoot, name)
+  const shared = path.join(installHome, ".agents", "skills", name)
+  for (const stage of ["initial install", "update", "reinstall"]) {
+    if (stage === "update") {
+      await makePackage(name, "1.1.0")
+      await fs.appendFile(path.join(source, "SKILL.md"), "\nUpdated package instructions.\n")
+      await writeCatalog()
+    }
+    const result = runInstaller(["--skill", name], { cwd: project })
+    assert.equal(result.status, 0, `${stage}: ${result.stderr || result.stdout}`)
+    assert.equal(await fs.readFile(path.join(shared, "PACKAGE_VERSION"), "utf8"), `${name}@${stage === "initial install" ? "1.0.0" : "1.1.0"}\n`)
+    assert.deepEqual(await fs.readFile(path.join(shared, "SKILL.md")), await fs.readFile(path.join(source, "SKILL.md")), stage)
+    assert.equal(await fs.realpath(path.join(installHome, ".claude", "skills", name)), await fs.realpath(shared))
+    // Exact package parity also detects knowledge copied into the installed package.
+    assert.deepEqual((await fs.readdir(shared, { recursive: true })).sort(), (await fs.readdir(source, { recursive: true })).sort(), stage)
+    for (const { knowledgeRoot, files, entries } of snapshots) {
+      assert.deepEqual((await fs.readdir(knowledgeRoot, { recursive: true })).sort(), entries, stage)
+      for (const [relativePath, bytes] of files) {
+        assert.deepEqual(await fs.readFile(path.join(knowledgeRoot, relativePath)), bytes, `${stage}: ${knowledgeRoot}/${relativePath}`)
+      }
+    }
+  }
+})
+
+test("ordinary local installation does not create personal or project prompt knowledge", async () => {
+  await ready("metamodern-shape-prompt")
+  const project = path.join(root, "project")
+  await fs.mkdir(project)
+
+  const result = runInstaller([], { cwd: project })
+  assert.equal(result.status, 0, result.stderr || result.stdout)
+  for (const base of [installHome, project]) {
+    await assert.rejects(fs.lstat(path.join(base, ".metamodern", "prompt-knowledge")), /ENOENT/)
+  }
 })
 
 test("refuses an unknown selection before altering an installation", async () => {

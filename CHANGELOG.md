@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 — 2026-09-26
+
+- Add Prompt Learn mode for explicit local knowledge saving, research, correction, inspection, and removal.
+- Discover relevant personal and project references outside installed packages, preserving knowledge across supported updates and reinstalls.
+- Document scope, provenance, conflict handling, backup/sharing, and Codex-only project installation.
+- Add installer preservation coverage and independent save/retrieval checks. Writing remains at 0.1.3.
+
 ## 1.1.0 — 2026-09-26
 
 - Expand Prompt to version 1.1.0 with eight source-backed domain references: UI design, front-end development, back-end/API design, domain and data modeling, automotive design, automotive engineering, copywriting, and marketing.

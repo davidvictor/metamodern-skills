@@ -1,6 +1,6 @@
 # Prompt foundation
 
-Clarify uses concepts to express existing meaning precisely. Expand proposes deeper directions. Combine preserves selected contributions in a coherent whole. Prepare makes a chosen intention actionable without inventing requirements. Domain questions are thinking aids, not a checklist to print or work the user has authorized.
+Clarify uses concepts to express existing meaning precisely. Expand proposes deeper directions. Combine preserves selected contributions in a coherent whole. Prepare makes a chosen intention actionable without inventing requirements. Learn maintains reusable local references under an explicit knowledge request. Domain questions are thinking aids, not a checklist to print or work the user has authorized.
 
 ## What supplies knowledge
 
@@ -13,7 +13,7 @@ Use the available context selectively. No mode requires searching every project 
 
 ## Domain dictionary library
 
-The domain guides form a library used by all four modes. Select a guide from the subject of the thought or an explicit request such as “use the furniture design dictionary.” A dictionary changes the available language, not the selected mode's output contract. Read only the relevant entries; combine guides when the thought actually crosses domains.
+The domain guides form a library used by the four prompt-shaping modes. Saved personal and project knowledge supplements them through [local knowledge](local-knowledge.md). Learn maintains that separate library. Select a guide from the subject of the thought or an explicit request such as “use the furniture design dictionary.” A dictionary changes the available language, not the selected mode's output contract. Read only the relevant entries; combine guides when the thought actually crosses domains.
 
 ## Select only relevant references
 

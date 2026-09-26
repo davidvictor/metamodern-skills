@@ -15,7 +15,7 @@ Then combine the strongest parts and prepare a prompt for implementation.
 Preserve my constraints and flag any conflicting choices.
 ```
 
-**Metamodern Prompt** has four main modes:
+**Metamodern Prompt** has five modes:
 
 | Mode | Use it to |
 | --- | --- |
@@ -23,10 +23,29 @@ Preserve my constraints and flag any conflicting choices.
 | Expand | Explore distinct, useful directions. |
 | Combine | Bring selected directions together without losing their contributions. |
 | Prepare | Turn the result into an actionable brief with an outcome, boundaries, and evidence of completion. |
+| Learn | Save, research, correct, inspect, or remove local domain knowledge for future prompts. |
 
 You can also **review, focus, split, or shorten** a prompt. Modes can compose. Preparing a prompt does not execute the task inside it.
 
 Prompt includes focused domain references for UI design, front-end development, back-end/API design, domain and data modeling, automotive design, automotive engineering, copywriting, and marketing, alongside the existing apparel, furniture, business, and research references. It consults only the guides relevant to your idea; naming a domain does not start the underlying design, coding, or campaign work. See the [domain guide index](metamodern-shape-prompt/references/foundation.md#select-only-relevant-references).
+
+## Teach Prompt your domain
+
+```text
+Use Metamodern Prompt in Learn mode. Save this for future furniture prompts:
+when I say "floating," I mean visually light, not necessarily wall mounted.
+This is my terminology preference, not an industry definition.
+```
+
+You can also ask it to research a domain and save a concise, sourced reference, correct an earlier entry, show what it knows about a topic, or remove an entry. Learn saves only when you request it; ordinary prompt shaping does not silently build a profile. Research runs only when requested or separately authorized.
+
+Later, ask: "Expand this furniture idea using my saved terminology." Prompt checks a small index and reads only relevant entries. It includes the needed meaning in the resulting prompt so another recipient does not need your local files. Saved material is reference context, not permission to run tasks.
+
+Personal knowledge lives in `~/.metamodern/prompt-knowledge/`. Say "for this project only" to use `.metamodern/prompt-knowledge/` inside the identified project instead. Both use an `index.md` with `Format: 1` and topic files in `domains/`. Codex and Claude Code on the same computer can use the same files. **Skill installation scope and knowledge scope are independent:** a project-installed skill can use personal knowledge, and a globally installed skill can use project knowledge.
+
+Supported installs, named updates, reinstalls, and removal of the skill leave these separate knowledge folders untouched. Keep personal additions here instead of editing installed skill files. This is persistent reference material, not model training or a change to every conversation. It requires local file access; without that access, the agent can draft an entry but must say it was not saved.
+
+To correct an entry, say "Learn: correct my furniture reference..." To remove one, name the topic and personal or project scope. Back up or deliberately share the knowledge folder as ordinary files; it is not automatically synchronized or sent to this repository. A project folder may be included in a later Git commit unless excluded, so choose your project's sharing policy. Saving knowledge does not commit or publish it. See the [local knowledge contract](metamodern-shape-prompt/references/local-knowledge.md) for discovery and conflict handling.
 
 ## Install only what you need
 
@@ -54,6 +73,17 @@ npx --yes skills@1.7.0 add davidvictor/metamodern-skills \
   --skill '*' --global --agent codex --agent claude-code --yes
 ```
 
+For **Codex only in one project**, open that project's directory and run:
+
+```bash
+npx --yes skills@1.7.0 add davidvictor/metamodern-skills \
+  --skill metamodern-shape-prompt \
+  --skill metamodern-refine-writing \
+  --agent codex --yes
+```
+
+This installs the two skills at project level, without a global or Claude Code installation. To use Learn only within that project as well, explicitly ask it to save knowledge "for this project only."
+
 For **one project**, run the same install command in that project's directory and omit `--global`. This creates project skill files and a lockfile there. Reopen your agent session if its skill list does not refresh.
 
 In Codex, invoke `$metamodern-shape-prompt`. In Claude Code, use `/metamodern-shape-prompt`. You can also ask for the method by name. Skills guide the model; they do not install integrations or grant permission to take external actions.
@@ -62,7 +92,7 @@ In Codex, invoke `$metamodern-shape-prompt`. In Claude Code, use `/metamodern-sh
 
 | Skill | What it helps you do |
 | --- | --- |
-| [Prompt](./metamodern-shape-prompt/SKILL.md) · `$metamodern-shape-prompt` | Clarify, expand, combine, prepare, and review prompts. |
+| [Prompt](./metamodern-shape-prompt/SKILL.md) · `$metamodern-shape-prompt` | Shape prompts and save reusable local domain knowledge. |
 | [Writing](./metamodern-refine-writing/SKILL.md) · `$metamodern-refine-writing` | Improve existing prose while preserving meaning and voice. |
 | [Project preparation](./metamodern-prepare-project/SKILL.md) · `$metamodern-prepare-project` | Start or adopt a project with usable context, references, and instructions. |
 | [Meeting processing](./metamodern-process-meeting/SKILL.md) · `$metamodern-process-meeting` | Reconcile meeting evidence with current project facts and requested actions. |
@@ -94,7 +124,7 @@ A GitHub-source install records its origin and content hash, allowing named upda
 npx --yes skills@1.7.0 update metamodern-shape-prompt --global --yes
 ```
 
-Repeat that command for each skill you want to update. To refresh a selected set, rerun its original `add` command. To refresh all Metamodern skills, rerun the full-collection install above. These commands can replace installed copies, so keep customizations in your project instructions or a fork.
+Repeat that command for each skill you want to update. To refresh a selected set, rerun its original `add` command. To refresh all Metamodern skills, rerun the full-collection install above. These commands can replace installed skill files. Use Learn for domain additions: its external personal and project knowledge folders are preserved. Keep other method customizations in project instructions or a fork.
 
 Inspect installed skills:
 
