@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Name Meeting"
+  short_description: "Give meetings candid, funny video titles"
+  default_prompt: "Use $metamodern-name-meeting to give this meeting a clear title with a funny parenthetical."
