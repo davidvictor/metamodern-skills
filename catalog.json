@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.2.0",
+  "collectionVersion": "1.2.1",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -43,6 +43,13 @@
       "version": "0.2.1",
       "category": "brand-and-design",
       "summary": "Turn an accepted brand into a Midjourney look kit, recipes, a calibration run, and screened sets."
+    },
+    {
+      "name": "metamodern-name-meeting",
+      "path": "metamodern-name-meeting",
+      "version": "0.1.0",
+      "category": "communication",
+      "summary": "Name meetings with candid premises and funny video style parentheticals."
     },
     {
       "name": "metamodern-prepare-project",
