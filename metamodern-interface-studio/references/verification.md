@@ -19,7 +19,7 @@ Each result records check ID, target, environment and tool version, source revis
 | Responsive | Representative narrow and wide shell plus meaningful target profiles. Inspect overflow, wrapping, preview scale labels, navigation/control reachability, safe areas where actually supported, loading/error and long-content states. |
 | Accessibility | Keyboard order/activation, visible focus, accessible names/roles, announcements for meaningful state changes, control contrast/size, pause and reduced motion. Automated scanning where available supplements manual checks; report untested assistive technologies and native accessibility. |
 
-Use current project tooling; don't require an arbitrary framework or broaden tests after relevant checks pass. Read current framework/router/tool documentation when integration details are uncertain. Preserve editable assets and keep capture bundles out of source control unless appropriate to the project.
+For the Studio's own interface, check the acceptance criteria in [shell.md](shell.md#acceptance-criteria) and report each as met, partial, not measured or not applicable. Use current project tooling; don't require an arbitrary framework or broaden tests after relevant checks pass. Read current framework/router/tool documentation when integration details are uncertain. Preserve editable assets and keep capture bundles out of source control unless appropriate to the project.
 
 ## Isolated skill evaluation
 

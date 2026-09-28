@@ -1,0 +1,88 @@
+/* Example product styles. Its own tokens, its own font stack: nothing here is shared with the shell. */
+:root {
+  --ex-primary: #0f766e;
+  --ex-primary-ink: #ffffff;
+  --ex-accent: #ccfbf1;
+  --ex-ground: #fafaf9;
+  --ex-surface: #ffffff;
+  --ex-ink: #1c1917;
+  --ex-ink-muted: #57534e;
+  --ex-line: #e7e5e4;
+  --ex-focus: 0 0 0 3px rgb(15 118 110 / 35%);
+  --ex-danger: #b91c1c;
+  --ex-warning: #a16207;
+  --ex-done: #15803d;
+  --ex-radius: 10px;
+  --ex-row: 48px;
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --ex-primary: #2dd4bf;
+  --ex-primary-ink: #042f2e;
+  --ex-accent: #134e4a;
+  --ex-ground: #0c0a09;
+  --ex-surface: #1c1917;
+  --ex-ink: #f5f5f4;
+  --ex-ink-muted: #a8a29e;
+  --ex-line: #292524;
+  --ex-focus: 0 0 0 3px rgb(45 212 191 / 40%);
+  --ex-danger: #f87171;
+  --ex-warning: #facc15;
+  --ex-done: #4ade80;
+  color-scheme: dark;
+}
+:root[data-density="compact"] { --ex-row: 38px; }
+
+* { box-sizing: border-box; }
+html, body, #app { margin: 0; height: 100%; }
+body { background: var(--ex-ground); color: var(--ex-ink); font: 15px/1.45 ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: none; box-shadow: var(--ex-focus); }
+
+.app { display: grid; grid-template-columns: 220px 1fr; height: 100%; }
+.nav { border-right: 1px solid var(--ex-line); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; background: var(--ex-surface); }
+.brand { font-weight: 700; font-size: 17px; padding: 4px 10px 16px; display: flex; align-items: center; gap: 8px; }
+.brand i { width: 22px; height: 22px; border-radius: 7px; background: var(--ex-primary); display: inline-block; }
+.nav a { padding: 8px 10px; border-radius: 8px; color: var(--ex-ink-muted); text-decoration: none; }
+.nav a[aria-current="page"] { background: var(--ex-accent); color: var(--ex-ink); font-weight: 600; }
+.main { overflow: auto; padding: 28px 36px; }
+.head { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.head h1 { font-size: 24px; margin: 0; flex: 1; }
+.btn { border: 0; border-radius: var(--ex-radius); padding: 9px 14px; font-weight: 600; background: var(--ex-primary); color: var(--ex-primary-ink); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--ex-ink); border: 1px solid var(--ex-line); }
+.list { background: var(--ex-surface); border: 1px solid var(--ex-line); border-radius: calc(var(--ex-radius) + 4px); overflow: hidden; }
+.row { display: flex; align-items: center; gap: 12px; min-height: var(--ex-row); padding: 0 16px; border-top: 1px solid var(--ex-line); width: 100%; background: none; border-left: 0; border-right: 0; border-bottom: 0; text-align: left; }
+.row:first-child { border-top: 0; }
+.row .check { width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid var(--ex-ink-muted); flex: none; }
+.row.done .check { background: var(--ex-done); border-color: var(--ex-done); }
+.row.done .title { text-decoration: line-through; color: var(--ex-ink-muted); }
+.row .title { flex: 1; }
+.row .due { color: var(--ex-ink-muted); font-size: 13px; }
+.row.new { background: var(--ex-accent); }
+.muted { color: var(--ex-ink-muted); }
+.empty, .failed { text-align: center; padding: 64px 24px; background: var(--ex-surface); border: 1px dashed var(--ex-line); border-radius: calc(var(--ex-radius) + 4px); }
+.failed { border-style: solid; }
+.failed strong { color: var(--ex-danger); display: block; margin-bottom: 6px; }
+.skeleton { height: 14px; border-radius: 6px; background: var(--ex-line); flex: 1; }
+.scrim { position: fixed; inset: 0; background: rgb(0 0 0 / 35%); display: grid; place-items: center; padding: 16px; }
+.dialog { width: min(440px, 100%); background: var(--ex-surface); border-radius: calc(var(--ex-radius) + 6px); padding: 22px; box-shadow: 0 24px 60px -20px rgb(0 0 0 / 45%); display: grid; gap: 14px; }
+.dialog h2 { margin: 0; font-size: 18px; }
+.field { display: grid; gap: 6px; }
+.field input, .field textarea { border: 1px solid var(--ex-line); border-radius: var(--ex-radius); padding: 9px 11px; background: var(--ex-ground); }
+.actions { display: flex; justify-content: flex-end; gap: 8px; }
+.card { background: var(--ex-surface); border: 1px solid var(--ex-line); border-radius: calc(var(--ex-radius) + 4px); padding: 20px; display: grid; gap: 14px; max-width: 560px; }
+.center { display: grid; place-items: center; height: 100%; padding: 24px; }
+.back { background: none; border: 0; color: var(--ex-primary); padding: 0; margin-bottom: 12px; font-weight: 600; }
+.tabs { display: none; }
+
+@media (max-width: 700px) {
+  .app { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  .nav { display: none; }
+  .main { padding: 20px 16px; }
+  .head h1 { font-size: 22px; }
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--ex-line); background: var(--ex-surface); }
+  .tabs a { padding: 12px 0 20px; text-align: center; font-size: 12px; color: var(--ex-ink-muted); text-decoration: none; }
+  .tabs a[aria-current="page"] { color: var(--ex-primary); font-weight: 600; }
+}

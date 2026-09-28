@@ -10,6 +10,8 @@ Map scenario navigation to the application's tab roots, push stacks, sheets/moda
 
 Use native rendering and input conventions. Web/native may share IDs, fixture meaning, and semantic token intent without sharing components or navigation code. A responsive web page, WebView mirror, or HTML recreation must be classified according to its actual renderer; none proves native rendering, navigation, accessibility, or OS behavior.
 
+In the shell starter, a native target with recorded captures only omits `frameEntry` and supplies captures with provenance; see [frame-protocol.md](frame-protocol.md#capture-only-studios). An instrumented stream keeps the same adapter declaration and needs its own preview host behind the handle contract.
+
 ## When live native access is unavailable
 
 Use verified captures as an explicitly static, read-only fallback. Each image needs original capture provenance: application/build/source identity, target/environment, scenario and fixture mapping where known, profile, axes, capture time and artifact identity. Keep unavailable fields and uncertain scenario mappings explicit. A supplied image without enough provenance is an unverified reference image or illustration, not a verified native preview.
