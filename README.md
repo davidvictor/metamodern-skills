@@ -88,10 +88,49 @@ For **one project**, run the same install command in that project's directory an
 
 In Codex, invoke `$metamodern-shape-prompt`. In Claude Code, use `/metamodern-shape-prompt`. You can also ask for the method by name. Skills guide the model; they do not install integrations or grant permission to take external actions.
 
+## Build an Interface Studio
+
+[Interface Studio](./metamodern-interface-studio/SKILL.md) helps an agent build and maintain a review environment around your existing application and UI kit. It reuses product components and behavior where practical, adds reproducible scenarios, and keeps presenter material separate from generated source mappings. It is a working method with a manifest validator, not a prebuilt Studio application.
+
+Install just this skill for Codex and Claude Code:
+
+```bash
+npx --yes skills@1.7.0 add davidvictor/metamodern-skills \
+  --skill metamodern-interface-studio \
+  --global --agent codex --agent claude-code --yes
+```
+
+Omit `--global` to install only in the current project. Invoke `$metamodern-interface-studio` in Codex or `/metamodern-interface-studio` in Claude Code. Start from the application repository so the agent can inspect its components, routes, tokens, assets, and tests.
+
+Start with a read-only inspection:
+
+```text
+Use $metamodern-interface-studio in Inspect mode for this application.
+Inventory the UI kit, surfaces, states, routes, and tests. Recommend a
+preview strategy and a concrete first Studio scope. Do not modify the app.
+```
+
+Then request the work you want:
+
+| Operation | Example request |
+| --- | --- |
+| Build | Build a local Studio for our task-management flow using the existing components and synthetic fixtures. Include Inspect, Gallery, and an initial walkthrough. |
+| Update | Update the Studio against the current source. Preserve my narration and walkthrough edits; report ambiguous renames, removed references, and stale captures. |
+| Verify | Verify reset, isolated previews, navigation, the key task interaction, responsive behavior, and the walkthrough. Report the source revision, scenarios, environments, and unavailable checks. |
+| Prepare | Prepare a five-minute walkthrough for product reviewers using the existing task flow. Explain current behavior and flag unresolved steps. |
+| Publish | Publish this Studio to the destination I specify, for the named audience, and verify the hosted result. |
+
+Supply the application and UI-kit locations, target platforms, relevant flows, intended audience, and any existing Studio or presenter files. Build can proceed with one appropriate target adapter. Native previews require an available instrumented build, simulator/device, stream, or supplied capture evidence; a web recreation never proves native behavior. Publication additionally needs an explicit destination and audience-appropriate fixtures/assets.
+
+The Studio's interface views are Inspect, Compare, Gallery, and Present. These are separate from the six skill operations. The first Build includes Gallery and an initial walkthrough; comparisons name the changing axis, such as theme or revision.
+
+Update preserves stable identities and presenter work and reports unresolved changes. Verification distinguishes source inspection, local runtime, native runtime, hosted publication, and user acceptance. Installing this skill does not deploy an application, connect accounts, or establish any of those outcomes. See the [manifest and update contract](./metamodern-interface-studio/references/manifest.md) and [verification guide](./metamodern-interface-studio/references/verification.md) for the detailed boundaries.
+
 ## Choose a skill
 
 | Skill | What it helps you do |
 | --- | --- |
+| [Interface Studio](./metamodern-interface-studio/SKILL.md) · `$metamodern-interface-studio` | Inspect, build, update, verify, prepare, and publish review Studios around existing interfaces. |
 | [Prompt](./metamodern-shape-prompt/SKILL.md) · `$metamodern-shape-prompt` | Shape prompts and save reusable local domain knowledge. |
 | [Writing](./metamodern-refine-writing/SKILL.md) · `$metamodern-refine-writing` | Improve existing prose while preserving meaning and voice. |
 | [Project preparation](./metamodern-prepare-project/SKILL.md) · `$metamodern-prepare-project` | Start or adopt a project with usable context, references, and instructions. |

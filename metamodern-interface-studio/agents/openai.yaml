@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Interface Studio"
+  short_description: "Build and maintain interface review Studios"
+  default_prompt: "Use $metamodern-interface-studio to inspect this application's UI kit and screens and propose a concrete Studio scope."

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0 — 2026-09-28
+
+- Add Interface Studio 0.1.0 for Inspect, Build, Update, Verify, Prepare, and Publish workflows around existing application interfaces.
+- Define portable manifest, presenter ownership, deterministic scenario, target fidelity, update reconciliation, presentation, and verification contracts.
+- Add a read-only manifest validator with 12 regression tests and document installation and usage for Codex and Claude Code.
+- Validate the method in an isolated synthetic web example; native runtime, real-application integration, hosted publication, and user acceptance remain unverified.
+
 ## 1.2.0 — 2026-09-26
 
 - Add Prompt Learn mode for explicit local knowledge saving, research, correction, inspection, and removal.

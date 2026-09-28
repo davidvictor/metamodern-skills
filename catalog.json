@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.2.0",
+  "collectionVersion": "1.3.0",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -36,6 +36,13 @@
       "version": "0.1.1",
       "category": "delivery-and-engineering",
       "summary": "Establish proportional engineering instructions and a verified first-task handoff for web apps, mobile apps, and websites."
+    },
+    {
+      "name": "metamodern-interface-studio",
+      "path": "metamodern-interface-studio",
+      "version": "0.1.0",
+      "category": "delivery-and-engineering",
+      "summary": "Build and maintain reproducible interface review and presentation Studios from existing UI kits and applications."
     },
     {
       "name": "metamodern-midjourney",
