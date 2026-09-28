@@ -19,7 +19,7 @@ Inject versioned fixtures, clock, seed, conditions, and asynchronous outcomes at
 
 Map semantic surface IDs and parameters to observed routes, including nested routes, dialogs, drawers, and auxiliary outlets. Give each preview independent history. Product back/dismiss affects that history; Studio back affects catalog selection or presentation. Verify deep entry as well as clicking into the state. A reload must not accidentally escape into a production route.
 
-For frame or remote mounts, use a versioned handshake and per-instance request IDs, validate message origin and source, and expose readiness/error/disposal through the adapter. Do not rely on arbitrary cross-origin DOM access. Capture and semantic inspection may be unavailable even when a frame is visible; report their limits.
+For frame or remote mounts, use a versioned handshake and per-instance request IDs, validate message origin and source, and expose readiness/error/disposal through the adapter. The starter implements this as studio-preview/1; see [frame-protocol.md](frame-protocol.md) for the product-side client. Do not rely on arbitrary cross-origin DOM access. Capture and semantic inspection may be unavailable even when a frame is visible; report their limits.
 
 ## Display, input, and evidence
 

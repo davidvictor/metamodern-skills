@@ -1,6 +1,6 @@
 # Review and presentation
 
-Read this for Build, Prepare, or presentation verification. The Studio's views are **Inspect, Compare, Gallery, and Present**. They are not extra skill operations. [manifest.md](manifest.md) defines stable records and presenter ownership; [adapters.md](adapters.md) determines which controls can honestly work.
+Read this for Build, Prepare, or presentation verification. The Studio's views are **Inspect, Compare, Gallery, and Present**, plus **Tokens** when the product has a token source. They are not extra skill operations. [shell.md](shell.md) defines how the starter lays them out and which controls it uses. [manifest.md](manifest.md) defines stable records and presenter ownership; [adapters.md](adapters.md) determines which controls can honestly work.
 
 ## Design around reviewer tasks
 

@@ -1,6 +1,6 @@
 # Preview adapter contract
 
-Read this when selecting, implementing, or verifying an adapter. [manifest.md](manifest.md) owns the serializable records and IDs; [scenarios.md](scenarios.md) owns materialization and isolation. This document defines runtime behavior, not a universal rendering framework.
+Read this when selecting, implementing, or verifying an adapter. [manifest.md](manifest.md) owns the serializable records and IDs; [scenarios.md](scenarios.md) owns materialization and isolation. This document defines runtime behavior, not a universal rendering framework. [frame-protocol.md](frame-protocol.md) shows how the shell starter realizes it: an adapter declaration plus an isolated frame per preview.
 
 ## Fidelity and capabilities
 

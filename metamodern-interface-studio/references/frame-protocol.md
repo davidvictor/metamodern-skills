@@ -1,0 +1,73 @@
+# Adapter declaration and frame protocol
+
+Read this when connecting a product to the [shell](shell.md), or when a preview does not start. It makes the [adapter contract](adapters.md) concrete for the starter: one data declaration the shell reads, and one message protocol between the shell and each preview runtime. The shell imports no product code, and the product imports no shell code except the small, framework-free frame client.
+
+## The adapter declaration
+
+`src/adapter.ts` exports one `StudioAdapter` (types in `src/studio/types.ts`). Generate it from the manifest and runtime catalog; do not hand-copy product facts into shell components.
+
+| Field | Contents |
+| --- | --- |
+| `id`, `version`, `protocol` | Stable Studio identity, adapter version, and `"studio-preview/1"`. |
+| `product` | Name, a two-letter mark, the source revision, and an optional brand color offered in Studio settings. |
+| `target` | Platform, fidelity class (`actual`, `actual-substituted`, `instrumented-native`, `static-capture`, `recreation`), the label shown on the preview tab, and a mode with a reason for each of rendering, behavior, navigation, data and operating system. |
+| `frameEntry`, `frameOrigin` | URL of the product's isolated preview document, and its origin when it differs from the Studio's. Omit `frameEntry` for a capture-only Studio. |
+| `axes` | The theme axis label and values (each with the appearance of its product ground), profiles with pixel sizes and a kind, and scenario inputs with options and a default. |
+| `areas`, `scenarios` | Stable IDs, labels, surface and state, optional parent for nested variants, fixture ID, version and provenance, source, clock, status (`stale`, `unresolved`, `later`), optional captures keyed `theme:profile`, and independent design, delivery and evidence statuses. |
+| `walkthroughs` | Steps with a scenario, optional theme and profile, product commands to replay, an optional anchor, narration and the expected outcome. |
+| `comparisons` | Saved pairs on the theme axis. |
+| `tokens` | Optional: source, the two theme columns, product grounds, families with counts, total, and tokens with values per theme, read counts and flags (`unread`, `literal`, `coupled`). |
+| `presentationOverrides` | Anything the Studio changes about product rendering, shown on every preview tab. |
+
+Selection is stored in the URL hash as stable IDs only: view, scenario, theme and profile. Never put fixture values in it.
+
+## studio-preview/1
+
+Every message is a plain object with `protocol: "studio-preview/1"` and the frame `instance`. Requests and their answers carry a `requestId`. The shell names each frame with its instance, so the frame reads its own instance from `window.name`.
+
+| Direction | Message | Meaning |
+| --- | --- | --- |
+| frame to shell | `hello` | The frame loaded and can receive a mount. |
+| shell to frame | `mount { inputs }` | Materialize one scenario from scratch: scenario, theme, profile, input values, commands to replay, draft tokens. |
+| frame to shell | `ready { fingerprint, appearance, location, canGoBack, anchors }` | State, navigation and commands are applied and rendering has settled. The fingerprint is a digest of the resolved inputs. |
+| frame to shell | `error { operation, recoverable, reason }` | A mount or operation failed. The reason is safe to show; it never contains fixture secrets. |
+| shell to frame | `command { command }` | Run one product command through the application's own path. |
+| shell to frame | `product-back` | Go back in the preview's own history. |
+| shell to frame | `draft-overrides { tokens }` | Apply draft token values without a remount. |
+| frame to shell | `reply { ok, reason }` | The answer to a command, back or draft request. |
+| frame to shell | `navigated { location, canGoBack, anchors }` | Product navigation or overlay state changed. |
+| frame to shell | `modified` | Sent once per runtime, when a person first changes product state. |
+
+Both sides check the message's origin and sending window before reading anything else. The shell accepts messages only from its own frame elements at the declared frame origin; the frame accepts messages only from its parent at an allowed origin and only for its own instance. A late `ready` for an older request is ignored.
+
+## Lifecycle in the shell
+
+The preview host (`src/studio/live-preview.tsx`) mounts one frame per runtime. Any input change mounts a new frame behind the current one and swaps only when the new one reports ready, then removes the old frame. If the new frame reports an error, or sends no ready signal within 20 seconds, the previous preview stays on screen marked "Showing previous settings" with the reason; with no previous preview the frame shows the error and Retry. Reset mounts a fresh runtime from the same scenario. Draft tokens never remount. Each Compare side and each Gallery thumbnail is its own runtime; Gallery thumbnails exist only while near the viewport. If product code focuses a field during mount, the host returns keyboard focus to the Studio so its shortcuts keep working.
+
+## The product side
+
+The product adds one preview entry: a route, page or recreation document that renders a single scenario in isolation, with fixtures injected at its existing seams. It calls `connectStudioFrame` from `src/studio/frame-client.ts` once. Copy that file into the product or import it; it has no dependencies.
+
+```ts
+const frame = connectStudioFrame({
+  mount: (inputs) => ({ appearance: "light", location: "/tasks" }),
+  command: (id) => runProductCommand(id),
+  back: () => productHistory.back(),
+  canGoBack: () => productHistory.length > 1,
+  location: () => currentRoute(),
+})
+```
+
+- `mount` builds the scenario from scratch and returns the appearance of the product ground and its location. Throw for a scenario the entry cannot render.
+- `command` runs the application's own action. Throw for an unknown command; the step that needed it stops with the reason.
+- Mark semantic anchors in product markup with `data-studio-anchor="id"` and, where the text is not a good name, `data-studio-anchor-label`. The client reports visible anchors with their rectangles; the shell draws the highlight on its own layer.
+- Call `frame.notifyNavigated()` after product navigation or overlay changes the Studio did not request.
+- Draft tokens default to custom properties on the root element. Pass `applyTokens` when the product's tokens live elsewhere.
+- `settle` defaults to fonts plus two animation frames. Pass one that waits for required assets and controlled asynchronous work, so ready means ready.
+- Modified is detected for you: a trusted pointer or key event arms a short window, and only a DOM change or product navigation inside it marks the runtime modified, once. Studio mounts and commands never arm it. Call `frame.markModified()` for state the DOM does not show, such as a canvas.
+
+Opened outside the Studio, the preview entry should still render a default scenario so developers can load it directly.
+
+## Capture-only Studios
+
+Omit `frameEntry` and supply `captures` on scenarios with their provenance. The shell shows the capture, labels it static, disables product back and product commands, disables theme and profile values with no recorded capture, and shows an explicit empty state for a missing combination. A walkthrough step that needs commands stops with the reason. A native instrumented stream that is not a web page needs its own host behind the same handle contract; keep the declaration and the shell unchanged.

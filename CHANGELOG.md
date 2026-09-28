@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0 — 2026-09-28
+
+- Add a product-neutral Studio shell starter to Interface Studio 0.2.0 in `assets/studio-shell`: a grey review stage, icon rail with contextual panels, and Inspect, Compare, Gallery, Present, and Tokens views on shadcn 4.21 (Base UI, Rhea style).
+- Connect products through one adapter declaration and the studio-preview/1 frame protocol, with a framework-free client for the product's preview entry, staged swaps, timeouts, isolated runtimes per preview, live token drafts, and walkthrough command replay with anchors.
+- Add a Studio brand color that tints only Studio accents, and treat Modified as a state set by real product changes rather than a count of clicks.
+- Add the shell and frame protocol references, shell acceptance criteria with the starter's current status, and a synthetic example product. Real-application integration, native runtime, hosted publication, and user acceptance remain unverified.
+
 ## 1.3.0 — 2026-09-28
 
 - Add Interface Studio 0.1.0 for Inspect, Build, Update, Verify, Prepare, and Publish workflows around existing application interfaces.
