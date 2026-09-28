@@ -134,6 +134,7 @@ Update preserves stable identities and presenter work and reports unresolved cha
 | [Prompt](./metamodern-shape-prompt/SKILL.md) · `$metamodern-shape-prompt` | Shape prompts and save reusable local domain knowledge. |
 | [Writing](./metamodern-refine-writing/SKILL.md) · `$metamodern-refine-writing` | Improve existing prose while preserving meaning and voice. |
 | [Project preparation](./metamodern-prepare-project/SKILL.md) · `$metamodern-prepare-project` | Start or adopt a project with usable context, references, and instructions. |
+| [Meeting naming](./metamodern-name-meeting/SKILL.md) · `$metamodern-name-meeting` | Name meetings with candid premises and funny video style parentheticals. |
 | [Meeting processing](./metamodern-process-meeting/SKILL.md) · `$metamodern-process-meeting` | Reconcile meeting evidence with current project facts and requested actions. |
 | [Proposal preparation](./metamodern-prepare-proposal/SKILL.md) · `$metamodern-prepare-proposal` | Scope work and prepare proposals from your approved terms and evidence. |
 | [Brand development](./metamodern-develop-brand/SKILL.md) · `$metamodern-develop-brand` | Document, audit, develop, or refresh a brand system. |
@@ -195,7 +196,7 @@ metamodern-skills/
 │   ├── agents/openai.yaml          # Codex display and invocation metadata
 │   └── references/                 # Mode details, examples, model guidance
 ├── metamodern-refine-writing/      # Same package contract
-├── …                               # 13 independent packages total
+├── …                               # 15 independent packages total
 ├── scripts/                        # Collection and package validators
 ├── tests/                          # Package contracts and failure cases
 └── install.sh                      # Validated local maintainer installation
