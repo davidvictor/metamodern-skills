@@ -120,9 +120,11 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   // A scoped axis (such as Role) that this scenario does not use falls back to the theme axis.
   const fallback = !axes.some((x) => x.id === s.compare.axis)
   const axis = fallback ? "theme" : s.compare.axis
-  const a = fallback ? adapter.axes.themes[0].id : s.compare.a
-  const b = fallback ? adapter.axes.themes[adapter.axes.themes.length - 1].id : s.compare.b
-  const options = axisOptions(axis)
+  const options = axisOptions(axis, sc)
+  // A saved pair that names an option this scenario cannot render falls back to the first two it can.
+  const valid = (id: string) => options.some((o) => o.id === id)
+  const a = fallback ? adapter.axes.themes[0].id : valid(s.compare.a) ? s.compare.a : (options[0]?.id ?? "")
+  const b = fallback ? adapter.axes.themes[adapter.axes.themes.length - 1].id : valid(s.compare.b) && s.compare.b !== a ? s.compare.b : (options.find((o) => o.id !== a)?.id ?? "")
   const optionLabel = (id: string) => options.find((o) => o.id === id)?.label ?? id
   // Each side is one full set of resolved inputs: everything the viewer chose, except the one axis that changes.
   const pick = (k: "a" | "b") => (k === "a" ? a : b)
@@ -145,7 +147,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const setC = (patch: Partial<typeof s.compare>) => s.set({ compare: { ...s.compare, ...patch } })
   const changeAxis = (next: string) => {
     if (next === axis) return
-    const opts = axisOptions(next)
+    const opts = axisOptions(next, sc)
     const current = next === "theme" ? s.theme : next === "profile" ? s.profile : (s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
     const at = Math.max(0, opts.findIndex((o) => o.id === current))
     setC({ axis: next, a: opts[at]?.id ?? "", b: opts[(at + 1) % opts.length]?.id ?? "" })

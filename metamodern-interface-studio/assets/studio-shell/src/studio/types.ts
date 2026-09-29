@@ -74,6 +74,11 @@ export type Scenario = {
   captures?: Partial<Record<string, Capture>>
   /** The value this scenario was designed with for a scenario input, keyed by input ID, such as `{ role: "viewer" }`. */
   designed?: Record<string, string>
+  /**
+   * The options of a scenario input this scenario can actually render, keyed by input ID, such as
+   * `{ density: ["default", "compact"] }`. Only these are offered for it; without an entry every option is.
+   */
+  supports?: Record<string, string[]>
   /** Independent statuses; the Studio never infers approval. */
   statuses?: { design?: string; delivery?: string; evidence?: string; fingerprint?: string }
 }

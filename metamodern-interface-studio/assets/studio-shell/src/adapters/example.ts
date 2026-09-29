@@ -60,7 +60,7 @@ export const exampleAdapter: StudioAdapter = {
     ],
     resizable: { min: { w: 280, h: 320 }, max: { w: 2560, h: 1600 }, snapWidths: [640, 768, 1024, 1280] },
     inputs: [
-      { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable" },
+      { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable", placement: "dock", icon: "density", note: "The densities the product ships. Sign in has only Comfortable." },
       { id: "role", label: "Role", control: "select", options: [{ id: "owner", label: "Owner" }, { id: "viewer", label: "Viewer" }], placement: "dock", scoped: true, icon: "person", note: "Viewers see tasks without New task." },
     ],
   },
@@ -79,7 +79,7 @@ export const exampleAdapter: StudioAdapter = {
     { id: "tasks.new", label: "New task", area: "tasks", surface: "New task dialog", state: "Dialog open", description: "The form for a new task over the list.", fixture, source: src, clock },
     { id: "task.detail", label: "Task", area: "task", surface: "Task detail", description: "One task with its notes and history.", fixture, source: src, clock },
     { id: "account.settings", label: "Settings", area: "account", surface: "Settings", description: "Name, notifications and appearance.", fixture, source: src, clock },
-    { id: "account.sign-in", label: "Sign in", area: "account", surface: "Sign in", description: "The sign-in page.", fixture, source: src, clock },
+    { id: "account.sign-in", label: "Sign in", area: "account", surface: "Sign in", description: "The sign-in page. It ships at one density.", fixture, source: src, clock, supports: { density: ["comfortable"] } },
     { id: "reports.overview", label: "Overview", area: "reports", surface: "Reports", description: "Not designed yet.", fixture, source: src, clock, status: "later" },
   ] as Scenario[]).map((x) => (x.area === "tasks" || x.area === "task" ? { ...x, designed: { role: "owner" } } : x)),
   walkthroughs: [

@@ -3,7 +3,7 @@ import * as React from "react"
 import { toast } from "sonner"
 
 import { adapter } from "@/adapter"
-import type { Scenario, Token } from "@/studio/types"
+import type { Scenario, ScenarioInput, Token } from "@/studio/types"
 
 export type View = "inspect" | "compare" | "gallery" | "present" | "tokens"
 export type CompareMode = "side" | "split" | "toggle"
@@ -95,11 +95,21 @@ function readHash(): Partial<State> {
 
 /** The scenario inputs a scenario uses: every unscoped input, and a scoped one only when the scenario designs a value for it. */
 export const inputsFor = (sc: Scenario | undefined) => A.axes.inputs.filter((i) => !i.scoped || sc?.designed?.[i.id] !== undefined)
-/** The viewer's choice, else the scenario's designed value, else the input's default. Inputs the scenario does not use are left out. */
+/** The options of an input a scenario supports (`Scenario.supports`); every option when it declares none. */
+export const optionsFor = (input: ScenarioInput, sc: Scenario | undefined) => {
+  const only = sc?.supports?.[input.id]
+  return only ? input.options.filter((o) => only.includes(o.id)) : input.options
+}
+/** Inputs a viewer can change on this scenario: those with at least two options it supports. The rest are still sent, at their designed value. */
+export const choosableFor = (sc: Scenario | undefined) => inputsFor(sc).filter((i) => optionsFor(i, sc).length > 1)
+/** Whether a scenario can render an option of an input. */
+export const supports = (sc: Scenario | undefined, input: string, option: string) => !sc?.supports?.[input] || sc.supports[input].includes(option)
+/** The viewer's choice when this scenario supports it, else the scenario's designed value, else the input's default. Inputs the scenario does not use are left out. */
 export function resolveValues(sc: Scenario | undefined, values: Record<string, string>) {
   const out: Record<string, string> = {}
   for (const i of inputsFor(sc)) {
-    const v = values[i.id] ?? sc?.designed?.[i.id] ?? i.default
+    const chosen = values[i.id] !== undefined && supports(sc, i.id, values[i.id]) ? values[i.id] : undefined
+    const v = chosen ?? sc?.designed?.[i.id] ?? i.default
     if (v !== undefined) out[i.id] = v
   }
   return out
@@ -107,9 +117,13 @@ export function resolveValues(sc: Scenario | undefined, values: Record<string, s
 /** The same values with the viewer's dock choices removed, for playing a walkthrough exactly as designed. */
 export const withoutLenses = (values: Record<string, string>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
 /** The axes Compare can change for a scenario: theme, profile and every scenario input it uses. */
-export const compareAxes = (sc?: Scenario) => [{ id: "theme", label: A.axes.themeLabel }, { id: "profile", label: "Profile" }, ...inputsFor(sc).map((i) => ({ id: i.id, label: i.label }))]
-export const axisOptions = (axis: string): { id: string; label: string }[] =>
-  axis === "theme" ? A.axes.themes.map((t) => ({ id: t.id, label: t.label })) : axis === "profile" ? A.axes.profiles.map((p) => ({ id: p.id, label: p.label })) : (A.axes.inputs.find((i) => i.id === axis)?.options ?? [])
+export const compareAxes = (sc?: Scenario) => [{ id: "theme", label: A.axes.themeLabel }, { id: "profile", label: "Profile" }, ...choosableFor(sc).map((i) => ({ id: i.id, label: i.label }))]
+export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: string }[] => {
+  if (axis === "theme") return A.axes.themes.map((t) => ({ id: t.id, label: t.label }))
+  if (axis === "profile") return A.axes.profiles.map((p) => ({ id: p.id, label: p.label }))
+  const input = A.axes.inputs.find((i) => i.id === axis)
+  return input ? optionsFor(input, sc) : []
+}
 
 // Only inputs with a default start with a value; a designed input is left unset until the viewer chooses.
 export const defaultValues = (): Record<string, string> => Object.fromEntries(A.axes.inputs.flatMap((i) => (i.default !== undefined && i.placement !== "dock" ? [[i.id, i.default]] : [])))

@@ -43,7 +43,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useTheme } from "@/components/theme-provider"
 import { adapter } from "@/adapter"
-import { areaLabel, captureFor, draftIsValid, inputsFor, isColor, useStudio } from "@/store"
+import { areaLabel, captureFor, choosableFor, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
 import type { CapabilityDimension } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
@@ -409,8 +409,11 @@ function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "to
   const s = useStudio()
   const inp = adapter.axes.inputs.find((i) => i.id === id)!
   const designed = s.scenarioObj.designed?.[id] ?? inp.default
-  const current = s.values[id] ?? designed
-  const overridden = s.values[id] !== undefined && s.values[id] !== designed
+  const options = optionsFor(inp, s.scenarioObj)
+  // A choice this scenario cannot render (carried from another scenario or a link) does not apply here.
+  const chosen = s.values[id] !== undefined && supports(s.scenarioObj, id, s.values[id]) ? s.values[id] : undefined
+  const current = chosen ?? designed
+  const overridden = chosen !== undefined && chosen !== designed
   const label = inp.options.find((o) => o.id === current)?.label ?? current ?? inp.label
   const Icon = { person: UserRoundIcon, density: Rows3Icon, sliders: SlidersHorizontalIcon }[inp.icon ?? "sliders"]
   return (
@@ -426,7 +429,7 @@ function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "to
         <DropdownMenuGroup>
           <DropdownMenuLabel>{inp.label}</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={current} onValueChange={(v) => s.setValue(id, v === designed ? null : (v as string))}>
-            {inp.options.map((o) => (
+            {options.map((o) => (
               <DropdownMenuRadioItem key={o.id} value={o.id} closeOnClick>
                 {o.label}
                 {o.id === designed && <DropdownMenuShortcut>Designed</DropdownMenuShortcut>}
@@ -490,7 +493,7 @@ export function StageControls({ variant, compact }: { variant: "dock" | "toolbar
       </ToggleGroup>
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       <SizeMenu variant={variant} compact={compact} />
-      {inputsFor(s.scenarioObj).filter((i) => i.placement === "dock").map((i) => <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />)}
+      {choosableFor(s.scenarioObj).filter((i) => i.placement === "dock").map((i) => <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />)}
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1 tabular-nums" aria-label={`Zoom, ${zoomLabel}`} />}>
@@ -579,26 +582,26 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
               <dt className="text-muted-foreground">Source</dt><dd className="font-mono text-xs break-all">{sc.source}</dd>
               {s.preview.location && (<><dt className="text-muted-foreground">Location</dt><dd className="font-mono text-xs break-all">{s.preview.location}</dd></>)}
             </dl>
-            {inputsFor(sc).some((i) => i.placement !== "dock") && (
+            {choosableFor(sc).some((i) => i.placement !== "dock") && (
               <FieldSet>
                 <FieldLegend variant="label">Scenario inputs</FieldLegend>
                 <FieldDescription className="text-xs">Declared by the {adapter.product.name} adapter. A change rebuilds the preview from the scenario.</FieldDescription>
                 <FieldGroup className="gap-4">
-                  {inputsFor(sc).filter((i) => i.placement !== "dock").map((inp) =>
+                  {choosableFor(sc).filter((i) => i.placement !== "dock").map((inp) =>
                     inp.control === "presets" ? (
                       <Field key={inp.id}>
                         <FieldLabel>{inp.label}</FieldLabel>
-                        <ToggleGroup value={[s.values[inp.id]]} variant="outline" size="sm" spacing={0} className="w-full" onValueChange={(v) => v[0] && s.setValue(inp.id, v[0])} aria-label={inp.label}>
-                          {inp.options.map((o) => <ToggleGroupItem key={o.id} value={o.id} className="flex-1 px-1 text-xs">{o.label}</ToggleGroupItem>)}
+                        <ToggleGroup value={[resolveValues(sc, s.values)[inp.id]]} variant="outline" size="sm" spacing={0} className="w-full" onValueChange={(v) => v[0] && s.setValue(inp.id, v[0])} aria-label={inp.label}>
+                          {optionsFor(inp, sc).map((o) => <ToggleGroupItem key={o.id} value={o.id} className="flex-1 px-1 text-xs">{o.label}</ToggleGroupItem>)}
                         </ToggleGroup>
                         {inp.note && <FieldDescription className="text-xs">{inp.note}</FieldDescription>}
                       </Field>
                     ) : (
                       <Field key={inp.id}>
                         <FieldLabel>{inp.label}</FieldLabel>
-                        <Select value={s.values[inp.id] ?? sc.designed?.[inp.id] ?? inp.default} items={Object.fromEntries(inp.options.map((o) => [o.id, o.label]))} onValueChange={(v) => v && s.setValue(inp.id, v as string)}>
+                        <Select value={resolveValues(sc, s.values)[inp.id]} items={Object.fromEntries(optionsFor(inp, sc).map((o) => [o.id, o.label]))} onValueChange={(v) => v && s.setValue(inp.id, v as string)}>
                           <SelectTrigger className="w-full" aria-label={inp.label}><SelectValue /></SelectTrigger>
-                          <SelectContent>{inp.options.map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
+                          <SelectContent>{optionsFor(inp, sc).map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
                         </Select>
                         {inp.note && <FieldDescription className="text-xs">{inp.note}</FieldDescription>}
                       </Field>

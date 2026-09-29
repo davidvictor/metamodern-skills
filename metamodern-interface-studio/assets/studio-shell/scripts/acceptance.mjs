@@ -597,6 +597,38 @@ await check("AC-17", async () => {
   return [ok ? "pass" : "fail", `opened "${designed}", New task ${ownerSees}; Viewer: "${changed}", New task ${viewerSees}, link role=${hash}, after reload "${kept}"; Back to Owner New task ${back}; a screen without the lens shows it ${scoped} times; Compare axes ${axes.join(", ")}`]
 })
 
+// AC-43 A scenario offers only the input options it supports (Scenario.supports); the designed one is marked
+await check("AC-43", async () => {
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  const frame = () => p.frames().find((f) => f !== p.mainFrame())
+  const density = () => frame().evaluate(() => document.documentElement.dataset.density)
+  const btn = () => p.getByRole("button", { name: /^Density,/ })
+  const designed = await btn().getAttribute("aria-label")
+  await btn().click()
+  await p.getByRole("menuitemradio").first().waitFor()
+  const offered = await p.getByRole("menuitemradio").allInnerTexts()
+  await p.getByRole("menuitemradio", { name: /^Compact/ }).click()
+  await wait(1500)
+  const compact = await density()
+  const link = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("density"))
+  await btn().click()
+  await p.getByRole("menuitem", { name: /Back to Comfortable/ }).click()
+  await wait(1500)
+  const back = await density()
+  await p.closeAll()
+  const q = await open("normal", { hash: "view=inspect&scenario=account.sign-in&density=compact" })
+  const hidden = await q.getByRole("button", { name: /^Density,/ }).count()
+  const signIn = await q.frames().find((f) => f !== q.mainFrame()).evaluate(() => document.documentElement.dataset.density)
+  await q.closeAll()
+  const c = await open("normal", { hash: "view=compare&scenario=account.sign-in" })
+  await c.getByRole("combobox", { name: "Changing axis" }).click()
+  await wait(400)
+  const axes = await c.getByRole("option").allInnerTexts()
+  await c.closeAll()
+  const ok = designed === "Density, Comfortable" && offered.length === 2 && /Comfortable[\s\S]*Designed/.test(offered[0]) && compact === "compact" && link === "compact" && back === "comfortable" && hidden === 0 && signIn === "comfortable" && !axes.includes("Density")
+  return [ok ? "pass" : "fail", `opened "${designed}", offered ${offered.map((o) => o.replace(/\s+/g, " ")).join(" / ")}; Compact rendered ${compact}, link density=${link}; Back rendered ${back}; Sign in (supports Comfortable only, link asks Compact): control shown ${hidden} times, rendered ${signIn}; its Compare axes ${axes.join(", ")}`]
+})
+
 await browser.close()
 for (const s of Object.values(servers)) s.server.close()
 writeFileSync(join(root, "acceptance-report.json"), JSON.stringify({ at: new Date().toISOString(), results }, null, 2) + "\n")
