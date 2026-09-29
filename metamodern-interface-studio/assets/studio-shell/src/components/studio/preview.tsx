@@ -4,7 +4,7 @@ import { TriangleAlertIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { adapter } from "@/adapter"
-import { captureFor } from "@/store"
+import { captureFor, resolveValues } from "@/store"
 import { LivePreview, type LivePreviewHandle, type LiveStatus } from "@/studio/live-preview"
 import { CaptureImage, PreviewFrame, type EmptyState } from "./bits"
 
@@ -68,7 +68,9 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   const w = capture?.w ?? size?.w ?? pr.w
   const h = capture?.h ?? size?.h ?? pr.h
   const rect = anchor ? status?.anchors.find((a) => a.id === anchor) : undefined
-  const mountKey = JSON.stringify([scenario, theme, profile, values, commands, resetNonce, retry])
+  // The frame receives resolved values: the viewer's choice, else what the scenario was designed with, else the default.
+  const resolved = sc ? resolveValues(sc, values) : values
+  const mountKey = JSON.stringify([scenario, theme, profile, resolved, commands, resetNonce, retry])
 
   return (
     <PreviewFrame
@@ -88,7 +90,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
           ref={ref}
           src={adapter.frameEntry!}
           origin={adapter.frameOrigin}
-          inputs={{ scenario, theme, profile, values, commands }}
+          inputs={{ scenario, theme, profile, values: resolved, commands }}
           mountKey={mountKey}
           tokens={tokens}
           w={w}

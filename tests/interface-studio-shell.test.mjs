@@ -63,7 +63,7 @@ test('modified is a state set by real changes, not a click count', () => {
 
 test('acceptance script covers every shell criterion', () => {
   const script = read('scripts/acceptance.mjs');
-  for (let i = 1; i <= 16; i++) assert.match(script, new RegExp(`"AC-${String(i).padStart(2, '0')}"`), `AC-${i} is not checked`);
+  for (let i = 1; i <= 17; i++) assert.match(script, new RegExp(`"AC-${String(i).padStart(2, '0')}"`), `AC-${i} is not checked`);
   assert.match(read('package.json'), /"acceptance": "node scripts\/acceptance\.mjs"/);
   assert.doesNotMatch(read('package.json'), /"playwright"/, 'Playwright stays optional');
 });

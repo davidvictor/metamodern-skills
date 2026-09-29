@@ -31,7 +31,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { adapter } from "@/adapter"
-import { areaLabel, axisOptions, captureFor, compareAxes, isColor, useStudio } from "@/store"
+import { areaLabel, axisOptions, captureFor, compareAxes, isColor, useStudio, withoutLenses } from "@/store"
 import type { LiveStatus } from "@/studio/live-preview"
 import type { Step } from "@/studio/types"
 import { FidelityBadge, ScaleChip, StatusBadge, useFit } from "./bits"
@@ -115,14 +115,20 @@ function useSideStatus() {
 export function CompareStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
   const sc = s.scenarioObj
-  const { axis, a, b, mode, split, showB } = s.compare
-  const axes = compareAxes()
+  const axes = compareAxes(sc)
+  const { mode, split, showB } = s.compare
+  // A scoped axis (such as Role) that this scenario does not use falls back to the theme axis.
+  const fallback = !axes.some((x) => x.id === s.compare.axis)
+  const axis = fallback ? "theme" : s.compare.axis
+  const a = fallback ? adapter.axes.themes[0].id : s.compare.a
+  const b = fallback ? adapter.axes.themes[adapter.axes.themes.length - 1].id : s.compare.b
   const options = axisOptions(axis)
   const optionLabel = (id: string) => options.find((o) => o.id === id)?.label ?? id
   // Each side is one full set of resolved inputs: everything the viewer chose, except the one axis that changes.
-  const sideProfile = (k: "a" | "b") => profileOf(axis === "profile" ? s.compare[k] : s.profile)
-  const sideTheme = (k: "a" | "b") => (axis === "theme" ? s.compare[k] : s.theme)
-  const sideValues = (k: "a" | "b") => (axis !== "theme" && axis !== "profile" ? { ...s.values, [axis]: s.compare[k] } : s.values)
+  const pick = (k: "a" | "b") => (k === "a" ? a : b)
+  const sideProfile = (k: "a" | "b") => profileOf(axis === "profile" ? pick(k) : s.profile)
+  const sideTheme = (k: "a" | "b") => (axis === "theme" ? pick(k) : s.theme)
+  const sideValues = (k: "a" | "b") => (axis !== "theme" && axis !== "profile" ? { ...s.values, [axis]: pick(k) } : s.values)
   const pa = sideProfile("a")
   const pb = sideProfile("b")
   const box = React.useRef<HTMLDivElement>(null)
@@ -140,7 +146,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const changeAxis = (next: string) => {
     if (next === axis) return
     const opts = axisOptions(next)
-    const current = next === "theme" ? s.theme : next === "profile" ? s.profile : s.values[next]
+    const current = next === "theme" ? s.theme : next === "profile" ? s.profile : (s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
     const at = Math.max(0, opts.findIndex((o) => o.id === current))
     setC({ axis: next, a: opts[at]?.id ?? "", b: opts[(at + 1) % opts.length]?.id ?? "" })
   }
@@ -173,7 +179,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
         resetNonce={x.nonce}
         scale={scale}
         interactive={interactive}
-        label={`Side ${k.toUpperCase()}: ${label(s.compare[k])}`}
+        label={`Side ${k.toUpperCase()}: ${label(pick(k))}`}
         onStatus={x.setSt}
       />
     )
@@ -190,7 +196,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           </Select>
           <Separator orientation="vertical" className="h-5! self-center!" />
           {(["a", "b"] as const).map((k) => (
-            <Select key={k} value={s.compare[k]} items={Object.fromEntries(options.map((o) => [o.id, o.label]))} onValueChange={(v) => setC({ [k]: v as string })}>
+            <Select key={k} value={pick(k)} items={Object.fromEntries(options.map((o) => [o.id, o.label]))} onValueChange={(v) => setC({ axis, a, b, [k]: v as string })}>
               <SelectTrigger size="sm" className="gap-1 border-0 shadow-none" aria-label={k === "a" ? "Side A" : "Side B"}>
                 <Badge variant="secondary" className="h-4 px-1 text-[10px]">{k.toUpperCase()}</Badge>
                 <SelectValue />
@@ -199,7 +205,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
             </Select>
           ))}
           <Tooltip>
-            <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Swap sides" onClick={() => setC({ a: b, b: a })} />}><ArrowLeftRightIcon /></TooltipTrigger>
+            <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Swap sides" onClick={() => setC({ axis, a: b, b: a })} />}><ArrowLeftRightIcon /></TooltipTrigger>
             <TooltipContent>Swap sides</TooltipContent>
           </Tooltip>
           <Separator orientation="vertical" className="h-5! self-center!" />
@@ -229,7 +235,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
             <figure key={k} className="m-0 flex flex-col items-center gap-2">
               <figcaption className="flex items-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs shadow-sm backdrop-blur">
                 <Badge variant="secondary" className="h-4 px-1 text-[10px]">{k.toUpperCase()}</Badge>
-                <b className="font-medium">{label(s.compare[k])}</b>
+                <b className="font-medium">{label(pick(k))}</b>
                 {sideStatus((k === "a" ? A : B).st)}
                 <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${k.toUpperCase()}`} onClick={(k === "a" ? A : B).reset}><RotateCcwIcon /></Button>
               </figcaption>
@@ -488,7 +494,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
               scenario={step.scenario}
               theme={theme}
               profile={profile}
-              values={s.values}
+              values={withoutLenses(s.values)}
               commands={step.commands}
               anchor={explored ? undefined : step.anchor}
               scale={scale}
