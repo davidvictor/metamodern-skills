@@ -44,6 +44,7 @@ import { adapter } from "@/adapter"
 import { areaCount, captureFor, useStudio, type View } from "@/store"
 import type { Scenario } from "@/studio/types"
 import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
+import { ProductMark } from "./bits"
 import { staticProblem } from "./views"
 
 /** Joined filter segments sized to fit a 272 px panel: small type, tight padding, never wider than their column. */
@@ -94,8 +95,8 @@ export function Rail({ labels }: { labels: boolean }) {
     <Sidebar collapsible="none" className="w-[calc(var(--sidebar-width-icon)+1px)]! border-r" aria-label="Studio">
       <SidebarHeader className="items-center">
         <Tooltip>
-          <TooltipTrigger render={<div tabIndex={0} className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-xs font-semibold text-sidebar-primary-foreground outline-none ring-sidebar-ring focus-visible:ring-2" aria-label={`${adapter.product.name} Studio`} />}>
-            {adapter.product.mark}
+          <TooltipTrigger render={<div tabIndex={0} role="img" className="flex size-8 items-center justify-center rounded-lg bg-(--mark-fill,var(--sidebar-primary)) text-xs font-semibold text-(--mark-ink,var(--sidebar-primary-foreground)) outline-none ring-sidebar-ring focus-visible:ring-2" aria-label={`${adapter.product.name} Studio`} />}>
+            <ProductMark width={19} decorative />
           </TooltipTrigger>
           <TooltipContent side="right">{adapter.product.name} Studio · {adapter.product.revision}</TooltipContent>
         </Tooltip>
@@ -216,7 +217,7 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
         <div className="border-b p-2">
           <p className="px-2 pb-1 text-xs font-medium text-sidebar-foreground/70">Saved comparisons</p>
           {adapter.comparisons.map((c) => (
-            <SidebarMenuButton key={c.id} size="sm" onClick={() => { s.set({ compare: { ...s.compare, a: c.a, b: c.b } }); if (c.scenario) s.selectScenario(c.scenario) }}>
+            <SidebarMenuButton key={c.id} size="sm" onClick={() => { s.set({ compare: { ...s.compare, axis: c.axis ?? "theme", a: c.a, b: c.b } }); if (c.scenario) s.selectScenario(c.scenario) }}>
               <BookmarkIcon />
               <span>{c.label}</span>
             </SidebarMenuButton>
@@ -277,7 +278,7 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
                 <>
                   <ChevronRightIcon className={cn("size-3.5 shrink-0 transition-transform duration-200", r.open && "rotate-90")} />
                   <span className="truncate">{r.label}</span>
-                  <span className="ml-auto font-normal tracking-normal tabular-nums normal-case opacity-70">{r.count}</span>
+                  <span className="ml-auto font-normal tracking-normal tabular-nums normal-case">{r.count}</span>
                 </>
               )
             return (
@@ -340,7 +341,7 @@ function PresentPanel() {
     <>
       <PanelHeader title="Walkthrough" count={`${tour.steps.length} steps`}>
         <Select value={tour.id} items={Object.fromEntries(tours.map((t) => [t.id, t.name]))} onValueChange={(v) => v && s.set({ present: { ...s.present, tour: v as string, step: 0, elapsed: 0, playing: false } })}>
-          <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full" aria-label="Walkthrough"><SelectValue /></SelectTrigger>
           <SelectContent>{tours.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
         </Select>
         <p className="text-xs leading-relaxed text-muted-foreground">{tour.goal}</p>

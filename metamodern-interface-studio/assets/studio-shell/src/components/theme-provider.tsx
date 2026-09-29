@@ -47,7 +47,8 @@ export function readableOn(color: string) {
 
 /*
  * The brand tints only the Studio's own accents: primary buttons, switches,
- * checkboxes, focus rings, the Studio mark and the active rail marker. The
+ * checkboxes, focus rings, the Studio mark and the active rail marker. The mark's
+ * tile keeps the unlifted brand in both appearances so a white mark reads on it. The
  * stage, preview boundary, status and fidelity colors stay fixed. In dark
  * appearance the brand is lifted to at least L 0.72 so it stays legible.
  */
@@ -65,16 +66,21 @@ function applyBrand(color: string | null) {
   const fg = readableOn(color)
   const lifted = `oklch(from ${color} max(l, 0.72) c h)`
   el.textContent = `
+:root { --mark-fill: ${color}; --mark-ink: ${fg}; }
 :root:not(.dark) { --primary: ${color}; --primary-foreground: ${fg}; --ring: ${color}; --sidebar-primary: ${color}; --sidebar-primary-foreground: ${fg}; --sidebar-ring: ${color}; }
 :root.dark { --primary: ${lifted}; --primary-foreground: oklch(0.18 0 0); --ring: ${lifted}; --sidebar-primary: ${lifted}; --sidebar-primary-foreground: oklch(0.18 0 0); --sidebar-ring: ${lifted}; }`
 }
 
 /** storagePrefix namespaces per-viewer settings, so each Studio remembers its own brand color. */
-export function ThemeProvider({ children, storagePrefix = "studio" }: { children: React.ReactNode; storagePrefix?: string }) {
+export function ThemeProvider({ children, storagePrefix = "studio", defaultBrand = null }: { children: React.ReactNode; storagePrefix?: string; defaultBrand?: string | null }) {
   const KEY = "studio.appearance"
   const BRAND_KEY = `${storagePrefix}.brand`
   const [theme, setThemeState] = React.useState<Theme>(() => read<Theme>(KEY, (v) => ["dark", "light", "system"].includes(v), "system") ?? "system")
-  const [brand, setBrandState] = React.useState<string | null>(() => read<string>(BRAND_KEY, (v) => CSS.supports("color", v), null))
+  // "neutral" is stored when a viewer picks Neutral over a product default, so the default does not come back.
+  const [brand, setBrandState] = React.useState<string | null>(() => {
+    const stored = read<string>(BRAND_KEY, (v) => v === "neutral" || CSS.supports("color", v), null)
+    return stored === "neutral" ? null : (stored ?? defaultBrand)
+  })
   React.useEffect(() => {
     const mq = window.matchMedia(QUERY)
     const apply = () => {
@@ -93,8 +99,8 @@ export function ThemeProvider({ children, storagePrefix = "studio" }: { children
   }, [])
   const setBrand = React.useCallback((c: string | null) => {
     setBrandState(c)
-    write(BRAND_KEY, c)
-  }, [BRAND_KEY])
+    write(BRAND_KEY, c === null && defaultBrand ? "neutral" : c)
+  }, [BRAND_KEY, defaultBrand])
   return <ThemeContext.Provider value={{ theme, setTheme, brand, setBrand }}>{children}</ThemeContext.Provider>
 }
 

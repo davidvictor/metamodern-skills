@@ -22,6 +22,8 @@ export type FrameHandlers = {
   applyTokens?: (tokens: Record<string, string>) => void
   /** Resolve when the rendering is settled: fonts, required assets, controlled async work. */
   settle?: () => Promise<void>
+  /** Digest of the resolved inputs and the resulting state and navigation. Defaults to the inputs alone. */
+  fingerprint?: (inputs: MountInputs) => Promise<string> | string
 }
 
 export type FrameOptions = { allowedOrigins?: string[] }
@@ -91,7 +93,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
           await handlers.command(id)
         }
         await settle()
-        post({ type: "ready", requestId: m.requestId, fingerprint: fingerprint(m.inputs), appearance, ...state() })
+        post({ type: "ready", requestId: m.requestId, fingerprint: handlers.fingerprint ? await handlers.fingerprint(m.inputs) : fingerprint(m.inputs), appearance, ...state() })
       } else if (m.type === "command") {
         if (!handlers.command) throw new Error("This preview has no commands")
         await handlers.command(m.command)

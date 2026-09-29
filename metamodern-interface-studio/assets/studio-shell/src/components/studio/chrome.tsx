@@ -1,7 +1,9 @@
 import * as React from "react"
 import {
   ChevronDownIcon,
+  ChevronRightIcon,
   ChevronUpIcon,
+  EllipsisIcon,
   CornerUpLeftIcon,
   LinkIcon,
   MonitorCogIcon,
@@ -41,8 +43,8 @@ import { useTheme } from "@/components/theme-provider"
 import { adapter } from "@/adapter"
 import { areaLabel, captureFor, draftIsValid, isColor, useStudio } from "@/store"
 import type { CapabilityDimension } from "@/studio/types"
-import { FidelityBadge, StatusBadge, lookOf, profileIcon, themeIcon } from "./bits"
-import { inspectHandle } from "./preview"
+import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
+import { inspectHandle, profileOf } from "./preview"
 
 async function copyLink() {
   try {
@@ -78,12 +80,35 @@ export function StatusNow() {
   return <StatusBadge kind="ready">Ready</StatusBadge>
 }
 
+/**
+ * On a phone the header actions fold behind one trigger and slide out to its left, so the title keeps
+ * its room. Wider screens show them in place. Folded actions are inert: not focusable, not announced.
+ */
+function MobileFold({ mobile, open, onOpenChange, children }: { mobile?: boolean; open: boolean; onOpenChange: (open: boolean) => void; children: React.ReactNode }) {
+  if (!mobile) return <>{children}</>
+  return (
+    <div className="flex shrink-0 items-center" onKeyDown={(e) => e.key === "Escape" && open && onOpenChange(false)}>
+      <div
+        id="header-actions"
+        inert={!open}
+        className={cn("grid transition-[grid-template-columns] duration-300 ease-(--ease-out-quint) motion-reduce:transition-none", open ? "grid-cols-[1fr]" : "grid-cols-[0fr]")}
+      >
+        <div className={cn("flex min-w-0 items-center gap-0.5 overflow-hidden transition-[opacity,translate] duration-300 ease-(--ease-out-quint) motion-reduce:transition-none", open ? "translate-x-0 p-0.5 opacity-100" : "translate-x-3 opacity-0")}>{children}</div>
+      </div>
+      <Button variant="ghost" size="icon-sm" aria-label={open ? "Hide actions" : "More actions"} aria-expanded={open} aria-controls="header-actions" onClick={() => onOpenChange(!open)}>
+        {open ? <ChevronRightIcon /> : <EllipsisIcon />}
+      </Button>
+    </div>
+  )
+}
+
 export function TopBar({ mobile }: { mobile?: boolean }) {
   const s = useStudio()
+  const [more, setMore] = React.useState(false)
   const { theme, setTheme } = useTheme()
   const viewLabel = { inspect: "Inspect", compare: "Compare", gallery: "Gallery", present: "Present", tokens: "Tokens" }[s.view]
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b bg-background px-2 md:px-3">
+    <header className="flex h-12 shrink-0 items-center gap-1.5 border-b bg-background px-2 md:gap-2 md:px-3">
       {!mobile && (
         <Tip label={s.panelOpen ? "Hide panel" : "Show panel"} keys={["⌘", "B"]}>
           <Button variant="ghost" size="icon-sm" aria-expanded={s.panelOpen} onClick={() => s.set({ panelOpen: !s.panelOpen })} aria-label={s.panelOpen ? "Hide panel" : "Show panel"} className="text-muted-foreground hover:text-foreground">
@@ -91,7 +116,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
           </Button>
         </Tip>
       )}
-      {mobile && <span className="flex size-7 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground">{adapter.product.mark}</span>}
+      {mobile && <span className="flex aspect-square size-7 shrink-0 items-center justify-center rounded-md bg-(--mark-fill,var(--primary)) text-[11px] font-semibold text-(--mark-ink,var(--primary-foreground))"><ProductMark width={17} /></span>}
       <Breadcrumb className="min-w-0">
         <BreadcrumbList className="flex-nowrap">
           <BreadcrumbItem className="hidden lg:inline-flex">{adapter.product.name}</BreadcrumbItem>
@@ -113,7 +138,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
       <div className="ml-1 hidden sm:block" aria-live="polite">
         {s.view === "inspect" && <StatusNow />}
       </div>
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-1">
         {!mobile && (
           <Button variant="outline" size="sm" className="hidden w-52 justify-start gap-2 text-muted-foreground xl:inline-flex" onClick={() => s.set({ commandOpen: true })}>
             <SearchIcon />
@@ -121,36 +146,36 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
             <KbdGroup><Kbd>⌘</Kbd><Kbd>K</Kbd></KbdGroup>
           </Button>
         )}
-        {(
-          <Button variant="ghost" size="icon-sm" className={cn(!mobile && "xl:hidden")} aria-label="Go to scenario" onClick={() => s.set({ commandOpen: true })}>
+        <MobileFold mobile={mobile} open={more} onOpenChange={setMore}>
+          <Button variant="ghost" size="icon-sm" className={cn(!mobile && "xl:hidden")} aria-label="Go to scenario" onClick={() => { s.set({ commandOpen: true }); setMore(false) }}>
             <SearchIcon />
           </Button>
-        )}
-        <LayoutOptions />
-        <DropdownMenu>
-          <Tip label="Studio appearance">
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Studio appearance" />}>
-              {theme === "dark" ? <MoonIcon /> : theme === "light" ? <SunIcon /> : <MonitorCogIcon />}
-            </DropdownMenuTrigger>
+          <LayoutOptions />
+          <DropdownMenu>
+            <Tip label="Studio appearance">
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Studio appearance" />}>
+                {theme === "dark" ? <MoonIcon /> : theme === "light" ? <SunIcon /> : <MonitorCogIcon />}
+              </DropdownMenuTrigger>
+            </Tip>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Studio appearance</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v)}>
+                  <DropdownMenuRadioItem value="system"><MonitorCogIcon />System</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="light"><SunIcon />Light</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="dark"><MoonIcon />Dark</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">Changes the Studio only. The product’s own theme is set on the stage.</p>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Tip label="Copy link to this view">
+            <Button variant="ghost" size="icon-sm" aria-label="Copy link" onClick={() => { copyLink(); setMore(false) }}>
+              <LinkIcon />
+            </Button>
           </Tip>
-          <DropdownMenuContent align="end" className="w-60">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>Studio appearance</DropdownMenuLabel>
-              <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v)}>
-                <DropdownMenuRadioItem value="system"><MonitorCogIcon />System</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="light"><SunIcon />Light</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="dark"><MoonIcon />Dark</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <p className="px-2 py-1.5 text-xs text-muted-foreground">Changes the Studio only. The product’s own theme is set on the stage.</p>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Tip label="Copy link to this view">
-          <Button variant="ghost" size="icon-sm" aria-label="Copy link" onClick={copyLink}>
-            <LinkIcon />
-          </Button>
-        </Tip>
+        </MobileFold>
         {!mobile && (
           <Tip label="Toggle details" keys={["⌘", "."]}>
             <Button variant="ghost" size="icon-sm" aria-pressed={s.detailsOpen} className="aria-pressed:bg-muted" onClick={() => s.set({ detailsOpen: !s.detailsOpen })} aria-label="Toggle details">
@@ -294,6 +319,81 @@ function LayoutOptions() {
 }
 
 /** Presentation controls: what you look at. Theme, profile, zoom, and the two preview actions. */
+/** Which group a profile sits in, by the form factor the adapter gave it. */
+const sizeGroup = (kind: "phone" | "tablet" | "laptop" | "desktop") => (kind === "phone" ? "Phone" : kind === "tablet" ? "Tablet" : "Laptop and desktop")
+
+/**
+ * One control for the frame's size: the profile list grouped by form factor, and, once the frame has
+ * been dragged, a Custom entry with the way back. It replaces a row of profile icons that could not
+ * hold this many sizes.
+ */
+function SizeMenu({ variant, compact }: { variant: "dock" | "toolbar"; compact?: boolean }) {
+  const s = useStudio()
+  const ax = adapter.axes
+  const live = !!adapter.frameEntry
+  const base = profileOf(s.profile)
+  const shown = s.size ? { ...base, ...s.size, label: "Custom" } : base
+  const groups = ["Phone", "Tablet", "Laptop and desktop"]
+    .map((g) => [g, ax.profiles.filter((p) => sizeGroup(p.kind) === g).sort((a, b) => a.w - b.w || a.h - b.h)] as const)
+    .filter(([, list]) => list.length)
+  const available = (id: string) => live || !!captureFor(s.scenarioObj, s.theme, id)
+  const dims = `${shown.w} × ${shown.h}`
+  return (
+    <DropdownMenu>
+      <Tip label={s.size ? `Custom size, from ${base.label}` : "Frame size"}>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1.5 tabular-nums" aria-label={`Size, ${shown.label}, ${dims}`} />}>
+          <ProfileIcon profile={base} />
+          {!compact && <span className="hidden max-w-36 truncate sm:inline">{shown.label}</span>}
+          <span className="text-muted-foreground">{dims}</span>
+        </DropdownMenuTrigger>
+      </Tip>
+      <DropdownMenuContent side={variant === "dock" ? "top" : "bottom"} align="start" className="w-80">
+        <DropdownMenuRadioGroup value={s.size ? "custom" : s.profile} onValueChange={(v) => v !== "custom" && s.setProfile(v as string)}>
+          {s.size && (
+            <DropdownMenuGroup>
+              <DropdownMenuRadioItem value="custom" closeOnClick>
+                <ProfileIcon profile={base} />
+                Custom
+                <DropdownMenuShortcut className="tabular-nums whitespace-nowrap">{dims}</DropdownMenuShortcut>
+              </DropdownMenuRadioItem>
+              <DropdownMenuSeparator />
+            </DropdownMenuGroup>
+          )}
+          {groups.map(([group, list], i) => (
+            <DropdownMenuGroup key={group}>
+              {i > 0 && <DropdownMenuSeparator />}
+              <DropdownMenuLabel>{group}</DropdownMenuLabel>
+              {list.map((p) => {
+                return (
+                  <DropdownMenuRadioItem key={p.id} value={p.id} disabled={!available(p.id)} closeOnClick>
+                    <ProfileIcon profile={p} />
+                    {p.label}
+                    <DropdownMenuShortcut className="tabular-nums whitespace-nowrap">{p.w} × {p.h}</DropdownMenuShortcut>
+                  </DropdownMenuRadioItem>
+                )
+              })}
+            </DropdownMenuGroup>
+          ))}
+        </DropdownMenuRadioGroup>
+        {live && ax.resizable && (
+          <>
+            <DropdownMenuSeparator />
+            <p className="px-2 py-1.5 text-xs text-muted-foreground">
+              {s.size ? (
+                <>
+                  Drag any edge to resize. <button className="rounded-sm underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.setSize(null)}>Back to {base.label}</button>
+                </>
+              ) : (
+                "Drag the frame's right or bottom edge in Inspect to set any size."
+              )}
+            </p>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export function StageControls({ variant, compact }: { variant: "dock" | "toolbar"; compact?: boolean }) {
   const s = useStudio()
   const ax = adapter.axes
@@ -329,21 +429,7 @@ export function StageControls({ variant, compact }: { variant: "dock" | "toolbar
         })}
       </ToggleGroup>
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
-      <ToggleGroup value={[s.profile]} onValueChange={(v) => v[0] && s.setProfile(v[0])} size="sm" spacing={0} aria-label="Profile">
-        {ax.profiles.filter((pr) => !compact || pr.kind === "phone" || pr.kind === "desktop").map((pr) => {
-          const Icon = profileIcon(pr)
-          const ok = available(s.theme, pr.id)
-          return (
-            <Tip key={pr.id} label={`${pr.label} · ${pr.w} × ${pr.h}${ok ? "" : " · no capture recorded"}`}>
-              <span className="inline-flex">
-                <ToggleGroupItem value={pr.id} aria-label={pr.label} disabled={!ok}>
-                  <Icon />
-                </ToggleGroupItem>
-              </span>
-            </Tip>
-          )
-        })}
-      </ToggleGroup>
+      <SizeMenu variant={variant} compact={compact} />
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1 tabular-nums" aria-label={`Zoom, ${zoomLabel}`} />}>

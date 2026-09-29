@@ -104,10 +104,17 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   const current = [...runtimes].reverse().find((r) => r.phase === "ready")
   const newest = runtimes[runtimes.length - 1]
 
-  // Live token drafts go to the runtime on screen without a remount.
+  // Live token drafts go to the runtime on screen without a remount. Compare with what that
+  // runtime last received, not with what it mounted with: returning to the mounted values
+  // (discarding a draft) must reach the frame too.
   const tokenKey = JSON.stringify(tokens)
+  const sentTokens = React.useRef(new Map<string, string>())
   React.useEffect(() => {
-    if (current && JSON.stringify(current.inputs.tokens) !== tokenKey) post(current.instance, { type: "draft-overrides", requestId: uid("tokens"), tokens: JSON.parse(tokenKey) })
+    if (!current) return
+    const last = sentTokens.current.get(current.instance) ?? JSON.stringify(current.inputs.tokens)
+    if (last === tokenKey) return
+    sentTokens.current.set(current.instance, tokenKey)
+    post(current.instance, { type: "draft-overrides", requestId: uid("tokens"), tokens: JSON.parse(tokenKey) })
   }, [tokenKey, current, post])
 
   React.useImperativeHandle(ref, () => ({

@@ -58,6 +58,7 @@ export const exampleAdapter: StudioAdapter = {
       { id: "tablet", label: "Tablet", w: 834, h: 1112, kind: "tablet" },
       { id: "phone", label: "Phone", w: 390, h: 844, kind: "phone" },
     ],
+    resizable: { min: { w: 280, h: 320 }, max: { w: 2560, h: 1600 }, snapWidths: [640, 768, 1024, 1280] },
     inputs: [
       { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable" },
       { id: "role", label: "Seen as", control: "select", options: [{ id: "owner", label: "Owner" }, { id: "viewer", label: "Viewer" }], default: "owner", note: "Viewers see tasks without New task." },

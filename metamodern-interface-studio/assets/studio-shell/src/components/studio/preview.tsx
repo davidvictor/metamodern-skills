@@ -12,12 +12,16 @@ import { CaptureImage, PreviewFrame, type EmptyState } from "./bits"
 export const inspectHandle = React.createRef<LivePreviewHandle>()
 
 export const profileOf = (id: string) => adapter.axes.profiles.find((p) => p.id === id) ?? adapter.axes.profiles[0]
+/** The profile with a dragged Inspect size on top. The ID stays the profile's, so input context and captures still resolve. */
+export const sizedProfile = (id: string, size: { w: number; h: number } | null) => (size ? { ...profileOf(id), ...size, custom: true } : { ...profileOf(id), custom: false })
 export const themeOf = (id: string) => adapter.axes.themes.find((t) => t.id === id) ?? adapter.axes.themes[0]
 
 type Props = {
   scenario: string
   theme: string
   profile: string
+  /** Inspect only: the frame's pixel size when the viewer dragged it off the profile's own. */
+  size?: { w: number; h: number } | null
   values: Record<string, string>
   commands?: string[]
   tokens?: Record<string, string>
@@ -38,7 +42,7 @@ type Props = {
  * similar scenario, theme or profile.
  */
 export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(function ScenarioPreview(
-  { scenario, theme, profile, values, commands = [], tokens = {}, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
+  { scenario, theme, profile, size, values, commands = [], tokens = {}, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
   ref
 ) {
   const sc = adapter.scenarios.find((x) => x.id === scenario)
@@ -61,8 +65,8 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   else if (live && status?.status === "error" && !status.previous)
     empty = { title: "The preview did not start", description: status.reason ?? "The frame reported an error.", tone: "danger", action: { label: "Retry", onClick: () => setRetry((n) => n + 1) } }
 
-  const w = capture?.w ?? pr.w
-  const h = capture?.h ?? pr.h
+  const w = capture?.w ?? size?.w ?? pr.w
+  const h = capture?.h ?? size?.h ?? pr.h
   const rect = anchor ? status?.anchors.find((a) => a.id === anchor) : undefined
   const mountKey = JSON.stringify([scenario, theme, profile, values, commands, resetNonce, retry])
 

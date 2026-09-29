@@ -9,13 +9,13 @@ Read this when connecting a product to the [shell](shell.md), or when a preview 
 | Field | Contents |
 | --- | --- |
 | `id`, `version`, `protocol` | Stable Studio identity, adapter version, and `"studio-preview/1"`. |
-| `product` | Name, a two-letter mark, the source revision, and an optional brand color offered in Studio settings. |
+| `product` | Name, a two-letter mark, an optional `markSvg` (`viewBox` and path data, drawn in the tile's foreground colour instead of the letters), the source revision, an optional brand color offered in Studio settings, and `brandDefault` to start on it instead of neutral. |
 | `target` | Platform, fidelity class (`actual`, `actual-substituted`, `instrumented-native`, `static-capture`, `recreation`), the label shown on the preview tab, and a mode with a reason for each of rendering, behavior, navigation, data and operating system. |
 | `frameEntry`, `frameOrigin` | URL of the product's isolated preview document, and its origin when it differs from the Studio's. Omit `frameEntry` for a capture-only Studio. |
-| `axes` | The theme axis label and values (each with the appearance of its product ground), profiles with pixel sizes and a kind, and scenario inputs with options and a default. |
+| `axes` | The theme axis label and values (each with the appearance of its product ground), profiles with pixel sizes and a kind (`phone`, `tablet`, `laptop` or `desktop`, which groups and icons the Size menu), scenario inputs with options and a default, an optional `defaultProfile` that opens on every screen size, and an optional `resizable` (`min`, `max` and `snapWidths`) that lets Inspect drag a live frame to any size in that range. |
 | `areas`, `scenarios` | Stable IDs, labels, surface and state, optional parent for nested variants, fixture ID, version and provenance, source, clock, status (`stale`, `unresolved`, `later`), optional captures keyed `theme:profile`, and independent design, delivery and evidence statuses. |
 | `walkthroughs` | Steps with a scenario, optional theme and profile, product commands to replay, an optional anchor, narration and the expected outcome. |
-| `comparisons` | Saved pairs on the theme axis. |
+| `comparisons` | Saved pairs on one axis: `theme` (the default), `profile`, or a scenario input's ID, with the two option IDs. |
 | `tokens` | Optional: source, the two theme columns, product grounds, families with counts, total, and tokens with values per theme, read counts and flags (`unread`, `literal`, `coupled`). |
 | `presentationOverrides` | Anything the Studio changes about product rendering, shown on every preview tab. |
 
@@ -29,7 +29,7 @@ Every message is a plain object with `protocol: "studio-preview/1"` and the fram
 | --- | --- | --- |
 | frame to shell | `hello` | The frame loaded and can receive a mount. |
 | shell to frame | `mount { inputs }` | Materialize one scenario from scratch: scenario, theme, profile, input values, commands to replay, draft tokens. |
-| frame to shell | `ready { fingerprint, appearance, location, canGoBack, anchors }` | State, navigation and commands are applied and rendering has settled. The fingerprint is a digest of the resolved inputs. |
+| frame to shell | `ready { fingerprint, appearance, location, canGoBack, anchors }` | State, navigation and commands are applied and rendering has settled. The fingerprint is a digest of the resolved inputs, or of whatever the product's optional `fingerprint` handler returns (the AUTOSTAK frame adds the visible text and location, as the scenario contract asks). |
 | frame to shell | `error { operation, recoverable, reason }` | A mount or operation failed. The reason is safe to show; it never contains fixture secrets. |
 | shell to frame | `command { command }` | Run one product command through the application's own path. |
 | shell to frame | `product-back` | Go back in the preview's own history. |
@@ -42,7 +42,7 @@ Both sides check the message's origin and sending window before reading anything
 
 ## Lifecycle in the shell
 
-The preview host (`src/studio/live-preview.tsx`) mounts one frame per runtime. Any input change mounts a new frame behind the current one and swaps only when the new one reports ready, then removes the old frame. If the new frame reports an error, or sends no ready signal within 20 seconds, the previous preview stays on screen marked "Showing previous settings" with the reason; with no previous preview the frame shows the error and Retry. Reset mounts a fresh runtime from the same scenario. Draft tokens never remount. Each Compare side and each Gallery thumbnail is its own runtime; Gallery thumbnails exist only while near the viewport. If product code focuses a field during mount, the host returns keyboard focus to the Studio so its shortcuts keep working.
+The preview host (`src/studio/live-preview.tsx`) mounts one frame per runtime. Any input change mounts a new frame behind the current one and swaps only when the new one reports ready, then removes the old frame. If the new frame reports an error, or sends no ready signal within 20 seconds, the previous preview stays on screen marked "Showing previous settings" with the reason; with no previous preview the frame shows the error and Retry. Reset mounts a fresh runtime from the same scenario. Dragging the Inspect frame does not mount anything: the shell changes the frame element's width and height, so the product must lay itself out from its own viewport (CSS breakpoints, `matchMedia`, `resize` events) and must not take its size from the `mount` message. The profile ID still decides input context. Draft tokens never remount. Each Compare side and each Gallery thumbnail is its own runtime; Gallery thumbnails exist only while near the viewport. If product code focuses a field during mount, the host returns keyboard focus to the Studio so its shortcuts keep working.
 
 ## The product side
 

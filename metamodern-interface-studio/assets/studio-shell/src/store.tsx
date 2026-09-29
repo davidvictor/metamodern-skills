@@ -17,12 +17,14 @@ type State = {
   scenario: string
   theme: string
   profile: string
+  /** A dragged Inspect size on top of the profile. The profile still decides input context; this only sets the frame's pixels. */
+  size: { w: number; h: number } | null
   values: Record<string, string>
   zoom: "fit" | number
   /** Bumped by Reset: a fresh runtime is mounted from the same scenario. */
   resetNonce: number
   preview: PreviewStatus
-  compare: { a: string; b: string; mode: CompareMode; split: number; showB: boolean }
+  compare: { axis: string; a: string; b: string; mode: CompareMode; split: number; showB: boolean }
   present: { tour: string; step: number; playing: boolean; speed: number; elapsed: number }
   tokens: { selected: string; drafts: Record<string, Record<string, string>>; query: string; flag: "all" | "unread" | "literal" | "draft"; family: string | null }
   gallery: { size: number; source: "captures" | "live"; query: string; hidden: string[]; onlyFlagged: boolean }
@@ -54,6 +56,9 @@ function writeJSON(key: string, value: unknown) {
   }
 }
 
+/** A link that names a scenario this Studio does not have. It is said out loud, never replaced silently. */
+let unresolvedLink: string | null = null
+
 /** Selection lives in the URL as stable IDs only, never fixture values. */
 function readHash(): Partial<State> {
   const q = new URLSearchParams(location.hash.slice(1))
@@ -62,12 +67,26 @@ function readHash(): Partial<State> {
   if (view && VIEWS.includes(view)) out.view = view
   const sc = q.get("scenario")
   if (sc && A.scenarios.some((x) => x.id === sc)) out.scenario = sc
+  else if (sc) unresolvedLink = sc
   const th = q.get("theme")
   if (th && A.axes.themes.some((x) => x.id === th)) out.theme = th
   const pr = q.get("profile")
   if (pr && A.axes.profiles.some((x) => x.id === pr)) out.profile = pr
+  const size = /^(\d{2,4})x(\d{2,4})$/.exec(q.get("size") ?? "")
+  const lim = A.axes.resizable
+  if (size && lim && A.frameEntry) {
+    const w = +size[1]
+    const h = +size[2]
+    const base = A.axes.profiles.find((x) => x.id === (out.profile ?? initial.profile))
+    if (w >= lim.min.w && w <= lim.max.w && h >= lim.min.h && h <= lim.max.h && !(base && base.w === w && base.h === h)) out.size = { w, h }
+  }
   return out
 }
+
+/** The axes Compare can change: theme, profile and every scenario input. */
+export const compareAxes = () => [{ id: "theme", label: A.axes.themeLabel }, { id: "profile", label: "Profile" }, ...A.axes.inputs.map((i) => ({ id: i.id, label: i.label }))]
+export const axisOptions = (axis: string): { id: string; label: string }[] =>
+  axis === "theme" ? A.axes.themes.map((t) => ({ id: t.id, label: t.label })) : axis === "profile" ? A.axes.profiles.map((p) => ({ id: p.id, label: p.label })) : (A.axes.inputs.find((i) => i.id === axis)?.options ?? [])
 
 export const defaultValues = () => Object.fromEntries(A.axes.inputs.map((i) => [i.id, i.default]))
 
@@ -77,12 +96,13 @@ const initial: State = {
   detailsOpen: true,
   scenario: firstScenario.id,
   theme: A.axes.themes[0].id,
-  profile: A.axes.profiles[0].id,
+  profile: A.axes.profiles.find((p) => p.id === A.axes.defaultProfile)?.id ?? A.axes.profiles[0].id,
+  size: null,
   values: defaultValues(),
   zoom: "fit",
   resetNonce: 0,
   preview: { status: "loading", modified: false, canGoBack: false },
-  compare: { a: A.comparisons?.[0]?.a ?? A.axes.themes[0].id, b: A.comparisons?.[0]?.b ?? A.axes.themes[A.axes.themes.length - 1].id, mode: "side", split: 50, showB: false },
+  compare: { axis: A.comparisons?.[0]?.axis ?? "theme", a: A.comparisons?.[0]?.a ?? A.axes.themes[0].id, b: A.comparisons?.[0]?.b ?? A.axes.themes[A.axes.themes.length - 1].id, mode: "side", split: 50, showB: false },
   present: { tour: A.walkthroughs[0]?.id ?? "", step: 0, playing: false, speed: 1, elapsed: 0 },
   tokens: { selected: A.tokens?.tokens[0]?.name ?? "", drafts: {}, query: "", flag: "all", family: null },
   gallery: { size: 240, source: hasCaptures || !A.frameEntry ? "captures" : "live", query: "", hidden: [], onlyFlagged: false },
@@ -99,6 +119,8 @@ type Ctx = State & {
   selectScenario: (id: string) => void
   setTheme: (id: string) => void
   setProfile: (id: string) => void
+  /** A dragged or typed Inspect size; null returns to the profile's own size. Nothing is remounted. */
+  setSize: (size: { w: number; h: number } | null) => void
   setValue: (id: string, value: string) => void
   setView: (v: View) => void
   reset: () => void
@@ -130,12 +152,17 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   const set = React.useCallback((patch: Partial<State> | ((s: State) => Partial<State>)) => {
     setState((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) }))
   }, [])
+  React.useEffect(() => {
+    if (unresolvedLink) toast.warning("That link names a scenario this Studio does not have", { description: `${unresolvedLink} is not in the catalog. Showing the first scenario instead.`, duration: 12000 })
+    unresolvedLink = null
+  }, [])
   React.useEffect(() => writeJSON(OPTIONS_KEY, state.options), [state.options])
   React.useEffect(() => writeJSON(DRAFTS_KEY, state.tokens.drafts), [state.tokens.drafts])
   React.useEffect(() => {
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })
+    if (state.size) q.set("size", `${state.size.w}x${state.size.h}`)
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size])
 
   const scenarioObj = A.scenarios.find((x) => x.id === state.scenario) ?? firstScenario
   // Any input change mounts a new runtime; the previous preview stays until the new one is ready.
@@ -148,7 +175,8 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     hasCaptures,
     selectScenario: (id) => restage({ scenario: id, mobilePanel: null }),
     setTheme: (id) => restage({ theme: id }),
-    setProfile: (id) => restage({ profile: id }),
+    setProfile: (id) => restage({ profile: id, size: null }),
+    setSize: (size) => set({ size }),
     setValue: (id, v) => set((s) => ({ values: { ...s.values, [id]: v }, preview: { ...s.preview, status: "loading", modified: false } })),
     setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v ? !s.panelOpen : true })),
     reset: () => {

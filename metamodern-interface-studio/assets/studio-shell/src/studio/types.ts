@@ -27,6 +27,9 @@ export type Theme = {
 
 export type Profile = { id: string; label: string; w: number; h: number; kind: "desktop" | "laptop" | "tablet" | "phone" }
 
+/** Inspect may drag a live frame to any size in this range. Widths in `snapWidths` attract the edge, as do the profiles' own sizes. */
+export type Resizable = { min: { w: number; h: number }; max: { w: number; h: number }; snapWidths?: number[] }
+
 /** A scenario input the adapter declares, such as density, clock or condition. A change rebuilds the preview. */
 export type ScenarioInput = {
   id: string
@@ -79,7 +82,8 @@ export type Step = {
 
 export type Walkthrough = { id: string; name: string; goal: string; illustrative?: boolean; steps: Step[] }
 
-export type Comparison = { id: string; label: string; scenario?: string; a: string; b: string }
+/** A saved pair on one axis: "theme" (default), "profile", or the ID of a scenario input. a and b are option IDs of that axis. */
+export type Comparison = { id: string; label: string; scenario?: string; axis?: string; a: string; b: string }
 
 export type TokenFlag = "unread" | "literal" | "coupled"
 export type Token = {
@@ -110,11 +114,15 @@ export type StudioAdapter = {
   protocol: "studio-preview/1"
   product: {
     name: string
-    /** Two letters for the rail mark. */
+    /** Two letters for the rail mark; shown when the product has no drawn mark. */
     mark: string
+    /** The product's own mark as SVG paths, drawn in the tile's foreground colour. Wins over the letters. */
+    markSvg?: { viewBox: string; paths: string[] }
     revision: string
     /** Offered as the "product brand" swatch in Studio settings. It tints Studio accents only. */
     brand?: string
+    /** Start on the product brand instead of neutral. A viewer's own choice, including Neutral, still wins. */
+    brandDefault?: boolean
   }
   target: {
     platform: "web" | "ios" | "android"
@@ -127,7 +135,16 @@ export type StudioAdapter = {
   frameEntry?: string
   /** Allowed origin of the frame entry; defaults to this Studio's origin. */
   frameOrigin?: string
-  axes: { themeLabel: string; themes: Theme[]; profiles: Profile[]; inputs: ScenarioInput[] }
+  axes: {
+    themeLabel: string
+    themes: Theme[]
+    profiles: Profile[]
+    /** Offered only with a live frame. Without it profiles are the only sizes. */
+    resizable?: Resizable
+    inputs: ScenarioInput[]
+    /** Profile a viewer starts on, on every screen size. Without it the first profile opens, and a phone opens on the phone profile. */
+    defaultProfile?: string
+  }
   areas: Area[]
   scenarios: Scenario[]
   walkthroughs: Walkthrough[]

@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { adapter } from "@/adapter"
 import { useStudio } from "@/store"
 import type { Capture, Fidelity, Mode, Profile, Theme } from "@/studio/types"
 
@@ -67,7 +68,14 @@ export function StatusBadge({ kind, children }: { kind: "ready" | "loading" | "m
 }
 
 export const themeIcon = (t: Theme) => ({ sun: SunIcon, moon: MoonIcon, "sun-contrast": SunMediumIcon, "moon-contrast": MoonStarIcon, swatch: PaletteIcon })[t.icon ?? "swatch"]
-export const profileIcon = (p: Profile) => ({ desktop: MonitorIcon, laptop: LaptopIcon, tablet: TabletIcon, phone: SmartphoneIcon })[p.kind]
+export function ProfileIcon({ profile }: { profile: Profile }) {
+  switch (profile.kind) {
+    case "phone": return <SmartphoneIcon />
+    case "tablet": return <TabletIcon />
+    case "laptop": return <LaptopIcon />
+    default: return <MonitorIcon />
+  }
+}
 
 /** Fit a preview inside its box; returns the displayed scale. Narrow screens fit to width and let the stage scroll. */
 export function useFit(ref: React.RefObject<HTMLElement | null>, w: number, h: number, zoom: "fit" | number, pad = 56, widthOnly = false) {
@@ -174,5 +182,26 @@ export function ScaleChip({ w, h, scale, className }: { w: number; h: number; sc
         {actual ? "Fit" : "100%"}
       </Button>
     </span>
+  )
+}
+
+/**
+ * The product mark inside a tile: the adapter's drawn mark in the tile's foreground colour,
+ * or its two letters. `width` is the glyph's optical width, set by the caller for the tile.
+ */
+export function ProductMark({ width, decorative }: { width: number; decorative?: boolean }) {
+  const m = adapter.product.markSvg
+  if (!m) return <>{adapter.product.mark}</>
+  const [, , w, h] = m.viewBox.split(" ").map(Number)
+  return (
+    <svg
+      viewBox={m.viewBox}
+      width={width}
+      height={(width * h) / w}
+      fill="currentColor"
+      {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": adapter.product.name })}
+    >
+      {m.paths.map((d) => <path key={d} d={d} />)}
+    </svg>
   )
 }
