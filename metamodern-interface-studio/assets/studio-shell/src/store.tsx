@@ -4,19 +4,21 @@ import { toast } from "sonner"
 
 import { adapter } from "@/adapter"
 import type { Scenario, ScenarioInput, Token } from "@/studio/types"
+import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, type DesignDraft, type DesignValues } from "@/studio/design"
+import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 
 /** One draft layer, as a preview receives it. */
 export type Draft = { tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>> }
 export const NO_DRAFT: Draft = { tokens: {}, css: "", stylesheets: [] }
 
-export type View = "inspect" | "compare" | "gallery" | "present" | "design"
+export type View = "inspect" | "compare" | "responsive" | "gallery" | "present" | "design"
 export type CompareMode = "side" | "split" | "toggle"
 /** draftEverywhere: show the design draft in Inspect, Gallery and Compare too. Off by default; Present never shows it. */
 export type Options = { controls: "dock" | "toolbar"; details: "docked" | "floating"; railLabels: boolean; draftEverywhere: boolean }
 export type PreviewStatus = { status: "loading" | "ready" | "error" | "static" | "empty"; modified: boolean; canGoBack: boolean; location?: string; fingerprint?: string; reason?: string; previous?: boolean }
 
-type State = {
+export type State = {
   view: View
   panelOpen: boolean
   detailsOpen: boolean
@@ -35,6 +37,12 @@ type State = {
   compare: { axis: string; a: string; b: string; mode: CompareMode; split: number; showB: boolean }
   present: { tour: string; step: number; playing: boolean; speed: number; elapsed: number }
   tokens: { selected: string; drafts: Record<string, Record<string, string>>; query: string; flag: "all" | "unread" | "literal" | "draft"; family: string | null }
+  /** The Responsive view's working layout: where it came from, its frames and settings, and whether it differs from its source. */
+  responsive: { layout: string; name: string; frames: ResponsiveFrame[]; arrangement: ResponsiveLayout["arrangement"]; height: ResponsiveLayout["height"]; viewport?: ResponsiveLayout["viewport"]; sync: SyncChannels; dirty: boolean; resetNonce: number }
+  /** Layouts saved in this Studio's layouts.json. */
+  saved: ResponsiveLayout[]
+  /** What the Responsive frames' clients can do, for the sync switches. */
+  frameCaps: FrameCapability[]
   /** The Design view: which tab, the Adjust values, and whether the stage shows the draft, the product as built, or both. */
   design: { tab: "adjust" | "tokens"; values: DesignValues; show: "draft" | "built" | "split" }
   gallery: { size: number; source: "captures" | "live"; query: string; hidden: string[]; onlyFlagged: boolean }
@@ -49,7 +57,7 @@ const OPTIONS_KEY = `studio.${A.id}.options`
 const DRAFTS_KEY = `studio.${A.id}.token-drafts`
 /** Written only after the viewer flips the switch, so a changed default reaches everyone who never chose. */
 const RAIL_KEY = `studio.${A.id}.rail-labels`
-const VIEWS: View[] = ["inspect", "compare", "gallery", "present", "design"]
+const VIEWS: View[] = ["inspect", "compare", "responsive", "gallery", "present", "design"]
 /** Design shows the Adjust tab when the adapter declares parameters and the Tokens tab when it has a token source. */
 export const hasAdjust = !!A.design?.parameters.length
 export const hasDesign = hasAdjust || !!A.tokens
@@ -71,6 +79,24 @@ function writeJSON(key: string, value: unknown) {
   } catch {
     /* per-viewer convenience only */
   }
+}
+
+/** Responsive presets: the adapter's first, then the shell's unless the adapter replaces them. Read only. */
+export const PRESETS: ResponsiveLayout[] = [...(A.axes.responsive?.presets ?? []), ...(A.axes.responsive?.replaceShellPresets ? [] : SHELL_PRESETS)].map((p) => fromPreset(p, A.axes.profiles))
+const RESPONSIVE_KEY = `studio.${A.id}.responsive`
+/** Saved layouts bundled into a built Studio; the dev server serves the live file instead. */
+const bundledLayouts = Object.values(import.meta.glob("/layouts.json", { eager: true, import: "default" }))[0] as LayoutsFile | undefined
+export const layoutsProblems = (data: unknown) => validateLayouts(data)
+export const canSaveLayouts = import.meta.env.DEV
+const initialResponsive = (): State["responsive"] => {
+  const p = PRESETS[0]
+  return { layout: p.id, name: p.name, frames: p.frames, arrangement: p.arrangement, height: p.height, sync: DEFAULT_SYNC, dirty: false, resetNonce: 0 }
+}
+const profileIds = A.axes.profiles.map((p) => p.id)
+/** A canvas viewport in a link: `x_y_zoom`. */
+function parseViewport(text: string | null) {
+  const m = /^(-?\d+)_(-?\d+)_(\d*\.?\d+)$/.exec(text ?? "")
+  return m && +m[3] >= 0.1 && +m[3] <= 2 ? { x: +m[1], y: +m[2], zoom: +m[3] } : undefined
 }
 
 /** A link that names a scenario this Studio does not have. It is said out loud, never replaced silently. */
@@ -100,6 +126,24 @@ function readHash(): Partial<State> {
     return v && i.options.some((o) => o.id === v) ? [[i.id, v]] : []
   }))
   if (Object.keys(lenses).length) out.values = { ...defaultValues(), ...lenses }
+  // Responsive: a layout by ID, frames inline when they differ from it, and its settings.
+  const layoutId = q.get("layout")
+  const inline = decodeFrames(q.get("frames"), profileIds)
+  if (layoutId || inline) {
+    const base = [...PRESETS, ...(bundledLayouts?.layouts ?? [])].find((l) => l.id === layoutId) ?? PRESETS[0]
+    const sync = q.get("sync")
+    out.responsive = {
+      ...initialResponsive(),
+      layout: base.id,
+      name: base.name,
+      frames: inline ?? base.frames,
+      arrangement: q.get("arrange") === "canvas" ? "canvas" : q.get("arrange") === "row" ? "row" : base.arrangement,
+      height: q.get("height") === "full" ? "full" : q.get("height") === "screen" ? "screen" : base.height,
+      sync: sync === null ? (base.sync ?? DEFAULT_SYNC) : { scroll: sync.includes("scroll"), interaction: sync.includes("interaction"), navigation: sync.includes("navigation") },
+      viewport: parseViewport(q.get("vp")) ?? base.viewport,
+      dirty: !!inline,
+    }
+  }
   const size = /^(\d{2,4})x(\d{2,4})$/.exec(q.get("size") ?? "")
   const lim = A.axes.resizable
   if (size && lim && A.frameEntry) {
@@ -166,6 +210,9 @@ const initial: State = {
   present: { tour: A.walkthroughs[0]?.id ?? "", step: 0, playing: false, speed: 1, elapsed: 0 },
   tokens: { selected: A.tokens?.tokens[0]?.name ?? "", drafts: {}, query: "", flag: "all", family: null },
   design: initialDesign,
+  frameCaps: [],
+  responsive: initialResponsive(),
+  saved: bundledLayouts && !validateLayouts(bundledLayouts).length ? bundledLayouts.layouts : [],
   gallery: { size: 240, source: hasCaptures || !A.frameEntry ? "captures" : "live", query: "", hidden: [], onlyFlagged: false },
   options: { controls: "dock", details: "docked", railLabels: true, draftEverywhere: false },
   commandOpen: false,
@@ -229,7 +276,10 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const options = readJSON<Partial<Options>>(OPTIONS_KEY)
     const drafts = readJSON<State["tokens"]["drafts"]>(DRAFTS_KEY)
     const railLabels = readJSON<boolean>(RAIL_KEY)
-    return { ...initial, ...readHash(), options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} } }
+    const fromLink = readHash()
+    const kept = readJSON<Partial<State["responsive"]>>(RESPONSIVE_KEY)
+    const responsive = fromLink.responsive ?? (kept?.frames?.length ? { ...initialResponsive(), ...kept, resetNonce: 0 } : initialResponsive())
+    return { ...initial, ...fromLink, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} } }
   })
   const set = React.useCallback((patch: Partial<State> | ((s: State) => Partial<State>)) => {
     setState((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) }))
@@ -252,10 +302,36 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     if (state.size) q.set("size", `${state.size.w}x${state.size.h}`)
     for (const i of A.axes.inputs) if (i.placement === "dock" && state.values[i.id] !== undefined) q.set(i.id, state.values[i.id])
     if (state.view === "design" && hasAdjust && A.tokens) q.set("tab", state.design.tab)
+    if (state.view === "responsive") {
+      const r = state.responsive
+      q.set("layout", r.layout)
+      if (r.dirty) q.set("frames", encodeFrames(r.frames))
+      if (r.height === "full") q.set("height", "full")
+      if (r.arrangement === "canvas") q.set("arrange", "canvas")
+      if (r.arrangement === "canvas" && r.viewport) q.set("vp", `${r.viewport.x}_${r.viewport.y}_${r.viewport.zoom}`)
+      const sync = (Object.keys(r.sync) as (keyof SyncChannels)[]).filter((k) => r.sync[k])
+      if (sync.length !== 3) q.set("sync", sync.join("-") || "off")
+    }
     const design = encodeDesign(A, state.design.values)
     if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.design.tab, state.design.values])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.design.tab, state.design.values, state.responsive])
+  // Unsaved Responsive edits stay in this browser until saved or reverted.
+  React.useEffect(() => {
+    const { resetNonce: _, ...keep } = state.responsive
+    void _
+    writeJSON(RESPONSIVE_KEY, keep)
+  }, [state.responsive])
+  // In the dev server the live layouts.json is read, so a save shows after a reload too.
+  React.useEffect(() => {
+    if (!canSaveLayouts) return
+    fetch("__studio/layouts")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && !validateLayouts(data).length) set({ saved: (data as LayoutsFile).layouts })
+      })
+      .catch(() => undefined)
+  }, [set])
 
   const scenarioObj = A.scenarios.find((x) => x.id === state.scenario) ?? firstScenario
   // Any input change mounts a new runtime; the previous preview stays until the new one is ready.

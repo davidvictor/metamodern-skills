@@ -64,6 +64,11 @@ export const exampleAdapter: StudioAdapter = {
       { id: "phone", label: "Phone", w: 390, h: 844, kind: "phone" },
     ],
     resizable: { min: { w: 280, h: 320 }, max: { w: 2560, h: 1600 }, snapWidths: [640, 768, 1024, 1280] },
+    // The product's own Responsive layout, shown before the shell's presets, and one extra device for Add frame.
+    responsive: {
+      presets: [{ id: "task-sizes", name: "Task list sizes", frames: [{ w: 390, h: 844, kind: "phone", profile: "phone" }, { w: 834, h: 1112, kind: "tablet", profile: "tablet" }, { w: 1280, h: 800, kind: "desktop", profile: "desktop" }] }],
+      devices: [{ w: 1180, h: 820, kind: "tablet", label: "Tablet, landscape" }],
+    },
     inputs: [
       { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable", placement: "dock", icon: "density", note: "The densities the product ships. Sign in has only Comfortable." },
       { id: "role", label: "Role", control: "select", options: [{ id: "owner", label: "Owner" }, { id: "viewer", label: "Viewer" }], placement: "dock", scoped: true, icon: "person", note: "Viewers see tasks without New task." },
@@ -74,6 +79,7 @@ export const exampleAdapter: StudioAdapter = {
     { id: "task", label: "Task detail" },
     { id: "account", label: "Account" },
     { id: "reports", label: "Reports" },
+    { id: "help", label: "Help" },
   ],
   // Task screens are designed for an owner; the role lens applies to them only.
   scenarios: ([
@@ -85,6 +91,8 @@ export const exampleAdapter: StudioAdapter = {
     { id: "task.detail", label: "Task", area: "task", surface: "Task detail", description: "One task with its notes and history.", fixture, source: src, clock },
     { id: "account.settings", label: "Settings", area: "account", surface: "Settings", description: "Name, notifications and appearance.", fixture, source: src, clock },
     { id: "account.sign-in", label: "Sign in", area: "account", surface: "Sign in", description: "The sign-in page. It ships at one density.", fixture, source: src, clock, supports: { density: ["comfortable"] } },
+    { id: "help.guide", label: "Getting started", area: "help", surface: "Guide", description: "A long page that scrolls as a document: sections with anchors, a scrolling notes box and a short form. Used by the Responsive view.", fixture, source: src, clock },
+    { id: "help.welcome", label: "Welcome", area: "help", surface: "Welcome", description: "A first-run page whose hero fills the window (100vh), so it has no full-page height of its own.", fixture, source: src, clock },
     { id: "reports.overview", label: "Overview", area: "reports", surface: "Reports", description: "Not designed yet.", fixture, source: src, clock, status: "later" },
   ] as Scenario[]).map((x) => (x.area === "tasks" || x.area === "task" ? { ...x, designed: { role: "owner" } } : x)),
   walkthroughs: [

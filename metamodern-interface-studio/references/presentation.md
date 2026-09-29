@@ -1,6 +1,6 @@
 # Review and presentation
 
-Read this for Build, Prepare, or presentation verification. The Studio's views are **Inspect, Compare, Gallery, and Present**, plus **Design** (Adjust and Tokens) when the product declares design parameters or has a token source. A design draft is exploration: it is always labeled and never plays in a walkthrough. They are not extra skill operations. [shell.md](shell.md) defines how the starter lays them out and which controls it uses. [manifest.md](manifest.md) defines stable records and presenter ownership; [adapters.md](adapters.md) determines which controls can honestly work.
+Read this for Build, Prepare, or presentation verification. The Studio's views are **Inspect, Compare, Gallery, and Present**, plus **Responsive** (one screen at several sizes, with sync) and **Design** (Adjust and Tokens) when the product declares design parameters or has a token source. A design draft is exploration: it is always labeled and never plays in a walkthrough. They are not extra skill operations. [shell.md](shell.md) defines how the starter lays them out and which controls it uses. [manifest.md](manifest.md) defines stable records and presenter ownership; [adapters.md](adapters.md) determines which controls can honestly work.
 
 ## Design around reviewer tasks
 

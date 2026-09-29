@@ -28,3 +28,10 @@ Each section below lists what a product does by hand when it updates to that ver
 - The frame client now announces `draft-css` in `hello` and applies draft CSS rules and Google Fonts stylesheets. A preview entry that imports `connectStudioFrame` from the Studio gets this with the update. A product that passes its own `applyTokens` keeps it; CSS and fonts still apply through the default `applyCss` unless it passes its own.
 - Save as variant downloads `{ id, kind, label, overrides: { "--token": { light, dark } }, css, stylesheets, design }`. A Studio whose variants folder reads another shape should read this one.
 
+## 0.8.0
+
+- The Responsive view is new: one scenario at several sizes, as a row or on a canvas, with full-page height and sync. It needs nothing to run. To give it the product's own layouts, add `axes.responsive.presets` (and `devices` for Add frame) to the adapter. Layouts the team saves land in `layouts.json` at the Studio root; commit it.
+- A preview entry that imports `connectStudioFrame` from the Studio gets full-page height and sync with the update. For better sync, mark nested scrolling regions with `data-studio-scroll`, stable click targets with `data-studio-anchor` or `data-studio-sync`, and fields that must never leave the frame with `data-studio-private`; pass a `navigate(location)` handler so navigation follows directly. A preview that must stay out of sync passes `{ sync: false }`.
+- `@xyflow/react` is a new dependency, loaded only when a canvas layout opens.
+- The Responsive view takes the 6 key; the rail places it between Compare and Gallery.
+

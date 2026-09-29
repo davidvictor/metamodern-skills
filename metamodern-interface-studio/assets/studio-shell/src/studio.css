@@ -117,11 +117,19 @@
 .panel-slide { transition: width 220ms var(--ease-out-quint), opacity 180ms ease-out, transform 220ms var(--ease-out-quint); }
 
 /* Coarse pointers: every control in the bars and docks reaches 44 px. */
+/* The Responsive canvas: while a drag or pan is in progress, frames stop taking the pointer. */
+.studio-canvas[data-shield] iframe { pointer-events: none; }
+.studio-canvas .react-flow__node { cursor: default; }
+.studio-canvas .react-flow__node.selected .preview-frame { outline: 2px solid var(--anchor); outline-offset: 3px; }
+
 @media (pointer: coarse) {
   header button,
   [role="toolbar"] button,
   nav[aria-label="Views"] button,
-  [aria-label="Studio"] button { min-height: 44px; min-width: 44px; }
+  [aria-label="Studio"] button,
+  [data-frame] figcaption button,
+  ul[aria-label="Frames"] button { min-height: 44px; min-width: 44px; }
+  [data-frame] figcaption { height: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

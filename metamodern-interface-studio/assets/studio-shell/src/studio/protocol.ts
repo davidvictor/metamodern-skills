@@ -23,7 +23,23 @@ export type MountInputs = {
 }
 
 /** What a frame client can do beyond the base protocol, announced in `hello`. */
-export type FrameCapability = "draft-css"
+export type FrameCapability = "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation"
+
+/**
+ * How a synced target is found in another frame, most stable first: a Studio anchor, a sync ID,
+ * an element ID, a test ID, a role with its accessible name (and which match it was), then a DOM path.
+ */
+export type SyncTarget = { anchor?: string; sync?: string; id?: string; testid?: string; role?: string; name?: string; nth?: number; path?: string }
+
+/** One person's interaction in the leading frame, replayed in the others. Private values never appear here. */
+export type SyncEvent =
+  | { kind: "scroll"; region?: string; anchor?: { target: SyncTarget; offset: number }; ratio: number }
+  | { kind: "click"; target: SyncTarget }
+  | { kind: "input"; target: SyncTarget; value: string }
+  | { kind: "submit"; target: SyncTarget }
+  | { kind: "navigate"; location: string }
+
+export type SyncChannelsMessage = { scroll: boolean; interaction: boolean; navigation: boolean }
 
 export type AnchorRect = { id: string; label: string; x: number; y: number; w: number; h: number }
 
@@ -43,6 +59,10 @@ export type ShellBody =
   | { type: "command"; requestId: string; command: string }
   | { type: "product-back"; requestId: string }
   | { type: "draft-overrides"; requestId: string; tokens: Record<string, string>; css?: string; stylesheets?: string[] }
+  /** Which interactions this frame should report; none until the Studio asks. */
+  | { type: "sync"; requestId: string; channels: SyncChannelsMessage }
+  /** Repeat another frame's interaction here. The reply says when the target could not be found. */
+  | { type: "replay"; requestId: string; event: SyncEvent }
 
 /** frame to shell */
 export type FrameBody =
@@ -53,6 +73,10 @@ export type FrameBody =
   | { type: "modified" }
   | { type: "navigated"; location: string; canGoBack: boolean; anchors: AnchorRect[] }
   | { type: "reply"; requestId: string; ok: boolean; reason?: string }
+  /** The document's content height in CSS pixels, after ready and whenever it settles at a new value. */
+  | { type: "content-size"; height: number }
+  /** A person's interaction here, for the Studio to replay in other frames (only for channels the Studio asked for). */
+  | { type: "interaction"; event: SyncEvent }
 
 export type ShellMessage = Envelope & ShellBody
 export type FrameMessage = Envelope & FrameBody

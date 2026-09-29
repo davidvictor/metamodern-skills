@@ -1,5 +1,6 @@
 import * as React from "react"
 import {
+  MonitorSmartphoneIcon,
   ChevronRightIcon,
   Columns2Icon,
   KeyboardIcon,
@@ -43,6 +44,7 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { adapter } from "@/adapter"
 import { areaCount, captureFor, hasAdjust, hasDesign, useStudio, type View } from "@/store"
 import { AdjustPanel } from "./design"
+import { ResponsivePanel } from "./responsive"
 import type { Scenario } from "@/studio/types"
 import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
 import { ProductMark } from "./bits"
@@ -55,6 +57,7 @@ const SEG = "h-7 min-w-0 gap-1 px-1.5 text-xs"
 export const VIEWS: { id: View; label: string; icon: React.ElementType; key: string }[] = [
   { id: "inspect" as View, label: "Inspect", icon: ScanEyeIcon, key: "1" },
   { id: "compare" as View, label: "Compare", icon: Columns2Icon, key: "2" },
+  { id: "responsive" as View, label: "Responsive", icon: MonitorSmartphoneIcon, key: "6" },
   { id: "gallery" as View, label: "Gallery", icon: LayoutGridIcon, key: "3" },
   { id: "present" as View, label: "Present", icon: PresentationIcon, key: "4" },
   { id: "design" as View, label: "Design", icon: SwatchBookIcon, key: "5" },
@@ -402,6 +405,16 @@ function PresentPanel() {
   )
 }
 
+function ResponsiveSide() {
+  const s = useStudio()
+  return (
+    <>
+      <PanelHeader title="Responsive" count={s.responsive.frames.length} />
+      <ResponsivePanel />
+    </>
+  )
+}
+
 /** Design: Adjust and Tokens over one draft layer; a tab shows only when the adapter supplies it. */
 function DesignPanel() {
   const s = useStudio()
@@ -483,6 +496,7 @@ export function ContextPanel() {
         {s.view === "gallery" && <GalleryPanel />}
         {s.view === "present" && <PresentPanel />}
         {s.view === "design" && <DesignPanel />}
+        {s.view === "responsive" && <ResponsiveSide />}
       </div>
     </Sidebar>
   )
@@ -497,6 +511,7 @@ export function MobilePanel() {
       {s.view === "gallery" && <GalleryPanel />}
       {s.view === "present" && <PresentPanel />}
       {s.view === "design" && <DesignPanel />}
+      {s.view === "responsive" && <ResponsiveSide />}
     </div>
   )
 }

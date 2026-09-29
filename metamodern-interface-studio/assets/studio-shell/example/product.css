@@ -91,3 +91,14 @@ button { cursor: pointer; }
   .tabs a { padding: 12px 0 20px; text-align: center; font-size: 12px; color: var(--ex-ink-muted); text-decoration: none; }
   .tabs a[aria-current="page"] { color: var(--ex-primary); font-weight: 600; }
 }
+
+/* Help pages scroll as documents, so the Responsive view can measure a full page. */
+:root[data-page="document"], :root[data-page="document"] body, :root[data-page="document"] #app { height: auto; }
+.doc { max-width: 680px; margin: 0 auto; padding: calc(var(--ex-space) * 2) calc(var(--ex-space) * 1.5); display: grid; gap: calc(var(--ex-space) * 1.5); }
+.doc h1 { font-size: var(--ex-title); margin: 0; }
+.doc section { display: grid; gap: 6px; min-height: 180px; }
+.doc h2 { font-size: 18px; margin: 0; }
+.notes { max-height: 160px; overflow: auto; margin: 0; padding: 8px 8px 8px 24px; border: 1px solid var(--ex-line); border-radius: var(--ex-radius); background: var(--ex-surface); }
+.welcome .hero { height: 100vh; display: grid; place-content: center; text-align: center; gap: 8px; background: var(--ex-accent); }
+.welcome .hero h1 { margin: 0; font-size: calc(var(--ex-title) * 1.4); }
+

@@ -109,7 +109,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
   const s = useStudio()
   const [more, setMore] = React.useState(false)
   const { theme, setTheme } = useTheme()
-  const viewLabel = { inspect: "Inspect", compare: "Compare", gallery: "Gallery", present: "Present", design: "Design" }[s.view]
+  const viewLabel = { inspect: "Inspect", compare: "Compare", responsive: "Responsive", gallery: "Gallery", present: "Present", design: "Design" }[s.view]
   return (
     <header className="flex h-12 shrink-0 items-center gap-1.5 border-b bg-background px-2 md:gap-2 md:px-3">
       {!mobile && (
@@ -457,7 +457,8 @@ function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "to
   )
 }
 
-export function StageControls({ variant, compact }: { variant: "dock" | "toolbar"; compact?: boolean }) {
+/** The dock. `lookOnly` keeps what changes how every frame is looked at (theme, dock inputs, zoom), for views with many frames. */
+export function StageControls({ variant, compact, lookOnly, noZoom }: { variant: "dock" | "toolbar"; compact?: boolean; lookOnly?: boolean; noZoom?: boolean }) {
   const s = useStudio()
   const ax = adapter.axes
   const live = !!adapter.frameEntry
@@ -493,10 +494,10 @@ export function StageControls({ variant, compact }: { variant: "dock" | "toolbar
         })}
       </ToggleGroup>
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
-      <SizeMenu variant={variant} compact={compact} />
+      {!lookOnly && <SizeMenu variant={variant} compact={compact} />}
       {choosableFor(s.scenarioObj).filter((i) => i.placement === "dock").map((i) => <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />)}
-      <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
-      <DropdownMenu>
+      {!noZoom && <Separator orientation="vertical" className="mx-1 h-5! self-center!" />}
+      {!noZoom && <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1 tabular-nums" aria-label={`Zoom, ${zoomLabel}`} />}>
           <ZoomInIcon /> {zoomLabel}
           <ChevronUpIcon className="size-3 opacity-60" />
@@ -512,7 +513,8 @@ export function StageControls({ variant, compact }: { variant: "dock" | "toolbar
             </DropdownMenuRadioGroup>
           </DropdownMenuGroup>
         </DropdownMenuContent>
-      </DropdownMenu>
+      </DropdownMenu>}
+ {!lookOnly && (<>
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       <Tip label={!live ? "Product back: unavailable for captures" : s.preview.canGoBack ? "Product back: the preview's own history" : "Product back: no product history yet"}>
         <span className="inline-flex">
@@ -526,6 +528,7 @@ export function StageControls({ variant, compact }: { variant: "dock" | "toolbar
           <RotateCcwIcon />
         </Button>
       </Tip>
+      </>)}
     </div>
   )
 }
