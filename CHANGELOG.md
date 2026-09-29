@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.10.1 — 2026-09-29
+
+- Interface Studio 0.8.1: `vite.config.ts` passes `npm run lint` (a useless assignment in the layouts endpoint). Found by the shell updater's checks on a real Studio.
+
 ## 1.10.0 — 2026-09-29
 
 - Interface Studio 0.8.0: the Responsive view shows one scenario at several sizes, each frame its own runtime. Presets (the adapter's, then Phones; Phone, tablet, laptop; Desktops) and layouts saved in the Studio's `layouts.json` (`studio-layouts/1`, written only by the dev server: same-origin, schema-checked, 256 KB, atomic; a published Studio reads it). Frames are added from profiles, devices or a typed size, removed, reordered by pointer or Alt and an arrow, resized with the Inspect handles, reset and opened in Inspect; at most six. Unsaved edits stay per viewer and travel in the link.

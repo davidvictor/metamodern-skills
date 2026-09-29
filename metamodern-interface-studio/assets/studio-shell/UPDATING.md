@@ -35,3 +35,6 @@ Each section below lists what a product does by hand when it updates to that ver
 - `@xyflow/react` is a new dependency, loaded only when a canvas layout opens.
 - The Responsive view takes the 6 key; the rail places it between Compare and Gallery.
 
+## 0.8.1
+
+Nothing to do by hand. `vite.config.ts` passes lint again.
