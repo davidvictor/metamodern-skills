@@ -126,6 +126,54 @@ export type TokenSet = {
   tokens: Token[]
 }
 
+/**
+ * One control of the Design view's Adjust tab. The shell turns its value into draft token values and,
+ * for what tokens cannot reach, draft CSS; products differ only in what they declare. A draft is
+ * exploration, always labeled, never the product.
+ */
+export type DesignParameter = {
+  id: string
+  label: string
+  /** scale: multiplies lengths. ratio: a type scale ratio. font: a typeface. color: a color. */
+  kind: "scale" | "ratio" | "font" | "color"
+  /** The value the product is built with: a number for scale and ratio, a font name or color for font and color. */
+  default: number | string
+  min?: number
+  max?: number
+  step?: number
+  /**
+   * Marks on a scale, such as the densities the product ships. With `values`, the tokens at that mark:
+   * between two marks the slider interpolates them, beyond the ends it scales from the nearest mark.
+   */
+  stops?: { at: number; label: string; values?: Record<string, string> }[]
+  /** font: a curated list; any Google Font name is also accepted. */
+  options?: string[]
+  apply: {
+    /** scale: token names or globs (`--space-*`) whose lengths follow the value. */
+    scale?: string[]
+    /** ratio: type tokens and their step on the scale (0 for the base size, 1 for one step up, -1 for one down). */
+    steps?: Record<string, number>
+    /** font and color: tokens set to the value. */
+    set?: string[]
+    /** color: tokens derived from the value, each a CSS expression using $value, such as `color-mix(in oklch, $value 12%, white)`. */
+    derive?: Record<string, string>
+    /** CSS rules using $value, for what tokens cannot reach, such as fonts baked into utility classes. */
+    css?: string
+    /** scale and ratio: also scale bare numbers, such as unitless line heights. */
+    unitless?: boolean
+    /** Token names or globs a glob matched that must not follow. */
+    exclude?: string[]
+    /** Smallest value in px a token may take after scaling, such as 44 for a touch target. */
+    floor?: Record<string, number>
+    /** Warn when a token ends below this size in px, such as 12 for text. */
+    warnBelow?: Record<string, number>
+    /** color: tokens the value must stay readable against, with the least contrast ratio. */
+    contrast?: { against: string[]; min: number }
+  }
+  /** Shown under the control, such as which modes the product ships. */
+  note?: string
+}
+
 export type StudioAdapter = {
   id: string
   version: string
@@ -168,6 +216,8 @@ export type StudioAdapter = {
   walkthroughs: Walkthrough[]
   comparisons?: Comparison[]
   tokens?: TokenSet
+  /** Parameters for the Design view's Adjust tab. Without them (and without tokens) there is no Design view. */
+  design?: { parameters: DesignParameter[] }
   /** Anything the Studio changes about product rendering, disclosed on every preview. */
   presentationOverrides?: { id: string; label: string }[]
 }

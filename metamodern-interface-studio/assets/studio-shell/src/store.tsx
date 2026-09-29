@@ -4,8 +4,13 @@ import { toast } from "sonner"
 
 import { adapter } from "@/adapter"
 import type { Scenario, ScenarioInput, Token } from "@/studio/types"
+import { decodeDesign, designDraft, encodeDesign, type DesignDraft, type DesignValues } from "@/studio/design"
 
-export type View = "inspect" | "compare" | "gallery" | "present" | "tokens"
+/** One draft layer, as a preview receives it. */
+export type Draft = { tokens: Record<string, string>; css: string; stylesheets: string[] }
+export const NO_DRAFT: Draft = { tokens: {}, css: "", stylesheets: [] }
+
+export type View = "inspect" | "compare" | "gallery" | "present" | "design"
 export type CompareMode = "side" | "split" | "toggle"
 export type Options = { controls: "dock" | "toolbar"; details: "docked" | "floating"; railLabels: boolean }
 export type PreviewStatus = { status: "loading" | "ready" | "error" | "static" | "empty"; modified: boolean; canGoBack: boolean; location?: string; fingerprint?: string; reason?: string; previous?: boolean }
@@ -29,6 +34,8 @@ type State = {
   compare: { axis: string; a: string; b: string; mode: CompareMode; split: number; showB: boolean }
   present: { tour: string; step: number; playing: boolean; speed: number; elapsed: number }
   tokens: { selected: string; drafts: Record<string, Record<string, string>>; query: string; flag: "all" | "unread" | "literal" | "draft"; family: string | null }
+  /** The Design view: which tab, the Adjust values, and whether the stage shows the draft, the product as built, or both. */
+  design: { tab: "adjust" | "tokens"; values: DesignValues; show: "draft" | "built" | "split" }
   gallery: { size: number; source: "captures" | "live"; query: string; hidden: string[]; onlyFlagged: boolean }
   options: Options
   commandOpen: boolean
@@ -41,7 +48,12 @@ const OPTIONS_KEY = `studio.${A.id}.options`
 const DRAFTS_KEY = `studio.${A.id}.token-drafts`
 /** Written only after the viewer flips the switch, so a changed default reaches everyone who never chose. */
 const RAIL_KEY = `studio.${A.id}.rail-labels`
-const VIEWS: View[] = ["inspect", "compare", "gallery", "present", "tokens"]
+const VIEWS: View[] = ["inspect", "compare", "gallery", "present", "design"]
+/** Design shows the Adjust tab when the adapter declares parameters and the Tokens tab when it has a token source. */
+export const hasAdjust = !!A.design?.parameters.length
+export const hasDesign = hasAdjust || !!A.tokens
+/** The Design tab that shows: the chosen one when both exist, else the only one. */
+export const designTab = (tab: "adjust" | "tokens") => (!A.tokens ? "adjust" : !hasAdjust ? "tokens" : tab)
 const firstScenario = A.scenarios.find((x) => x.status !== "later") ?? A.scenarios[0]
 const hasCaptures = A.scenarios.some((x) => Object.keys(x.captures ?? {}).length > 0)
 
@@ -67,8 +79,13 @@ let unresolvedLink: string | null = null
 function readHash(): Partial<State> {
   const q = new URLSearchParams(location.hash.slice(1))
   const out: Partial<State> = {}
-  const view = q.get("view") as View | null
-  if (view && VIEWS.includes(view)) out.view = view
+  const view = q.get("view")
+  if (view && VIEWS.includes(view as View)) out.view = view as View
+  // The Design view grew out of Tokens; old links land on its Tokens tab.
+  if (view === "tokens" && A.tokens) out.view = "design"
+  const tab = view === "tokens" ? "tokens" : q.get("tab")
+  const values = decodeDesign(A, q.get("design"))
+  if (tab === "adjust" || tab === "tokens" || Object.keys(values).length) out.design = { ...initialDesign, ...(tab === "adjust" || tab === "tokens" ? { tab } : {}), values }
   const sc = q.get("scenario")
   if (sc && A.scenarios.some((x) => x.id === sc)) out.scenario = sc
   else if (sc) unresolvedLink = sc
@@ -128,6 +145,8 @@ export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: s
 // Only inputs with a default start with a value; a designed input is left unset until the viewer chooses.
 export const defaultValues = (): Record<string, string> => Object.fromEntries(A.axes.inputs.flatMap((i) => (i.default !== undefined && i.placement !== "dock" ? [[i.id, i.default]] : [])))
 
+const initialDesign: State["design"] = { tab: hasAdjust ? "adjust" : "tokens", values: {}, show: "draft" }
+
 const initial: State = {
   view: "inspect",
   panelOpen: true,
@@ -144,6 +163,7 @@ const initial: State = {
   compare: { axis: A.comparisons?.[0]?.axis ?? "theme", a: A.comparisons?.[0]?.a ?? A.axes.themes[0].id, b: A.comparisons?.[0]?.b ?? A.axes.themes[A.axes.themes.length - 1].id, mode: "side", split: 50, showB: false },
   present: { tour: A.walkthroughs[0]?.id ?? "", step: 0, playing: false, speed: 1, elapsed: 0 },
   tokens: { selected: A.tokens?.tokens[0]?.name ?? "", drafts: {}, query: "", flag: "all", family: null },
+  design: initialDesign,
   gallery: { size: 240, source: hasCaptures || !A.frameEntry ? "captures" : "live", query: "", hidden: [], onlyFlagged: false },
   options: { controls: "dock", details: "docked", railLabels: true },
   commandOpen: false,
@@ -165,8 +185,15 @@ type Ctx = State & {
   setView: (v: View) => void
   reset: () => void
   step: (d: number) => void
-  /** Valid draft values for one theme, the only drafts ever sent to a preview. */
+  /** Valid hand-edited token drafts for one theme. */
   draftsFor: (theme: string) => Record<string, string>
+  /** What the Adjust values produce for one theme, with what changed and what to watch. */
+  designFor: (theme: string) => DesignDraft
+  /** The one draft layer sent to a preview: Adjust's values with hand-edited tokens winning, plus draft CSS and font stylesheets. */
+  draftFor: (theme: string) => Draft
+  /** Whether any draft exists, from Adjust or from Tokens. */
+  hasDraft: boolean
+  setDesign: (patch: Partial<State["design"]>) => void
 }
 
 const StudioContext = React.createContext<Ctx | null>(null)
@@ -181,6 +208,16 @@ export const isColor = (v: string) => /^(#|rgb|hsl|oklch|oklab|lab|lch|color\()/
 export function draftIsValid(token: Token, theme: string, value: string) {
   if (!value) return true
   return isColor(token.values[theme] ?? "") ? CSS.supports("color", value) : value.trim().length > 0
+}
+
+function handDrafts(drafts: Record<string, Record<string, string>>, theme: string) {
+  const out: Record<string, string> = {}
+  for (const [name, byTheme] of Object.entries(drafts)) {
+    const token = A.tokens?.tokens.find((t) => t.name === name)
+    const v = byTheme[theme]
+    if (token && v && draftIsValid(token, theme, v)) out[name] = v.trim()
+  }
+  return out
 }
 
 export function StudioProvider({ children }: { children: React.ReactNode }) {
@@ -210,8 +247,11 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })
     if (state.size) q.set("size", `${state.size.w}x${state.size.h}`)
     for (const i of A.axes.inputs) if (i.placement === "dock" && state.values[i.id] !== undefined) q.set(i.id, state.values[i.id])
+    if (state.view === "design" && hasAdjust && A.tokens) q.set("tab", state.design.tab)
+    const design = encodeDesign(A, state.design.values)
+    if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.design.tab, state.design.values])
 
   const scenarioObj = A.scenarios.find((x) => x.id === state.scenario) ?? firstScenario
   // Any input change mounts a new runtime; the previous preview stays until the new one is ready.
@@ -244,15 +284,14 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       const next = list[Math.max(0, Math.min(list.length - 1, i + d))]
       if (next && next.id !== scenarioObj.id) restage({ scenario: next.id })
     },
-    draftsFor: (theme) => {
-      const out: Record<string, string> = {}
-      for (const [name, byTheme] of Object.entries(state.tokens.drafts)) {
-        const token = A.tokens?.tokens.find((t) => t.name === name)
-        const v = byTheme[theme]
-        if (token && v && draftIsValid(token, theme, v)) out[name] = v.trim()
-      }
-      return out
+    draftsFor: (theme) => handDrafts(state.tokens.drafts, theme),
+    designFor: (theme) => designDraft(A, state.design.values, theme),
+    draftFor: (theme) => {
+      const d = designDraft(A, state.design.values, theme)
+      return { tokens: { ...d.tokens, ...handDrafts(state.tokens.drafts, theme) }, css: d.css, stylesheets: d.stylesheets }
     },
+    hasDraft: Object.keys(state.tokens.drafts).length > 0 || !!encodeDesign(A, state.design.values),
+    setDesign: (patch) => set((s) => ({ design: { ...s.design, ...patch } })),
   }
   return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>
 }

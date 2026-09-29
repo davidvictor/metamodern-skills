@@ -16,7 +16,14 @@ export type MountInputs = {
   commands: string[]
   /** Draft token overrides, applied before ready so a remount keeps them. */
   tokens: Record<string, string>
+  /** Draft CSS rules, for what tokens cannot reach (such as fonts baked into utility classes). Optional; older frames ignore it. */
+  css?: string
+  /** Font stylesheets the draft needs. Only https://fonts.googleapis.com/css2 is loaded. */
+  stylesheets?: string[]
 }
+
+/** What a frame client can do beyond the base protocol, announced in `hello`. */
+export type FrameCapability = "draft-css"
 
 export type AnchorRect = { id: string; label: string; x: number; y: number; w: number; h: number }
 
@@ -35,11 +42,11 @@ export type ShellBody =
   | { type: "mount"; requestId: string; inputs: MountInputs }
   | { type: "command"; requestId: string; command: string }
   | { type: "product-back"; requestId: string }
-  | { type: "draft-overrides"; requestId: string; tokens: Record<string, string> }
+  | { type: "draft-overrides"; requestId: string; tokens: Record<string, string>; css?: string; stylesheets?: string[] }
 
 /** frame to shell */
 export type FrameBody =
-  | { type: "hello" }
+  | { type: "hello"; capabilities?: FrameCapability[] }
   | ({ type: "ready"; requestId: string } & ReadyPayload)
   | { type: "error"; requestId?: string; operation: string; recoverable: boolean; reason: string }
   /** Sent once per runtime, when a person's interaction first changes product state. */

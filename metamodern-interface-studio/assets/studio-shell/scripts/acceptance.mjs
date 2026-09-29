@@ -125,7 +125,7 @@ await check("AC-02", async () => {
 await check("AC-03", async () => {
   const bad = []
   for (const width of [360, 390, 430]) {
-    for (const view of ["inspect", "compare", "gallery", "present", "tokens"]) {
+    for (const view of ["inspect", "compare", "gallery", "present", "design"]) {
       const p = await open("normal", { width, height: 844, touch: true, hash: `view=${view}` })
       const m = await p.evaluate(() => {
         const wide = [...document.querySelectorAll("body *")].filter((e) => {
@@ -379,7 +379,7 @@ await check("AC-10", async () => {
 await check("AC-11", async () => {
   const bad = []
   for (const width of [1440, 1024, 390]) {
-    for (const view of ["inspect", "compare", "present", "tokens", "gallery"]) {
+    for (const view of ["inspect", "compare", "present", "design", "gallery"]) {
       const p = await open("normal", { width, height: 900, touch: width < 768, hash: `view=${view}` })
       const text = await p.locator("body").innerText()
       // Inspect states size in the Size control and scale in the Zoom control; the other views carry a chip under the frame.
@@ -543,7 +543,7 @@ await check("AC-15", async () => {
 
 // AC-16 The rail names its views by default, including for a viewer whose stored options predate the default
 await check("AC-16", async () => {
-  const names = ["Inspect", "Compare", "Gallery", "Present", "Tokens"]
+  const names = ["Inspect", "Compare", "Gallery", "Present", "Design"]
   const shown = async (seed) => {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
     if (seed) await context.addInitScript(([k, v]) => localStorage.setItem(k, v), seed)
@@ -627,6 +627,52 @@ await check("AC-43", async () => {
   await c.closeAll()
   const ok = designed === "Density, Comfortable" && offered.length === 2 && /Comfortable[\s\S]*Designed/.test(offered[0]) && compact === "compact" && link === "compact" && back === "comfortable" && hidden === 0 && signIn === "comfortable" && !axes.includes("Density")
   return [ok ? "pass" : "fail", `opened "${designed}", offered ${offered.map((o) => o.replace(/\s+/g, " ")).join(" / ")}; Compact rendered ${compact}, link density=${link}; Back rendered ${back}; Sign in (supports Comfortable only, link asks Compact): control shown ${hidden} times, rendered ${signIn}; its Compare axes ${axes.join(", ")}`]
+})
+
+// AC-44 Design view: Adjust drafts reach the live frame without a remount, marks sit at shipped modes, the link carries the draft, Present and the Tokens tab are untouched
+await check("AC-44", async () => {
+  const p = await open("normal", { hash: "view=design&scenario=tasks.list&profile=desktop" })
+  const frame = () => p.frames().find((f) => f !== p.mainFrame() && f.url().includes("example"))
+  const prop = (name) => frame().evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name)
+  await frame().evaluate(() => (window.__kept = "same document"))
+  const built = await prop("--ex-row")
+  const marks = await p.getByRole("button", { name: /^Density (Compact|Comfortable)/ }).allInnerTexts()
+  await p.getByRole("button", { name: /^Density Compact/ }).click()
+  await wait(600)
+  const compact = [await prop("--ex-row"), await prop("--ex-space")]
+  const badge = await p.getByText("Draft design", { exact: true }).isVisible()
+  const thumb = p.getByRole("slider", { name: "Density" })
+  await thumb.focus()
+  for (let i = 0; i < 10; i++) await p.keyboard.press("ArrowRight")
+  await wait(600)
+  const between = await prop("--ex-row")
+  const kept = await frame().evaluate(() => window.__kept)
+  const hold = p.getByRole("button", { name: /Hold to see as built/ })
+  const box = await hold.boundingBox()
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await p.mouse.down()
+  await wait(500)
+  const peeked = await prop("--ex-row")
+  await p.mouse.up()
+  await wait(500)
+  const released = await prop("--ex-row")
+  const link = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("design"))
+  await p.reload()
+  await p.waitForSelector("header")
+  await wait(2000)
+  const readout = await p.locator("output").first().innerText()
+  const reloaded = await prop("--ex-row")
+  await p.getByRole("button", { name: "Present" }).first().click()
+  await wait(2500)
+  const presented = await p.frames().find((f) => f !== p.mainFrame() && f.url().includes("example")).evaluate(() => document.documentElement.style.getPropertyValue("--ex-row"))
+  await p.closeAll()
+  const t = await open("normal", { hash: "view=tokens" })
+  const tokensTab = (await t.getByRole("treegrid", { name: "Tokens" }).count()) === 1
+  const tab = await t.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("tab"))
+  const pressed = await t.getByRole("radio", { name: "Tokens" }).getAttribute("aria-checked").catch(() => null)
+  await t.closeAll()
+  const ok = built === "48px" && marks.join(",") === "Compact,Comfortable" && compact.join(",") === "38px,12px" && badge && between === "43px" && kept === "same document" && peeked === "48px" && released === "43px" && link === "density:0.9" && readout === "0.90×" && reloaded === "43px" && presented === "" && tokensTab && tab === "tokens"
+  return [ok ? "pass" : "fail", `as built --ex-row ${built}; marks ${marks.join(", ")}; Compact mark gave ${compact.join(" and ")}; draft badge ${badge}; 0.90 gave ${between} (between the marks); frame document kept: ${kept}; holding As built showed ${peeked}, release ${released}; link design=${link}; after reload readout ${readout} and ${reloaded}; Present frame override "${presented}"; old view=tokens link opens the Tokens tab ${tokensTab} (tab=${tab}, pressed ${pressed})`]
 })
 
 await browser.close()

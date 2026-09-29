@@ -4,9 +4,19 @@ import { TriangleAlertIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { adapter } from "@/adapter"
-import { captureFor, resolveValues } from "@/store"
+import { captureFor, NO_DRAFT, resolveValues, useStudio, type Draft } from "@/store"
 import { LivePreview, type LivePreviewHandle, type LiveStatus } from "@/studio/live-preview"
 import { CaptureImage, PreviewFrame, type EmptyState } from "./bits"
+
+/** A view's preview status as Details and the top bar read it. A capture or empty state has no live status. */
+export function useReportStatus() {
+  const s = useStudio()
+  const set = s.set
+  return React.useCallback(
+    (st: LiveStatus | null) => set({ preview: st ? { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous } : { status: "static", modified: false, canGoBack: false } }),
+    [set]
+  )
+}
 
 /** The Inspect preview's handle, for Product back in the stage controls. */
 export const inspectHandle = React.createRef<LivePreviewHandle>()
@@ -24,7 +34,8 @@ type Props = {
   size?: { w: number; h: number } | null
   values: Record<string, string>
   commands?: string[]
-  tokens?: Record<string, string>
+  /** The draft this preview shows; none by default. Present never passes one. */
+  draft?: Draft
   resetNonce?: number
   scale: number
   label: string
@@ -42,7 +53,7 @@ type Props = {
  * similar scenario, theme or profile.
  */
 export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(function ScenarioPreview(
-  { scenario, theme, profile, size, values, commands = [], tokens = {}, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
+  { scenario, theme, profile, size, values, commands = [], draft = NO_DRAFT, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
   ref
 ) {
   const sc = adapter.scenarios.find((x) => x.id === scenario)
@@ -53,7 +64,9 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   const live = !!adapter.frameEntry && source === "auto" && !!sc && sc.status !== "later"
   const capture = sc && !live ? captureFor(sc, theme, profile) : undefined
   const onStatusRef = React.useRef(onStatus)
-  onStatusRef.current = onStatus
+  React.useLayoutEffect(() => {
+    onStatusRef.current = onStatus
+  })
   React.useEffect(() => {
     if (!live) onStatusRef.current?.(null)
   }, [live])
@@ -92,7 +105,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
           origin={adapter.frameOrigin}
           inputs={{ scenario, theme, profile, values: resolved, commands }}
           mountKey={mountKey}
-          tokens={tokens}
+          draft={draft}
           w={w}
           h={h}
           scale={scale}
@@ -106,6 +119,14 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
       ) : capture ? (
         <CaptureImage capture={capture} />
       ) : null}
+      {live && status?.status === "ready" && (draft.css || draft.stylesheets.length > 0) && !status.capabilities.includes("draft-css") && (
+        <Tooltip>
+          <TooltipTrigger render={<Badge variant="secondary" className="absolute bottom-3 left-3 gap-1.5 text-warning shadow-sm" />}>
+            <TriangleAlertIcon /> Fonts did not apply
+          </TooltipTrigger>
+          <TooltipContent>This preview's frame client predates draft CSS. Update the Studio so its preview entry picks up the new frame client.</TooltipContent>
+        </Tooltip>
+      )}
       {live && status?.previous && (
         <Tooltip>
           <TooltipTrigger render={<Badge variant="secondary" className="absolute top-3 left-3 gap-1.5 text-warning shadow-sm" />}>

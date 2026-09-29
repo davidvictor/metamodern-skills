@@ -43,7 +43,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useTheme } from "@/components/theme-provider"
 import { adapter } from "@/adapter"
-import { areaLabel, captureFor, choosableFor, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
+import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
 import type { CapabilityDimension } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
@@ -108,7 +108,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
   const s = useStudio()
   const [more, setMore] = React.useState(false)
   const { theme, setTheme } = useTheme()
-  const viewLabel = { inspect: "Inspect", compare: "Compare", gallery: "Gallery", present: "Present", tokens: "Tokens" }[s.view]
+  const viewLabel = { inspect: "Inspect", compare: "Compare", gallery: "Gallery", present: "Present", design: "Design" }[s.view]
   return (
     <header className="flex h-12 shrink-0 items-center gap-1.5 border-b bg-background px-2 md:gap-2 md:px-3">
       {!mobile && (
@@ -540,7 +540,7 @@ const DIMENSIONS: [CapabilityDimension, string][] = [
 /** Details: the summary is always visible; Scenario, Fidelity and Evidence as line tabs. */
 export function DetailsContent({ onClose }: { onClose?: () => void }) {
   const s = useStudio()
-  if (s.view === "tokens" && adapter.tokens) return <TokenEditor />
+  if (s.view === "design" && designTab(s.design.tab) === "tokens") return <TokenEditor />
   const sc = s.scenarioObj
   const list = adapter.scenarios
   const i = list.findIndex((x) => x.id === sc.id)

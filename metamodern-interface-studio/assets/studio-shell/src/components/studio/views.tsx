@@ -31,13 +31,13 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { adapter } from "@/adapter"
-import { areaLabel, axisOptions, captureFor, compareAxes, isColor, useStudio, withoutLenses } from "@/store"
+import { areaLabel, axisOptions, captureFor, compareAxes, isColor, NO_DRAFT, useStudio, withoutLenses } from "@/store"
 import type { LiveStatus } from "@/studio/live-preview"
 import type { Step } from "@/studio/types"
 import { FidelityBadge, ScaleChip, StatusBadge, useFit } from "./bits"
 import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
 import { StageControls } from "./chrome"
-import { ScenarioPreview, inspectHandle, profileOf, themeOf } from "./preview"
+import { ScenarioPreview, inspectHandle, profileOf, themeOf, useReportStatus } from "./preview"
 import { ResizeHandles } from "./resize-handles"
 
 /** The grey stage with its controls in the chosen placement. */
@@ -673,6 +673,7 @@ export function TokensStage() {
   const pr = profileOf(s.profile)
   const scale = useFit(box, pr.w, pr.h, s.zoom, 40)
   const COLS = "grid-cols-[minmax(0,42%)_minmax(0,1fr)_minmax(0,1fr)]"
+  const report = useReportStatus()
   return (
     <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
       <ResizablePanel defaultSize="60" minSize="40">
@@ -777,12 +778,12 @@ export function TokensStage() {
               <Separator orientation="vertical" className="h-4! self-center!" />
               <ToggleGroup value={[showDraft ? "draft" : "baseline"]} onValueChange={(v) => v[0] && setShowDraft(v[0] === "draft")} size="sm" spacing={0} aria-label="Values">
                 <ToggleGroupItem value="baseline" className="h-6 px-2 text-xs">Baseline</ToggleGroupItem>
-                <ToggleGroupItem value="draft" className="h-6 px-2 text-xs" disabled={!drafts}>Draft{drafts ? ` · ${drafts}` : ""}</ToggleGroupItem>
+                <ToggleGroupItem value="draft" className="h-6 px-2 text-xs" disabled={!s.hasDraft}>Draft{drafts ? ` · ${drafts}` : ""}</ToggleGroupItem>
               </ToggleGroup>
             </div>
-            <ScenarioPreview scenario={s.scenario} theme={showTheme} profile={s.profile} values={s.values} tokens={showDraft ? s.draftsFor(showTheme) : {}} scale={scale} label="Token preview" />
+            <ScenarioPreview scenario={s.scenario} theme={showTheme} profile={s.profile} values={s.values} draft={showDraft ? s.draftFor(showTheme) : NO_DRAFT} onStatus={report} scale={scale} label="Token preview" />
             <ScaleChip w={pr.w} h={pr.h} scale={scale} />
-            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">Drafts apply to this preview only and stay in this browser. They never change the product.</p>
+            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">One draft layer: Adjust's values, with tokens edited here winning. It applies in the Design view only and never changes the product.</p>
            </div>
           </div>
         </div>

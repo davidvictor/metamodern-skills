@@ -22,7 +22,7 @@ export function CommandMenu() {
           <CommandEmpty>No match. Try an area, a state, or an action such as “reset”.</CommandEmpty>
           <CommandGroup heading="Scenarios">
             {adapter.scenarios.map((x) => (
-              <CommandItem key={x.id} value={`${areaLabel(x.area)} ${x.label} ${x.surface} ${x.id}`} onSelect={run(() => { s.selectScenario(x.id); if (s.view === "gallery" || s.view === "tokens") s.set({ view: "inspect" }) })}>
+              <CommandItem key={x.id} value={`${areaLabel(x.area)} ${x.label} ${x.surface} ${x.id}`} onSelect={run(() => { s.selectScenario(x.id); if (s.view === "gallery") s.set({ view: "inspect" }) })}>
                 {x.status ? <TriangleAlertIcon className="text-warning" /> : <FileIcon />}
                 <span>{x.label}</span>
                 <span className="text-muted-foreground">{areaLabel(x.area)}</span>
