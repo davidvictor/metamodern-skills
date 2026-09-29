@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.0 — 2026-09-29
+
+- Interface Studio 0.5.0: scenario inputs can be dock lenses. An input with `placement: "dock"` (such as Role) sits in the dock with its icon and current value; the scenario's own value (`Scenario.designed`) is marked Designed, another choice shows a dot and offers Back, and the choice travels in the link. `scoped` inputs apply only to scenarios that design a value, so their control, their Compare axis and their value are absent elsewhere. The shell sends resolved values to the frame. Present ignores dock choices and plays every step as designed.
+- The shell guide now says product development chrome inside a preview (a development strip, a role picker, catalogue links) is replaced in the frame build and declared as a presentation override, never edited in product source. The example's role is a scoped dock lens. Acceptance adds AC-17; all seventeen pass for the starter.
+
 ## 1.6.1 — 2026-09-29
 
 - Interface Studio 0.4.1: remove the caption above the preview. It repeated the dock and Details. Fidelity is stated in Details (and in the top bar for static captures and recreations), Inspect's Zoom control states the shown scale ("Fit · 54%") beside the Size control's pixels, and other views keep a size chip under the frame.

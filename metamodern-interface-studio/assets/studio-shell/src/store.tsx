@@ -76,6 +76,12 @@ function readHash(): Partial<State> {
   if (th && A.axes.themes.some((x) => x.id === th)) out.theme = th
   const pr = q.get("profile")
   if (pr && A.axes.profiles.some((x) => x.id === pr)) out.profile = pr
+  // Dock choices travel in the link under the input's own ID.
+  const lenses = Object.fromEntries(A.axes.inputs.filter((i) => i.placement === "dock").flatMap((i) => {
+    const v = q.get(i.id)
+    return v && i.options.some((o) => o.id === v) ? [[i.id, v]] : []
+  }))
+  if (Object.keys(lenses).length) out.values = { ...defaultValues(), ...lenses }
   const size = /^(\d{2,4})x(\d{2,4})$/.exec(q.get("size") ?? "")
   const lim = A.axes.resizable
   if (size && lim && A.frameEntry) {
@@ -87,12 +93,26 @@ function readHash(): Partial<State> {
   return out
 }
 
-/** The axes Compare can change: theme, profile and every scenario input. */
-export const compareAxes = () => [{ id: "theme", label: A.axes.themeLabel }, { id: "profile", label: "Profile" }, ...A.axes.inputs.map((i) => ({ id: i.id, label: i.label }))]
+/** The scenario inputs a scenario uses: every unscoped input, and a scoped one only when the scenario designs a value for it. */
+export const inputsFor = (sc: Scenario | undefined) => A.axes.inputs.filter((i) => !i.scoped || sc?.designed?.[i.id] !== undefined)
+/** The viewer's choice, else the scenario's designed value, else the input's default. Inputs the scenario does not use are left out. */
+export function resolveValues(sc: Scenario | undefined, values: Record<string, string>) {
+  const out: Record<string, string> = {}
+  for (const i of inputsFor(sc)) {
+    const v = values[i.id] ?? sc?.designed?.[i.id] ?? i.default
+    if (v !== undefined) out[i.id] = v
+  }
+  return out
+}
+/** The same values with the viewer's dock choices removed, for playing a walkthrough exactly as designed. */
+export const withoutLenses = (values: Record<string, string>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
+/** The axes Compare can change for a scenario: theme, profile and every scenario input it uses. */
+export const compareAxes = (sc?: Scenario) => [{ id: "theme", label: A.axes.themeLabel }, { id: "profile", label: "Profile" }, ...inputsFor(sc).map((i) => ({ id: i.id, label: i.label }))]
 export const axisOptions = (axis: string): { id: string; label: string }[] =>
   axis === "theme" ? A.axes.themes.map((t) => ({ id: t.id, label: t.label })) : axis === "profile" ? A.axes.profiles.map((p) => ({ id: p.id, label: p.label })) : (A.axes.inputs.find((i) => i.id === axis)?.options ?? [])
 
-export const defaultValues = () => Object.fromEntries(A.axes.inputs.map((i) => [i.id, i.default]))
+// Only inputs with a default start with a value; a designed input is left unset until the viewer chooses.
+export const defaultValues = (): Record<string, string> => Object.fromEntries(A.axes.inputs.flatMap((i) => (i.default !== undefined && i.placement !== "dock" ? [[i.id, i.default]] : [])))
 
 const initial: State = {
   view: "inspect",
@@ -126,7 +146,8 @@ type Ctx = State & {
   setProfile: (id: string) => void
   /** A dragged or typed Inspect size; null returns to the profile's own size. Nothing is remounted. */
   setSize: (size: { w: number; h: number } | null) => void
-  setValue: (id: string, value: string) => void
+  /** null returns the input to the scenario's designed value (or its default). */
+  setValue: (id: string, value: string | null) => void
   setView: (v: View) => void
   reset: () => void
   step: (d: number) => void
@@ -174,8 +195,9 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })
     if (state.size) q.set("size", `${state.size.w}x${state.size.h}`)
+    for (const i of A.axes.inputs) if (i.placement === "dock" && state.values[i.id] !== undefined) q.set(i.id, state.values[i.id])
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile, state.size])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values])
 
   const scenarioObj = A.scenarios.find((x) => x.id === state.scenario) ?? firstScenario
   // Any input change mounts a new runtime; the previous preview stays until the new one is ready.
@@ -190,7 +212,13 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     setTheme: (id) => restage({ theme: id }),
     setProfile: (id) => restage({ profile: id, size: null }),
     setSize: (size) => set({ size }),
-    setValue: (id, v) => set((s) => ({ values: { ...s.values, [id]: v }, preview: { ...s.preview, status: "loading", modified: false } })),
+    setValue: (id, v) =>
+      set((s) => {
+        const values = { ...s.values }
+        if (v === null) delete values[id]
+        else values[id] = v
+        return { values, preview: { ...s.preview, status: "loading", modified: false } }
+      }),
     setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v ? !s.panelOpen : true })),
     reset: () => {
       set((s) => ({ resetNonce: s.resetNonce + 1, preview: { ...s.preview, status: "loading", modified: false, canGoBack: false } }))

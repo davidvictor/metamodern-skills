@@ -4,7 +4,7 @@
  * illustrative. Replace this file (and example/) with the product's adapter;
  * do not extend it with product facts.
  */
-import type { StudioAdapter, Token } from "@/studio/types"
+import type { Scenario, StudioAdapter, Token } from "@/studio/types"
 
 const fixture = { id: "example-tasks", version: "1", provenance: "Synthetic, written for the starter" }
 const src = "example/main.ts"
@@ -61,7 +61,7 @@ export const exampleAdapter: StudioAdapter = {
     resizable: { min: { w: 280, h: 320 }, max: { w: 2560, h: 1600 }, snapWidths: [640, 768, 1024, 1280] },
     inputs: [
       { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable" },
-      { id: "role", label: "Seen as", control: "select", options: [{ id: "owner", label: "Owner" }, { id: "viewer", label: "Viewer" }], default: "owner", note: "Viewers see tasks without New task." },
+      { id: "role", label: "Role", control: "select", options: [{ id: "owner", label: "Owner" }, { id: "viewer", label: "Viewer" }], placement: "dock", scoped: true, icon: "person", note: "Viewers see tasks without New task." },
     ],
   },
   areas: [
@@ -70,7 +70,8 @@ export const exampleAdapter: StudioAdapter = {
     { id: "account", label: "Account" },
     { id: "reports", label: "Reports" },
   ],
-  scenarios: [
+  // Task screens are designed for an owner; the role lens applies to them only.
+  scenarios: ([
     { id: "tasks.list", label: "Today", area: "tasks", surface: "Task list", description: "Today's tasks, open first. New task is the page's one primary action.", fixture, source: src, clock, statuses: { design: "Unknown", delivery: "Unknown", evidence: "Unverified" } },
     { id: "tasks.list.empty", label: "First use", parent: "tasks.list", area: "tasks", surface: "Task list", state: "No tasks yet", description: "The list before anything exists.", fixture, source: src, clock },
     { id: "tasks.list.loading", label: "Loading", parent: "tasks.list", area: "tasks", surface: "Task list", state: "Loading", description: "The list while rows load. Loading is held, not timed.", fixture, source: src, clock },
@@ -80,7 +81,7 @@ export const exampleAdapter: StudioAdapter = {
     { id: "account.settings", label: "Settings", area: "account", surface: "Settings", description: "Name, notifications and appearance.", fixture, source: src, clock },
     { id: "account.sign-in", label: "Sign in", area: "account", surface: "Sign in", description: "The sign-in page.", fixture, source: src, clock },
     { id: "reports.overview", label: "Overview", area: "reports", surface: "Reports", description: "Not designed yet.", fixture, source: src, clock, status: "later" },
-  ],
+  ] as Scenario[]).map((x) => (x.area === "tasks" || x.area === "task" ? { ...x, designed: { role: "owner" } } : x)),
   walkthroughs: [
     {
       id: "add-a-task",

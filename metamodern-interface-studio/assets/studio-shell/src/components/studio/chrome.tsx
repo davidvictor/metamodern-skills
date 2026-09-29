@@ -12,6 +12,8 @@ import {
   PanelLeftOpenIcon,
   PanelRightIcon,
   RotateCcwIcon,
+  Rows3Icon,
+  UserRoundIcon,
   SearchIcon,
   SlidersHorizontalIcon,
   SunIcon,
@@ -28,7 +30,7 @@ import { Separator } from "@/components/ui/separator"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -41,7 +43,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useTheme } from "@/components/theme-provider"
 import { adapter } from "@/adapter"
-import { areaLabel, captureFor, draftIsValid, isColor, useStudio } from "@/store"
+import { areaLabel, captureFor, draftIsValid, inputsFor, isColor, useStudio } from "@/store"
 import type { CapabilityDimension } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
@@ -398,6 +400,59 @@ function SizeMenu({ variant, compact }: { variant: "dock" | "toolbar"; compact?:
   )
 }
 
+/**
+ * A scenario input that changes how a screen is looked at, such as the role it is seen as, in the dock.
+ * The scenario's own value is marked Designed; choosing another overrides it until Reset, and the
+ * choice travels in the link. It shows only for scenarios that use the input.
+ */
+function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "toolbar"; compact?: boolean }) {
+  const s = useStudio()
+  const inp = adapter.axes.inputs.find((i) => i.id === id)!
+  const designed = s.scenarioObj.designed?.[id] ?? inp.default
+  const current = s.values[id] ?? designed
+  const overridden = s.values[id] !== undefined && s.values[id] !== designed
+  const label = inp.options.find((o) => o.id === current)?.label ?? current ?? inp.label
+  const Icon = { person: UserRoundIcon, density: Rows3Icon, sliders: SlidersHorizontalIcon }[inp.icon ?? "sliders"]
+  return (
+    <DropdownMenu>
+      <Tip label={overridden ? `${inp.label}: ${label}, changed from ${inp.options.find((o) => o.id === designed)?.label ?? "designed"}` : `${inp.label}: ${label}, as designed`}>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="relative gap-1.5" aria-label={`${inp.label}, ${label}${overridden ? ", changed" : ""}`} />}>
+          <Icon />
+          {!compact && <span className="max-w-32 truncate">{label}</span>}
+          {overridden && <span aria-hidden className="size-1.5 rounded-full bg-(--anchor)" />}
+        </DropdownMenuTrigger>
+      </Tip>
+      <DropdownMenuContent side={variant === "dock" ? "top" : "bottom"} align="start" className="w-64">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{inp.label}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup value={current} onValueChange={(v) => s.setValue(id, v === designed ? null : (v as string))}>
+            {inp.options.map((o) => (
+              <DropdownMenuRadioItem key={o.id} value={o.id} closeOnClick>
+                {o.label}
+                {o.id === designed && <DropdownMenuShortcut>Designed</DropdownMenuShortcut>}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+        {overridden && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => s.setValue(id, null)}>
+              <RotateCcwIcon /> Back to {inp.options.find((o) => o.id === designed)?.label ?? "designed"}
+            </DropdownMenuItem>
+          </>
+        )}
+        {inp.note && (
+          <>
+            <DropdownMenuSeparator />
+            <p className="px-2 py-1.5 text-xs text-muted-foreground">{inp.note}</p>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export function StageControls({ variant, compact }: { variant: "dock" | "toolbar"; compact?: boolean }) {
   const s = useStudio()
   const ax = adapter.axes
@@ -435,6 +490,7 @@ export function StageControls({ variant, compact }: { variant: "dock" | "toolbar
       </ToggleGroup>
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       <SizeMenu variant={variant} compact={compact} />
+      {inputsFor(s.scenarioObj).filter((i) => i.placement === "dock").map((i) => <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />)}
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1 tabular-nums" aria-label={`Zoom, ${zoomLabel}`} />}>
@@ -523,12 +579,12 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
               <dt className="text-muted-foreground">Source</dt><dd className="font-mono text-xs break-all">{sc.source}</dd>
               {s.preview.location && (<><dt className="text-muted-foreground">Location</dt><dd className="font-mono text-xs break-all">{s.preview.location}</dd></>)}
             </dl>
-            {adapter.axes.inputs.length > 0 && (
+            {inputsFor(sc).some((i) => i.placement !== "dock") && (
               <FieldSet>
                 <FieldLegend variant="label">Scenario inputs</FieldLegend>
                 <FieldDescription className="text-xs">Declared by the {adapter.product.name} adapter. A change rebuilds the preview from the scenario.</FieldDescription>
                 <FieldGroup className="gap-4">
-                  {adapter.axes.inputs.map((inp) =>
+                  {inputsFor(sc).filter((i) => i.placement !== "dock").map((inp) =>
                     inp.control === "presets" ? (
                       <Field key={inp.id}>
                         <FieldLabel>{inp.label}</FieldLabel>
@@ -540,7 +596,7 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
                     ) : (
                       <Field key={inp.id}>
                         <FieldLabel>{inp.label}</FieldLabel>
-                        <Select value={s.values[inp.id]} items={Object.fromEntries(inp.options.map((o) => [o.id, o.label]))} onValueChange={(v) => v && s.setValue(inp.id, v as string)}>
+                        <Select value={s.values[inp.id] ?? sc.designed?.[inp.id] ?? inp.default} items={Object.fromEntries(inp.options.map((o) => [o.id, o.label]))} onValueChange={(v) => v && s.setValue(inp.id, v as string)}>
                           <SelectTrigger className="w-full" aria-label={inp.label}><SelectValue /></SelectTrigger>
                           <SelectContent>{inp.options.map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
                         </Select>

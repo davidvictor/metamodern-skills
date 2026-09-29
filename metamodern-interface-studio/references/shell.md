@@ -14,6 +14,8 @@ The starter in [assets/studio-shell](../assets/studio-shell/README.md) implement
 6. Delete `src/adapters/example.ts`, `src/adapters/synthetic.ts`, `example/` and the example input in `vite.config.ts`, and reduce `src/adapter.ts` to the product adapter. Keep `scripts/acceptance.mjs` and point its example-specific checks at the product (see Check the shell).
 7. Verify with the acceptance criteria below and [verification.md](verification.md).
 
+Product development chrome that would sit inside every preview (a "development preview" strip, a role picker, links back to a catalogue) belongs to the Studio, not the frame: replace it in the frame build with an empty substitute, declare it as a presentation override, and move any control it carried into a dock input. Never edit the product's source to do this.
+
 Change shell components only to fix a shell defect or to meet a criterion here. Product needs belong in the adapter: an extra scenario input, a named variant axis, a presentation override. If a product seems to need a shell change, record why in the Studio's notes and keep the change product-neutral.
 
 ## Layout
@@ -25,7 +27,7 @@ Change shell components only to fix a shell defect or to meet a criterion here. 
 | Panel toggle | One control: the button at the left of the top bar, whose icon shows what it will do, plus ⌘B and the full-height sidebar edge. Never two controls for the same action side by side. |
 | Top bar | Panel toggle, breadcrumb (product, view, scenario; the scenario opens Go to), live status, then Go to, Studio settings, Studio appearance, Copy link and the Details toggle. On a phone the four actions fold behind one trigger that slides them out to its left (inert while folded, Esc or a choice folds them), and the product mark's tile stays square. |
 | Stage | A neutral grey surface with a faint 24 px grid: lighter than the Studio in light appearance, darker in dark. The preview sits centered with nothing drawn above it. Fidelity is stated in Details (summary and Fidelity tab); a static capture or recreation also shows its fidelity badge in the top bar. Scale is stated by the dock's Zoom control ("Fit · 54%"), and by a size chip under the frame in views without a dock. |
-| Dock | Floating under the preview: theme, size, zoom, Product back, Reset. These change how the scenario is viewed, not what it is. |
+| Dock | Floating under the preview: theme, size, any dock inputs the scenario uses (such as Role), zoom, Product back, Reset. These change how the scenario is viewed, not what it is. |
 | Details | 320 px on the right, docked, pushing the stage. Summary always visible, then Scenario, Fidelity and Evidence as line tabs. Scenario inputs live here because they change what the scenario is. In Tokens it becomes the token editor. |
 
 Below 1280 px only one side panel stays open: the one just opened wins. Below 768 px the rail becomes a bottom bar with Panel, the five views and Details; the panel and Details open as swipeable drawers; the dock becomes a full-width strip; fit means fit to width and the stage scrolls; a phone profile opens by default when the product declares one, unless the adapter names a `defaultProfile`, which opens on every screen size.
@@ -56,7 +58,8 @@ Choose controls by what they do and where the eye is.
 | Zoom | DropdownMenu with a radio group | Dock | The trigger shows the current value. ⇧1 fit, ⇧0 actual size. |
 | All steps | Popover with a list of the walkthrough's steps | Present player | Any step can be chosen, with problem steps marked. It works with the side panel closed and on a phone. |
 | Product back, Reset | Icon Button with tooltip and key | Dock, right end | Back disabled until the preview has product history. R resets; a toast confirms. |
-| Scenario inputs | Select, or ToggleGroup for presets | Details | Declared by the adapter. A change stages a new preview. |
+| Scenario inputs | Select, or ToggleGroup for presets | Details | Declared by the adapter. A change stages a new preview. Only the inputs the current scenario uses are shown. |
+| Dock inputs (lenses) | DropdownMenu with a radio group, the input's icon and the current value | Dock | For inputs with `placement: "dock"`: how a screen is looked at, such as the role it is seen as. The scenario's own value is marked Designed; another choice shows a dot and offers Back to the designed value; the choice travels in the link under the input's ID and applies in Inspect, Compare (as an axis) and Gallery. Present ignores it and plays each step as designed. A scoped input shows only on scenarios that design a value for it. |
 | Catalog search | InputGroup with a / hint | Panel header | / focuses, Esc clears, the count becomes "n of N". |
 | Status filter | Joined outline ToggleGroup on a fixed grid | Panel header | All, Stale, Unresolved with counts. Columns sized so labels never spill out of the panel. |
 | Catalog tree | Windowed `role="tree"` (`VirtualList`) | Panel | One tab stop with a roving row. Up, Down, Home, End, PageUp and PageDown move; Right and Left open, close and step between group and scenario; letters type ahead and are consumed so they do not trigger Studio shortcuts. All groups open under 30 scenarios; otherwise only the current group. Searching opens every match. |
@@ -97,7 +100,7 @@ Status reads from the preview runtime: Loading, Ready, Capture, No capture, Did 
 
 ## Check the shell
 
-`npm run acceptance` in the starter builds the Studio three ways (the example product, a stress adapter with 1,000 scenarios, 1,000 tokens and a 40-step walkthrough with four broken steps, and a capture-only adapter), serves them locally and measures AC-01 to AC-16 in headless Chromium. It needs Playwright (`npm i -D playwright` and `npx playwright install chromium`, or `PLAYWRIGHT_MODULE` pointing at an existing install). It prints each result, writes `acceptance-report.json` and exits non-zero on a failure. `ONLY=AC-03,AC-10` runs a subset. The stress and capture adapters build only when `VITE_STUDIO_ADAPTER` is set, and drop out of a normal build.
+`npm run acceptance` in the starter builds the Studio three ways (the example product, a stress adapter with 1,000 scenarios, 1,000 tokens and a 40-step walkthrough with four broken steps, and a capture-only adapter), serves them locally and measures AC-01 to AC-17 in headless Chromium. It needs Playwright (`npm i -D playwright` and `npx playwright install chromium`, or `PLAYWRIGHT_MODULE` pointing at an existing install). It prints each result, writes `acceptance-report.json` and exits non-zero on a failure. `ONLY=AC-03,AC-10` runs a subset. The stress and capture adapters build only when `VITE_STUDIO_ADAPTER` is set, and drop out of a normal build.
 
 Run it after any change to the shell. Before connecting a product, run it unchanged to prove the shell; after connecting, replace the example-specific selectors (the New task button, the example scenario names) with the product's own and keep the rest. A product Studio can also run the shell checks against its own adapter.
 
@@ -123,3 +126,4 @@ These come from stress cases observed in real Studios and projected for larger p
 | AC-14 | In the walkthrough player, All steps lists every step and chooses one, with the side panel closed. | Met: the list held every step and the chosen step played. |
 | AC-15 | On a phone the header actions fold behind one trigger and are inert while folded; opened, every action sits inside the screen with the title still readable, Esc folds them, and the product mark's tile stays square. | Met at 390 px with emulated touch. |
 | AC-16 | The rail names its views under the icons by default on desktop, including for a viewer whose stored options predate the default; a viewer who turned the labels off keeps them off. | Met. |
+| AC-17 | A dock input opens on the scenario's designed value, changes the live preview, travels in the link and survives a reload, returns with Back to the designed value, is offered as a Compare axis, does not appear on scenarios outside its scope, and is ignored by Present. | Met with the example's Role. |

@@ -30,15 +30,26 @@ export type Profile = { id: string; label: string; w: number; h: number; kind: "
 /** Inspect may drag a live frame to any size in this range. Widths in `snapWidths` attract the edge, as do the profiles' own sizes. */
 export type Resizable = { min: { w: number; h: number }; max: { w: number; h: number }; snapWidths?: number[] }
 
-/** A scenario input the adapter declares, such as density, clock or condition. A change rebuilds the preview. */
+/** A scenario input the adapter declares, such as density, role, clock or condition. A change rebuilds the preview. */
 export type ScenarioInput = {
   id: string
   label: string
   control: "select" | "presets"
   options: { id: string; label: string }[]
-  default: string
-  /** Why an option is missing or limited, shown under the control. */
+  /** The value when the scenario designs none and the viewer chose none. Omit when every scenario that uses the input designs its own. */
+  default?: string
+  /** Why an option is missing or limited, shown with the control. */
   note?: string
+  /**
+   * Where the control lives. "details" (the default) is for what the scenario is; "dock" is for how a screen is
+   * looked at, such as the role it is seen as. A dock input is a lens: Present ignores the viewer's choice and plays
+   * each step as designed.
+   */
+  placement?: "details" | "dock"
+  /** Only scenarios that design a value for this input use it (`Scenario.designed`); elsewhere there is no control and no value is sent. */
+  scoped?: boolean
+  /** Icon for the dock control. */
+  icon?: "person" | "density" | "sliders"
 }
 
 /** An existing capture with its provenance. A capture proves only the visible state it recorded. */
@@ -61,6 +72,8 @@ export type Scenario = {
   status?: "stale" | "unresolved" | "later"
   /** Keyed `${themeId}:${profileId}`. */
   captures?: Partial<Record<string, Capture>>
+  /** The value this scenario was designed with for a scenario input, keyed by input ID, such as `{ role: "viewer" }`. */
+  designed?: Record<string, string>
   /** Independent statuses; the Studio never infers approval. */
   statuses?: { design?: string; delivery?: string; evidence?: string; fingerprint?: string }
 }
