@@ -6,7 +6,7 @@
  */
 import * as React from "react"
 import { toast } from "sonner"
-import { ChevronDownIcon, EllipsisIcon, GripVerticalIcon, LayoutGridIcon, PlusIcon, RotateCcwIcon, SaveIcon, XIcon } from "lucide-react"
+import { ChevronDownIcon, EllipsisIcon, GripVerticalIcon, LayoutGridIcon, PlusIcon, Undo2Icon, RotateCcwIcon, SaveIcon, XIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { Badge } from "@/components/ui/badge"
@@ -47,6 +47,9 @@ const GAP = 32
 const LABEL_H = 36
 const MIN_COLUMN = 148
 const FLOOR = 0.2
+/** Placed frames snap to 8 px at 100%, as on the canvas. */
+const SNAP = 8
+const snap = (v: number) => Math.round(v / SNAP) * SNAP
 const kindLabel = { phone: "Phone", tablet: "Tablet", laptop: "Laptop", desktop: "Desktop" }
 
 /** Why a size cannot be a frame here, or nothing when it can. */
@@ -95,10 +98,10 @@ function useResponsive() {
     s.set({ responsive: { layout: layout.id, name: layout.name, frames: layout.frames.map((f) => ({ ...f })), arrangement: layout.arrangement, height: layout.height, viewport: layout.viewport, sync: layout.sync ?? before.sync, dirty: false, resetNonce: before.resetNonce } })
     if (before.dirty) toast(`Unsaved changes to ${before.name} were set aside`, { action: { label: "Undo", onClick: () => s.set({ responsive: before }) } })
   }
-  /** Row keeps the canvas order, read left to right, then top to bottom. */
+  /** Row keeps the canvas order, read left to right, then top to bottom, as a clean row. */
   const arrange = (a: "row" | "canvas") => {
     if (a === r.arrangement) return
-    if (a === "row") set({ arrangement: "row", frames: [...r.frames].sort((x, y) => (x.x ?? 0) - (y.x ?? 0) || (x.y ?? 0) - (y.y ?? 0)) })
+    if (a === "row") set({ arrangement: "row", frames: [...r.frames].sort((x, y) => (x.x ?? 0) - (y.x ?? 0) || (x.y ?? 0) - (y.y ?? 0)).map(({ x: _x, y: _y, ...f }) => (void _x, void _y, f)) })
     // Each frame starts where it sits in the row, at the row's scale.
     else set({ arrangement: "canvas", viewport: undefined, frames: r.frames.map(({ x: _x, y: _y, ...f }) => (void _x, void _y, f)) })
   }
@@ -589,13 +592,14 @@ export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrap
       </figcaption>
   )
   return (
-    <figure className={cn("m-0 flex shrink-0 flex-col gap-2 transition-opacity", dragging && "opacity-60")} style={{ width: canvas ? frame.w : narrow ? w : Math.max(w, MIN_COLUMN) }} data-frame={frame.id}>
+    <figure className={cn("m-0 flex shrink-0 flex-col gap-2 transition-opacity", dragging && "opacity-80")} style={{ width: canvas ? frame.w : narrow ? w : Math.max(w, MIN_COLUMN) }} data-frame={frame.id}>
       {wrapLabel ? wrapLabel(label) : label}
       {adapter.axes.resizable && live && !problem && !narrow ? (
         <ResizeHandles
           w={frame.w}
           h={h}
           scale={onScreen}
+          zoomed={canvas}
           onDragChange={setFrozen}
           control={{ profile: frame.profile, centred: false, label: `${frame.w} by ${frame.h} frame`, setSize: (size) => setFrame(size ?? { w: prof.w, h: prof.h }), setProfile: (id) => { const p = profileOf(id); setFrame({ profile: id, w: p.w, h: p.h }) } }}
         >
@@ -682,16 +686,23 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
   const caps = [...new Set(Object.values(statuses).flatMap((x) => x?.capabilities ?? []))].sort().join()
   React.useEffect(() => setStudioCaps({ frameCaps: caps ? (caps.split(",") as State["frameCaps"]) : [] }), [setStudioCaps, caps])
 
+  // A row whose frames were dragged holds them where they were dropped (x, y at 100%); a clean row flows.
+  const placed = !narrow && !onCanvas && r.frames.some((f) => f.x !== undefined)
   const widest = Math.max(...r.frames.map((f) => f.w))
-  const fit = narrow ? Math.max(0.05, Math.min(1, dims.w / widest)) : rowScale(r.frames, dims.w, dims.h, r.height === "full")
+  const fit = narrow
+    ? Math.max(0.05, Math.min(1, dims.w / widest))
+    : placed
+      ? Math.max(FLOOR, Math.min(1, dims.w / Math.max(...r.frames.map((f) => (f.x ?? 0) + f.w)), r.height === "full" ? 9 : (dims.h - LABEL_H) / Math.max(...r.frames.map((f) => (f.y ?? 0) + f.h))))
+      : rowScale(r.frames, dims.w, dims.h, r.height === "full")
   const scale = s.zoom === "fit" ? fit : s.zoom / 100
   const nav = useStageNav(box, scale, { enabled: !onCanvas })
   const [canvasPct, setCanvasPct] = React.useState(100)
   const tidy = React.useRef<(() => void) | null>(null)
 
-  // Reorder by dragging a frame's label across its neighbours.
+  // Drag a frame by its label to place it anywhere; on a phone, where frames stack, dragging reorders.
   const labels = React.useRef(new Map<string, HTMLElement>())
   const [dragging, setDragging] = React.useState<string | null>(null)
+  const [drag, setDrag] = React.useState<{ id: string; x: number; y: number } | null>(null)
   const [said, setSaid] = React.useState("")
   const [refocus, setRefocus] = React.useState<string | null>(null)
   React.useEffect(() => {
@@ -708,39 +719,125 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
     setSaid(`Moved ${f.w} by ${f.h} to position ${j + 1} of ${next.length}`)
     setRefocus(id)
   }
+  /** Every frame's place at 100% (its label's top-left), read from where it sits on the stage now, so placing moves nothing. */
+  const readPlaces = () => {
+    const el = box.current!
+    const b = el.getBoundingClientRect()
+    const pad = parseFloat(getComputedStyle(el).paddingLeft) || 0
+    const ox = b.left + pad - el.scrollLeft
+    const oy = b.top + pad - el.scrollTop
+    return Object.fromEntries(
+      r.frames.map((f) => {
+        const at = el.querySelector(`[data-frame="${f.id}"]`)?.getBoundingClientRect()
+        return [f.id, { x: snap(Math.max(0, (at?.left ?? ox) - ox) / scale), y: snap(Math.max(0, (at?.top ?? oy) - oy) / scale) }]
+      })
+    )
+  }
+  /** Commit places. A frame dragged past the top or left edge shifts every frame back into view, and the stage scrolls by the shift so nothing jumps. */
+  const commit = (places: Record<string, { x: number; y: number }>, announce: string) => {
+    const minX = Math.min(0, ...Object.values(places).map((p) => p.x))
+    const minY = Math.min(0, ...Object.values(places).map((p) => p.y))
+    set({ frames: r.frames.map((f) => ({ ...f, x: places[f.id].x - minX, y: places[f.id].y - minY })) })
+    if (minX || minY) requestAnimationFrame(() => box.current?.scrollBy(-minX * scale, -minY * scale))
+    setSaid(announce)
+  }
+  const scaleRef = React.useRef(scale)
+  React.useLayoutEffect(() => {
+    scaleRef.current = scale
+  })
   const start = (e: React.PointerEvent, id: string) => {
     if (e.button !== 0) return
+    // The pointer stays with the label, so a release over a frame's page still ends the drag here.
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId)
+    } catch {
+      // Without capture the frames' pointer shield below still keeps the page from taking the release.
+    }
     const x0 = e.clientX
     const y0 = e.clientY
     let moved = false
+    let base: Record<string, { x: number; y: number }> | null = null
+    let at = { x: 0, y: 0 }
     const onMove = (ev: PointerEvent) => {
       if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 5) return
       moved = true
       setDragging(id)
-      const others = [...document.querySelectorAll<HTMLElement>("[data-frame]")]
-      const over = others.find((el) => {
-        const b = el.getBoundingClientRect()
-        return el.dataset.frame !== id && (narrow ? ev.clientY > b.top && ev.clientY < b.bottom : ev.clientX > b.left && ev.clientX < b.right)
-      })
-      if (over) moveTo(id, r.frames.findIndex((f) => f.id === over.dataset.frame))
+      if (narrow) {
+        const over = [...document.querySelectorAll<HTMLElement>("[data-frame]")].find((el) => {
+          const b = el.getBoundingClientRect()
+          return el.dataset.frame !== id && ev.clientY > b.top && ev.clientY < b.bottom
+        })
+        if (over) moveTo(id, r.frames.findIndex((f) => f.id === over.dataset.frame))
+        return
+      }
+      // The first move turns a flowing row into placed frames exactly where they are, and holds the zoom
+      // where it is: Fit would shrink everything as the frames spread, so the stage grows and scrolls instead.
+      if (!base) {
+        if (s.zoom === "fit") s.set({ zoom: Math.round(scaleRef.current * 1000) / 10 })
+        base = placed ? Object.fromEntries(r.frames.map((f) => [f.id, { x: f.x ?? 0, y: f.y ?? 0 }])) : readPlaces()
+        if (!placed) set({ frames: r.frames.map((f) => ({ ...f, ...base![f.id] })) })
+      }
+      const k = scaleRef.current
+      at = { x: snap(base[id].x + (ev.clientX - x0) / k), y: snap(base[id].y + (ev.clientY - y0) / k) }
+      setDrag({ id, ...at })
     }
     const onUp = () => {
       window.removeEventListener("pointermove", onMove)
       window.removeEventListener("pointerup", onUp)
+      window.removeEventListener("pointercancel", onUp)
       setDragging(null)
+      setDrag(null)
+      if (!moved || narrow || !base) return
+      const f = r.frames.find((x) => x.id === id)!
+      commit({ ...base, [id]: at }, `Moved ${f.w} by ${f.h}`)
     }
     window.addEventListener("pointermove", onMove)
     window.addEventListener("pointerup", onUp)
+    window.addEventListener("pointercancel", onUp)
   }
   const onKey = (e: React.KeyboardEvent) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>("[data-frame]")
     if (!el || !e.altKey || !(e.target as HTMLElement).hasAttribute("data-frame-label")) return
-    const back = narrow ? "ArrowUp" : "ArrowLeft"
-    const fwd = narrow ? "ArrowDown" : "ArrowRight"
-    if (e.key !== back && e.key !== fwd) return
+    const id = el.dataset.frame!
+    if (!narrow) {
+      // Alt and an arrow moves the frame 8 px at 100%, or 64 with Shift.
+      const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key]
+      if (!dir) return
+      e.preventDefault()
+      const places = placed ? Object.fromEntries(r.frames.map((f) => [f.id, { x: f.x ?? 0, y: f.y ?? 0 }])) : readPlaces()
+      const step = e.shiftKey ? 64 : SNAP
+      const f = r.frames.find((x) => x.id === id)!
+      commit({ ...places, [id]: { x: places[id].x + dir[0] * step, y: places[id].y + dir[1] * step } }, `Moved ${f.w} by ${f.h} to ${places[id].x + dir[0] * step}, ${places[id].y + dir[1] * step}`)
+      setRefocus(id)
+      return
+    }
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return
     e.preventDefault()
-    const i = r.frames.findIndex((f) => f.id === el.dataset.frame)
-    moveTo(el.dataset.frame!, i + (e.key === back ? -1 : 1))
+    const i = r.frames.findIndex((f) => f.id === id)
+    moveTo(id, i + (e.key === "ArrowUp" ? -1 : 1))
+  }
+  // A placed row's content starts at the stage's top-left and is as large as its frames reach, so the stage scrolls to every one.
+  const content = React.useRef<HTMLDivElement>(null)
+  const [extent, setExtent] = React.useState({ w: 0, h: 0 })
+  React.useLayoutEffect(() => {
+    const el = content.current
+    if (!el || !placed) return
+    const measure = () => {
+      const kids = [...el.children] as HTMLElement[]
+      const w = Math.ceil(Math.max(0, ...kids.map((c) => c.offsetLeft + c.offsetWidth)))
+      const h = Math.ceil(Math.max(0, ...kids.map((c) => c.offsetTop + c.offsetHeight)))
+      setExtent((prev) => (prev.w === w && prev.h === h ? prev : { w, h }))
+    }
+    measure()
+    // Full-page frames grow after they load; the content grows with them.
+    const ro = new ResizeObserver(measure)
+    for (const c of el.children) ro.observe(c)
+    return () => ro.disconnect()
+  }, [placed, r.frames, scale, drag])
+  const placeOf = (f: ResponsiveFrame) => (drag?.id === f.id ? drag : { x: f.x ?? 0, y: f.y ?? 0 })
+  const backToRow = () => {
+    set({ frames: [...r.frames].sort((a, b) => (a.x ?? 0) - (b.x ?? 0) || (a.y ?? 0) - (b.y ?? 0)).map(({ x: _x, y: _y, ...f }) => (void _x, void _y, f)) })
+    setSaid("Frames back in a row")
   }
 
   return (
@@ -759,6 +856,12 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
             <ToggleGroupItem value="canvas" className="text-xs" disabled={narrow}>Canvas</ToggleGroupItem>
           </ToggleGroup>
           <AddFrame compact />
+          {placed && (
+            <Tooltip>
+              <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Back to a row" onClick={backToRow} />}><Undo2Icon /></TooltipTrigger>
+              <TooltipContent>Back to a row: undo where frames were dragged</TooltipContent>
+            </Tooltip>
+          )}
           {onCanvas && <Button variant="ghost" size="sm" aria-label="Tidy" title="Tidy into a row, grouped by kind" onClick={() => tidy.current?.()}><LayoutGridIcon /><span className="hidden xl:inline">Tidy</span></Button>}
           <Button variant="ghost" size="sm" aria-label="Reset all" title="Reset all frames" onClick={() => set({ resetNonce: r.resetNonce + 1 }, false)}><RotateCcwIcon /><span className={cn(onCanvas && "hidden xl:inline")}>Reset all</span></Button>
         </div>
@@ -772,9 +875,12 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
         </div>
       ) : (
       <div ref={box} className="flex min-h-0 flex-1 overflow-auto p-6" onKeyDown={onKey} onPointerDown={nav.onPointerDown}>
-        <div className={cn("m-auto flex w-max items-start", narrow ? "flex-col" : "flex-row")} style={{ gap: GAP }}>
+        {/* One structure for a flowing and a placed row, so placing frames never remounts them. */}
+        <div ref={content} className={cn(dragging && "[&_iframe]:pointer-events-none", placed ? "relative shrink-0" : cn("m-auto flex w-max items-start", narrow ? "flex-col" : "flex-row"))} style={placed ? { width: extent.w, height: extent.h } : { gap: GAP }}>
           {r.frames.map((f, i) => (
-            <FrameCard key={f.id} frame={f} index={i} count={r.frames.length} scale={scale} narrow={narrow} status={statuses[f.id] ?? null} onStatus={onStatus} dragging={dragging === f.id} onDragStart={start} labelRef={(el) => { if (el) labels.current.set(f.id, el); else labels.current.delete(f.id) }} />
+            <div key={f.id} className={cn(placed && "absolute", placed && dragging === f.id && "z-10")} style={placed ? { left: placeOf(f).x * scale, top: placeOf(f).y * scale } : undefined}>
+              <FrameCard frame={f} index={i} count={r.frames.length} scale={scale} narrow={narrow} status={statuses[f.id] ?? null} onStatus={onStatus} dragging={dragging === f.id} onDragStart={start} labelRef={(el) => { if (el) labels.current.set(f.id, el); else labels.current.delete(f.id) }} />
+            </div>
           ))}
         </div>
       </div>

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.11.1 — 2026-09-29
+
+- Interface Studio 0.9.1: frames in the Responsive row drag. A label drag places the frame where it is dropped (it follows the pointer, the others stay, its page is not reloaded), the zoom holds while the stage grows to reach every frame, and the places are kept in the viewer's browser and the link. Alt and an arrow on a label moves it 8 px (64 with Shift); the Frames list still reorders. An icon in the Responsive toolbar puts the frames back in a row.
+- Resize handles hug each frame rather than its label column, and keep their size on screen: grips follow the frame's size (12 to 40 px) and on the canvas are counter-scaled against the zoom. Acceptance rewrites AC-22 and adds AC-52.
+
 ## 1.11.0 — 2026-09-29
 
 - Interface Studio 0.9.0: one stage navigation in Inspect, Compare, Design and Responsive. Scroll pans, and over a frame the page scrolls first and hands the stage what it cannot use; ⌘ or Ctrl with the wheel, or a pinch, zooms at the pointer over frames too (10% to 400%), without the browser zooming the tab; Space and a drag, or a middle drag, pans; + and − step. `studio-preview/1` gains the `stage-gestures` capability and a `gesture` message; `{ gestures: false }` opts a preview out.
