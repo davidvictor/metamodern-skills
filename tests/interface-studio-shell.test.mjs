@@ -17,7 +17,7 @@ test('shell starter ships source only', () => {
   for (const excluded of ['node_modules/', 'dist/', '.git/']) {
     assert.ok(!rel.some((file) => file.startsWith(excluded)), `${excluded} must not be packaged`);
   }
-  for (const required of ['README.md', 'package.json', 'package-lock.json', 'index.html', 'vite.config.ts', 'src/adapter.ts', 'src/studio/types.ts', 'src/studio/protocol.ts', 'src/studio/frame-client.ts', 'src/studio/live-preview.tsx', 'example/index.html', 'example/main.ts']) {
+  for (const required of ['README.md', 'package.json', 'package-lock.json', 'index.html', 'vite.config.ts', 'src/adapter.ts', 'src/studio/types.ts', 'src/studio/protocol.ts', 'src/studio/frame-client.ts', 'src/studio/live-preview.tsx', 'example/index.html', 'example/main.ts', 'src/studio/virtual-list.tsx', 'src/adapters/synthetic.ts', 'scripts/acceptance.mjs']) {
     assert.ok(rel.includes(required), `${required} is missing`);
   }
 });
@@ -38,7 +38,8 @@ test('the adapter is the only product seam in the shell', () => {
     .filter((file) => /\.(ts|tsx)$/.test(file) && file.includes('/src/'))
     .filter((file) => /from "@\/adapters\//.test(readFileSync(file, 'utf8')))
     .map((file) => relative(root, file));
-  assert.deepEqual(importers, ['src/adapter.ts']);
+  // The stress adapters extend the example; nothing else in the shell may import an adapter.
+  assert.deepEqual(importers, ['src/adapter.ts', 'src/adapters/synthetic.ts']);
   assert.match(read('src/adapter.ts'), /export const adapter = /);
 });
 
@@ -58,6 +59,19 @@ test('modified is a state set by real changes, not a click count', () => {
   assert.match(client, /MutationObserver/);
   assert.match(client, /e\.isTrusted/);
   assert.doesNotMatch(read('src/components/studio/chrome.tsx'), /Modified · \{/);
+});
+
+test('acceptance script covers every shell criterion', () => {
+  const script = read('scripts/acceptance.mjs');
+  for (let i = 1; i <= 11; i++) assert.match(script, new RegExp(`"AC-${String(i).padStart(2, '0')}"`), `AC-${i} is not checked`);
+  assert.match(read('package.json'), /"acceptance": "node scripts\/acceptance\.mjs"/);
+  assert.doesNotMatch(read('package.json'), /"playwright"/, 'Playwright stays optional');
+});
+
+test('large lists are windowed with one tab stop', () => {
+  const list = read('src/studio/virtual-list.tsx');
+  assert.match(list, /tabIndex=\{i === safeActive \? 0 : -1\}/);
+  for (const file of ['src/components/studio/rail-panel.tsx', 'src/components/studio/views.tsx']) assert.match(read(file), /<VirtualList/);
 });
 
 test('starter documents local edits and the shell reference exists', () => {

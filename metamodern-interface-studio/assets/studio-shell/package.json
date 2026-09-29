@@ -9,7 +9,8 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "acceptance": "node scripts/acceptance.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

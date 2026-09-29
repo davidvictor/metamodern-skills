@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
+import { useStudio } from "@/store"
 import type { Capture, Fidelity, Mode, Profile, Theme } from "@/studio/types"
 
 type Look = Mode | "recreation"
@@ -158,6 +159,20 @@ export function ScaleNote({ w, h, scale }: { w: number; h: number; scale: number
     <span className="tabular-nums">
       {w} × {h}
       {scale < 0.995 || scale > 1.005 ? <span className="opacity-70"> · {Math.round(scale * 100)}%</span> : <span className="opacity-70"> · actual size</span>}
+    </span>
+  )
+}
+
+/** Size and shown percentage, with the one action that switches between Fit and actual size. */
+export function ScaleChip({ w, h, scale, className }: { w: number; h: number; scale: number; className?: string }) {
+  const s = useStudio()
+  const actual = Math.abs(scale - 1) < 0.005
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur", className)}>
+      <ScaleNote w={w} h={h} scale={scale} />
+      <Button variant="ghost" size="xs" className="h-5 px-1.5 text-xs" aria-label={actual ? "Fit to the stage" : "Show at actual size"} onClick={() => s.set({ zoom: actual ? "fit" : 100 })}>
+        {actual ? "Fit" : "100%"}
+      </Button>
     </span>
   )
 }

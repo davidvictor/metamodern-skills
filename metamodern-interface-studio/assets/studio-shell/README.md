@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open the printed local URL. `npm run build` type checks and builds both the Studio (`index.html`) and the example preview entry (`example/index.html`) into `dist/`. `npm run lint` and `npm run typecheck` run the static checks.
+Open the printed local URL. `npm run build` type checks and builds both the Studio (`index.html`) and the example preview entry (`example/index.html`) into `dist/`. `npm run lint` and `npm run typecheck` run the static checks. `npm run acceptance` measures the shell against the acceptance criteria in `references/shell.md` (it needs Playwright).
 
 ## What a product changes
 
@@ -20,7 +20,7 @@ A new Studio changes three things and leaves the shell alone.
 | File | Change |
 | --- | --- |
 | `src/adapter.ts` | Point `adapter` at the product's adapter declaration. This is the only import of product data in the shell. |
-| `src/adapters/` | Add the product adapter, generated from the manifest and runtime catalog: product name and mark, target fidelity and capabilities, themes, profiles, scenario inputs, areas, scenarios, walkthroughs, comparisons and tokens. Delete `example.ts` once the product adapter exists. |
+| `src/adapters/` | Add the product adapter, generated from the manifest and runtime catalog: product name and mark, target fidelity and capabilities, themes, profiles, scenario inputs, areas, scenarios, walkthroughs, comparisons and tokens. Delete `example.ts` and `synthetic.ts` once the product adapter exists, and reduce `src/adapter.ts` to the product adapter. |
 | The product's preview entry | A route or document in the product that renders one scenario in isolation and calls `connectStudioFrame` from `src/studio/frame-client.ts`. Set the adapter's `frameEntry` to its URL. Delete `example/` and its build input in `vite.config.ts`. |
 
 A Studio with no live preview, such as native work with recorded captures only, omits `frameEntry` and supplies `captures` on each scenario. The shell then shows captures, disables what a capture cannot do, and says why.
@@ -31,11 +31,13 @@ A Studio with no live preview, such as native work with recorded captures only, 
 src/
   adapter.ts                 the one product seam
   adapters/example.ts        synthetic example adapter (replace)
+  adapters/synthetic.ts      stress and capture-only adapters for the acceptance script
   studio/
     types.ts                 adapter declaration types
     protocol.ts              studio-preview/1 messages
     frame-client.ts          product side of the protocol (framework free)
     live-preview.tsx         preview host: isolated frames, staged swap, timeouts
+    virtual-list.tsx         windowed list with one tab stop and type-ahead
   store.tsx                  Studio state, URL selection, per-viewer settings
   App.tsx                    desktop and phone shells, global keys
   components/studio/         rail, panels, top bar, stage controls, views, details
@@ -43,6 +45,7 @@ src/
   components/theme-provider.tsx   Studio appearance and brand color
   index.css, studio.css      shadcn tokens plus the Studio extensions
 example/                     synthetic example product preview entry (replace)
+scripts/acceptance.mjs       measures AC-01 to AC-11 in headless Chromium
 ```
 
 ## Keep these rules

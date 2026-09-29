@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0 — 2026-09-28
+
+- Interface Studio 0.3.0: the shell starter now meets its own scale criteria. The catalog and walkthrough step list are windowed lists with one tab stop, arrow keys and type-ahead; the token grid is windowed and folds families over 60; walkthroughs past 24 steps use one progress bar with marks for broken steps and an All steps list.
+- Every preview states its size and percentage with a Fit or 100% action; the frame edge uses two keylines so any product edge stays visible; controls reach 44 px on coarse pointers; Exit returns focus to what opened Present.
+- Add `npm run acceptance`, a Playwright script that builds the starter with a 1,000-scenario stress adapter and a capture-only adapter and measures AC-01 to AC-11. All eleven pass for the starter; swipe, real devices, more than two Compare sides, and real-product integration remain unverified.
+
 ## 1.4.0 — 2026-09-28
 
 - Add a product-neutral Studio shell starter to Interface Studio 0.2.0 in `assets/studio-shell`: a grey review stage, icon rail with contextual panels, and Inspect, Compare, Gallery, Present, and Tokens views on shadcn 4.21 (Base UI, Rhea style).

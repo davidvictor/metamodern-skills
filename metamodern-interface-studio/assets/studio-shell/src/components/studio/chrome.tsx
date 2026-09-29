@@ -97,7 +97,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
           <BreadcrumbItem className="hidden lg:inline-flex">{adapter.product.name}</BreadcrumbItem>
           <BreadcrumbSeparator className="hidden lg:inline-flex" />
           <BreadcrumbItem className="hidden sm:inline-flex">{viewLabel}</BreadcrumbItem>
-          {s.view !== "tokens" && s.view !== "gallery" && (
+          {(s.view === "inspect" || s.view === "compare") && (
             <>
               <BreadcrumbSeparator className="hidden sm:inline-flex" />
               <BreadcrumbItem className="min-w-0">
@@ -111,7 +111,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-1 hidden sm:block" aria-live="polite">
-        {s.view !== "tokens" && s.view !== "gallery" && <StatusNow />}
+        {s.view === "inspect" && <StatusNow />}
       </div>
       <div className="ml-auto flex items-center gap-1">
         {!mobile && (

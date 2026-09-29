@@ -134,7 +134,7 @@ function mount(inputs: MountInputs) {
   root.dataset.theme = inputs.theme
   root.dataset.density = inputs.values.density ?? "comfortable"
   const known = ["tasks.list", "tasks.list.empty", "tasks.list.loading", "tasks.list.failed", "tasks.new", "task.detail", "account.settings", "account.sign-in"]
-  if (!known.includes(inputs.scenario)) throw new Error(`Scenario ${inputs.scenario} has no preview in this product`)
+  if (!known.includes(inputs.scenario) && !inputs.scenario.startsWith("syn.")) throw new Error(`Scenario ${inputs.scenario} has no preview in this product`)
   s = {
     scenario: inputs.scenario,
     role: inputs.values.role ?? "owner",

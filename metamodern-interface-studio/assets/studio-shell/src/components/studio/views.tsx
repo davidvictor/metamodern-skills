@@ -29,28 +29,28 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { adapter } from "@/adapter"
 import { areaLabel, captureFor, isColor, useStudio } from "@/store"
 import type { LiveStatus } from "@/studio/live-preview"
 import type { Step } from "@/studio/types"
-import { FidelityBadge, ScaleNote, StatusBadge, lookOf, useFit } from "./bits"
+import { FidelityBadge, ScaleChip, StatusBadge, lookOf, useFit } from "./bits"
+import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
 import { StageControls } from "./chrome"
 import { ScenarioPreview, inspectHandle, profileOf, themeOf } from "./preview"
 
 function PreviewTab({ theme, profile, scale, extra }: { theme: string; profile: string; scale: number; extra?: React.ReactNode }) {
   const pr = profileOf(profile)
   return (
-    <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-lg bg-background/92 px-1.5 py-1 text-xs text-muted-foreground shadow-sm ring-1 ring-black/5 backdrop-blur">
+    <div className="flex max-w-[min(calc(100vw-2rem),40rem)] flex-wrap items-center justify-center gap-1.5 rounded-lg bg-background/92 px-1.5 py-1 text-xs text-muted-foreground shadow-sm ring-1 ring-black/5 backdrop-blur">
       <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="h-5">{adapter.target.label}</FidelityBadge>
       <span className="font-medium text-foreground">{adapter.product.name}</span>
       <span>{themeOf(theme).label}</span>
       <span className="opacity-40">·</span>
       <span>{pr.label}</span>
       <span className="opacity-40">·</span>
-      <ScaleNote w={pr.w} h={pr.h} scale={scale} />
+      <ScaleChip w={pr.w} h={pr.h} scale={scale} className="bg-transparent p-0 shadow-none backdrop-blur-none" />
       {adapter.presentationOverrides?.map((o) => (
         <Badge key={o.id} variant="outline" className="h-5 border-dashed">{o.label}</Badge>
       ))}
@@ -95,7 +95,8 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
   )
   return (
     <Stage narrow={narrow}>
-      <div ref={box} className={cn("flex min-h-0 flex-1 flex-col items-center gap-3 overflow-auto px-4 pt-4", dock && !narrow ? "pb-20" : "pb-4", !narrow && "justify-center")}>
+      <div ref={box} className={cn("flex min-h-0 flex-1 flex-col overflow-auto px-4 pt-4", dock && !narrow ? "pb-20" : "pb-4")}>
+        <div className={cn("mx-auto flex w-max flex-col items-center gap-3", !narrow && "my-auto")}>
         <PreviewTab theme={s.theme} profile={s.profile} scale={scale} />
         <ScenarioPreview
           ref={inspectHandle}
@@ -108,6 +109,7 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
           label={`${areaLabel(sc.area)}: ${sc.label} preview`}
           onStatus={onStatus}
         />
+        </div>
       </div>
     </Stage>
   )
@@ -127,7 +129,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const box = React.useRef<HTMLDivElement>(null)
   const effectiveMode = narrow && mode === "side" ? "toggle" : mode
   const sides = effectiveMode === "side" ? 2 : 1
-  const scale = useFit(box, pr.w * sides + (sides - 1) * 40, pr.h, "fit", 64)
+  const scale = useFit(box, pr.w * sides + (sides - 1) * 40, pr.h, s.zoom, 64)
   const label = (id: string) => themeOf(id).label
   const setC = (patch: Partial<typeof s.compare>) => s.set({ compare: { ...s.compare, ...patch } })
   const A = useSideStatus()
@@ -205,7 +207,9 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           </HoverCardContent>
         </HoverCard>
       </div>
-      <div ref={box} className="flex min-h-0 flex-1 items-center justify-center gap-10 overflow-hidden p-6">
+      <div ref={box} className="flex min-h-0 flex-1 flex-col overflow-auto p-6">
+       <div className="mx-auto my-auto flex w-max flex-col items-center gap-3">
+       <div className="flex items-center justify-center gap-10">
         {effectiveMode === "side" &&
           (["a", "b"] as const).map((k) => (
             <figure key={k} className="m-0 flex flex-col items-center gap-2">
@@ -258,6 +262,9 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
             <p className="text-[11px] text-stage-muted">Press <Kbd>Space</Kbd> to flip between A and B.</p>
           </div>
         )}
+       </div>
+       <ScaleChip w={pr.w} h={pr.h} scale={scale} />
+       </div>
       </div>
     </Stage>
   )
@@ -291,6 +298,21 @@ export function GalleryStage() {
   const list = adapter.scenarios.filter((x) => !g.hidden.includes(x.area) && (!q || `${x.label} ${x.surface} ${areaLabel(x.area)}`.toLowerCase().includes(q)) && (!g.onlyFlagged || !!x.status))
   const groups = adapter.areas.map((a) => ({ area: a, items: list.filter((x) => x.area === a.id) })).filter((x) => x.items.length)
   const phone = pr.kind === "phone"
+  // Thumbnails are scaled previews: measure the first card and say so.
+  const grid = React.useRef<HTMLDivElement>(null)
+  const [thumbPct, setThumbPct] = React.useState<number | null>(null)
+  React.useEffect(() => {
+    const el = grid.current
+    if (!el) return
+    const measure = () => {
+      const media = el.querySelector<HTMLElement>("[data-thumb]")
+      setThumbPct(media ? Math.round((media.clientWidth / pr.w) * 100) : null)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [pr.w, g.size, list.length])
   return (
     <Stage
       controls={false}
@@ -319,9 +341,9 @@ export function GalleryStage() {
       }
     >
       <ScrollArea className="min-h-0 flex-1">
-        <div className="grid gap-8 p-6 pb-24">
+        <div ref={grid} className="grid gap-8 p-6 pb-24">
           <p className="text-xs text-stage-muted">
-            {list.length} of {adapter.scenarios.length} · {themeOf(s.theme).label} · {pr.label} · {g.source === "live" ? "live, mounted while visible" : "captures from the last verification run"}
+            {list.length} of {adapter.scenarios.length} · {themeOf(s.theme).label} · {pr.label} {pr.w} × {pr.h}{thumbPct != null && ` · thumbnails at about ${thumbPct}%`} · {g.source === "live" ? "live, mounted while visible" : "captures from the last verification run"} · a card opens Inspect
           </p>
           {groups.map(({ area, items }) => (
             <section key={area.id} className="grid gap-3" aria-label={area.label}>
@@ -339,7 +361,7 @@ export function GalleryStage() {
                       className="group flex flex-col gap-2 rounded-xl bg-background/95 p-2 text-left shadow-sm ring-1 ring-black/5 transition-all duration-200 ease-out outline-none animate-in fade-in-0 slide-in-from-bottom-1 hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-3 focus-visible:ring-ring"
                       style={{ animationDelay: `${Math.min(i, 12) * 30}ms`, animationFillMode: "backwards" }}
                     >
-                      <div className="relative overflow-hidden rounded-lg bg-muted" style={{ aspectRatio: `${pr.w} / ${pr.h}` }}>
+                      <div data-thumb className="relative overflow-hidden rounded-lg bg-muted" style={{ aspectRatio: `${pr.w} / ${pr.h}` }}>
                         {x.status === "later" ? (
                           <div className="flex size-full items-center justify-center p-3 text-center text-xs text-muted-foreground">Not designed yet</div>
                         ) : g.source === "captures" ? (
@@ -380,6 +402,8 @@ export function staticProblem(st: Step) {
   return null
 }
 
+const MAX_SEGMENTS = 24
+
 export function PresentStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
   const tour = adapter.walkthroughs.find((t) => t.id === s.present.tour) ?? adapter.walkthroughs[0]
@@ -391,7 +415,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
   const theme = step?.theme ?? s.theme
   const profile = step?.profile ?? s.profile
   const pr = profileOf(profile)
-  const scale = useFit(box, pr.w, pr.h, "fit", 48)
+  const scale = useFit(box, pr.w, pr.h, s.zoom, 48)
   // Runtime problems count too: a failed command or a missing anchor stops the step.
   const problem = !step ? null : staticProblem(step) ?? (st?.status === "error" && !st.previous ? `The step did not run: ${st.reason}` : st?.status === "ready" && step.anchor && !st.anchors.some((a) => a.id === step.anchor) ? `Anchor ${step.anchor} is missing from the preview. Nothing was highlighted in its place.` : null)
   const ready = !problem && (adapter.frameEntry ? st?.status === "ready" : true)
@@ -432,7 +456,8 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="stage-surface relative flex min-h-0 flex-1 flex-col">
-        <div ref={box} className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-4">
+        <div ref={box} className="flex min-h-0 flex-1 flex-col overflow-auto p-4">
+         <div className="mx-auto my-auto flex w-max flex-col items-center gap-3">
           {!staticProblem(step) && <PreviewTab theme={theme} profile={profile} scale={scale} />}
           {staticProblem(step) ? (
             <div className="flex max-w-sm flex-col items-center gap-2 rounded-xl bg-background/95 p-6 text-center text-sm shadow-sm">
@@ -455,14 +480,25 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
               onStatus={setSt}
             />
           )}
+         </div>
         </div>
       </div>
       <section aria-label="Narration" className="border-t bg-background">
-        <div className="seg-track px-4 pt-3" aria-hidden>
-          {tour.steps.map((x, j) => (
-            <i key={j} data-state={staticProblem(x) || (j === i && problem) ? "unresolved" : j < i ? "done" : j === i ? "current" : "upcoming"} style={j === i ? ({ "--p": `${(s.present.elapsed / secs) * 100}%` } as React.CSSProperties) : undefined} />
-          ))}
-        </div>
+        {tour.steps.length <= MAX_SEGMENTS ? (
+          <div className="seg-track px-4 pt-3" aria-hidden>
+            {tour.steps.map((x, j) => (
+              <i key={j} data-state={staticProblem(x) || (j === i && problem) ? "unresolved" : j < i ? "done" : j === i ? "current" : "upcoming"} style={j === i ? ({ "--p": `${(s.present.elapsed / secs) * 100}%` } as React.CSSProperties) : undefined} />
+            ))}
+          </div>
+        ) : (
+          // Past 24 steps one bar replaces the segments; broken steps stay visible as marks on it.
+          <div className="px-4 pt-3" aria-hidden>
+            <div className="relative h-1 rounded-full bg-foreground/15">
+              <div className="absolute inset-y-0 left-0 rounded-full bg-foreground" style={{ width: `${((i + s.present.elapsed / secs) / tour.steps.length) * 100}%` }} />
+              {tour.steps.map((x, j) => (staticProblem(x) || (j === i && problem) ? <i key={j} className="absolute -top-0.5 h-2 w-0.5 rounded-full bg-danger" style={{ left: `${(j / tour.steps.length) * 100}%` }} /> : null))}
+            </div>
+          </div>
+        )}
         <div className={cn("grid items-start gap-x-6 gap-y-3 px-4 pt-3 pb-4", narrow ? "grid-cols-1" : "grid-cols-[minmax(160px,1fr)_minmax(0,2.4fr)_auto]")}>
           <div className="grid gap-1">
             <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{tour.name} · {i + 1} of {tour.steps.length}</p>
@@ -494,7 +530,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
               {s.present.playing ? <PauseIcon /> : <PlayIcon />}
             </Button>
             <Button variant="outline" size="icon" aria-label="Next step" disabled={i === tour.steps.length - 1} onClick={() => go(1)}><ChevronRightIcon /></Button>
-            {!narrow && <Button variant="ghost" size="icon" aria-label="All steps" onClick={() => s.set({ panelOpen: true })}><ListIcon /></Button>}
+            {!narrow && <Button variant="ghost" size="sm" aria-label="All steps" onClick={() => { s.set({ panelOpen: true }); window.setTimeout(() => document.querySelector<HTMLElement>("[aria-label=Steps] [tabindex='0']")?.focus({ preventScroll: true }), 80) }}><ListIcon /> All steps</Button>}
             <Button variant="ghost" size="icon" aria-label="Exit walkthrough" onClick={() => s.set({ view: "inspect", present: { ...s.present, playing: false } })}><XIcon /></Button>
           </div>
         </div>
@@ -508,6 +544,12 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
   )
 }
 
+type TokenRow = { key: string; kind: "family"; name: string; count: number; open: boolean } | { key: string; kind: "token"; token: import("@/studio/types").Token }
+const FAMILY_ROW = 32
+const TOKEN_ROW = 56
+/** Families larger than this start folded, so a huge token set opens as a short list of families. */
+const FOLD_OVER = 60
+
 export function TokensStage() {
   const s = useStudio()
   const t = adapter.tokens!
@@ -517,13 +559,36 @@ export function TokensStage() {
   const [ca, cb] = t.columns
   const [showTheme, setShowTheme] = React.useState(ca)
   const [showDraft, setShowDraft] = React.useState(true)
+  const [folds, setFolds] = React.useState<Record<string, boolean>>({})
   const drafts = Object.keys(s.tokens.drafts).length
-  const rows = t.tokens.filter(
-    (x) =>
-      (!family || x.family === family) &&
-      (!q || `${x.name} ${Object.values(x.values).join(" ")}`.toLowerCase().includes(q)) &&
-      (s.tokens.flag === "all" || (s.tokens.flag === "unread" && x.flags?.includes("unread")) || (s.tokens.flag === "literal" && x.flags?.includes("literal")) || (s.tokens.flag === "draft" && !!s.tokens.drafts[x.name]))
+  const matches = React.useMemo(
+    () =>
+      t.tokens.filter(
+        (x) =>
+          (!family || x.family === family) &&
+          (!q || `${x.name} ${Object.values(x.values).join(" ")}`.toLowerCase().includes(q)) &&
+          (s.tokens.flag === "all" || (s.tokens.flag === "unread" && x.flags?.includes("unread")) || (s.tokens.flag === "literal" && x.flags?.includes("literal")) || (s.tokens.flag === "draft" && !!s.tokens.drafts[x.name]))
+      ),
+    [t.tokens, family, q, s.tokens.flag, s.tokens.drafts]
   )
+  const narrowed = !!q || !!family || s.tokens.flag !== "all"
+  const rows = React.useMemo(() => {
+    const out: TokenRow[] = []
+    const names = [...new Set(matches.map((x) => x.family))]
+    for (const name of names) {
+      const items = matches.filter((x) => x.family === name)
+      // An explicit fold wins; otherwise big families fold unless the view is already narrowed.
+      const open = folds[name] ?? (narrowed || items.length <= FOLD_OVER)
+      out.push({ key: `family:${name}`, kind: "family", name, count: items.length, open })
+      if (open) for (const token of items) out.push({ key: token.name, kind: "token", token })
+    }
+    return out
+  }, [matches, folds, narrowed])
+  const [activeKey, setActiveKey] = React.useState<string | null>(null)
+  const found = rows.findIndex((r) => r.key === (activeKey ?? s.tokens.selected))
+  const active = found >= 0 ? found : 0
+  const handle = React.useRef<VirtualListHandle>(null)
+  const heightOf = React.useCallback((i: number) => (rows[i].kind === "family" ? FAMILY_ROW : TOKEN_ROW), [rows])
   const ground = (theme: string) => t.grounds?.[theme] ?? (themeOf(theme).appearance === "dark" ? "#111111" : "#ffffff")
   const pval = (v: string | undefined, theme: string, draft?: string) => (
     <span className="flex min-w-0 items-center gap-2">
@@ -536,66 +601,108 @@ export function TokensStage() {
     </span>
   )
   const select = (name: string) => s.set({ tokens: { ...s.tokens, selected: name }, detailsOpen: true })
+  const toggleFamily = (name: string, open: boolean) => setFolds((m) => ({ ...m, [name]: !open }))
   const box = React.useRef<HTMLDivElement>(null)
   const pr = profileOf(s.profile)
-  const scale = useFit(box, pr.w, pr.h, "fit", 40)
+  const scale = useFit(box, pr.w, pr.h, s.zoom, 40)
+  const COLS = "grid-cols-[minmax(0,42%)_minmax(0,1fr)_minmax(0,1fr)]"
   return (
     <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
       <ResizablePanel defaultSize="60" minSize="40">
         <div className="flex h-full min-h-0 flex-col bg-background">
           <div className="flex items-center gap-2 border-b px-4 py-2 text-xs text-muted-foreground">
-            <span>{family ? `${family} · ` : ""}{rows.length} shown of {familyCount ?? t.total} · read from {t.source} at {adapter.product.revision}</span>
+            <span>{family ? `${family} · ` : ""}{matches.length} shown of {familyCount ?? t.total} · read from {t.source} at {adapter.product.revision}</span>
             <span className="ml-auto hidden lg:inline">Product values sit on the product’s own ground</span>
           </div>
-          <ScrollArea className="min-h-0 flex-1">
-            <Table>
-              <TableHeader className="sticky top-0 z-10 bg-background">
-                <TableRow>
-                  <TableHead className="w-[42%]">Token</TableHead>
-                  <TableHead>{themeOf(ca).label}</TableHead>
-                  <TableHead>{themeOf(cb).label}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((x) => {
-                  const d = s.tokens.drafts[x.name]
+          <div className={cn("grid border-b py-2 pr-4 pl-4 text-xs font-medium text-muted-foreground [scrollbar-gutter:stable]", COLS)} aria-hidden>
+            <span>Token</span>
+            <span>{themeOf(ca).label}</span>
+            <span>{themeOf(cb).label}</span>
+          </div>
+          {rows.length === 0 ? (
+            <Empty className="border-0 py-12">
+              <EmptyHeader>
+                <EmptyTitle className="text-sm">No token matches</EmptyTitle>
+                <EmptyDescription className="text-xs">Clear the search, the flag or the family.</EmptyDescription>
+              </EmptyHeader>
+              <Button variant="outline" size="sm" onClick={() => s.set({ tokens: { ...s.tokens, family: null, query: "", flag: "all" } })}>Show all tokens</Button>
+            </Empty>
+          ) : (
+            <VirtualList
+              ref={handle}
+              role="grid"
+              aria-label="Tokens"
+              aria-rowcount={rows.length}
+              className="[scrollbar-gutter:stable]"
+              count={rows.length}
+              rowHeight={heightOf}
+              active={active}
+              onActiveChange={(i) => setActiveKey(rows[i].key)}
+              label={(i) => { const r = rows[i]; return r.kind === "family" ? r.name : r.token.name.replace(/^-+/, "") }}
+              onRowKeyDown={(e, i) => {
+                const r = rows[i]
+                if (r.kind !== "family") return
+                if (e.key === "ArrowRight" && !r.open) { e.preventDefault(); toggleFamily(r.name, r.open) }
+                if (e.key === "ArrowLeft" && r.open) { e.preventDefault(); toggleFamily(r.name, r.open) }
+              }}
+              rowProps={(i) => {
+                const r = rows[i]
+                if (r.kind === "family")
+                  return {
+                    role: "row",
+                    "aria-rowindex": i + 1,
+                    "aria-expanded": r.open,
+                    onClick: () => toggleFamily(r.name, r.open),
+                    className: "flex cursor-default items-center gap-1.5 border-b bg-muted/40 px-4 text-xs font-medium select-none hover:bg-muted outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--ring)]",
+                  }
+                return {
+                  role: "row",
+                  "aria-rowindex": i + 1,
+                  "aria-selected": s.tokens.selected === r.token.name,
+                  onClick: () => select(r.token.name),
+                  className: cn("grid cursor-default items-center gap-x-2 border-b px-4 select-none hover:bg-muted/50 outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--ring)]", COLS, s.tokens.selected === r.token.name && "bg-muted"),
+                }
+              }}
+            >
+              {(i) => {
+                const r = rows[i]
+                if (r.kind === "family")
                   return (
-                    <TableRow key={x.name} data-state={s.tokens.selected === x.name ? "selected" : undefined} className="cursor-pointer" onClick={() => select(x.name)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && select(x.name)}>
-                      <TableCell>
-                        <div className="grid">
-                          <code className="font-mono text-xs font-medium">{x.name}</code>
-                          <span className="text-[11px] text-muted-foreground">{x.family}{x.reads != null && ` · ${x.reads} reads`}</span>
-                          <span className="mt-1 flex flex-wrap gap-1 empty:hidden">
-                            {d && <StatusBadge kind="draft">Draft</StatusBadge>}
-                            {x.flags?.includes("unread") && <Badge variant="outline" className="text-warning">Unread</Badge>}
-                            {x.flags?.includes("literal") && <Badge variant="outline">Fixed values</Badge>}
-                            {x.flags?.includes("coupled") && <Badge variant="outline" className="text-info">Coupled</Badge>}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="max-w-40">{pval(x.values[ca], ca, d?.[ca])}</TableCell>
-                      <TableCell className="max-w-40">{pval(x.values[cb], cb, d?.[cb])}</TableCell>
-                    </TableRow>
+                    <>
+                      <ChevronRightIcon className={cn("size-3.5 transition-transform duration-200", r.open && "rotate-90")} />
+                      {r.name}
+                      <span className="font-normal text-muted-foreground tabular-nums">{r.count}</span>
+                      {!r.open && <span className="ml-auto font-normal text-muted-foreground">Folded</span>}
+                    </>
                   )
-                })}
-              </TableBody>
-            </Table>
-            {rows.length === 0 && (
-              <Empty className="border-0 py-12">
-                <EmptyHeader>
-                  <EmptyTitle className="text-sm">No token matches</EmptyTitle>
-                  <EmptyDescription className="text-xs">Clear the search, the flag or the family.</EmptyDescription>
-                </EmptyHeader>
-                <Button variant="outline" size="sm" onClick={() => s.set({ tokens: { ...s.tokens, family: null, query: "", flag: "all" } })}>Show all tokens</Button>
-              </Empty>
-            )}
-          </ScrollArea>
+                const x = r.token
+                const d = s.tokens.drafts[x.name]
+                return (
+                  <>
+                    <div className="grid min-w-0 gap-0.5" role="gridcell">
+                      <code className="truncate font-mono text-xs font-medium">{x.name}</code>
+                      <span className="flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
+                        <span className="shrink-0">{x.reads != null ? `${x.reads} reads` : "reads unknown"}</span>
+                        {d && <StatusBadge kind="draft">Draft</StatusBadge>}
+                        {x.flags?.includes("unread") && <Badge variant="outline" className="h-4 px-1 text-[10px] text-warning">Unread</Badge>}
+                        {x.flags?.includes("literal") && <Badge variant="outline" className="h-4 px-1 text-[10px]">Fixed</Badge>}
+                        {x.flags?.includes("coupled") && <Badge variant="outline" className="h-4 px-1 text-[10px] text-info">Coupled</Badge>}
+                      </span>
+                    </div>
+                    <div role="gridcell" className="min-w-0">{pval(x.values[ca], ca, d?.[ca])}</div>
+                    <div role="gridcell" className="min-w-0">{pval(x.values[cb], cb, d?.[cb])}</div>
+                  </>
+                )
+              }}
+            </VirtualList>
+          )}
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel defaultSize="40" minSize="25">
         <div className="stage-surface flex h-full min-h-0 flex-col">
-          <div ref={box} className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-4">
+          <div ref={box} className="flex min-h-0 flex-1 flex-col overflow-auto p-4">
+           <div className="mx-auto my-auto flex w-max flex-col items-center gap-3">
             <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-lg bg-background/92 p-1 text-xs shadow-sm backdrop-blur">
               <ToggleGroup value={[showTheme]} onValueChange={(v) => v[0] && setShowTheme(v[0])} size="sm" spacing={0} aria-label="Preview theme">
                 {[ca, cb].map((id) => <ToggleGroupItem key={id} value={id} className="h-6 px-2 text-xs">{themeOf(id).label}</ToggleGroupItem>)}
@@ -607,7 +714,9 @@ export function TokensStage() {
               </ToggleGroup>
             </div>
             <ScenarioPreview scenario={s.scenario} theme={showTheme} profile={s.profile} values={s.values} tokens={showDraft ? s.draftsFor(showTheme) : {}} scale={scale} label="Token preview" />
-            <p className="max-w-xs text-center text-[11px] text-stage-muted">Drafts apply to this preview only and stay in this browser. They never change the product.</p>
+            <ScaleChip w={pr.w} h={pr.h} scale={scale} />
+            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">Drafts apply to this preview only and stay in this browser. They never change the product.</p>
+           </div>
           </div>
         </div>
       </ResizablePanel>
