@@ -6,7 +6,7 @@
  */
 import * as React from "react"
 import { toast } from "sonner"
-import { ChevronDownIcon, EllipsisIcon, GripVerticalIcon, PlusIcon, RotateCcwIcon, SaveIcon, XIcon } from "lucide-react"
+import { ChevronDownIcon, EllipsisIcon, GripVerticalIcon, LayoutGridIcon, PlusIcon, RotateCcwIcon, SaveIcon, XIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { Badge } from "@/components/ui/badge"
@@ -41,6 +41,7 @@ import { PreviewFrame, StatusBadge } from "./bits"
 import { profileOf, ScenarioPreview } from "./preview"
 import { ResizeHandles } from "./resize-handles"
 import { StageControls } from "./chrome"
+import { StageNav, useStageNav } from "./stage-nav"
 
 const GAP = 32
 const LABEL_H = 36
@@ -684,7 +685,9 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
   const widest = Math.max(...r.frames.map((f) => f.w))
   const fit = narrow ? Math.max(0.05, Math.min(1, dims.w / widest)) : rowScale(r.frames, dims.w, dims.h, r.height === "full")
   const scale = s.zoom === "fit" ? fit : s.zoom / 100
-  const ready = live.filter((x) => x.status === "ready").length
+  const nav = useStageNav(box, scale, { enabled: !onCanvas })
+  const [canvasPct, setCanvasPct] = React.useState(100)
+  const tidy = React.useRef<(() => void) | null>(null)
 
   // Reorder by dragging a frame's label across its neighbours.
   const labels = React.useRef(new Map<string, HTMLElement>())
@@ -743,6 +746,7 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
   return (
     <SyncContext.Provider value={sync}>
     <div className="stage-surface relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <StageNav nav={nav}>
       <div className="flex flex-wrap items-center justify-center gap-2 px-3 pt-3">
         <div role="toolbar" aria-label="Responsive controls" className="flex flex-wrap items-center gap-1 rounded-xl border bg-popover/95 p-1 shadow-[var(--dock-shadow)] backdrop-blur-md">
           <span className="px-2 text-xs font-medium">{r.name}{r.dirty ? " · unsaved" : ""}</span>
@@ -755,18 +759,19 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
             <ToggleGroupItem value="canvas" className="text-xs" disabled={narrow}>Canvas</ToggleGroupItem>
           </ToggleGroup>
           <AddFrame compact />
-          <Button variant="ghost" size="sm" onClick={() => set({ resetNonce: r.resetNonce + 1 }, false)}><RotateCcwIcon /> Reset all</Button>
+          {onCanvas && <Button variant="ghost" size="sm" aria-label="Tidy" title="Tidy into a row, grouped by kind" onClick={() => tidy.current?.()}><LayoutGridIcon /><span className="hidden xl:inline">Tidy</span></Button>}
+          <Button variant="ghost" size="sm" aria-label="Reset all" title="Reset all frames" onClick={() => set({ resetNonce: r.resetNonce + 1 }, false)}><RotateCcwIcon /><span className={cn(onCanvas && "hidden xl:inline")}>Reset all</span></Button>
         </div>
       </div>
       {r.arrangement === "canvas" && narrow && <p className="px-4 pt-2 text-center text-xs text-stage-muted">This layout is a canvas. The canvas opens on wider screens; here its frames stack.</p>}
       {onCanvas ? (
         <div ref={box} className="relative min-h-0 flex-1">
           <React.Suspense fallback={<p className="p-6 text-center text-xs text-stage-muted">Opening the canvas…</p>}>
-            <Canvas statuses={statuses} onStatus={onStatus} rowPlacement={() => lastRow.current} onAnnounce={setSaid} />
+            <Canvas statuses={statuses} onStatus={onStatus} rowPlacement={() => lastRow.current} onAnnounce={setSaid} onZoom={setCanvasPct} tidyRef={tidy} />
           </React.Suspense>
         </div>
       ) : (
-      <div ref={box} className="flex min-h-0 flex-1 overflow-auto p-6" onKeyDown={onKey}>
+      <div ref={box} className="flex min-h-0 flex-1 overflow-auto p-6" onKeyDown={onKey} onPointerDown={nav.onPointerDown}>
         <div className={cn("m-auto flex w-max items-start", narrow ? "flex-col" : "flex-row")} style={{ gap: GAP }}>
           {r.frames.map((f, i) => (
             <FrameCard key={f.id} frame={f} index={i} count={r.frames.length} scale={scale} narrow={narrow} status={statuses[f.id] ?? null} onStatus={onStatus} dragging={dragging === f.id} onDragStart={start} labelRef={(el) => { if (el) labels.current.set(f.id, el); else labels.current.delete(f.id) }} />
@@ -775,15 +780,10 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
       </div>
       )}
       <div className="pointer-events-none flex flex-wrap items-center justify-center gap-2 px-3 pb-3">
-        {!narrow && <StageControls variant="dock" lookOnly noZoom={onCanvas} />}
-        {!onCanvas && <span className="pointer-events-auto inline-flex items-center gap-2 rounded-lg bg-background/92 px-2 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur" aria-label="Scale">
-          <span className="tabular-nums">{r.frames.length} frames{adapter.frameEntry ? ` · ${ready} ready` : ""} · one scale, {Math.abs(scale - 1) < 0.005 ? "actual size" : `${Math.round(scale * 100)}%`}</span>
-          <Button variant="ghost" size="xs" className="h-5 px-1.5 text-xs" onClick={() => s.set({ zoom: Math.abs(scale - 1) < 0.005 ? "fit" : 100 })} aria-label={Math.abs(scale - 1) < 0.005 ? "Fit to the stage" : "Show at actual size"}>
-            {Math.abs(scale - 1) < 0.005 ? "Fit" : "100%"}
-          </Button>
-        </span>}
+        {!narrow && <StageControls variant="dock" lookOnly canvasZoom={onCanvas ? canvasPct : undefined} />}
       </div>
       <p className="sr-only" aria-live="polite">{said}</p>
+      </StageNav>
     </div>
     </SyncContext.Provider>
   )

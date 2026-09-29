@@ -8,6 +8,7 @@ import { useTheme } from "@/components/theme-provider"
 import { adapter } from "@/adapter"
 import { areaLabel, useStudio } from "@/store"
 import { VIEWS } from "./rail-panel"
+import { isMac } from "./stage-nav"
 
 export function CommandMenu() {
   const s = useStudio()
@@ -76,6 +77,9 @@ const SHORTCUTS: [string, string[]][] = [
   ["Toggle details", ["⌘", "."]],
   ["Reset preview", ["R"]],
   ["Fit or actual size", ["⇧1", "⇧0"]],
+  ["Zoom in or out", ["+", "−"]],
+  ["Zoom at the pointer", [isMac ? "⌘" : "Ctrl", "scroll"]],
+  ["Pan the stage", ["Space", "drag"]],
   ["Walkthrough: step, pause, exit", ["←", "→", "Space", "Esc"]],
   ["Compare: flip A and B", ["Space"]],
   ["This list", ["?"]],

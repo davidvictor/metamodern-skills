@@ -15,7 +15,7 @@ export const NO_DRAFT: Draft = { tokens: {}, css: "", stylesheets: [] }
 export type View = "inspect" | "compare" | "responsive" | "gallery" | "present" | "design"
 export type CompareMode = "side" | "split" | "toggle"
 /** draftEverywhere: show the design draft in Inspect, Gallery and Compare too. Off by default; Present never shows it. */
-export type Options = { controls: "dock" | "toolbar"; details: "docked" | "floating"; railLabels: boolean; draftEverywhere: boolean }
+export type Options = { controls: "dock" | "toolbar"; details: "docked" | "floating"; railLabels: boolean; draftEverywhere: boolean; map: boolean }
 export type PreviewStatus = { status: "loading" | "ready" | "error" | "static" | "empty"; modified: boolean; canGoBack: boolean; location?: string; fingerprint?: string; reason?: string; previous?: boolean }
 
 export type State = {
@@ -96,7 +96,7 @@ const profileIds = A.axes.profiles.map((p) => p.id)
 /** A canvas viewport in a link: `x_y_zoom`. */
 function parseViewport(text: string | null) {
   const m = /^(-?\d+)_(-?\d+)_(\d*\.?\d+)$/.exec(text ?? "")
-  return m && +m[3] >= 0.1 && +m[3] <= 2 ? { x: +m[1], y: +m[2], zoom: +m[3] } : undefined
+  return m && +m[3] >= 0.1 && +m[3] <= 4 ? { x: +m[1], y: +m[2], zoom: +m[3] } : undefined
 }
 
 /** A link that names a scenario this Studio does not have. It is said out loud, never replaced silently. */
@@ -214,7 +214,7 @@ const initial: State = {
   responsive: initialResponsive(),
   saved: bundledLayouts && !validateLayouts(bundledLayouts).length ? bundledLayouts.layouts : [],
   gallery: { size: 240, source: hasCaptures || !A.frameEntry ? "captures" : "live", query: "", hidden: [], onlyFlagged: false },
-  options: { controls: "dock", details: "docked", railLabels: true, draftEverywhere: false },
+  options: { controls: "dock", details: "docked", railLabels: true, draftEverywhere: false, map: false },
   commandOpen: false,
   shortcutsOpen: false,
   mobilePanel: null,

@@ -25,6 +25,11 @@ export type Theme = {
   appearance: "light" | "dark"
   /** Icon hint. Named product variants use "swatch" and show their label. */
   icon?: "sun" | "moon" | "sun-contrast" | "moon-contrast" | "swatch"
+  /**
+   * The theme this is the high-contrast version of. When themes declare it, the dock shows only the standard
+   * themes and offers Contrast in its Design menu; without it every theme is its own button.
+   */
+  contrastOf?: string
 }
 
 export type Profile = { id: string; label: string; w: number; h: number; kind: "desktop" | "laptop" | "tablet" | "phone" }
@@ -48,6 +53,8 @@ export type ScenarioInput = {
    * each step as designed.
    */
   placement?: "details" | "dock"
+  /** A dock input in the "design" group sits in the dock's Design menu, with contrast, instead of as its own control. It is still a lens. */
+  group?: "design"
   /** Only scenarios that design a value for this input use it (`Scenario.designed`); elsewhere there is no control and no value is sent. */
   scoped?: boolean
   /** Icon for the dock control. */
@@ -201,7 +208,7 @@ export type StudioAdapter = {
     name: string
     /** Two letters for the rail mark; shown when the product has no drawn mark. */
     mark: string
-    /** The product's own mark as SVG paths, drawn in the tile's foreground colour. Wins over the letters. */
+    /** The product's own mark as SVG paths, drawn in the tile's foreground color. Wins over the letters. */
     markSvg?: { viewBox: string; paths: string[] }
     revision: string
     /** Offered as the "product brand" swatch in Studio settings. It tints Studio accents only. */

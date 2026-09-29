@@ -21,7 +21,7 @@
   --ex-font: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   color-scheme: light;
 }
-:root[data-theme="dark"] {
+:root[data-theme="dark"], :root[data-theme="dark-contrast"] {
   --ex-primary: #2dd4bf;
   --ex-primary-ink: #042f2e;
   --ex-accent: #134e4a;
@@ -36,6 +36,8 @@
   --ex-done: #4ade80;
   color-scheme: dark;
 }
+:root[data-theme="light-contrast"] { --ex-primary: #115e59; --ex-ink-muted: #1c1917; --ex-line: #57534e; --ex-ground: #ffffff; }
+:root[data-theme="dark-contrast"] { --ex-ink-muted: #f5f5f4; --ex-line: #a8a29e; --ex-ground: #000000; --ex-surface: #0c0a09; }
 :root[data-density="compact"] { --ex-row: 38px; --ex-space: 12px; }
 
 * { box-sizing: border-box; }

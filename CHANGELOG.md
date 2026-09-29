@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.11.0 — 2026-09-29
+
+- Interface Studio 0.9.0: one stage navigation in Inspect, Compare, Design and Responsive. Scroll pans, and over a frame the page scrolls first and hands the stage what it cannot use; ⌘ or Ctrl with the wheel, or a pinch, zooms at the pointer over frames too (10% to 400%), without the browser zooming the tab; Space and a drag, or a middle drag, pans; + and − step. `studio-preview/1` gains the `stage-gestures` capability and a `gesture` message; `{ gestures: false }` opts a preview out.
+- The dock's zoom control is the one zoom everywhere: Zoom in and out, Fit, 50%, 100%, Show map on the canvas, and a line naming the gestures. The Responsive scale chip and the canvas zoom chip and buttons are gone; Tidy moved to the Responsive toolbar; the minimap is off until asked for.
+- A Design menu in the dock holds Contrast and the `design` group of lenses (such as density), with a way into the Design view. Themes pair with high-contrast versions through `contrastOf`; the dock then shows only the standard themes. Token values for a contrast theme without its own column come from its standard theme.
+- The frame's outer line in light drops from 60% to 14% black; the corner ticks still carry the edge at 3:1. Acceptance adds AC-49 to AC-51; AC-10, 11, 19, 34 and 43 follow the new controls.
+
 ## 1.10.1 — 2026-09-29
 
 - Interface Studio 0.8.1: `vite.config.ts` passes `npm run lint` (a useless assignment in the layouts endpoint). Found by the shell updater's checks on a real Studio.

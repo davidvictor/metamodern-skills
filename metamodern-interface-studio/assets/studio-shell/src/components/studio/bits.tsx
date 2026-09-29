@@ -186,7 +186,7 @@ export function ScaleChip({ w, h, scale, className }: { w: number; h: number; sc
 }
 
 /**
- * The product mark inside a tile: the adapter's drawn mark in the tile's foreground colour,
+ * The product mark inside a tile: the adapter's drawn mark in the tile's foreground color,
  * or its two letters. `width` is the glyph's optical width, set by the caller for the tile.
  */
 export function ProductMark({ width, decorative }: { width: number; decorative?: boolean }) {

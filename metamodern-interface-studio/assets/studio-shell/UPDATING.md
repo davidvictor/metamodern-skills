@@ -38,3 +38,10 @@ Each section below lists what a product does by hand when it updates to that ver
 ## 0.8.1
 
 Nothing to do by hand. `vite.config.ts` passes lint again.
+
+## 0.9.0
+
+- Stage navigation is the same on every stage: scroll pans, ⌘ or Ctrl with the wheel or a pinch zooms at the pointer, Space or a middle drag pans, + and − step. A preview entry that imports `connectStudioFrame` from the Studio gets it over its frames with the update (the frame announces `stage-gestures`). A preview that must keep every wheel and Space press passes `{ gestures: false }`.
+- The Responsive row's scale chip and the canvas's own zoom buttons are gone; the dock's zoom control states and sets the zoom everywhere, and Tidy is in the Responsive toolbar. Checks that read `[aria-label="Scale"]`, "Canvas zoom", "Fit view" or "Show at actual size" should read the dock's `Zoom, …` control instead.
+- The dock can group what the product ships for how a screen looks into a Design menu. Give each high-contrast theme `contrastOf: "<its standard theme>"` and the dock shows only the standard themes, with Contrast in the menu. Give a dock input `group: "design"` (such as density) to move it into the menu; it is still a lens. Checks that press a `Density, …` button should open the `Design, …` menu instead.
+- The frame's outer line in light is now 14% black instead of 60%.

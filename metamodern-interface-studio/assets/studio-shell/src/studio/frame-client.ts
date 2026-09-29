@@ -9,6 +9,7 @@
  */
 import { PROTOCOL, fingerprint, isShellMessage, type AnchorRect, type FrameBody, type FrameCapability, type MountInputs } from "./protocol"
 import { createFrameSync } from "./frame-sync"
+import { createFrameGestures } from "./frame-gestures"
 
 export type FrameHandlers = {
   /** Materialize the scenario from scratch: state, navigation, theme, profile and inputs. */
@@ -31,8 +32,11 @@ export type FrameHandlers = {
   fingerprint?: (inputs: MountInputs) => Promise<string> | string
 }
 
-/** sync: false keeps this preview out of scroll, click, typing and navigation sync. */
-export type FrameOptions = { allowedOrigins?: string[]; sync?: boolean }
+/**
+ * sync: false keeps this preview out of scroll, click, typing and navigation sync.
+ * gestures: false keeps every scroll, pinch and Space press in the page, so the Studio's stage cannot pan or zoom over it.
+ */
+export type FrameOptions = { allowedOrigins?: string[]; sync?: boolean; gestures?: boolean }
 
 const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
 
@@ -177,7 +181,10 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
   const sync = createFrameSync((event) => post({ type: "interaction", event }), { navigate: handlers.navigate, location: () => state().location, arm: () => (armedAt = performance.now()) })
   const syncCaps: FrameCapability[] = options.sync === false ? [] : ["sync-scroll", "sync-interaction", ...(handlers.navigate ? (["sync-navigation"] as const) : [])]
 
-  post({ type: "hello", capabilities: ["draft-css", "content-size", ...syncCaps] })
+  // Stage navigation that starts over this frame: the part of a scroll the page cannot use, zoom, Space and middle drag.
+  const gestures = options.gestures === false ? null : createFrameGestures((gesture) => post({ type: "gesture", gesture }))
+
+  post({ type: "hello", capabilities: ["draft-css", "content-size", ...syncCaps, ...(gestures ? (["stage-gestures"] as const) : [])] })
 
   return {
     /** Call after product navigation the Studio did not ask for, so it can update location and anchors. */
@@ -191,6 +198,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
     markModified,
     disconnect: () => {
       sync.dispose()
+      gestures?.dispose()
       observer.disconnect()
       sizes.disconnect()
       sizeChanges.disconnect()

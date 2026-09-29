@@ -7,16 +7,16 @@
  * frame so the product never swallows it.
  */
 import * as React from "react"
-import { Background, BackgroundVariant, Controls, MiniMap, NodeToolbar, Position, ReactFlow, ReactFlowProvider, applyNodeChanges, useReactFlow, type Node, type NodeChange, type NodeProps, type Viewport } from "@xyflow/react"
+import { Background, BackgroundVariant, MiniMap, NodeToolbar, Position, ReactFlow, ReactFlowProvider, applyNodeChanges, useReactFlow, useViewport, type Node, type NodeChange, type NodeProps, type Viewport } from "@xyflow/react"
 import "@xyflow/react/dist/base.css"
-import { LayoutGridIcon, Maximize2Icon } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { useStudio } from "@/store"
 import type { ResponsiveFrame } from "@/studio/layouts"
 import type { LiveStatus } from "@/studio/live-preview"
+import { StageGestureContext, type StageGestureHandler } from "@/studio/stage-gestures"
 import { profileOf } from "./preview"
 import { FrameCard } from "./responsive"
+import { OWNS_SPACE, useZoomTarget, wheelFactor, type ZoomApi } from "./stage-nav"
 
 const SNAP = 8
 const snap = (v: number) => Math.round(v / SNAP) * SNAP
@@ -83,16 +83,26 @@ export type CanvasProps = {
   /** Where the row showed each frame when the viewer switched to the canvas, so nothing jumps. Read once, on opening. */
   rowPlacement?: () => { positions: Record<string, { x: number; y: number }>; viewport: Viewport } | null
   onAnnounce: (text: string) => void
+  /** The canvas zoom in percent, for the dock's zoom control. */
+  onZoom: (pct: number) => void
+  /** Filled with the canvas's Tidy, for the Responsive toolbar. */
+  tidyRef: React.MutableRefObject<(() => void) | null>
 }
 
-function CanvasInner({ statuses, onStatus, rowPlacement, onAnnounce }: CanvasProps) {
+const MIN_ZOOM = 0.1
+const MAX_ZOOM = 4
+
+function CanvasInner({ statuses, onStatus, rowPlacement, onAnnounce, onZoom, tidyRef }: CanvasProps) {
   const [placeFromRow] = React.useState(() => rowPlacement?.() ?? null)
   const s = useStudio()
   const r = s.responsive
   const rf = useReactFlow<FrameNode>()
   const setR = React.useCallback((patch: Partial<typeof r>) => s.set((st) => ({ responsive: { ...st.responsive, ...patch, dirty: true } })), [s])
-  const [zoom, setZoom] = React.useState(r.viewport?.zoom ?? placeFromRow?.viewport.zoom ?? 1)
+  const zoom = useViewport().zoom
   const [shield, setShield] = React.useState(false)
+  // Space held, in the Studio or in a frame: the shield stays up so a drag pans from anywhere.
+  const [held, setHeld] = React.useState(false)
+  const pane = React.useRef<HTMLDivElement>(null)
   const labels = React.useRef(new Map<string, HTMLElement>())
   const labelRef = React.useCallback((id: string, el: HTMLElement | null) => {
     if (el) labels.current.set(id, el)
@@ -197,10 +207,6 @@ function CanvasInner({ statuses, onStatus, rowPlacement, onAnnounce }: CanvasPro
   const onKeyDown = (e: React.KeyboardEvent) => {
     const t = e.target as HTMLElement
     if (t.closest("input, textarea, [role=menu]")) return
-    if (e.key === "+" || e.key === "=") return e.preventDefault(), rf.zoomIn({ duration: 0 })
-    if (e.key === "-") return e.preventDefault(), rf.zoomOut({ duration: 0 })
-    if (e.shiftKey && e.key === "!") return e.preventDefault(), rf.fitView({ padding: 0.15, duration: 200 })
-    if (e.shiftKey && e.key === ")") return e.preventDefault(), rf.zoomTo(1, { duration: 200 })
     const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key]
     const id = t.closest("[data-frame-caption]")?.getAttribute("data-frame-caption")
     if (!dir || !id || e.altKey) return
@@ -224,23 +230,105 @@ function CanvasInner({ statuses, onStatus, rowPlacement, onAnnounce }: CanvasPro
     window.setTimeout(() => rf.fitView({ padding: 0.15, duration: 200 }), 50)
   }
 
+  React.useLayoutEffect(() => {
+    tidyRef.current = tidy
+  })
+
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !(e.target as HTMLElement).closest("input, textarea, button, [role=menu]")) setShield(true)
+      if (e.code !== "Space" || e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement).closest?.(OWNS_SPACE)) return
+      e.preventDefault()
+      setHeld(true)
     }
-    const up = (e: KeyboardEvent) => e.code === "Space" && setShield(false)
+    const up = (e: KeyboardEvent) => e.code === "Space" && setHeld(false)
+    const blur = () => setHeld(false)
     window.addEventListener("keydown", down)
     window.addEventListener("keyup", up)
+    window.addEventListener("blur", blur)
     return () => {
       window.removeEventListener("keydown", down)
       window.removeEventListener("keyup", up)
+      window.removeEventListener("blur", blur)
     }
   }, [])
 
+  // A viewport change that is not React Flow's own gesture (keys, the dock, a frame's gesture) is saved once it settles.
+  const saveTimer = React.useRef(0)
+  const saveViewport = React.useCallback(() => {
+    window.clearTimeout(saveTimer.current)
+    saveTimer.current = window.setTimeout(() => {
+      const vp = rf.getViewport()
+      const before = s.responsive.viewport
+      if (!before || Math.abs(before.x - vp.x) > 0.5 || Math.abs(before.y - vp.y) > 0.5 || Math.abs(before.zoom - vp.zoom) > 0.001) setR({ viewport: { x: Math.round(vp.x), y: Math.round(vp.y), zoom: Math.round(vp.zoom * 1000) / 1000 } })
+    }, 250)
+  }, [rf, s.responsive.viewport, setR])
+  React.useEffect(() => () => window.clearTimeout(saveTimer.current), [])
+  const moveTo = React.useCallback(
+    (vp: Viewport) => {
+      rf.setViewport(vp)
+      saveViewport()
+    },
+    [rf, saveViewport]
+  )
+  const zoomAround = React.useCallback(
+    (factor: number, cx?: number, cy?: number) => {
+      const vp = rf.getViewport()
+      const b = pane.current?.getBoundingClientRect()
+      if (!b) return
+      const x = (cx ?? b.left + b.width / 2) - b.left
+      const y = (cy ?? b.top + b.height / 2) - b.top
+      const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, vp.zoom * factor))
+      moveTo({ x: x - ((x - vp.x) * z) / vp.zoom, y: y - ((y - vp.y) * z) / vp.zoom, zoom: z })
+    },
+    [rf, moveTo]
+  )
+
+  // ⌘ or Ctrl with the wheel, or a pinch, zooms at the same rate over empty canvas as over a frame.
+  React.useEffect(() => {
+    const el = pane.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      e.stopPropagation()
+      zoomAround(wheelFactor(e.deltaY * (e.deltaMode === 1 ? 16 : 1)), e.clientX, e.clientY)
+    }
+    el.addEventListener("wheel", onWheel, { capture: true, passive: false })
+    return () => el.removeEventListener("wheel", onWheel, { capture: true })
+  }, [zoomAround])
+
+  // Gestures that began over a frame: pan by the part of a scroll the page could not use, zoom around the pointer.
+  const onGesture = React.useCallback<StageGestureHandler>(
+    (g) => {
+      if (g.kind === "space") return setHeld(g.down)
+      const vp = rf.getViewport()
+      if (g.kind === "drag") return moveTo({ ...vp, x: vp.x + g.dx, y: vp.y + g.dy })
+      if (g.zoom) zoomAround(wheelFactor(g.dy), g.x, g.y)
+      else moveTo({ ...vp, x: vp.x - g.dx, y: vp.y - g.dy })
+    },
+    [rf, moveTo, zoomAround]
+  )
+
+  const api = React.useMemo<ZoomApi>(
+    () => ({
+      zoomIn: () => zoomAround(1.25),
+      zoomOut: () => zoomAround(0.8),
+      fit: () => {
+        rf.fitView({ padding: 0.15, duration: 200 })
+        window.setTimeout(saveViewport, 220)
+      },
+      to: (pct: number) => zoomAround(pct / 100 / rf.getViewport().zoom),
+    }),
+    [rf, zoomAround, saveViewport]
+  )
+  useZoomTarget(api)
+  React.useEffect(() => onZoom(Math.round(zoom * 100)), [zoom, onZoom])
+
+  // A saved layout opens where it was left, and a switch from the row keeps every frame where it was; otherwise the canvas opens with every frame in view.
   const initial = r.viewport ?? placeFromRow?.viewport
-  const pct = Math.round(zoom * 100)
   return (
-    <div className="studio-canvas relative size-full" data-shield={shield || undefined} onKeyDown={onKeyDown}>
+    <StageGestureContext.Provider value={onGesture}>
+    <div ref={pane} className="studio-canvas relative size-full" data-shield={shield || held || undefined} onKeyDown={onKeyDown}>
       <ReactFlow<FrameNode>
         nodes={nodes}
         nodeTypes={nodeTypes}
@@ -248,12 +336,12 @@ function CanvasInner({ statuses, onStatus, rowPlacement, onAnnounce }: CanvasPro
         defaultViewport={initial ?? { x: 0, y: 0, zoom: 1 }}
         fitView={!initial}
         fitViewOptions={{ padding: 0.15 }}
-        minZoom={0.1}
-        maxZoom={2}
+        minZoom={MIN_ZOOM}
+        maxZoom={MAX_ZOOM}
         panOnScroll
         zoomOnScroll={false}
         zoomOnPinch
-        panOnDrag
+        panOnDrag={[0, 1]}
         selectionKeyCode="Shift"
         snapToGrid
         snapGrid={[SNAP, SNAP]}
@@ -264,28 +352,18 @@ function CanvasInner({ statuses, onStatus, rowPlacement, onAnnounce }: CanvasPro
         deleteKeyCode={null}
         proOptions={{ hideAttribution: true }}
         onMoveStart={() => setShield(true)}
-        onMove={(_, vp) => setZoom(vp.zoom)}
         onMoveEnd={(_, vp) => {
           setShield(false)
-          setZoom(vp.zoom)
           const before = s.responsive.viewport
           if (!before || Math.abs(before.x - vp.x) > 0.5 || Math.abs(before.y - vp.y) > 0.5 || Math.abs(before.zoom - vp.zoom) > 0.001) setR({ viewport: { x: Math.round(vp.x), y: Math.round(vp.y), zoom: Math.round(vp.zoom * 1000) / 1000 } })
         }}
         aria-label="Responsive canvas"
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1.2} className="text-stage-muted" color="currentColor" />
-        <MiniMap pannable zoomable className="!bg-background/90 rounded-lg border shadow-sm" maskColor="color-mix(in oklch, var(--foreground) 12%, transparent)" nodeColor="var(--muted-foreground)" ariaLabel="Canvas overview" />
-        <Controls showInteractive={false} className="overflow-hidden rounded-lg border bg-background shadow-sm [&_button]:border-b [&_button]:bg-background [&_button]:text-foreground [&_svg]:fill-current" />
+        {s.options.map && <MiniMap pannable zoomable className="!bg-background/90 rounded-lg border shadow-sm" maskColor="color-mix(in oklch, var(--foreground) 12%, transparent)" nodeColor="var(--muted-foreground)" ariaLabel="Canvas overview" />}
       </ReactFlow>
-      <div className="pointer-events-none absolute inset-x-0 bottom-3 z-10 flex justify-center">
-        <span className="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur" aria-label="Canvas zoom">
-          <span className="tabular-nums">Canvas {pct === 100 ? "at actual size" : `${pct}%`}</span>
-          <Button variant="ghost" size="xs" className="h-5 px-1.5 text-xs" onClick={() => rf.fitView({ padding: 0.15, duration: 200 })}><Maximize2Icon /> Fit view</Button>
-          <Button variant="ghost" size="xs" className="h-5 px-1.5 text-xs" onClick={() => rf.zoomTo(1, { duration: 200 })}>100%</Button>
-          <Button variant="ghost" size="xs" className="h-5 px-1.5 text-xs" onClick={tidy}><LayoutGridIcon /> Tidy</Button>
-        </span>
-      </div>
     </div>
+    </StageGestureContext.Provider>
   )
 }
 

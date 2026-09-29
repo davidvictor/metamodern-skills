@@ -39,6 +39,7 @@ import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
 import { StageControls } from "./chrome"
 import { ScenarioPreview, inspectHandle, profileOf, themeOf, useReportStatus } from "./preview"
 import { ResizeHandles } from "./resize-handles"
+import { StageNav, useStageNav } from "./stage-nav"
 
 /** The grey stage with its controls in the chosen placement. */
 function Stage({ children, controls = true, footer, narrow }: { children: React.ReactNode; controls?: boolean; footer?: React.ReactNode; narrow?: boolean }) {
@@ -79,8 +80,8 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
   const fit = useFit(box, pr.w, pr.h, s.zoom, narrow ? 32 : 64, narrow)
   const scale = frozen?.scale ?? fit
   const set = s.set
-  // The dock's Zoom control states the shown scale, so the stage carries no caption of its own.
-  React.useEffect(() => set({ scale }), [set, scale])
+  // The dock's Zoom control states the shown scale (set by the navigation), so the stage carries no caption of its own.
+  const nav = useStageNav(box, scale)
   const onStatus = React.useCallback(
     (st: LiveStatus | null) => {
       if (st) set({ preview: { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous } })
@@ -105,11 +106,13 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
   )
   return (
     <Stage narrow={narrow}>
-      <div ref={box} className={cn("flex min-h-0 flex-1 flex-col px-4 pt-4", frozen ? "overflow-hidden select-none" : "overflow-auto", dock && !narrow ? "pb-20" : "pb-4")}>
+      <StageNav nav={nav}>
+      <div ref={box} onPointerDown={nav.onPointerDown} className={cn("flex min-h-0 flex-1 flex-col px-4 pt-4", frozen ? "overflow-hidden select-none" : "overflow-auto", dock && !narrow ? "pb-20" : "pb-4")}>
         <div className={cn("mx-auto flex w-max flex-col items-center gap-3", !narrow && "my-auto")}>
         {resizable ? <ResizeHandles w={pr.w} h={pr.h} scale={scale} onDragChange={setFrozen}>{preview}</ResizeHandles> : preview}
         </div>
       </div>
+      </StageNav>
     </Stage>
   )
 }
@@ -151,6 +154,8 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const fitH = Math.max(pa.h, pb.h)
   // The 40 px between two sides is fixed, not scaled, so it comes off the box instead of the preview widths; a narrow profile's caption is wider than its frame, so the profile axis leaves room for it.
   const scale = useFit(box, effectiveMode === "side" ? pa.w + pb.w : fitW, fitH, s.zoom, 64 + (sides - 1) * 40 + (sides === 2 && axis === "profile" ? 56 : 0))
+  // Space flips the sides here, so panning is by scroll and middle drag.
+  const nav = useStageNav(box, scale, { space: false })
   const label = optionLabel
   const setC = (patch: Partial<typeof s.compare>) => s.set({ compare: { ...s.compare, ...patch } })
   const changeAxis = (next: string) => {
@@ -199,6 +204,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
     !st ? null : st.status === "loading" ? <StatusBadge kind="loading">Loading</StatusBadge> : st.status === "error" ? <StatusBadge kind="unresolved">Did not start</StatusBadge> : st.modified ? <StatusBadge kind="modified">Modified</StatusBadge> : <StatusBadge kind="ready">Ready</StatusBadge>
   return (
     <Stage controls={false}>
+      <StageNav nav={nav}>
       <div className="flex flex-wrap items-center justify-center gap-2 px-3 pt-3">
         <div className="flex flex-wrap items-center gap-1 rounded-xl border bg-popover/95 p-1 shadow-[var(--dock-shadow)] backdrop-blur-md">
           <Select value={axis} items={Object.fromEntries(axes.map((x) => [x.id, x.label]))} onValueChange={(v) => v && changeAxis(v as string)}>
@@ -238,7 +244,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           </Badge>
         )}
       </div>
-      <div ref={box} className="flex min-h-0 flex-1 flex-col overflow-auto p-6">
+      <div ref={box} onPointerDown={nav.onPointerDown} className="flex min-h-0 flex-1 flex-col overflow-auto p-6">
        <div className="mx-auto my-auto flex w-max flex-col items-center gap-3">
        <div className="flex items-center justify-center gap-10">
         {effectiveMode === "side" &&
@@ -301,6 +307,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
        )}
        </div>
       </div>
+      </StageNav>
     </Stage>
   )
 }

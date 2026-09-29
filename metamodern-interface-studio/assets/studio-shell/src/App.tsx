@@ -15,6 +15,7 @@ import { CompareStage, GalleryStage, InspectStage, PresentStage, TokensStage } f
 import { DesignStage } from "@/components/studio/design"
 import { ResponsiveStage } from "@/components/studio/responsive"
 import { CommandMenu, ShortcutsDialog } from "@/components/studio/command"
+import { stepZoom, zoomTarget } from "@/components/studio/stage-nav"
 
 function useGlobalKeys() {
   const s = useStudio()
@@ -31,8 +32,18 @@ function useGlobalKeys() {
       // Never steal keys from fields, open dialogs, or a preview frame.
       if (t?.closest("input, textarea, select, [contenteditable='true'], [role='dialog'], [role='menu'], [role='listbox'], iframe")) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (e.shiftKey && e.code === "Digit1") { s.set({ zoom: "fit" }); return }
-      if (e.shiftKey && e.code === "Digit0") { s.set({ zoom: 100 }); return }
+      // Zoom keys act on the stage on screen (a canvas has its own viewport); without one they set the Studio zoom.
+      const z = zoomTarget.current
+      if (e.shiftKey && e.code === "Digit1") { if (z) z.fit(); else s.set({ zoom: "fit" }); return }
+      if (e.shiftKey && e.code === "Digit0") { if (z) z.to(100); else s.set({ zoom: 100 }); return }
+      if ((e.key === "+" || e.key === "=" || e.key === "-") && s.view !== "present") {
+        e.preventDefault()
+        const dir = e.key === "-" ? -1 : 1
+        if (z && dir > 0) z.zoomIn()
+        else if (z) z.zoomOut()
+        else s.set({ zoom: stepZoom(s.scale * 100, dir) })
+        return
+      }
       if (e.key === "/") { e.preventDefault(); s.set({ panelOpen: true }); window.setTimeout(() => (document.querySelector("[data-search]") as HTMLInputElement | null)?.focus(), 60); return }
       if (e.key === "?") { s.set({ shortcutsOpen: true }); return }
       const v = VIEWS.find((x) => x.key === e.key)
@@ -167,9 +178,9 @@ function MobileShell() {
       <div className="relative flex min-h-0 flex-1 flex-col">
         <StageForView narrow />
       </div>
-      {s.view === "inspect" && (
+      {(s.view === "inspect" || s.view === "responsive") && (
         <div className="flex justify-center border-t bg-background px-2 py-1.5">
-          <StageControls variant="toolbar" compact />
+          <StageControls variant="toolbar" compact lookOnly={s.view === "responsive"} />
         </div>
       )}
       <nav aria-label="Views" className="grid border-t bg-background pb-[env(safe-area-inset-bottom)]" style={{ gridTemplateColumns: `repeat(${tabs.length + 2}, minmax(0, 1fr))` }}>
