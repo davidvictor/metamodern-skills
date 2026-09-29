@@ -44,12 +44,13 @@ const layouts = (): Plugin => ({
       }
       if (req.method !== "POST") return send(405, { error: "Use GET or POST" })
       const origin = req.headers.origin
-      let sameOrigin = false
-      try {
-        sameOrigin = !!origin && new URL(origin).host === req.headers.host
-      } catch {
-        sameOrigin = false
-      }
+      const sameOrigin = (() => {
+        try {
+          return !!origin && new URL(origin).host === req.headers.host
+        } catch {
+          return false
+        }
+      })()
       if (!sameOrigin) return send(403, { error: "Only this Studio can save its layouts" })
       if (!/^application\/json\b/.test(req.headers["content-type"] ?? "")) return send(415, { error: "Send JSON" })
       const chunks: Buffer[] = []
