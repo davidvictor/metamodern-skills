@@ -121,6 +121,8 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
     const excluded = matcher(p.apply.exclude)
     const floors = Object.entries(p.apply.floor ?? {}).map(([k, px]) => [matcher([k]), px] as const)
     const warns = Object.entries(p.apply.warnBelow ?? {}).map(([k, px]) => [matcher([k]), px] as const)
+    // Parameters compose in declaration order: a later one scales what an earlier one produced.
+    const current = (name: string) => out.tokens[name] ?? baseValue(adapter, name, theme)
     const put = (name: string, value: string | undefined) => {
       if (value === undefined) return
       let next = value
@@ -133,7 +135,7 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
       if (next !== baseValue(adapter, name, theme)) {
         out.tokens[name] = next
         change.tokens.push(name)
-      }
+      } else delete out.tokens[name]
     }
 
     if (p.kind === "scale") {
@@ -153,7 +155,7 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
           else if (hi) put(name, scaleValue(hi.values![name], x / hi.at, p.apply.unitless))
           continue
         }
-        const base = baseValue(adapter, name, theme)
+        const base = current(name)
         if (base === undefined) change.missing.push(name)
         else put(name, scaleValue(base, x / d, p.apply.unitless))
       }
@@ -161,7 +163,7 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
     } else if (p.kind === "ratio") {
       const factor = Number(v) / Number(p.default)
       for (const [name, step] of Object.entries(p.apply.steps ?? {})) {
-        const base = baseValue(adapter, name, theme)
+        const base = current(name)
         if (base === undefined) change.missing.push(name)
         else if (step !== 0) put(name, scaleValue(base, factor ** step, p.apply.unitless))
       }
@@ -174,6 +176,15 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
       }
       const sheet = fontStylesheet(name)
       if (sheet && !out.stylesheets.includes(sheet)) out.stylesheets.push(sheet)
+    } else if (p.kind === "temperature") {
+      const x = Math.max(-1, Math.min(1, Number(v)))
+      const toward = x > 0 ? "#ff9a3c" : "#3c8cff"
+      const pct = Math.round(Math.abs(x) * (p.apply.amount ?? 12) * 10) / 10
+      for (const token of p.apply.set ?? []) {
+        const base = current(token)
+        if (base === undefined) change.missing.push(token)
+        else put(token, `color-mix(in oklch, ${base}, ${toward} ${pct}%)`)
+      }
     } else if (p.kind === "color") {
       const color = String(v).trim()
       if (!CSS.supports("color", color)) {
@@ -216,7 +227,7 @@ export function decodeDesign(adapter: StudioAdapter, text: string | null): Desig
     const p = adapter.design?.parameters.find((x) => x.id === part.slice(0, i))
     const raw = part.slice(i + 1)
     if (!p) continue
-    if (p.kind === "scale" || p.kind === "ratio") {
+    if (p.kind === "scale" || p.kind === "ratio" || p.kind === "temperature") {
       const n = Number(raw)
       if (Number.isFinite(n) && (p.min === undefined || n >= p.min) && (p.max === undefined || n <= p.max)) out[p.id] = n
     } else if (raw.trim()) out[p.id] = raw.trim()

@@ -134,8 +134,11 @@ export type TokenSet = {
 export type DesignParameter = {
   id: string
   label: string
-  /** scale: multiplies lengths. ratio: a type scale ratio. font: a typeface. color: a color. */
-  kind: "scale" | "ratio" | "font" | "color"
+  /**
+   * scale: multiplies lengths. ratio: a type scale ratio. font: a typeface. color: a color.
+   * temperature: from cool (-1) to warm (1), mixed into neutral tokens.
+   */
+  kind: "scale" | "ratio" | "font" | "color" | "temperature"
   /** The value the product is built with: a number for scale and ratio, a font name or color for font and color. */
   default: number | string
   min?: number
@@ -153,7 +156,7 @@ export type DesignParameter = {
     scale?: string[]
     /** ratio: type tokens and their step on the scale (0 for the base size, 1 for one step up, -1 for one down). */
     steps?: Record<string, number>
-    /** font and color: tokens set to the value. */
+    /** font and color: tokens set to the value. temperature: the neutral tokens it tints. */
     set?: string[]
     /** color: tokens derived from the value, each a CSS expression using $value, such as `color-mix(in oklch, $value 12%, white)`. */
     derive?: Record<string, string>
@@ -167,6 +170,8 @@ export type DesignParameter = {
     floor?: Record<string, number>
     /** Warn when a token ends below this size in px, such as 12 for text. */
     warnBelow?: Record<string, number>
+    /** temperature: the most a neutral is mixed toward warm or cool, in percent. Defaults to 12. */
+    amount?: number
     /** color: tokens the value must stay readable against, with the least contrast ratio. */
     contrast?: { against: string[]; min: number }
   }

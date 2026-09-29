@@ -29,6 +29,7 @@ const tokens: Token[] = [
   t("--ex-space", "Radius and density", "16px", "16px", { reads: 7 }),
   t("--ex-text", "Type", "15px", "15px", { reads: 1 }),
   t("--ex-title", "Type", "24px", "24px", { reads: 1 }),
+  t("--ex-leading", "Type", "1.45", "1.45", { reads: 1 }),
   t("--ex-font", "Type", 'ui-rounded, "SF Pro Rounded", system-ui, sans-serif', 'ui-rounded, "SF Pro Rounded", system-ui, sans-serif', { reads: 1 }),
 ]
 const families = [...new Set(tokens.map((x) => x.family))].map((name) => ({ name, count: tokens.filter((x) => x.family === name).length }))
@@ -122,8 +123,11 @@ export const exampleAdapter: StudioAdapter = {
       { id: "radius", label: "Corner radius", kind: "scale", default: 1, min: 0, max: 2, step: 0.05, apply: { scale: ["--ex-radius"] } },
       { id: "body-font", label: "Typeface", kind: "font", default: "system-ui", options: ["Inter", "IBM Plex Sans", "Source Serif 4", "Georgia"], apply: { set: ["--ex-font"] }, note: "Google Fonts only; the font loads in the preview frame." },
       { id: "type-scale", label: "Type scale", kind: "ratio", default: 1.6, min: 1.2, max: 2, step: 0.01, apply: { steps: { "--ex-title": 1 }, warnBelow: { "--ex-title": 18 } } },
-      { id: "text-size", label: "Text size", kind: "scale", default: 1, min: 0.8, max: 1.25, step: 0.01, apply: { scale: ["--ex-text", "--ex-title"], warnBelow: { "--ex-text": 12 } } },
+      { id: "text-size", label: "Text size", kind: "scale", default: 1, min: 0.75, max: 1.25, step: 0.01, apply: { scale: ["--ex-text", "--ex-title"], warnBelow: { "--ex-text": 12 } } },
+      { id: "leading", label: "Line height", kind: "scale", default: 1, min: 0.85, max: 1.3, step: 0.01, apply: { scale: ["--ex-leading"], unitless: true } },
+      { id: "neutral", label: "Neutral temperature", kind: "temperature", default: 0, min: -1, max: 1, step: 0.05, apply: { set: ["--ex-ground", "--ex-surface", "--ex-line"] }, note: "Tints the grounds and lines toward warm or cool." },
       { id: "primary", label: "Primary color", kind: "color", default: "#0f766e", apply: { set: ["--ex-primary"], derive: { "--ex-accent": "color-mix(in oklch, $value 18%, white)" }, contrast: { against: ["--ex-primary-ink"], min: 4.5 } }, note: "Contrast is checked against the text on primary buttons." },
+      { id: "accent", label: "Accent color", kind: "color", default: "#ccfbf1", note: "Set after Primary, so it wins over the accent Primary derives.", apply: { set: ["--ex-accent"], contrast: { against: ["--ex-ink"], min: 4.5 } } },
     ],
   },
   comparisons: [{ id: "list-light-dark", label: "Today in Light and Dark", scenario: "tasks.list", a: "light", b: "dark" }],

@@ -16,19 +16,20 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { adapter } from "@/adapter"
 import { NO_DRAFT, useStudio } from "@/store"
-import { isDefault } from "@/studio/design"
+import { allowedStylesheet, baseValue, isDefault, toPx } from "@/studio/design"
 import type { DesignParameter } from "@/studio/types"
 import { ScaleChip, StatusBadge, useFit } from "./bits"
 import { ScenarioPreview, sizedProfile, useReportStatus } from "./preview"
 
 const params = () => adapter.design?.parameters ?? []
-const readout = (p: DesignParameter, v: number | string) => (p.kind === "scale" ? `${Number(v).toFixed(2)}×` : p.kind === "ratio" ? Number(v).toFixed(3) : String(v))
+const readout = (p: DesignParameter, v: number | string) =>
+  p.kind === "scale" ? `${Number(v).toFixed(2)}×` : p.kind === "ratio" ? Number(v).toFixed(3) : p.kind === "temperature" ? (Number(v) === 0 ? "Neutral" : `${Number(v) > 0 ? "Warm" : "Cool"} ${Math.abs(Number(v)).toFixed(2)}`) : String(v)
 
 function ScaleControl({ p }: { p: DesignParameter }) {
   const s = useStudio()
   const v = Number(s.design.values[p.id] ?? p.default)
-  const min = p.min ?? 0.5
-  const max = p.max ?? 2
+  const min = p.min ?? (p.kind === "temperature" ? -1 : 0.5)
+  const max = p.max ?? (p.kind === "temperature" ? 1 : 2)
   const step = p.step ?? 0.01
   const places = (String(step).split(".")[1] ?? "").length
   const set = (n: number) => s.setDesign({ values: { ...s.design.values, [p.id]: Number((Math.round(n / step) * step).toFixed(places)) } })
@@ -152,6 +153,59 @@ export function AdjustPanel() {
   )
 }
 
+/**
+ * The type specimen beside the screen: each typeface the draft sets, and each size on the type scale,
+ * drawn in this Studio from the same draft values. Fonts load from Google Fonts only.
+ */
+function Specimen() {
+  const s = useStudio()
+  const d = s.designFor(s.theme)
+  const fonts = params().filter((p) => p.kind === "font")
+  const sized = params().filter((p) => p.kind === "ratio").flatMap((p) => Object.entries(p.apply.steps ?? {}).sort((a, b) => b[1] - a[1]).map(([name]) => name))
+  const base = params().filter((p) => p.kind === "scale" && (p.apply.scale ?? []).some((n) => sized.includes(n))).flatMap((p) => (p.apply.scale ?? []).filter((n) => !sized.includes(n) && !n.includes("*")))
+  const sizes = [...new Set([...sized, ...base])]
+  const family = fonts.map((p) => String(s.design.values[p.id] ?? p.default))[0]
+  React.useEffect(() => {
+    const links = d.stylesheets.filter(allowedStylesheet).map((href) => {
+      const link = Object.assign(document.createElement("link"), { rel: "stylesheet", href })
+      link.dataset.specimen = ""
+      document.head.append(link)
+      return link
+    })
+    return () => links.forEach((l) => l.remove())
+  }, [d.stylesheets])
+  if (!fonts.length && !sizes.length) return null
+  const value = (name: string) => d.tokens[name] ?? baseValue(adapter, name, s.theme)
+  return (
+    <aside className="w-60 shrink-0 rounded-xl border bg-background p-4 text-foreground shadow-sm" aria-label="Type specimen">
+      <h3 className="mb-3 text-xs font-medium text-muted-foreground">Type specimen</h3>
+      {fonts.map((p) => {
+        const name = String(s.design.values[p.id] ?? p.default)
+        return (
+          <div key={p.id} className="mb-3 grid gap-1">
+            <span className="text-[11px] text-muted-foreground">{p.label} · {name}</span>
+            <p className="text-lg leading-snug" style={{ fontFamily: `"${name}", system-ui` }}>Pack my box with five dozen liquor jugs</p>
+          </div>
+        )
+      })}
+      {!!sizes.length && (
+        <ul className="grid gap-2 border-t pt-3">
+          {sizes.map((name) => {
+            const v = value(name)
+            const px = v ? toPx(v) : null
+            return (
+              <li key={name} className="grid gap-0.5">
+                <span className={cn("font-mono text-[11px] text-muted-foreground", d.tokens[name] && "text-info")}>{name} {v ?? "not in the token source"}</span>
+                {px !== null && <span className="truncate leading-tight" style={{ fontSize: Math.min(px, 40), fontFamily: family ? `"${family}", system-ui` : undefined }}>Aa Quarterly plan</span>}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </aside>
+  )
+}
+
 /** Adjust's stage: the product as built, the draft, or both side by side, at one scale. */
 export function DesignStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
@@ -162,7 +216,8 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
   const pr = sizedProfile(s.profile, null)
   const box = React.useRef<HTMLDivElement>(null)
   const sides = show === "split" ? 2 : 1
-  const scale = useFit(box, pr.w * sides, pr.h, s.zoom, 64 + (sides - 1) * 32)
+  const specimen = !narrow && params().some((p) => p.kind === "font" || p.kind === "ratio")
+  const scale = useFit(box, pr.w * sides, pr.h, s.zoom, 64 + (sides - 1) * 32 + (specimen ? 272 : 0))
   const peekOn = { onPointerDown: () => setPeek(true), onPointerUp: () => setPeek(false), onPointerLeave: () => setPeek(false), onKeyDown: (e: React.KeyboardEvent) => (e.key === " " || e.key === "Enter") && (e.preventDefault(), setPeek(true)), onKeyUp: () => setPeek(false), onBlur: () => setPeek(false) }
   const one = (kind: "draft" | "built") => (
     <div className="relative flex flex-col items-center gap-2">
@@ -195,6 +250,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
             ) : (
               one(show)
             )}
+            {!narrow && <Specimen />}
           </div>
           <ScaleChip w={pr.w} h={pr.h} scale={scale} />
           <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">A draft is exploration. It shows here only, travels in the link, and never changes the product or a walkthrough.</p>

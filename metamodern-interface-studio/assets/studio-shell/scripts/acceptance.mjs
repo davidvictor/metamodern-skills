@@ -675,6 +675,61 @@ await check("AC-44", async () => {
   return [ok ? "pass" : "fail", `as built --ex-row ${built}; marks ${marks.join(", ")}; Compact mark gave ${compact.join(" and ")}; draft badge ${badge}; 0.90 gave ${between} (between the marks); frame document kept: ${kept}; holding As built showed ${peeked}, release ${released}; link design=${link}; after reload readout ${readout} and ${reloaded}; Present frame override "${presented}"; old view=tokens link opens the Tokens tab ${tokensTab} (tab=${tab}, pressed ${pressed})`]
 })
 
+const designFrame = (p) => p.frames().find((f) => f !== p.mainFrame() && f.url().includes("example"))
+const frameProp = (p, name) => designFrame(p).evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name)
+
+// AC-45 Typography: typefaces from Google Fonts only, type scale and base size compose, line height, a specimen, and size warnings
+await check("AC-45", async () => {
+  const p = await open("normal", { hash: "view=design&scenario=tasks.list&profile=desktop&design=type-scale:1.9;text-size:0.75;leading:1.2" })
+  await wait(1200)
+  const title = await frameProp(p, "--ex-title")
+  const text = await frameProp(p, "--ex-text")
+  const leading = await frameProp(p, "--ex-leading")
+  const warning = await p.getByText(/--ex-text is 11\.25px, under 12px/).isVisible()
+  await p.getByLabel("Typeface, any Google Font name").fill("Inter")
+  await p.keyboard.press("Enter")
+  await wait(800)
+  const font = await designFrame(p).evaluate(() => getComputedStyle(document.body).fontFamily)
+  const specimen = await p.getByRole("complementary", { name: "Type specimen" }).innerText()
+  // A stylesheet from any other host is never loaded, even if a message asks for it.
+  await p.evaluate(() => {
+    const f = [...document.querySelectorAll("iframe")].find((x) => x.style.opacity !== "0" && x.className.includes("opacity-100"))
+    f.contentWindow.postMessage({ protocol: "studio-preview/1", instance: f.name, type: "draft-overrides", requestId: "probe", tokens: {}, css: "", stylesheets: ["https://example.com/font.css", "https://fonts.googleapis.com/css2?family=Inter&display=swap"] }, "*")
+  })
+  await wait(500)
+  const links = await designFrame(p).evaluate(() => [...document.querySelectorAll("link[data-studio-draft]")].map((l) => new URL(l.href).host))
+  await p.getByRole("combobox", { name: "Typeface typeface" }).click()
+  await p.getByRole("option", { name: "Georgia" }).click()
+  await wait(800)
+  const local = await designFrame(p).evaluate(() => [getComputedStyle(document.body).fontFamily, document.querySelectorAll("link[data-studio-draft]").length])
+  await p.closeAll()
+  const ok = title === "21.38px" && text === "11.25px" && leading === "1.74" && warning && /^Inter,/.test(font) && /Typeface · Inter/.test(specimen) && links.length === 1 && links[0] === "fonts.googleapis.com" && /^Georgia,/.test(local[0]) && local[1] === 0
+  return [ok ? "pass" : "fail", `type scale 1.9 then text size 0.75 gave --ex-title ${title} and --ex-text ${text}; line height 1.2 gave ${leading}; size warning shown ${warning}; Inter reached the body as ${font.split(",")[0]}; specimen lists ${specimen.split("\n")[1]}; draft stylesheet hosts after a request for two: ${links.join(", ")}; Georgia (local) gave ${local[0].split(",")[0]} with ${local[1]} stylesheets`]
+})
+
+// AC-46 Color: brand and accent colors, derived tokens follow, contrast is checked against the product's own grounds, fixed values are listed, neutral temperature tints grounds
+await check("AC-46", async () => {
+  const p = await open("normal", { hash: "view=design&scenario=tasks.list&profile=desktop&design=primary:%23b91c1c;neutral:1" })
+  await wait(1200)
+  const primary = await frameProp(p, "--ex-primary")
+  const accent = await frameProp(p, "--ex-accent")
+  const ground = await frameProp(p, "--ex-ground")
+  const fixed = await p.getByText(/Won’t follow \(fixed values\)/).innerText()
+  const before = await p.getByText(/:1 against --ex-primary-ink/).count()
+  await p.getByLabel("Primary color", { exact: true }).fill("#9ca3af")
+  await p.keyboard.press("Enter")
+  await wait(600)
+  const warn = await p.getByText(/:1 against --ex-primary-ink, under 4\.5:1/).innerText().catch(() => "")
+  await p.getByLabel("Accent color", { exact: true }).fill("#1e3a8a")
+  await p.keyboard.press("Enter")
+  await wait(600)
+  const accent2 = await frameProp(p, "--ex-accent")
+  const accentWarn = await p.getByText(/:1 against --ex-ink, under 4\.5:1/).count()
+  await p.closeAll()
+  const ok = primary === "#b91c1c" && /^color-mix\(in oklch, #b91c1c 18%, white\)$/.test(accent) && /^color-mix\(in oklch, #fafaf9, #ff9a3c 12%\)$/.test(ground) && /--ex-focus/.test(fixed) && before === 0 && /^Primary color: \d\.\d:1/.test(warn) && accent2 === "#1e3a8a" && accentWarn === 1
+  return [ok ? "pass" : "fail", `primary ${primary}, derived accent ${accent}; warm neutral ground ${ground}; ${fixed}; a readable primary warns ${before} times, a grey primary warns "${warn}"; an accent set after the primary wins (${accent2}) and is checked against --ex-ink (${accentWarn} warning)`]
+})
+
 await browser.close()
 for (const s of Object.values(servers)) s.server.close()
 writeFileSync(join(root, "acceptance-report.json"), JSON.stringify({ at: new Date().toISOString(), results }, null, 2) + "\n")

@@ -16,6 +16,7 @@
   --ex-row: 48px;
   --ex-space: 16px;
   --ex-text: 15px;
+  --ex-leading: 1.45;
   --ex-title: 24px;
   --ex-font: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
   color-scheme: light;
@@ -39,7 +40,7 @@
 
 * { box-sizing: border-box; }
 html, body, #app { margin: 0; height: 100%; }
-body { background: var(--ex-ground); color: var(--ex-ink); font: var(--ex-text)/1.45 var(--ex-font); }
+body { background: var(--ex-ground); color: var(--ex-ink); font: var(--ex-text)/var(--ex-leading) var(--ex-font); }
 button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: none; box-shadow: var(--ex-focus); }
