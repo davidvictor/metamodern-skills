@@ -153,6 +153,7 @@ function MobileShell() {
   React.useEffect(() => {
     if (once.current) return
     once.current = true
+    if (adapter.axes.defaultProfile) return
     const phone = adapter.axes.profiles.find((p) => p.kind === "phone")
     if (phone && adapter.axes.profiles.find((p) => p.id === s.profile)?.kind !== "phone") s.setProfile(phone.id)
   }, [s])

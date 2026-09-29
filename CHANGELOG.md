@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.6.0 — 2026-09-29
+
+- Interface Studio 0.4.0: profiles become a range of sizes. The dock's profile icons become one Size menu grouped by profile kind (phone, tablet, laptop, desktop), and with a live frame and `axes.resizable` Inspect's frame can be dragged by its right edge, bottom edge or corner to any size. Edges snap to profile sizes and adapter breakpoints, the scale is frozen during a drag, a readout names the profile a drag lands on, the size travels in the link, the handles are keyboard sliders, and a double-click returns to the profile. The frame is resized in place, so a product must lay itself out from its own viewport.
+- Fix the Gallery size slider under a pointer drag (Base UI passes a number, not an array). Compare gains Profile and scenario-input axes and reports the pair's state instead of a stale Loading. Add `axes.defaultProfile`, `product.brandDefault` and an optional `product.markSvg` drawn on a solid brand tile.
+- The walkthrough player's All steps opens a step list that works with the side panel closed. On a phone the header actions fold behind one trigger that slides them out, and the mark's tile stays square. In dark appearance the frame's inner keyline is a faint hairline; corner ticks carry the 3:1 boundary.
+- Acceptance grows to AC-01 to AC-15 (AC-10 now measures light and dark separately, and adds AC-12 Gallery zoom, AC-13 size and resize, AC-14 All steps, AC-15 phone header). All fifteen pass for the starter; swipe, real devices, more than two Compare sides, and real-product integration remain unverified.
+
 ## 1.5.0 — 2026-09-28
 
 - Interface Studio 0.3.0: the shell starter now meets its own scale criteria. The catalog and walkthrough step list are windowed lists with one tab stop, arrow keys and type-ahead; the token grid is windowed and folds families over 60; walkthroughs past 24 steps use one progress bar with marks for broken steps and an All steps list.

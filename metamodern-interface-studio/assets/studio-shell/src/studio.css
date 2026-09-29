@@ -5,16 +5,16 @@
  * Products never share this document: previews run in their own frames.
  */
 :root {
-  /* One neutral grey, identical in light and dark: the surround every preview is judged against. */
-  --stage: oklch(0.6 0.003 250);
-  --stage-foreground: oklch(0.99 0 0);
-  --stage-muted: oklch(0.93 0 0 / 0.78);
-  --stage-grid: oklch(1 0 0 / 0.07);
+  /* The surround every preview is judged against: lighter than the Studio in light appearance, darker in dark. */
+  --stage: oklch(0.93 0.003 250);
+  --stage-foreground: oklch(0.22 0 0);
+  --stage-muted: oklch(0.3 0 0 / 0.8);
+  --stage-grid: oklch(0 0 0 / 0.06);
   /* Two keylines: a white one against dark or grey edges, a dark one against light edges, so any product edge reaches 3:1 against one of them. */
   --boundary-inner: oklch(1 0 0);
   --boundary: oklch(0 0 0 / 0.6);
-  --tick: oklch(0.98 0 0 / 0.9);
-  --anchor: oklch(0.62 0.19 256);
+  --tick: oklch(0.25 0 0 / 0.85);
+  --anchor: oklch(0.54 0.2 256);
   --anchor-foreground: oklch(0.99 0 0);
 
   --success: oklch(0.52 0.12 152);
@@ -35,6 +35,14 @@
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 .dark {
+  --stage: oklch(0.19 0.004 250);
+  --stage-foreground: oklch(0.96 0 0);
+  --stage-muted: oklch(0.96 0 0 / 0.72);
+  --stage-grid: oklch(1 0 0 / 0.055);
+  --tick: oklch(0.98 0 0 / 0.9);
+  /* A hairline that separates the frame from the stage without shouting; the ticks still mark the corners. */
+  --boundary-inner: oklch(1 0 0 / 0.14);
+  --boundary: oklch(0 0 0 / 0.5);
   --anchor: oklch(0.72 0.15 256);
   --success: oklch(0.8 0.12 152);
   --success-surface: oklch(0.3 0.05 152);
@@ -65,7 +73,7 @@
   --ease-out-quint: var(--ease-out-quint);
 }
 
-/* The stage: calibrated grey with a faint measuring grid. */
+/* The stage: a neutral grey surface with a faint measuring grid. */
 .stage-surface {
   background-color: var(--stage);
   background-image:

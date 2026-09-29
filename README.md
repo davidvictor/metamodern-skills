@@ -90,7 +90,7 @@ In Codex, invoke `$metamodern-shape-prompt`. In Claude Code, use `/metamodern-sh
 
 ## Build an Interface Studio
 
-[Interface Studio](./metamodern-interface-studio/SKILL.md) helps an agent build and maintain a review environment around your existing application and UI kit. It reuses product components and behavior where practical, adds reproducible scenarios, and keeps presenter material separate from generated source mappings. It includes a manifest validator and a product-neutral Studio shell starter: a grey review stage with an icon rail, contextual panels, and Inspect, Compare, Gallery, Present, and Tokens views, built on shadcn (Base UI, Rhea style). A synthetic example product runs inside it until you connect your own through a small adapter and an isolated preview frame.
+[Interface Studio](./metamodern-interface-studio/SKILL.md) helps an agent build and maintain a review environment around your existing application and UI kit. It reuses product components and behavior where practical, adds reproducible scenarios, and keeps presenter material separate from generated source mappings. It includes a manifest validator and a product-neutral Studio shell starter: a grey review stage with an icon rail, contextual panels, and Inspect, Compare, Gallery, Present, and Tokens views, built on shadcn (Base UI, Rhea style), with a Size menu of device profiles and a draggable Inspect frame. A synthetic example product runs inside it until you connect your own through a small adapter and an isolated preview frame.
 
 Install just this skill for Codex and Claude Code:
 

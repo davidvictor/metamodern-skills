@@ -1,0 +1,176 @@
+import * as React from "react"
+
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { adapter } from "@/adapter"
+import { useStudio } from "@/store"
+import { profileOf } from "./preview"
+
+type Edge = "e" | "s" | "se"
+
+/** How close, in displayed pixels, the dragged edge must come to a known width or height to be drawn to it. */
+const SNAP_PX = 8
+
+const nearest = (v: number, list: number[], tol: number) => {
+  let best: number | null = null
+  for (const x of list) if (Math.abs(x - v) <= tol && (best === null || Math.abs(x - v) < Math.abs(best - v))) best = x
+  return best
+}
+
+/**
+ * Drag handles on the right edge, the bottom edge and the corner of the Inspect frame.
+ *
+ * The frame stays centred, so an edge follows the pointer by changing that dimension by twice the
+ * distance from the frame's centre. The displayed scale is frozen while dragging (`onDragChange`),
+ * so the handle does not slide out from under the pointer as Fit recomputes; it refits on release.
+ * The frame is never remounted: the product just sees its window change size.
+ *
+ * Widths and heights are drawn to the profiles' own sizes (and the adapter's breakpoints) unless
+ * Shift is held. Releasing on exactly a profile's size selects that profile.
+ */
+export function ResizeHandles({ w, h, scale, onDragChange, children }: { w: number; h: number; scale: number; onDragChange: (frozen: { scale: number } | null) => void; children: React.ReactNode }) {
+  const s = useStudio()
+  const lim = adapter.axes.resizable!
+  const base = profileOf(s.profile)
+  const wrap = React.useRef<HTMLDivElement>(null)
+  const drag = React.useRef<{ edge: Edge; cx: number; cy: number; gx: number; gy: number; scale: number; next: { w: number; h: number }; frame: number } | null>(null)
+  const [active, setActive] = React.useState<Edge | null>(null)
+  const [readout, setReadout] = React.useState<{ w: number; h: number; name?: string } | null>(null)
+
+  const widths = React.useMemo(() => [...new Set([...adapter.axes.profiles.map((p) => p.w), ...(lim.snapWidths ?? [])])], [lim.snapWidths])
+  const heights = React.useMemo(() => [...new Set(adapter.axes.profiles.map((p) => p.h))], [])
+  React.useEffect(() => {
+    if (!active) return
+    document.body.style.cursor = active === "e" ? "ew-resize" : active === "s" ? "ns-resize" : "nwse-resize"
+    return () => {
+      document.body.style.cursor = ""
+    }
+  }, [active])
+  const clamp = (v: number, lo: number, hi: number) => Math.round(Math.min(hi, Math.max(lo, v)))
+  const presetAt = (pw: number, ph: number) => {
+    const same = adapter.axes.profiles.filter((p) => p.w === pw && p.h === ph)
+    return same.find((p) => p.id === s.profile) ?? same[0]
+  }
+  const apply = (nw: number, nh: number) => {
+    const size = { w: clamp(nw, lim.min.w, lim.max.w), h: clamp(nh, lim.min.h, lim.max.h) }
+    s.setSize(size.w === base.w && size.h === base.h ? null : size)
+    return size
+  }
+
+  const begin = (e: React.PointerEvent<HTMLElement>) => {
+    const edge = e.currentTarget.dataset.edge as Edge
+    if (e.button !== 0 || !wrap.current) return
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    const r = wrap.current.getBoundingClientRect()
+    // gx/gy: where inside the handle it was grabbed, so the edge does not jump to the pointer.
+    drag.current = { edge, cx: r.left + r.width / 2, cy: r.top + r.height / 2, gx: e.clientX - r.right, gy: e.clientY - r.bottom, scale, next: { w, h }, frame: 0 }
+    setActive(edge)
+    onDragChange({ scale })
+  }
+  const move = (e: React.PointerEvent<HTMLElement>) => {
+    const d = drag.current
+    if (!d) return
+    const { clientX, clientY, shiftKey } = e
+    if (d.frame) cancelAnimationFrame(d.frame)
+    d.frame = requestAnimationFrame(() => {
+      let nw = d.edge === "s" ? d.next.w : clamp((2 * (clientX - d.gx - d.cx)) / d.scale, lim.min.w, lim.max.w)
+      let nh = d.edge === "e" ? d.next.h : clamp((2 * (clientY - d.gy - d.cy)) / d.scale, lim.min.h, lim.max.h)
+      if (!shiftKey) {
+        // The frame is centred, so an edge moves half as far as the size changes.
+        const tol = (2 * SNAP_PX) / d.scale
+        if (d.edge !== "s") nw = nearest(nw, widths, tol) ?? nw
+        if (d.edge !== "e") nh = nearest(nh, heights, tol) ?? nh
+      }
+      const size = apply(nw, nh)
+      d.next = size
+      setReadout({ ...size, name: presetAt(size.w, size.h)?.label })
+    })
+  }
+  const end = () => {
+    const d = drag.current
+    if (!d) return
+    cancelAnimationFrame(d.frame)
+    drag.current = null
+    // Landing exactly on a profile's size selects it, so the toolbar names it and its input context applies.
+    const hit = presetAt(d.next.w, d.next.h)
+    if (hit && hit.id !== s.profile) s.setProfile(hit.id)
+    else if (hit) s.setSize(null)
+    setActive(null)
+    setReadout(null)
+    onDragChange(null)
+  }
+  const nudge = (axis: "w" | "h") => (e: React.KeyboardEvent<HTMLElement>) => {
+    const dir = axis === "w" ? (e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0) : e.key === "ArrowDown" ? 1 : e.key === "ArrowUp" ? -1 : 0
+    if (!dir) return
+    e.preventDefault()
+    const step = (e.shiftKey ? 10 : 1) * dir
+    apply(axis === "w" ? w + step : w, axis === "h" ? h + step : h)
+  }
+  const reset = () => s.setSize(null)
+
+  const grip = "bg-[color-mix(in_oklch,var(--stage-foreground)_38%,transparent)] transition-colors group-hover:bg-[color-mix(in_oklch,var(--stage-foreground)_80%,transparent)] group-focus-visible:bg-(--stage-foreground) group-data-[active=true]:bg-(--anchor)"
+  const common = { onPointerMove: move, onPointerUp: end, onPointerCancel: end, onDoubleClick: reset }
+
+  return (
+    <div ref={wrap} className="relative">
+      {children}
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label="Frame width"
+        aria-orientation="horizontal"
+        aria-valuemin={lim.min.w}
+        aria-valuemax={lim.max.w}
+        aria-valuenow={w}
+        aria-valuetext={`${w} pixels`}
+        title="Drag to resize. Double-click to return to the profile's size."
+        data-active={active === "e" || active === "se"}
+        className="group absolute inset-y-0 -right-5 flex w-5 cursor-ew-resize touch-none items-center pl-1.5 outline-none"
+        {...common}
+        data-edge="e"
+        onPointerDown={begin}
+        onKeyDown={nudge("w")}
+      >
+        <i className={cn("h-10 w-1 rounded-full group-focus-visible:ring-2 group-focus-visible:ring-ring", grip)} />
+      </div>
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label="Frame height"
+        aria-orientation="vertical"
+        aria-valuemin={lim.min.h}
+        aria-valuemax={lim.max.h}
+        aria-valuenow={h}
+        aria-valuetext={`${h} pixels`}
+        title="Drag to resize. Double-click to return to the profile's size."
+        data-active={active === "s" || active === "se"}
+        className="group absolute inset-x-0 -bottom-5 flex h-5 cursor-ns-resize touch-none justify-center pt-1.5 outline-none"
+        {...common}
+        data-edge="s"
+        onPointerDown={begin}
+        onKeyDown={nudge("h")}
+      >
+        <i className={cn("h-1 w-10 rounded-full group-focus-visible:ring-2 group-focus-visible:ring-ring", grip)} />
+      </div>
+      <div
+        aria-hidden
+        data-active={active === "se"}
+        className="group absolute -right-5 -bottom-5 flex size-5 cursor-nwse-resize touch-none items-start justify-start pt-1.5 pl-1.5"
+        {...common}
+        data-edge="se"
+        onPointerDown={begin}
+      >
+        <i className={cn("size-1.5 rounded-full", grip)} />
+      </div>
+      {readout && (
+        <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
+          <Badge className="h-6 gap-1.5 px-2.5 text-xs tabular-nums shadow-md">
+            {readout.w} × {readout.h}
+            {readout.name && <span className="opacity-70">· {readout.name}</span>}
+          </Badge>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -63,7 +63,7 @@ test('modified is a state set by real changes, not a click count', () => {
 
 test('acceptance script covers every shell criterion', () => {
   const script = read('scripts/acceptance.mjs');
-  for (let i = 1; i <= 11; i++) assert.match(script, new RegExp(`"AC-${String(i).padStart(2, '0')}"`), `AC-${i} is not checked`);
+  for (let i = 1; i <= 15; i++) assert.match(script, new RegExp(`"AC-${String(i).padStart(2, '0')}"`), `AC-${i} is not checked`);
   assert.match(read('package.json'), /"acceptance": "node scripts\/acceptance\.mjs"/);
   assert.doesNotMatch(read('package.json'), /"playwright"/, 'Playwright stays optional');
 });
@@ -79,4 +79,13 @@ test('starter documents local edits and the shell reference exists', () => {
   assert.match(read('src/components/ui/select.tsx'), /alignItemWithTrigger = false/);
   const refs = fileURLToPath(new URL('../metamodern-interface-studio/references/', import.meta.url));
   for (const name of ['shell.md', 'frame-protocol.md']) assert.ok(existsSync(join(refs, name)), `${name} is missing`);
+});
+
+test('the frame can be resized in place and the Size menu lists every profile', () => {
+  const handles = read('src/components/studio/resize-handles.tsx');
+  assert.match(handles, /aria-label="Frame width"/);
+  assert.match(handles, /aria-label="Frame height"/);
+  assert.match(read('src/studio/types.ts'), /export type Resizable/);
+  assert.match(read('src/components/studio/chrome.tsx'), /function SizeMenu/);
+  assert.match(read('src/adapters/example.ts'), /resizable:/);
 });

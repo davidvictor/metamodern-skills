@@ -40,12 +40,12 @@ src/
     virtual-list.tsx         windowed list with one tab stop and type-ahead
   store.tsx                  Studio state, URL selection, per-viewer settings
   App.tsx                    desktop and phone shells, global keys
-  components/studio/         rail, panels, top bar, stage controls, views, details
+  components/studio/         rail, panels, top bar, stage controls, views, details, resize handles
   components/ui/             shadcn components (base: Base UI, style: Rhea)
   components/theme-provider.tsx   Studio appearance and brand color
   index.css, studio.css      shadcn tokens plus the Studio extensions
 example/                     synthetic example product preview entry (replace)
-scripts/acceptance.mjs       measures AC-01 to AC-11 in headless Chromium
+scripts/acceptance.mjs       measures AC-01 to AC-15 in headless Chromium
 ```
 
 ## Keep these rules
@@ -65,5 +65,6 @@ These files differ from `shadcn add` output. Reapply the edits after regeneratin
 | `src/components/ui/select.tsx` | `alignItemWithTrigger` defaults to `false` so the list opens below its trigger, and the popup uses `p-1` with a 150 ms ease-out. |
 | `src/components/ui/sonner.tsx` | Reads the Studio appearance from `theme-provider` instead of `next-themes`. |
 | `src/components/ui/scroll-area.tsx` | Unused React import removed. |
+| `src/components/ui/slider.tsx` | `aria-label` on the Slider is passed to the thumb input, which is what a screen reader reads. |
 
 The stack is shadcn 4.21 (`base-rhea`, Lucide icons), Base UI 1.8, Tailwind CSS 4, React 19 and Vite 8. The shell uses Geist through `@fontsource-variable/geist`.
