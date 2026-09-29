@@ -13,6 +13,7 @@ import { ContextPanel, MobilePanel, Rail, VIEWS } from "@/components/studio/rail
 import { DetailsContent, StageControls, TopBar } from "@/components/studio/chrome"
 import { CompareStage, GalleryStage, InspectStage, PresentStage, TokensStage } from "@/components/studio/views"
 import { DesignStage } from "@/components/studio/design"
+import { ResponsiveStage } from "@/components/studio/responsive"
 import { CommandMenu, ShortcutsDialog } from "@/components/studio/command"
 
 function useGlobalKeys() {
@@ -73,6 +74,7 @@ function StageForView({ narrow }: { narrow?: boolean }) {
     <div key={s.view} className="flex min-h-0 min-w-0 flex-1 animate-in fade-in-0 duration-200">
       {s.view === "inspect" && <InspectStage narrow={narrow} />}
       {s.view === "compare" && <CompareStage narrow={narrow} />}
+      {s.view === "responsive" && <ResponsiveStage narrow={narrow} />}
       {s.view === "gallery" && <GalleryStage />}
       {s.view === "present" && <PresentStage narrow={narrow} />}
       {s.view === "design" && (designTab(s.design.tab) === "tokens" ? <TokensStage /> : <DesignStage narrow={narrow} />)}

@@ -8,8 +8,8 @@
  * install. Results print as a table and are written to acceptance-report.json.
  * A result is pass, fail, or not-measured; nothing is inferred. Set ONLY=AC-03,AC-10 to run a subset.
  */
-import { execFileSync } from "node:child_process"
-import { createReadStream, existsSync, readFileSync, statSync, writeFileSync } from "node:fs"
+import { execFileSync, spawn } from "node:child_process"
+import { copyFileSync, createReadStream, existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { createServer } from "node:http"
 import { extname, join, normalize } from "node:path"
 
@@ -786,6 +786,363 @@ await check("AC-48", async () => {
   const diff = JSON.parse(json.text)
   const ok = css.name === "draft-tokens.css" && /never a decision/.test(css.text) && /Light \(light\) \*\/\n:root \{[\s\S]*--ex-row: 38px; \/\* was 48px \*\//.test(css.text) && /--ex-font: "Georgia", /.test(css.text) && diff.schema === "studio-token-diff/1" && diff.themes.light["--ex-row"].from === "48px" && diff.themes.light["--ex-row"].to === "38px" && diff.themes.dark["--ex-space"].to === "12px" && diff.design === "density:0.8;body-font:Georgia"
   return [ok ? "pass" : "fail", `${ok ? "" : JSON.stringify(css.text) + " "}${css.name}: ${css.text.split("\n").length} lines with from and to per theme; ${json.name}: light --ex-row ${JSON.stringify(diff.themes.light["--ex-row"])}, dark --ex-space ${JSON.stringify(diff.themes.dark["--ex-space"])}, design ${diff.design}`]
+})
+
+// ---------- Responsive view (AC-18 to AC-27) ----------
+const exFrames = (p) => p.frames().filter((f) => f !== p.mainFrame() && f.url().includes("example"))
+const chip = (p) => p.locator('[aria-label="Scale"]').innerText()
+async function allReady(p, n, timeout = 30000) {
+  await p.waitForFunction((count) => new RegExp(`^${count} frames · ${count} ready`).test(document.querySelector('[aria-label="Scale"]')?.textContent?.trim() ?? ""), n, { timeout })
+  await wait(400)
+}
+const frameSizes = async (p) => {
+  const out = []
+  for (const el of await p.locator("[data-frame] iframe.opacity-100").all()) {
+    const f = await (await el.elementHandle()).contentFrame()
+    out.push(await f.evaluate(() => ({ w: innerWidth, h: innerHeight, mounted: window.__studioMounted })))
+  }
+  return out
+}
+const scaleOf = async (p) => Number(/(\d+)%/.exec(await chip(p))?.[1] ?? 100) / 100
+
+// AC-18 Presets: each shows exactly its frames in order at their declared sizes, labeled, the adapter's first
+await check("AC-18", async () => {
+  const expected = { "task-sizes": [[390, 844], [834, 1112], [1280, 800]], phones: [[360, 780], [390, 844], [430, 932]], "phone-tablet-laptop": [[390, 844], [834, 1112], [1280, 800]], desktops: [[1280, 800], [1440, 900], [1920, 1080]] }
+  const bad = []
+  let firstPreset = ""
+  let details = ""
+  for (const [id, sizes] of Object.entries(expected)) {
+    const p = await open("normal", { hash: `view=responsive&scenario=tasks.list&layout=${id}` })
+    await allReady(p, sizes.length)
+    const got = await frameSizes(p)
+    const labels = await p.locator("[data-frame] figcaption").allInnerTexts()
+    if (got.map((x) => `${x.w}x${x.h}`).join(",") !== sizes.map(([w, h]) => `${w}x${h}`).join(",")) bad.push(`${id}: ${got.map((x) => `${x.w}x${x.h}`).join(",")}`)
+    if (!labels.every((t, i) => t.includes(`${sizes[i][0]} × ${sizes[i][1]}`))) bad.push(`${id} labels ${labels.join(" | ")}`)
+    if (id === "task-sizes") {
+      firstPreset = await p.locator('ul[data-sidebar="menu"] li').first().innerText().catch(() => "")
+      details = await p.locator("aside, [data-slot=sidebar]").last().innerText().catch(() => "")
+    }
+    await p.closeAll()
+  }
+  const ok = !bad.length && /Task list sizes/.test(firstPreset) && /Illustrative example/.test(details)
+  return [ok ? "pass" : "fail", bad.length ? bad.join("; ") : `4 layouts (the adapter's first: "${firstPreset.split("\n")[0]}") each mounted exactly its frames in order, every live document at its declared size, every label naming its size; Details states the fidelity`]
+})
+
+// AC-19 One shared scale, stated once; widths proportional within 1 px; no page scroll from 360 to 1600 px; below the floor only the stage scrolls
+await check("AC-19", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop" })
+  await allReady(p, 3)
+  const rects = await p.locator("[data-frame] .preview-frame").evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width))
+  // The chip rounds the percentage; the frames share the exact scale, read from the first frame.
+  const k = rects[0] / 390
+  const stated = await scaleOf(p)
+  const drift = Math.max(...[390, 834, 1280].map((w, i) => Math.abs(rects[i] - w * k))) + (Math.abs(stated - k) > 0.006 ? 100 : 0)
+  const hundred = await p.getByRole("button", { name: "Show at actual size" }).count()
+  await p.closeAll()
+  const scrolled = []
+  for (const width of [360, 390, 768, 1024, 1280, 1440, 1600]) {
+    const q = await open("normal", { width, height: 900, touch: width < 768, hash: "view=responsive&scenario=tasks.list&layout=desktops" })
+    await wait(1500)
+    const m = await q.evaluate(() => ({ doc: document.documentElement.scrollWidth - innerWidth }))
+    if (m.doc > 1) scrolled.push(`${width}: ${m.doc}px`)
+    await q.closeAll()
+  }
+  const f = await open("normal", { width: 1024, height: 900, hash: "view=responsive&scenario=tasks.list&layout=desktops" })
+  await wait(2000)
+  const floor = await chip(f)
+  const stage = await f.evaluate(() => { const b = document.querySelector("[data-frame]")?.closest(".overflow-auto"); return b ? b.scrollWidth - b.clientWidth : 0 })
+  await f.closeAll()
+  const ok = drift <= 1 && hundred === 1 && !scrolled.length && /20%/.test(floor) && stage > 0
+  return [ok ? "pass" : "fail", `one scale ${Math.round(k * 100)}%, widest drift from proportional ${drift.toFixed(2)} px, 100% one action (${hundred}); page scroll at ${scrolled.length ? scrolled.join(", ") : "no width from 360 to 1600"}; at 1024 px the desktops stop at "${floor.split("·").pop().trim()}" and the stage scrolls ${stage} px inside itself`]
+})
+
+// AC-20 Frames differ only in size and profile; a change restages all with the previous shown until ready; interaction modifies one frame; an error stays in its frame
+await check("AC-20", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop" })
+  await allReady(p, 3)
+  const before = await frameSizes(p)
+  const strip = (m) => JSON.stringify({ ...m, profile: undefined })
+  const same = before.every((x) => strip(x.mounted) === strip(before[0].mounted))
+  const profiles = new Set(before.map((x) => x.mounted.profile)).size
+  await p.getByRole("toolbar", { name: "Preview controls" }).getByLabel("Dark").click()
+  // Each frame stages its new runtime behind the one on screen.
+  let staged = 0
+  for (let i = 0; i < 40 && staged <= 3; i++) {
+    staged = Math.max(staged, await p.locator("[data-frame] iframe").count())
+    await wait(50)
+  }
+  await allReady(p, 3)
+  const dark = (await frameSizes(p)).every((x) => x.mounted.theme === "dark")
+  const first = await (await p.locator("[data-frame] iframe.opacity-100").first().elementHandle()).contentFrame()
+  await first.getByRole("button", { name: "New task" }).click()
+  await wait(800)
+  const modified = await p.locator("[data-frame] figcaption").allInnerTexts()
+  await p.closeAll()
+  const q = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones&frames=290x640:phone,390x844:phone" })
+  await wait(4000)
+  const caps = await q.locator("[data-frame]").allInnerTexts()
+  await q.closeAll()
+  const ok = same && profiles === 3 && staged > 3 && dark && /Modified/.test(modified[0]) && !/Modified/.test(modified[1]) && !/Modified/.test(modified[2]) && /narrower than 300 px/.test(caps[0]) && !/did not start/i.test(caps[1])
+  return [ok ? "pass" : "fail", `mount inputs equal apart from profile ${same} (${profiles} profiles); Dark staged ${staged} frames for 3 shown, then all dark ${dark}; New task in one frame marked ${modified.map((m) => (/Modified/.test(m) ? "Modified" : "clean")).join(", ")}; a 290 px frame said "${/narrower[^.]*/.exec(caps[0])?.[0] ?? caps[0].slice(0, 60)}" while its neighbour stayed live`]
+})
+
+// AC-21 Add and remove: profiles, devices, typed sizes, refusals with reasons, a limit of six, disposal, and the last frame stays
+let at21 = ""
+await check("AC-21", async () => {
+  try {
+    return await ac21()
+  } catch (e) {
+    throw new Error(`at ${at21}: ${String(e).split("\n")[0]}`)
+  }
+})
+async function ac21() {
+  at21 = "open"
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones" })
+  await allReady(p, 3)
+  const addMenu = async () => {
+    await p.keyboard.press("Escape")
+    await p.keyboard.press("Escape")
+    await wait(200)
+    await p.getByRole("toolbar", { name: "Responsive controls" }).getByRole("button", { name: /Add frame/ }).click()
+    await p.getByRole("menuitem", { name: "Custom size…" }).waitFor()
+  }
+  at21 = "profile"
+  await addMenu()
+  await p.getByRole("menuitem", { name: /^Tablet/ }).first().click()
+  at21 = "device"
+  await addMenu()
+  await p.getByRole("menuitem", { name: "Devices" }).click()
+  await p.getByRole("menuitem", { name: /Tablet, landscape/ }).waitFor()
+  await p.getByRole("menuitem", { name: /Tablet, landscape/ }).click()
+  at21 = "refused size"
+  await p.keyboard.press("Escape")
+  await p.getByLabel("Custom width").fill("5000")
+  await p.getByLabel("Custom height").fill("800")
+  await p.getByRole("button", { name: "Add", exact: true }).click()
+  const refused = await p.locator("[data-sonner-toast]").last().innerText().catch(() => "")
+  at21 = "custom size from the menu"
+  await addMenu()
+  await p.getByRole("menuitem", { name: "Custom size…" }).click()
+  await wait(300)
+  const focused = await p.evaluate(() => document.activeElement?.getAttribute("aria-label"))
+  await p.getByLabel("Custom width").fill("1024")
+  await p.getByLabel("Custom height").fill("768")
+  await p.getByRole("button", { name: "Add", exact: true }).click()
+  await wait(500)
+  const six = await p.locator("[data-frame]").count()
+  const disabled = await p.getByRole("toolbar", { name: "Responsive controls" }).getByRole("button", { name: /Add frame/ }).isDisabled()
+  at21 = "six ready"
+  await allReady(p, 6, 45000)
+  at21 = "remove"
+  await p.getByRole("button", { name: "Remove 360 by 780" }).click()
+  await wait(1000)
+  const after = await p.locator("iframe").count()
+  at21 = "switch layouts"
+  for (let i = 0; i < 10; i++) {
+    await p.getByRole("button", { name: i % 2 ? "Phones" : "Desktops" }).first().click()
+    await wait(250)
+  }
+  await wait(2500)
+  const shown = await p.locator("[data-frame]").count()
+  const iframes = await p.locator("iframe").count()
+  await p.closeAll()
+  at21 = "last frame"
+  const one = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones&frames=390x844:phone" })
+  const last = await one.getByRole("button", { name: "Remove 390 by 844" }).isDisabled()
+  await one.closeAll()
+  at21 = "captures"
+  const c = await open("captures", { hash: "view=responsive&layout=phones" })
+  await c.getByLabel("Custom width").fill("1000")
+  await c.getByRole("button", { name: "Add", exact: true }).click()
+  const capRefused = await c.locator("[data-sonner-toast]").last().innerText().catch(() => "")
+  await c.closeAll()
+  const ok = /5000 × 800 can't be a frame here[\s\S]*Outside the sizes/.test(refused) && six === 6 && disabled && after === 5 && iframes <= shown && last && /only its recorded sizes/.test(capRefused) && focused === "Custom width"
+  return [ok ? "pass" : "fail", `Custom size… focused the panel's width field (${focused}); a profile, a device and a typed size reached ${six} frames and Add frame was then disabled ${disabled}; 5000 × 800 was refused ("${refused.replace(/\s+/g, " ").slice(0, 90)}"); removing one left ${after} frames within a second; ten layout switches left ${iframes} iframes for ${shown} frames; the last frame's Remove disabled ${last}; a captures Studio refused a typed size ("${capRefused.replace(/\s+/g, " ").slice(0, 60)}")`]
+}
+
+// AC-22 Reorder by pointer on the label, and by Alt plus an arrow key on a label or list row; focus stays and the move is announced
+await check("AC-22", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones" })
+  await allReady(p, 3)
+  const order = () => p.locator("[data-frame] figcaption").evaluateAll((els) => els.map((e) => e.textContent.match(/\d+ × \d+/)[0]))
+  const start = await order()
+  const a = await p.locator("[data-frame-label]").nth(0).boundingBox()
+  const c3 = await p.locator("[data-frame]").nth(2).boundingBox()
+  await p.mouse.move(a.x + 20, a.y + a.height / 2)
+  await p.mouse.down()
+  await p.mouse.move(a.x + 60, a.y + a.height / 2, { steps: 4 })
+  await p.mouse.move(c3.x + c3.width / 2, a.y + a.height / 2, { steps: 10 })
+  await p.mouse.up()
+  await wait(400)
+  const dragged = await order()
+  await p.locator("[data-frame-label]").nth(0).focus()
+  await p.keyboard.press("Alt+ArrowRight")
+  await wait(300)
+  const keyed = await order()
+  const focus = await p.evaluate(() => document.activeElement?.closest("[data-frame]")?.querySelector("figcaption")?.textContent?.match(/\d+ × \d+/)?.[0])
+  const said = await p.locator("p[aria-live=polite]").allInnerTexts()
+  await p.locator('ul[aria-label="Frames"] li').nth(2).focus()
+  await p.keyboard.press("Alt+ArrowUp")
+  await wait(300)
+  const listed = await order()
+  await p.closeAll()
+  const ok = start.join() === "360 × 780,390 × 844,430 × 932" && dragged[2] === "360 × 780" && keyed[1] === dragged[0] && focus === dragged[0] && said.some((t) => /Moved \d+ by \d+ to position 2 of 3/.test(t)) && listed[1] === keyed[2]
+  return [ok ? "pass" : "fail", `start ${start.join(", ")}; dragging the first label past the third gave ${dragged.join(", ")}; Alt+Right gave ${keyed.join(", ")} with focus on ${focus}; announced "${said.filter(Boolean).join(" ")}"; Alt+Up in the frame list gave ${listed.join(", ")}`]
+})
+
+// AC-23 Saving: the dev server writes a valid layouts.json that restores exactly; rename, duplicate, delete; presets stay read only; a built Studio loads but cannot save; unsaved edits persist and travel in the link; the endpoint refuses what it should
+await check("AC-23", async () => {
+  const file = join(root, "layouts.json")
+  const backup = existsSync(file) ? `${file}.acceptance-backup` : null
+  if (backup) copyFileSync(file, backup)
+  const port = 5391
+  const dev = spawn("npx", ["vite", "--port", String(port), "--strictPort", "--logLevel", "error"], { cwd: root, stdio: "ignore" })
+  try {
+    const url = `http://localhost:${port}/`
+    for (let i = 0; i < 60 && !(await fetch(url).then((r) => r.ok).catch(() => false)); i++) await wait(500)
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+    const p = await context.newPage()
+    p.on("dialog", (d) => d.accept(d.type() === "prompt" ? "Checkout sizes, renamed" : undefined))
+    await p.goto(`${url}#view=responsive&scenario=tasks.list&layout=phones`)
+    await p.waitForSelector("header")
+    await wait(2500)
+    const presetSave = await p.getByRole("button", { name: "Save", exact: true }).count()
+    await p.getByRole("button", { name: "Remove 360 by 780" }).click()
+    await p.getByRole("button", { name: /Save as/ }).first().click()
+    await p.getByLabel("Save as a new layout").fill("Checkout sizes")
+    await p.getByRole("button", { name: "Save", exact: true }).last().click()
+    await wait(800)
+    const written = JSON.parse(readFileSync(file, "utf8"))
+    await p.reload()
+    await p.waitForSelector("header")
+    await wait(2500)
+    await p.getByRole("button", { name: "Checkout sizes" }).first().click()
+    await wait(800)
+    const restored = await p.locator("[data-frame] figcaption").evaluateAll((els) => els.map((e) => e.textContent.match(/\d+ × \d+/)[0]))
+    await p.getByRole("button", { name: "More layout actions" }).click()
+    await p.getByRole("menuitem", { name: "Rename" }).click()
+    await wait(600)
+    await p.getByRole("button", { name: "More layout actions" }).click()
+    await p.getByRole("menuitem", { name: "Duplicate" }).click()
+    await wait(600)
+    const two = JSON.parse(readFileSync(file, "utf8")).layouts.map((l) => l.name)
+    await p.getByRole("button", { name: "More layout actions" }).click()
+    await p.getByRole("menuitem", { name: "Delete" }).click()
+    await wait(600)
+    const one = JSON.parse(readFileSync(file, "utf8")).layouts.map((l) => l.name)
+    await context.close()
+    const post = (body, headers = {}) => fetch(`${url}__studio/layouts`, { method: "POST", headers: { "content-type": "application/json", origin: `http://localhost:${port}`, ...headers }, body })
+    const cross = (await post(JSON.stringify(written), { origin: "https://evil.example" })).status
+    const invalid = (await post(JSON.stringify({ schema: "studio-layouts/1", layouts: [{ id: "Bad ID", name: "", frames: [] }] }))).status
+    const huge = (await post(JSON.stringify({ schema: "studio-layouts/1", pad: "x".repeat(300 * 1024), layouts: [] }))).status
+    // A built Studio: saved layouts load, Save is disabled with the reason, unsaved edits survive a reload and travel in the link.
+    const b = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones" })
+    const builtSave = await b.getByRole("button", { name: /Save as/ }).first().isDisabled()
+    const reason = await b.getByText(/Saving needs the local Studio/).count()
+    await b.getByRole("button", { name: "Remove 430 by 932" }).click()
+    await wait(300)
+    const link = await b.evaluate(() => location.hash)
+    await b.reload()
+    await b.waitForSelector("header")
+    await wait(1500)
+    const kept = await b.locator("[data-frame]").count()
+    const unsaved = await b.getByText("Unsaved", { exact: true }).count()
+    await b.closeAll()
+    const fresh = await open("normal", { hash: link.slice(1) })
+    await wait(1200)
+    const shared = await fresh.locator("[data-frame]").count()
+    await fresh.closeAll()
+    const ok = presetSave === 0 && written.schema === "studio-layouts/1" && written.layouts[0]?.name === "Checkout sizes" && written.layouts[0].frames.length === 2 && restored.join() === "390 × 844,430 × 932" && two.join("|") === "Checkout sizes, renamed|Checkout sizes, renamed copy" && one.join("|") === "Checkout sizes, renamed" && cross === 403 && invalid === 422 && huge === 413 && builtSave && reason > 0 && kept === 2 && unsaved > 0 && shared === 2 && /frames=/.test(link)
+    return [ok ? "pass" : "fail", `a preset offers no Save (${presetSave}); Save as wrote ${written.layouts.length} layout "${written.layouts[0]?.name}" with ${written.layouts[0]?.frames.length} frames, restored after a reload as ${restored.join(", ")}; rename and duplicate gave ${two.join(" and ")} (the copy opens), and deleting the copy left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${huge} to an oversized one; a built Studio disables Save as (${builtSave}) and says why, kept ${kept} unsaved frames across a reload marked Unsaved, and its link opened ${shared} frames in a fresh browser`]
+  } finally {
+    dev.kill()
+    if (backup) copyFileSync(backup, file), rmSync(backup)
+    else rmSync(file, { force: true })
+  }
+})
+
+// AC-24 A capture-only Studio: frames at recorded sizes show the capture; others say unavailable; nothing is substituted
+await check("AC-24", async () => {
+  const p = await open("captures", { hash: "view=responsive&layout=phone-tablet-laptop" })
+  await wait(1500)
+  const cards = await p.locator("[data-frame]").allInnerTexts()
+  const imgs = await p.locator("[data-frame] img").count()
+  await p.closeAll()
+  const ok = imgs === 1 && /No capture at 390 × 844/.test(cards[0]) && /No capture at 834 × 1112/.test(cards[1]) && !/No capture/.test(cards[2])
+  return [ok ? "pass" : "fail", `${imgs} capture shown (1280 × 800, the recorded size); the phone and tablet frames say ${cards.slice(0, 2).map((c) => `"${/No capture at [^\n]*/.exec(c)?.[0]}"`).join(" and ")}`]
+})
+
+// AC-25 On a phone the frames stack at one scale with no page scroll, the panel is a drawer, and targets are 44 px
+await check("AC-25", async () => {
+  const results = []
+  for (const width of [360, 390, 430]) {
+    const p = await open("normal", { width, height: 800, touch: true, hash: "view=responsive&scenario=tasks.list&layout=phones" })
+    await wait(2500)
+    const r = await p.evaluate(() => {
+      const rects = [...document.querySelectorAll("[data-frame]")].map((e) => e.getBoundingClientRect())
+      const targets = [...document.querySelectorAll("[data-frame] figcaption button")].map((b) => b.getBoundingClientRect()).filter((b) => b.width > 0)
+      return { stacked: rects.every((b, i) => i === 0 || b.top >= rects[i - 1].bottom), scroll: document.documentElement.scrollWidth - innerWidth, small: targets.filter((b) => b.height < 44 || b.width < 44).length }
+    })
+    await p.getByRole("button", { name: "Panel" }).click()
+    await wait(600)
+    const drawer = await p.getByRole("dialog").getByText(/Frames/).count()
+    results.push({ width, ...r, drawer })
+    await p.closeAll()
+  }
+  const ok = results.every((r) => r.stacked && r.scroll <= 1 && r.small === 0 && r.drawer > 0)
+  return [ok ? "pass" : "fail", results.map((r) => `${r.width}: stacked ${r.stacked}, page scroll ${r.scroll}px, small targets ${r.small}, drawer ${r.drawer > 0}`).join("; ")]
+})
+
+// AC-26 Full page: frames follow content height, only the stage scrolls, a 100vh page stops at the screen with the reason, a switch does not reload
+await check("AC-26", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=help.guide&layout=phones" })
+  await allReady(p, 3)
+  const f = () => p.locator("[data-frame] iframe.opacity-100").first()
+  const doc = await (await f().elementHandle()).contentFrame()
+  await doc.evaluate(() => (window.__kept = "same"))
+  await p.getByRole("toolbar", { name: "Responsive controls" }).getByRole("button", { name: "Full page" }).click()
+  await wait(1500)
+  const got = await (await f().elementHandle()).contentFrame()
+  const m = await got.evaluate(() => ({ inner: innerHeight, content: document.documentElement.scrollHeight, kept: window.__kept }))
+  await got.evaluate(() => { const s = document.createElement("section"); s.style.height = "600px"; s.id = "added"; document.querySelector(".doc").append(s) })
+  await wait(600)
+  const grown = await got.evaluate(() => ({ inner: innerHeight, content: document.documentElement.scrollHeight }))
+  const pageScroll = await p.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+  await p.closeAll()
+  const w = await open("normal", { hash: "view=responsive&scenario=help.welcome&layout=phones&height=full" })
+  await allReady(w, 3)
+  await wait(2500)
+  const notes = await w.locator("[data-frame] p").allInnerTexts()
+  const heights = await w.locator("[data-frame] iframe.opacity-100").evaluateAll((els) => els.map((e) => e.style.height))
+  await w.closeAll()
+  const ok = Math.abs(m.inner - m.content) <= 1 && m.inner > 844 && m.kept === "same" && Math.abs(grown.inner - grown.content) <= 1 && grown.inner >= m.inner + 590 && pageScroll <= 1 && notes.length === 3 && notes.every((n) => /sizes itself to the window/.test(n)) && heights.join() === "780px,844px,932px"
+  return [ok ? "pass" : "fail", `the guide's first frame became ${m.inner} px for ${m.content} px of content in the same document (${m.kept}); adding 600 px grew it to ${grown.inner} px; page scroll ${pageScroll}px; the 100vh welcome page stayed at ${heights.join(", ")} with the reason on ${notes.length} frames`]
+})
+
+// AC-27 Keys and commands: the Responsive shortcut, Reset all, [ and ], and the command menu work in the view
+await check("AC-27", async () => {
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  await p.keyboard.press("6")
+  await wait(800)
+  const view = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("view"))
+  await allReady(p, 3)
+  await p.keyboard.press("]")
+  await wait(800)
+  const next = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("scenario"))
+  await allReady(p, 3)
+  const before = await p.locator("iframe").evaluateAll((els) => els.map((e) => e.name).join())
+  await p.getByRole("button", { name: "Reset all" }).click()
+  await allReady(p, 3)
+  const after = await p.locator("iframe").evaluateAll((els) => els.map((e) => e.name).join())
+  await p.keyboard.press("Meta+k")
+  await wait(400)
+  const cmd = await p.getByRole("dialog").count()
+  await p.keyboard.press("Escape")
+  const labels = await p.locator("[data-frame-label]").count()
+  const menus = await p.getByRole("button", { name: /frame actions$/ }).count()
+  await p.closeAll()
+  const ok = view === "responsive" && next !== "tasks.list" && before !== after && cmd > 0 && labels === 3 && menus === 3
+  return [ok ? "pass" : "fail", `6 opened ${view}; ] moved to ${next}; Reset all remounted every frame ${before !== after}; the command menu opened ${cmd > 0}; every frame has a focusable label and an actions menu (${labels}, ${menus})`]
 })
 
 await browser.close()

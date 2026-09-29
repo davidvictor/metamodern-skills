@@ -7,6 +7,8 @@
  * product facts into shell components.
  */
 
+import type { Preset, PresetFrame } from "./layouts"
+
 /** How one capability dimension of a preview behaves. */
 export type Mode = "real" | "simulated" | "static" | "unavailable"
 
@@ -225,6 +227,8 @@ export type StudioAdapter = {
     /** Offered only with a live frame. Without it profiles are the only sizes. */
     resizable?: Resizable
     inputs: ScenarioInput[]
+    /** The Responsive view: product layouts shown before the shell's presets, and sizes offered in Add frame. */
+    responsive?: { presets?: Preset[]; replaceShellPresets?: boolean; devices?: PresetFrame[] }
     /** Profile a viewer starts on, on every screen size. Without it the first profile opens, and a phone opens on the phone profile. */
     defaultProfile?: string
   }

@@ -23,12 +23,14 @@ export type LiveStatus = {
   previous?: boolean
   /** What the frame client announced, such as draft-css. */
   capabilities: FrameCapability[]
+  /** The document's content height, when the frame client reports it. */
+  contentHeight?: number
   anchors: AnchorRect[]
 }
 
 export type LivePreviewHandle = { back: () => void; command: (id: string) => void }
 
-type Runtime = { instance: string; key: string; requestId: string; inputs: MountInputs; phase: "loading" | "ready" | "error"; ready?: FrameMessage & { type: "ready" }; modified: boolean; capabilities?: FrameCapability[] }
+type Runtime = { instance: string; key: string; requestId: string; inputs: MountInputs; phase: "loading" | "ready" | "error"; ready?: FrameMessage & { type: "ready" }; modified: boolean; capabilities?: FrameCapability[]; contentHeight?: number }
 /** The draft a preview shows: token values, CSS rules and font stylesheets. */
 export type PreviewDraft = { tokens: Record<string, string>; css: string; stylesheets: string[] }
 const draftKey = (d: { tokens: Record<string, string>; css?: string; stylesheets?: string[] }) => JSON.stringify({ tokens: d.tokens, css: d.css ?? "", stylesheets: d.stylesheets ?? [] })
@@ -103,6 +105,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
         failure.current = { instance: rt.instance, reason: m.reason }
         update(rt.instance, () => ({ phase: "error" }))
       } else if (m.type === "modified") update(rt.instance, () => ({ modified: true }))
+      else if (m.type === "content-size") update(rt.instance, () => ({ contentHeight: m.height }))
       else if (m.type === "navigated") update(rt.instance, (r) => (r.ready ? { ready: { ...r.ready, location: m.location, canGoBack: m.canGoBack, anchors: m.anchors } } : {}))
     }
     window.addEventListener("message", onMessage)
@@ -144,6 +147,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       previous: failed && !!current,
       anchors: current?.ready?.anchors ?? [],
       capabilities: current?.capabilities ?? newest?.capabilities ?? [],
+      contentHeight: current?.contentHeight,
     }
   }, [newest, current])
   const statusKey = JSON.stringify(status)

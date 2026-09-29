@@ -28,12 +28,16 @@ const nearest = (v: number, list: number[], tol: number) => {
  * Widths and heights are drawn to the profiles' own sizes (and the adapter's breakpoints) unless
  * Shift is held. Releasing on exactly a profile's size selects that profile.
  */
-export function ResizeHandles({ w, h, scale, onDragChange, children }: { w: number; h: number; scale: number; onDragChange: (frozen: { scale: number } | null) => void; children: React.ReactNode }) {
-  const s = useStudio()
+/** Who owns the size: Inspect's store by default, or a Responsive frame. `centred` frames grow both ways from their centre. */
+export type ResizeControl = { profile: string; setSize: (size: { w: number; h: number } | null) => void; setProfile: (id: string) => void; centred: boolean; label?: string }
+
+export function ResizeHandles({ w, h, scale, onDragChange, control, children }: { w: number; h: number; scale: number; onDragChange: (frozen: { scale: number } | null) => void; control?: ResizeControl; children: React.ReactNode }) {
+  const store = useStudio()
+  const s: ResizeControl = control ?? { profile: store.profile, setSize: store.setSize, setProfile: store.setProfile, centred: true }
   const lim = adapter.axes.resizable!
   const base = profileOf(s.profile)
   const wrap = React.useRef<HTMLDivElement>(null)
-  const drag = React.useRef<{ edge: Edge; cx: number; cy: number; gx: number; gy: number; scale: number; next: { w: number; h: number }; frame: number } | null>(null)
+  const drag = React.useRef<{ edge: Edge; cx: number; cy: number; left: number; top: number; gx: number; gy: number; scale: number; next: { w: number; h: number }; frame: number } | null>(null)
   const [active, setActive] = React.useState<Edge | null>(null)
   const [readout, setReadout] = React.useState<{ w: number; h: number; name?: string } | null>(null)
 
@@ -64,7 +68,7 @@ export function ResizeHandles({ w, h, scale, onDragChange, children }: { w: numb
     e.currentTarget.setPointerCapture(e.pointerId)
     const r = wrap.current.getBoundingClientRect()
     // gx/gy: where inside the handle it was grabbed, so the edge does not jump to the pointer.
-    drag.current = { edge, cx: r.left + r.width / 2, cy: r.top + r.height / 2, gx: e.clientX - r.right, gy: e.clientY - r.bottom, scale, next: { w, h }, frame: 0 }
+    drag.current = { edge, cx: r.left + r.width / 2, cy: r.top + r.height / 2, left: r.left, top: r.top, gx: e.clientX - r.right, gy: e.clientY - r.bottom, scale, next: { w, h }, frame: 0 }
     setActive(edge)
     onDragChange({ scale })
   }
@@ -74,11 +78,14 @@ export function ResizeHandles({ w, h, scale, onDragChange, children }: { w: numb
     const { clientX, clientY, shiftKey } = e
     if (d.frame) cancelAnimationFrame(d.frame)
     d.frame = requestAnimationFrame(() => {
-      let nw = d.edge === "s" ? d.next.w : clamp((2 * (clientX - d.gx - d.cx)) / d.scale, lim.min.w, lim.max.w)
-      let nh = d.edge === "e" ? d.next.h : clamp((2 * (clientY - d.gy - d.cy)) / d.scale, lim.min.h, lim.max.h)
+      // A centred frame grows both ways, so an edge moves half as far as the size changes.
+      const k = s.centred ? 2 : 1
+      const x0 = s.centred ? d.cx : d.left
+      const y0 = s.centred ? d.cy : d.top
+      let nw = d.edge === "s" ? d.next.w : clamp((k * (clientX - d.gx - x0)) / d.scale, lim.min.w, lim.max.w)
+      let nh = d.edge === "e" ? d.next.h : clamp((k * (clientY - d.gy - y0)) / d.scale, lim.min.h, lim.max.h)
       if (!shiftKey) {
-        // The frame is centred, so an edge moves half as far as the size changes.
-        const tol = (2 * SNAP_PX) / d.scale
+        const tol = (k * SNAP_PX) / d.scale
         if (d.edge !== "s") nw = nearest(nw, widths, tol) ?? nw
         if (d.edge !== "e") nh = nearest(nh, heights, tol) ?? nh
       }
@@ -118,7 +125,7 @@ export function ResizeHandles({ w, h, scale, onDragChange, children }: { w: numb
       <div
         role="slider"
         tabIndex={0}
-        aria-label="Frame width"
+        aria-label={`${s.label ?? "Frame"} width`}
         aria-orientation="horizontal"
         aria-valuemin={lim.min.w}
         aria-valuemax={lim.max.w}
@@ -137,7 +144,7 @@ export function ResizeHandles({ w, h, scale, onDragChange, children }: { w: numb
       <div
         role="slider"
         tabIndex={0}
-        aria-label="Frame height"
+        aria-label={`${s.label ?? "Frame"} height`}
         aria-orientation="vertical"
         aria-valuemin={lim.min.h}
         aria-valuemax={lim.max.h}

@@ -23,7 +23,7 @@ export type MountInputs = {
 }
 
 /** What a frame client can do beyond the base protocol, announced in `hello`. */
-export type FrameCapability = "draft-css"
+export type FrameCapability = "draft-css" | "content-size"
 
 export type AnchorRect = { id: string; label: string; x: number; y: number; w: number; h: number }
 
@@ -53,6 +53,8 @@ export type FrameBody =
   | { type: "modified" }
   | { type: "navigated"; location: string; canGoBack: boolean; anchors: AnchorRect[] }
   | { type: "reply"; requestId: string; ok: boolean; reason?: string }
+  /** The document's content height in CSS pixels, after ready and whenever it settles at a new value. */
+  | { type: "content-size"; height: number }
 
 export type ShellMessage = Envelope & ShellBody
 export type FrameMessage = Envelope & FrameBody

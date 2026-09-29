@@ -10,6 +10,8 @@ import type { MountInputs } from "../src/studio/protocol"
 type Task = { id: string; title: string; due: string; done?: boolean; isNew?: boolean }
 type State = {
   scenario: string
+  /** The name last sent from the guide's form. */
+  sent?: string
   role: string
   location: string[]
   tasks: Task[]
@@ -63,8 +65,37 @@ function dialogView() {
   </div></div>`
 }
 
+function guideView() {
+  const sections = [
+    ["guide-start", "Start here", "Tasks keep today's work in one list. Add a task, give it a due time, and tick it off when it is done."],
+    ["guide-lists", "Lists and due times", "Each task has one due time. Overdue tasks move to the top of Today and stay there until they are done or moved."],
+    ["guide-sharing", "Sharing", "Owners can add and edit tasks. Viewers see the same list without New task, so a shared list stays tidy."],
+    ["guide-shortcuts", "Shortcuts", "Press N for a new task, J and K to move through the list, and X to tick the current task."],
+  ]
+  const notes = Array.from({ length: 12 }, (_, i) => `<li>Note ${i + 1}: a line in a box that scrolls on its own.</li>`).join("")
+  return `<article class="doc">
+    <h1 data-studio-anchor="guide-top" data-studio-anchor-label="Guide title">Getting started</h1>
+    ${sections.map(([id, title, text]) => `<section id="${id}" data-studio-anchor="${id}" data-studio-anchor-label="${title}"><h2>${title}</h2><p>${text}</p><p class="muted">${text}</p></section>`).join("")}
+    <section data-studio-anchor="guide-notes" data-studio-anchor-label="Notes"><h2>Notes</h2><ul class="notes" data-studio-scroll="guide-notes">${notes}</ul></section>
+    <form class="card" data-studio-anchor="guide-form" data-studio-anchor-label="Feedback form" onsubmit="return false">
+      <h2 style="margin:0">Was this helpful?</h2>
+      <label class="field"><span>Your name</span><input id="guide-name" name="name" autocomplete="off" /></label>
+      <label class="field"><span>Password (never sent to the Studio)</span><input id="guide-secret" name="secret" type="password" autocomplete="off" /></label>
+      <label class="field"><span>Comments</span><textarea id="guide-comments" name="comments" rows="3"></textarea></label>
+      <button class="btn" data-act="send-feedback" data-studio-anchor="guide-send" style="justify-self:start">Send</button>
+      <p class="muted" id="guide-sent" ${s.sent ? "" : "hidden"}>Thanks, ${esc(s.sent ?? "")}.</p>
+    </form>
+  </article>`
+}
+
+function welcomeView() {
+  return `<div class="welcome"><section class="hero" data-studio-anchor="welcome-hero" data-studio-anchor-label="Hero"><h1>Welcome to Example Tasks</h1><p>Today's work, in one list.</p></section><section class="doc"><h2>What's next</h2><p>Add your first task.</p></section></div>`
+}
+
 function page() {
   const path = here()
+  if (s.scenario === "help.guide") return guideView()
+  if (s.scenario === "help.welcome") return welcomeView()
   if (s.scenario === "account.sign-in") return `<div class="center"><div class="card" style="width:min(380px,100%)"><div class="brand"><i></i>Example Tasks</div><label class="field"><span>Email</span><input placeholder="you@example.com" /></label><button class="btn" data-studio-anchor="sign-in">Continue</button></div></div>`
   const { side, tabs } = nav()
   let body: string
@@ -112,6 +143,12 @@ app.addEventListener("click", (e) => {
   else if (act === "save") actions["save-task"]()
   else if (act === "retry") actions.retry()
   else if (act === "back") frameBack()
+  else if (act === "send-feedback") {
+    s.sent = (document.getElementById("guide-name") as HTMLInputElement | null)?.value.trim() || "friend"
+    const sent = document.getElementById("guide-sent")!
+    sent.textContent = `Thanks, ${s.sent}.`
+    sent.hidden = false
+  }
 })
 app.addEventListener("input", (e) => {
   const el = e.target as HTMLInputElement
@@ -133,8 +170,11 @@ function mount(inputs: MountInputs) {
   const root = document.documentElement
   root.dataset.theme = inputs.theme
   root.dataset.density = inputs.values.density ?? "comfortable"
-  const known = ["tasks.list", "tasks.list.empty", "tasks.list.loading", "tasks.list.failed", "tasks.new", "task.detail", "account.settings", "account.sign-in"]
+  const known = ["tasks.list", "tasks.list.empty", "tasks.list.loading", "tasks.list.failed", "tasks.new", "task.detail", "account.settings", "account.sign-in", "help.guide", "help.welcome"]
+  root.dataset.page = inputs.scenario.startsWith("help.") ? "document" : "app"
   if (!known.includes(inputs.scenario) && !inputs.scenario.startsWith("syn.")) throw new Error(`Scenario ${inputs.scenario} has no preview in this product`)
+  // A real product constraint for the example: it has no layout narrower than 300 px.
+  if (innerWidth < 300) throw new Error(`Example Tasks has no layout narrower than 300 px; this frame is ${innerWidth} px`)
   s = {
     scenario: inputs.scenario,
     role: inputs.values.role ?? "owner",
@@ -145,6 +185,8 @@ function mount(inputs: MountInputs) {
     failed: inputs.scenario === "tasks.list.failed",
   }
   render()
+  // For the starter's acceptance script only: the inputs this runtime was mounted with.
+  ;(window as unknown as { __studioMounted: MountInputs }).__studioMounted = inputs
   return { appearance: inputs.theme === "dark" ? ("dark" as const) : ("light" as const), location: here() }
 }
 

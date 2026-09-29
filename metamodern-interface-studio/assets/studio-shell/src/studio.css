@@ -121,7 +121,10 @@
   header button,
   [role="toolbar"] button,
   nav[aria-label="Views"] button,
-  [aria-label="Studio"] button { min-height: 44px; min-width: 44px; }
+  [aria-label="Studio"] button,
+  [data-frame] figcaption button,
+  ul[aria-label="Frames"] button { min-height: 44px; min-width: 44px; }
+  [data-frame] figcaption { height: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

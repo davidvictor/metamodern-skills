@@ -117,6 +117,9 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
         }
         await settle()
         post({ type: "ready", requestId: m.requestId, fingerprint: handlers.fingerprint ? await handlers.fingerprint(m.inputs) : fingerprint(m.inputs), appearance, ...state() })
+        mountedOnce = true
+        lastHeight = 0
+        reportSize()
       } else if (m.type === "command") {
         if (!handlers.command) throw new Error("This preview has no commands")
         await handlers.command(m.command)
@@ -139,7 +142,27 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
     }
   }
   window.addEventListener("message", onMessage)
-  post({ type: "hello", capabilities: ["draft-css"] })
+  // Content height, for full-page frames: after ready and whenever it settles at a new value.
+  let lastHeight = 0
+  let sizeFrame = 0
+  let mountedOnce = false
+  const reportSize = () => {
+    if (!mountedOnce) return
+    cancelAnimationFrame(sizeFrame)
+    sizeFrame = requestAnimationFrame(() => {
+      const height = Math.ceil(Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight ?? 0))
+      if (Math.abs(height - lastHeight) < 1) return
+      lastHeight = height
+      post({ type: "content-size", height })
+    })
+  }
+  const sizes = new ResizeObserver(reportSize)
+  sizes.observe(document.documentElement)
+  if (document.body) sizes.observe(document.body)
+  const sizeChanges = new MutationObserver(reportSize)
+  sizeChanges.observe(document.documentElement, { subtree: true, childList: true, attributes: true })
+
+  post({ type: "hello", capabilities: ["draft-css", "content-size"] })
 
   return {
     /** Call after product navigation the Studio did not ask for, so it can update location and anchors. */
@@ -151,6 +174,8 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
     markModified,
     disconnect: () => {
       observer.disconnect()
+      sizes.disconnect()
+      sizeChanges.disconnect()
       window.removeEventListener("message", onMessage)
       window.removeEventListener("pointerdown", onUser, true)
       window.removeEventListener("keydown", onUser, true)
