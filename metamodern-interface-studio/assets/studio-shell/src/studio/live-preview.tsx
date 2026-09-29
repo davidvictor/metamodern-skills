@@ -6,7 +6,7 @@
  */
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type FrameMessage, type MountInputs, type ShellBody } from "./protocol"
+import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type FrameMessage, type MountInputs, type ShellBody, type SyncChannelsMessage, type SyncEvent } from "./protocol"
 
 export const READY_TIMEOUT_MS = 20000
 
@@ -28,7 +28,15 @@ export type LiveStatus = {
   anchors: AnchorRect[]
 }
 
-export type LivePreviewHandle = { back: () => void; command: (id: string) => void }
+export type LivePreviewHandle = {
+  back: () => void
+  command: (id: string) => void
+  /** Replay another frame's interaction here; resolves with the frame's answer, or a timeout. */
+  replay: (event: SyncEvent) => Promise<{ ok: boolean; reason?: string }>
+}
+
+/** Sync for a preview that is one of several: which channels it reports, and where its interactions go. */
+export type PreviewSync = { channels: SyncChannelsMessage; onInteraction: (event: SyncEvent) => void }
 
 type Runtime = { instance: string; key: string; requestId: string; inputs: MountInputs; phase: "loading" | "ready" | "error"; ready?: FrameMessage & { type: "ready" }; modified: boolean; capabilities?: FrameCapability[]; contentHeight?: number }
 /** The draft a preview shows: token values, CSS rules and font stylesheets. */
@@ -51,13 +59,15 @@ type Props = {
   label: string
   interactive?: boolean
   onStatus?: (s: LiveStatus) => void
+  sync?: PreviewSync
 }
 
-export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, inputs, mountKey, draft, w, h, scale, label, interactive = true, onStatus }, ref) {
+export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, inputs, mountKey, draft, w, h, scale, label, interactive = true, onStatus, sync }, ref) {
   const [runtimes, setRuntimes] = React.useState<Runtime[]>([])
   const frames = React.useRef(new Map<string, HTMLIFrameElement>())
-  const latest = React.useRef({ draft, onStatus, inputs })
-  latest.current = { draft, onStatus, inputs }
+  const latest = React.useRef({ draft, onStatus, inputs, sync })
+  latest.current = { draft, onStatus, inputs, sync }
+  const replies = React.useRef(new Map<string, (r: { ok: boolean; reason?: string }) => void>())
   const expectedOrigin = origin ?? (location.origin === "null" ? "null" : new URL(src, location.href).origin)
 
   const post = React.useCallback((instance: string, message: ShellBody) => {
@@ -106,6 +116,16 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
         update(rt.instance, () => ({ phase: "error" }))
       } else if (m.type === "modified") update(rt.instance, () => ({ modified: true }))
       else if (m.type === "content-size") update(rt.instance, () => ({ contentHeight: m.height }))
+      else if (m.type === "interaction") {
+        // Only the runtime on screen leads; a staged one is not seen by anyone.
+        if (rt.phase === "ready") latest.current.sync?.onInteraction(m.event)
+      } else if (m.type === "reply") {
+        const done = replies.current.get(m.requestId)
+        if (done) {
+          replies.current.delete(m.requestId)
+          done({ ok: m.ok, reason: m.reason })
+        }
+      }
       else if (m.type === "navigated") update(rt.instance, (r) => (r.ready ? { ready: { ...r.ready, location: m.location, canGoBack: m.canGoBack, anchors: m.anchors } } : {}))
     }
     window.addEventListener("message", onMessage)
@@ -128,9 +148,30 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
     post(current.instance, { type: "draft-overrides", requestId: uid("draft"), ...(JSON.parse(key) as PreviewDraft) })
   }, [key, current, post])
 
+  // The runtime on screen reports only the channels asked for; a new runtime is told again.
+  const channelKey = sync ? JSON.stringify(sync.channels) : ""
+  React.useEffect(() => {
+    if (!current || !channelKey) return
+    post(current.instance, { type: "sync", requestId: uid("sync"), channels: JSON.parse(channelKey) })
+  }, [channelKey, current, post])
+
   React.useImperativeHandle(ref, () => ({
     back: () => current && post(current.instance, { type: "product-back", requestId: uid("back") }),
     command: (id) => current && post(current.instance, { type: "command", requestId: uid("cmd"), command: id }),
+    replay: (event) =>
+      new Promise((resolve) => {
+        if (!current) return resolve({ ok: false, reason: "This preview is not ready" })
+        const requestId = uid("replay")
+        const timer = window.setTimeout(() => {
+          replies.current.delete(requestId)
+          resolve({ ok: false, reason: "The preview did not answer" })
+        }, 3000)
+        replies.current.set(requestId, (r) => {
+          window.clearTimeout(timer)
+          resolve(r)
+        })
+        post(current.instance, { type: "replay", requestId, event })
+      }),
   }), [current, post])
 
   const status: LiveStatus = React.useMemo(() => {

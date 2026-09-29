@@ -1420,6 +1420,202 @@ await check("AC-35", async () => {
   return [ok ? "pass" : "fail", `labels named "${names[0]}" and so on; Tab from the first reached "${reached?.slice(0, 40)}"; clicking a label announced "${selected.filter(Boolean).pop()}"; at 390 px the canvas layout stacked ${stacked} with the note (${note}) and no page scroll (${scroll}px)`]
 })
 
+// ---------- Responsive sync (AC-36 to AC-42) ----------
+const liveDocs = async (p) => Promise.all((await p.locator("[data-frame] iframe.opacity-100").all()).map(async (e) => (await e.elementHandle()).contentFrame()))
+// The anchored element at the top of a frame's view and how far through it the top edge is.
+const topAnchor = (f) => f.evaluate(() => { const a = [...document.querySelectorAll("[data-studio-anchor]")].map((e) => ({ id: e.dataset.studioAnchor, r: e.getBoundingClientRect() })).filter((x) => x.r.height > 0); const at = a.filter((x) => x.r.top <= 1 && x.r.bottom > 0).pop(); return at ? { id: at.id, offset: -at.r.top / at.r.height } : null })
+const offsetOf = (f, id) => f.evaluate((anchor) => { const r = document.querySelector(`[data-studio-anchor="${anchor}"]`).getBoundingClientRect(); return -r.top / r.height }, id)
+async function wheelIn(p, index, dy, times = 4) {
+  const box = await p.locator("[data-frame] iframe.opacity-100").nth(index).boundingBox()
+  await p.mouse.move(box.x + box.width / 2, box.y + Math.min(box.height / 2, 300))
+  for (let i = 0; i < times; i++) {
+    await p.mouse.wheel(0, dy)
+    await wait(60)
+  }
+}
+// The example's test hooks: a frame that stands in for an older client, or a product without navigate.
+const frameFlag = (p, flag, minWidth, maxWidth) => p.addInitScript(({ flag, minWidth, maxWidth }) => { if (window !== window.top && innerWidth >= minWidth && innerWidth <= maxWidth) window[flag] = true }, { flag, minWidth, maxWidth })
+
+// AC-36 Scroll: the same anchored element comes to the same place within 100 ms; a region follows proportionally within 2%; alternating leaders for thirty seconds never loop or drift
+await check("AC-36", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=help.guide&layout=phone-tablet-laptop" })
+  await allReady(p, 3)
+  const docs = await liveDocs(p)
+  await wheelIn(p, 0, 160)
+  const t0 = Date.now()
+  let lead = null
+  let aligned = null
+  for (let i = 0; i < 40 && aligned === null; i++) {
+    lead = await topAnchor(docs[0])
+    if (lead) {
+      const offs = await Promise.all(docs.slice(1).map((f) => offsetOf(f, lead.id)))
+      if (offs.every((o) => Math.abs(o - lead.offset) < 0.02)) aligned = Date.now() - t0
+    }
+    if (aligned === null) await wait(10)
+  }
+  // A region scrolls proportionally.
+  const notes = await docs[1].locator("[data-studio-scroll=guide-notes]").boundingBox()
+  await p.mouse.move(notes.x + notes.width / 2, notes.y + notes.height / 2)
+  for (let i = 0; i < 2; i++) {
+    await p.mouse.wheel(0, 40)
+    await wait(60)
+  }
+  await wait(500)
+  const ratios = await Promise.all(docs.map((f) => f.evaluate(() => { const e = document.querySelector("[data-studio-scroll=guide-notes]"); return e.scrollTop / (e.scrollHeight - e.clientHeight) })))
+  // Thirty seconds, leaders alternating.
+  const start = Date.now()
+  let round = 0
+  while (Date.now() - start < 30000) {
+    await wheelIn(p, round % 2, round % 4 < 2 ? 120 : -90, 3)
+    await wait(1400)
+    round++
+  }
+  const last = (round - 1) % 2
+  const a = await Promise.all(docs.map((f) => f.evaluate(() => scrollY)))
+  await wait(1200)
+  const b = await Promise.all(docs.map((f) => f.evaluate(() => scrollY)))
+  const leadEnd = await topAnchor(docs[last])
+  const endOffs = leadEnd ? await Promise.all(docs.map((f) => offsetOf(f, leadEnd.id))) : []
+  await p.closeAll()
+  const ok = aligned !== null && aligned <= 100 && Math.max(...ratios) - Math.min(...ratios) <= 0.02 && a.join() === b.join() && endOffs.every((o) => Math.abs(o - leadEnd.offset) < 0.02)
+  return [ok ? "pass" : "fail", `the leader's top anchor "${lead?.id}" was at the same place in every frame ${aligned ?? "never"} ms after the scroll ended; the notes region stood at ${ratios.map((r) => r.toFixed(3)).join(", ")}; after ${round} alternating rounds over 30 s the frames were still (${a.join() === b.join()}) and aligned on "${leadEnd?.id}" (${endOffs.map((o) => o.toFixed(3)).join(", ")})`]
+})
+
+// AC-37 Clicks and typing: the same product state in every frame, composed (IME) text included
+await check("AC-37", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop" })
+  await allReady(p, 3)
+  const docs = await liveDocs(p)
+  await docs[0].getByRole("button", { name: "New task" }).click()
+  await wait(600)
+  const dialogs = await Promise.all(docs.map((f) => f.getByRole("dialog").count()))
+  const title = docs[0].locator("#title")
+  await title.click()
+  await title.pressSequentially("Plan ", { delay: 25 })
+  const cdp = await p.context().newCDPSession(p)
+  await cdp.send("Input.imeSetComposition", { text: "にほん", selectionStart: 3, selectionEnd: 3 })
+  await wait(150)
+  const mid = await Promise.all(docs.slice(1).map((f) => f.evaluate(() => document.querySelector("#title").value)))
+  await cdp.send("Input.insertText", { text: "日本" })
+  await wait(600)
+  const values = await Promise.all(docs.map((f) => f.evaluate(() => document.querySelector("#title").value)))
+  await docs[0].getByRole("button", { name: "Save" }).click()
+  await wait(800)
+  const firstRows = await Promise.all(docs.map((f) => f.evaluate(() => document.querySelector(".row .title")?.textContent)))
+  await p.closeAll()
+  const ok = dialogs.every((d) => d === 1) && values.every((v) => v === "Plan 日本") && mid.every((v) => v === "Plan ") && firstRows.every((t) => t === "Plan 日本")
+  return [ok ? "pass" : "fail", `New task opened the dialog in ${dialogs.filter((d) => d === 1).length} of 3 frames; followers held "${mid[0]}" during composition and every frame ended with "${values.join('", "')}"; Save put "${firstRows[0]}" first in every list (${firstRows.join(" | ")})`]
+})
+
+// AC-38 Password, file and private fields never leave the frame: no message carries them
+await check("AC-38", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=help.guide&layout=phones" })
+  await p.evaluate(() => { window.__relayed = []; window.addEventListener("message", (e) => { if (e.data?.type === "interaction") window.__relayed.push(JSON.stringify(e.data)) }) })
+  await allReady(p, 3)
+  const docs = await liveDocs(p)
+  for (const id of ["#guide-secret", "#guide-private"]) {
+    const el = docs[0].locator(id)
+    await el.scrollIntoViewIfNeeded()
+    await el.click()
+    await el.pressSequentially(id === "#guide-secret" ? "hunter2" : "my diary", { delay: 20 })
+  }
+  await docs[0].locator("#guide-file").setInputFiles({ name: "secret.png", mimeType: "image/png", buffer: Buffer.from("png") })
+  await docs[0].locator("#guide-name").click()
+  await docs[0].locator("#guide-name").pressSequentially("Grace", { delay: 20 })
+  await wait(700)
+  const relayed = await p.evaluate(() => window.__relayed)
+  const followers = await Promise.all(docs.slice(1).map((f) => f.evaluate(() => [document.querySelector("#guide-secret").value, document.querySelector("#guide-private").value, document.querySelector("#guide-file").files.length, document.querySelector("#guide-name").value])))
+  await p.closeAll()
+  const leaked = relayed.filter((m) => /hunter2|my diary|secret\.png|guide-secret|guide-private|guide-file/.test(m))
+  const ok = relayed.length > 0 && leaked.length === 0 && followers.every((f) => f[0] === "" && f[1] === "" && f[2] === 0 && f[3] === "Grace")
+  return [ok ? "pass" : "fail", `${relayed.length} interaction messages reached the Studio, ${leaked.length} naming or carrying the password, private or file field; followers' password, private and file fields stayed empty while the name followed ("${followers[0]?.[3]}")`]
+})
+
+// AC-39 A follower that cannot find the target shows Out of sync naming it, is not clicked, and Reset all clears it
+await check("AC-39", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop" })
+  await allReady(p, 3)
+  const docs = await liveDocs(p)
+  await docs[1].evaluate(() => document.querySelector('[data-studio-anchor="new-task"]').remove())
+  await docs[0].getByRole("button", { name: "New task" }).click()
+  await wait(800)
+  const labels = await p.locator("[data-frame] figcaption").allInnerTexts()
+  const dialogs = await Promise.all(docs.map((f) => f.getByRole("dialog").count()))
+  const reason = (await p.locator("[data-frame] figcaption").nth(1).getByRole("status").getAttribute("aria-label").catch(() => "")) ?? ""
+  await p.getByRole("button", { name: "Reset all" }).click()
+  await allReady(p, 3)
+  const after = await p.locator("[data-frame] figcaption").allInnerTexts()
+  await p.closeAll()
+  const ok = /Out of sync/.test(labels[1]) && !/Out of sync/.test(labels[2]) && dialogs[0] === 1 && dialogs[1] === 0 && dialogs[2] === 1 && /New task|new-task/.test(reason) && !after.some((t) => /Out of sync/.test(t))
+  return [ok ? "pass" : "fail", `with New task removed from the tablet frame, it showed Out of sync (${/Out of sync/.test(labels[1])}) saying "${reason.split(".")[0]}", got no dialog (${dialogs[1]}), while the others opened theirs (${dialogs[0]}, ${dialogs[2]}); Reset all cleared it (${!after.some((t) => /Out of sync/.test(t))})`]
+})
+
+// AC-40 Navigation follows through the frame client's navigate handler; without one the switch says why
+await check("AC-40", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop&sync=scroll-navigation" })
+  await allReady(p, 3)
+  const docs = await liveDocs(p)
+  await docs[2].locator(".nav a", { hasText: "Settings" }).click()
+  await wait(800)
+  const where = await Promise.all(docs.map((f) => f.evaluate(() => document.querySelector("h1")?.textContent)))
+  await p.closeAll()
+  const q = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const page = await q.newPage()
+  await frameFlag(page, "__studioNoNavigate", 0, 5000)
+  await page.goto(servers.normal.url + "#view=responsive&scenario=tasks.list&layout=phones")
+  await page.waitForSelector("header")
+  await allReady(page, 3)
+  const note = await page.getByText(/Unavailable here: this product's preview cannot navigate on request/).count()
+  await q.close()
+  const ok = where.every((h) => h === "Settings") && note === 1
+  return [ok ? "pass" : "fail", `with clicks and typing off and navigation on, Settings in the laptop frame took every frame there (${where.join(", ")}); without a navigate handler the switch says it is unavailable and why (${note})`]
+})
+
+// AC-41 A frame whose client predates sync is labeled Not synced with the reason; the others keep syncing
+await check("AC-41", async () => {
+  const c = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const p = await c.newPage()
+  await frameFlag(p, "__studioLegacy", 360, 360)
+  await p.goto(servers.normal.url + "#view=responsive&scenario=help.guide&layout=phones")
+  await p.waitForSelector("header")
+  await allReady(p, 3)
+  const labels = await p.locator("[data-frame] figcaption").allInnerTexts()
+  const docs = await liveDocs(p)
+  await wheelIn(p, 1, 160)
+  await wait(700)
+  const ys = await Promise.all(docs.map((f) => f.evaluate(() => Math.round(scrollY))))
+  const reason = (await p.locator("[data-frame] figcaption").nth(0).getByRole("status").getAttribute("aria-label").catch(() => "")) ?? ""
+  await c.close()
+  const ok = /Not synced/.test(labels[0]) && !/Not synced/.test(labels[1]) && ys[0] === 0 && ys[1] > 0 && ys[2] > 0 && /Not synced: this preview's scroll and interaction are not followed/.test(reason)
+  return [ok ? "pass" : "fail", `the older frame read "${labels[0].replace(/\s+/g, " ")}" ("${reason.split(",")[0]}") and stayed at ${ys[0]} while the other two followed a scroll to ${ys[1]} and ${ys[2]}`]
+})
+
+// AC-42 New layouts start with every channel on; a switch turned off stops its channel at once; only a frame's parent can make it replay
+await check("AC-42", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=help.guide&layout=phones" })
+  await allReady(p, 3)
+  const on = await Promise.all(["Scroll", "Clicks and typing", "Navigation"].map((n) => p.getByRole("switch", { name: n }).getAttribute("aria-checked")))
+  await p.getByRole("switch", { name: "Scroll" }).click()
+  await wait(200)
+  const docs = await liveDocs(p)
+  await wheelIn(p, 0, 160)
+  await wait(700)
+  const ys = await Promise.all(docs.map((f) => f.evaluate(() => Math.round(scrollY))))
+  // Another window posts a well-formed replay straight at a frame: the frame answers only its parent.
+  const acted = await p.evaluate(async () => {
+    const target = document.querySelector("[data-frame] iframe.opacity-100")
+    const intruder = document.createElement("iframe")
+    document.body.append(intruder)
+    await new Promise((r) => setTimeout(r, 100))
+    intruder.contentWindow.eval(`parent.document.querySelector("[data-frame] iframe.opacity-100").contentWindow.postMessage({ protocol: "studio-preview/1", instance: "${target.name}", type: "replay", requestId: "x", event: { kind: "click", target: { anchor: "guide-send" } } }, "*")`)
+    await new Promise((r) => setTimeout(r, 500))
+    return !target.contentDocument.querySelector("#guide-sent").hidden
+  })
+  await p.closeAll()
+  const ok = on.every((v) => v === "true") && ys[0] > 0 && ys[1] === 0 && ys[2] === 0 && acted === false
+  return [ok ? "pass" : "fail", `a new layout starts with Scroll, Clicks and typing and Navigation on (${on.join(", ")}); with Scroll off the leader went to ${ys[0]} and the others stayed at ${ys[1]} and ${ys[2]}; a replay posted from another window was ignored (${!acted})`]
+})
+
 await browser.close()
 for (const s of Object.values(servers)) s.server.close()
 writeFileSync(join(root, "acceptance-report.json"), JSON.stringify({ at: new Date().toISOString(), results }, null, 2) + "\n")

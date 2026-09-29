@@ -193,6 +193,11 @@ export function AdjustPanel() {
  * The type specimen beside the screen: each typeface the draft sets, and each size on the type scale,
  * drawn in this Studio from the same draft values. Fonts load from Google Fonts only.
  */
+/** Whether the draft changes type: a typeface, the type scale, or a size the specimen shows. */
+function typeChanged(values: Record<string, number | string>) {
+  return params().some((p) => !isDefault(p, values[p.id]) && (p.kind === "font" || p.kind === "ratio" || (p.kind === "scale" && (p.apply.scale ?? []).some((n) => params().some((q) => q.kind === "ratio" && n in (q.apply.steps ?? {}))))))
+}
+
 function Specimen() {
   const s = useStudio()
   const d = s.designFor(s.theme)
@@ -210,7 +215,7 @@ function Specimen() {
     })
     return () => links.forEach((l) => l.remove())
   }, [d.stylesheets])
-  if (!fonts.length && !sizes.length) return null
+  if ((!fonts.length && !sizes.length) || !typeChanged(s.design.values)) return null
   const value = (name: string) => d.tokens[name] ?? baseValue(adapter, name, s.theme)
   return (
     <aside className="w-60 shrink-0 rounded-xl border bg-background p-4 text-foreground shadow-sm" aria-label="Type specimen">
@@ -252,7 +257,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
   const pr = sizedProfile(s.profile, null)
   const box = React.useRef<HTMLDivElement>(null)
   const sides = show === "split" ? 2 : 1
-  const specimen = !narrow && params().some((p) => p.kind === "font" || p.kind === "ratio")
+  const specimen = !narrow && typeChanged(s.design.values)
   const scale = useFit(box, pr.w * sides, pr.h, s.zoom, 64 + (sides - 1) * 32 + (specimen ? 272 : 0))
   const peekOn = { onPointerDown: () => setPeek(true), onPointerUp: () => setPeek(false), onPointerLeave: () => setPeek(false), onKeyDown: (e: React.KeyboardEvent) => (e.key === " " || e.key === "Enter") && (e.preventDefault(), setPeek(true)), onKeyUp: () => setPeek(false), onBlur: () => setPeek(false) }
   const one = (kind: "draft" | "built") => (

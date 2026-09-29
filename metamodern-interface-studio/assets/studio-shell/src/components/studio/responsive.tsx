@@ -31,9 +31,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { adapter } from "@/adapter"
-import { canSaveLayouts, captureFor, PRESETS, useStudio } from "@/store"
-import { FULL_PAGE_MAX, frameId, MAX_FRAMES, nearestProfile, SHELL_DEVICES, slug, type PresetFrame, type ResponsiveFrame, type ResponsiveLayout } from "@/studio/layouts"
-import type { LiveStatus } from "@/studio/live-preview"
+import { canSaveLayouts, captureFor, PRESETS, useStudio, type State } from "@/store"
+import { FULL_PAGE_MAX, frameId, MAX_FRAMES, nearestProfile, SHELL_DEVICES, slug, type PresetFrame, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
+import type { LivePreviewHandle, LiveStatus } from "@/studio/live-preview"
+import type { SyncEvent } from "@/studio/protocol"
+import { Switch } from "@/components/ui/switch"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PreviewFrame, StatusBadge } from "./bits"
 import { profileOf, ScenarioPreview } from "./preview"
 import { ResizeHandles } from "./resize-handles"
@@ -56,6 +59,20 @@ export function sizeProblem(w: number, h: number) {
 }
 
 const Canvas = React.lazy(() => import("./canvas"))
+
+/**
+ * Sync between the frames of a layout: each frame registers its preview, reports its interactions,
+ * and shows when it could not follow. The Studio relays only between frames of this layout.
+ */
+type SyncState = {
+  channels: SyncChannels
+  register: (id: string, handle: LivePreviewHandle | null) => void
+  interaction: (from: string, event: SyncEvent) => void
+  out: Record<string, string>
+}
+const SyncContext = React.createContext<SyncState | null>(null)
+const channelOf = (e: SyncEvent): keyof SyncChannels => (e.kind === "scroll" ? "scroll" : e.kind === "navigate" ? "navigation" : "interaction")
+const capOf = { scroll: "sync-scroll", interaction: "sync-interaction", navigation: "sync-navigation" } as const
 
 function useResponsive() {
   const s = useStudio()
@@ -233,6 +250,7 @@ export function ResponsivePanel() {
           <ToggleGroupItem value="canvas" className="h-7 text-xs">Canvas</ToggleGroupItem>
         </ToggleGroup>
       </SidebarGroup>
+      <SyncSwitches />
       <SidebarGroup>
         <SidebarGroupLabel>
           Frames <span className="ml-auto tabular-nums">{r.frames.length} of {MAX_FRAMES}</span>
@@ -288,6 +306,33 @@ export function ResponsivePanel() {
         </SidebarMenu>
       </SidebarGroup>
     </SidebarContent>
+  )
+}
+
+/** Scroll, clicks and typing, and navigation follow across frames; all on for a new layout. */
+function SyncSwitches() {
+  const { s, r, set } = useResponsive()
+  const nav = s.frameCaps.includes("sync-navigation")
+  const all = r.sync.scroll || r.sync.interaction || r.sync.navigation
+  const row = (key: keyof SyncChannels, label: string, note?: string) => (
+    <Field orientation="horizontal" className="items-start">
+      <Switch id={`sync-${key}`} checked={r.sync[key]} onCheckedChange={(v) => set({ sync: { ...r.sync, [key]: v } })} />
+      <div className="grid gap-0.5">
+        <FieldLabel htmlFor={`sync-${key}`} className="text-xs font-normal">{label}</FieldLabel>
+        {note && <span className="text-[11px] text-muted-foreground">{note}</span>}
+      </div>
+    </Field>
+  )
+  return (
+    <SidebarGroup className="gap-2 border-t px-3 py-3">
+      <div className="flex items-center">
+        <span className="text-xs font-medium">Sync</span>
+        <Button variant="ghost" size="xs" className="ml-auto h-6 text-xs" onClick={() => set({ sync: all ? { scroll: false, interaction: false, navigation: false } : { scroll: true, interaction: true, navigation: true } })}>{all ? "All sync off" : "All sync on"}</Button>
+      </div>
+      {row("scroll", "Scroll")}
+      {row("interaction", "Clicks and typing", "Passwords, files and private fields are never sent.")}
+      {row("navigation", "Navigation", nav || !s.frameCaps.length ? undefined : "Unavailable here: this product's preview cannot navigate on request, so navigation follows only through synced clicks.")}
+    </SidebarGroup>
   )
 }
 
@@ -467,12 +512,31 @@ export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrap
   const problem = sizeProblem(frame.w, frame.h)
   const setFrame = (patch: Partial<ResponsiveFrame>) => set({ frames: r.frames.map((f) => (f.id === frame.id ? { ...f, ...patch } : f)) })
   const w = Math.round(frame.w * shown)
+  const syncCtx = React.useContext(SyncContext)
+  const anySync = !!syncCtx && (syncCtx.channels.scroll || syncCtx.channels.interaction || syncCtx.channels.navigation)
+  const missing = anySync && live && status?.status === "ready" ? (Object.keys(capOf) as (keyof SyncChannels)[]).filter((k) => syncCtx!.channels[k] && k !== "navigation" && !status.capabilities.includes(capOf[k])) : []
+  const syncBadge = syncCtx?.out[frame.id] ? (
+    <Tooltip>
+      <TooltipTrigger render={<span className="inline-flex shrink-0" role="status" aria-label={`Out of sync: ${syncCtx.out[frame.id]}`} />}><StatusBadge kind="unresolved">Out of sync</StatusBadge></TooltipTrigger>
+      <TooltipContent>{syncCtx.out[frame.id]}. Reset all brings every frame back together.</TooltipContent>
+    </Tooltip>
+  ) : missing.length ? (
+    <Tooltip>
+      <TooltipTrigger render={<span className="inline-flex shrink-0" role="status" aria-label={`Not synced: this preview's ${missing.join(" and ")} ${missing.length > 1 ? "are" : "is"} not followed`} />}><Badge variant="outline" className="h-5 shrink-0 px-1 text-[10px] text-warning">Not synced</Badge></TooltipTrigger>
+      <TooltipContent>This preview does not take part in sync: its frame client predates sync, or the product keeps it out. Its {missing.join(" and ")} {missing.length > 1 ? "are" : "is"} not followed. If it predates sync, update the Studio so the preview entry picks up the new frame client.</TooltipContent>
+    </Tooltip>
+  ) : null
+  const register = syncCtx?.register
+  const handleRef = React.useCallback((h: LivePreviewHandle | null) => register?.(frame.id, h), [register, frame.id])
+  const onInteraction = React.useCallback((e: SyncEvent) => syncCtx?.interaction(frame.id, e), [syncCtx, frame.id])
   const stateBadge = !status ? null : status.status === "loading" ? <StatusBadge kind="loading">Loading</StatusBadge> : status.status === "error" ? <StatusBadge kind="unresolved">Did not start</StatusBadge> : status.modified ? <StatusBadge kind="modified">Modified</StatusBadge> : null
   const preview =
     problem || unavailable ? (
       <PreviewFrame w={frame.w} h={frame.h} scale={shown} phone={prof.kind === "phone"} empty={{ title: `No ${live ? "preview" : "capture"} at ${frame.w} × ${frame.h}`, description: problem ?? `This Studio shows recorded captures only, and ${prof.label} in this theme was ${capture ? `recorded at ${capture.w} × ${capture.h}` : "never recorded"}. Nothing is substituted.` }} />
     ) : (
       <ScenarioPreview
+        ref={handleRef}
+        sync={syncCtx ? { channels: syncCtx.channels, onInteraction } : undefined}
         scenario={s.scenario}
         theme={s.theme}
         profile={frame.profile}
@@ -501,6 +565,7 @@ export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrap
         </button>
         {full && live && !note && <Badge variant="outline" className="h-5 shrink-0 px-1 text-[10px]">Full page</Badge>}
         {stateBadge}
+        {syncBadge}
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon-xs" aria-label={`${frame.w} by ${frame.h} frame actions`} />}>
             <EllipsisIcon />
@@ -579,6 +644,43 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
       viewport: { x: first.left - b.left, y: first.top - b.top, zoom: k },
     }
   })
+  // Sync: relay each interaction to every other frame that can follow it; say which could not.
+  const handles = React.useRef(new Map<string, LivePreviewHandle>())
+  const [out, setOut] = React.useState<{ key: string; frames: Record<string, string> }>({ key: "", frames: {} })
+  const outKey = `${s.scenario}:${s.theme}:${r.resetNonce}:${r.frames.map((f) => f.id).join()}`
+  const outNow = React.useMemo(() => (out.key === outKey ? out.frames : {}), [out, outKey])
+  const statusesRef = React.useRef(statuses)
+  React.useLayoutEffect(() => {
+    statusesRef.current = statuses
+  })
+  const sync = React.useMemo<SyncState>(
+    () => ({
+      channels: r.sync,
+      out: outNow,
+      register: (id, h) => {
+        if (h) handles.current.set(id, h)
+        else handles.current.delete(id)
+      },
+      interaction: (from, event) => {
+        const channel = channelOf(event)
+        if (!r.sync[channel]) return
+        for (const f of r.frames) {
+          if (f.id === from) continue
+          const st = statusesRef.current[f.id]
+          const h = handles.current.get(f.id)
+          if (!h || !st || st.status !== "ready" || !st.capabilities.includes(capOf[channel])) continue
+          h.replay(event).then((res) => {
+            if (!res.ok) setOut((o) => ({ key: outKey, frames: { ...(o.key === outKey ? o.frames : {}), [f.id]: res.reason ?? "It could not follow" } }))
+          })
+        }
+      },
+    }),
+    [r.sync, r.frames, outNow, outKey]
+  )
+  const setStudioCaps = s.set
+  const caps = [...new Set(Object.values(statuses).flatMap((x) => x?.capabilities ?? []))].sort().join()
+  React.useEffect(() => setStudioCaps({ frameCaps: caps ? (caps.split(",") as State["frameCaps"]) : [] }), [setStudioCaps, caps])
+
   const widest = Math.max(...r.frames.map((f) => f.w))
   const fit = narrow ? Math.max(0.05, Math.min(1, dims.w / widest)) : rowScale(r.frames, dims.w, dims.h, r.height === "full")
   const scale = s.zoom === "fit" ? fit : s.zoom / 100
@@ -639,6 +741,7 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
   }
 
   return (
+    <SyncContext.Provider value={sync}>
     <div className="stage-surface relative flex min-h-0 min-w-0 flex-1 flex-col">
       <div className="flex flex-wrap items-center justify-center gap-2 px-3 pt-3">
         <div role="toolbar" aria-label="Responsive controls" className="flex flex-wrap items-center gap-1 rounded-xl border bg-popover/95 p-1 shadow-[var(--dock-shadow)] backdrop-blur-md">
@@ -682,5 +785,6 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
       </div>
       <p className="sr-only" aria-live="polite">{said}</p>
     </div>
+    </SyncContext.Provider>
   )
 }

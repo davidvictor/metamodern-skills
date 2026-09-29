@@ -7,7 +7,8 @@
  * The frame never trusts a message it did not expect: it answers only its
  * parent window, only from an allowed origin, and only for its own instance.
  */
-import { PROTOCOL, fingerprint, isShellMessage, type AnchorRect, type FrameBody, type MountInputs } from "./protocol"
+import { PROTOCOL, fingerprint, isShellMessage, type AnchorRect, type FrameBody, type FrameCapability, type MountInputs } from "./protocol"
+import { createFrameSync } from "./frame-sync"
 
 export type FrameHandlers = {
   /** Materialize the scenario from scratch: state, navigation, theme, profile and inputs. */
@@ -24,11 +25,14 @@ export type FrameHandlers = {
   applyCss?: (css: string, stylesheets: string[]) => void
   /** Resolve when the rendering is settled: fonts, required assets, controlled async work. */
   settle?: () => Promise<void>
+  /** Go to a product location, for navigation sync between frames. Without it navigation follows only through synced clicks. */
+  navigate?: (location: string) => void
   /** Digest of the resolved inputs and the resulting state and navigation. Defaults to the inputs alone. */
   fingerprint?: (inputs: MountInputs) => Promise<string> | string
 }
 
-export type FrameOptions = { allowedOrigins?: string[] }
+/** sync: false keeps this preview out of scroll, click, typing and navigation sync. */
+export type FrameOptions = { allowedOrigins?: string[]; sync?: boolean }
 
 const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
 
@@ -131,6 +135,13 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
         await nextFrame()
         post({ type: "reply", requestId: m.requestId, ok, reason: ok ? undefined : "No product history in this preview" })
         post({ type: "navigated", ...state() })
+      } else if (m.type === "sync") {
+        if (options.sync !== false) sync.setChannels(m.channels)
+        post({ type: "reply", requestId: m.requestId, ok: options.sync !== false, reason: options.sync === false ? "This preview is kept out of sync" : undefined })
+      } else if (m.type === "replay") {
+        const result = options.sync === false ? { ok: false, reason: "This preview is kept out of sync" } : sync.replay(m.event)
+        await nextFrame()
+        post({ type: "reply", requestId: m.requestId, ...result })
       } else if (m.type === "draft-overrides") {
         applyTokens(m.tokens)
         applyCss(m.css ?? "", m.stylesheets ?? [])
@@ -162,17 +173,24 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
   const sizeChanges = new MutationObserver(reportSize)
   sizeChanges.observe(document.documentElement, { subtree: true, childList: true, attributes: true })
 
-  post({ type: "hello", capabilities: ["draft-css", "content-size"] })
+  // Sync: report a person's interactions when the Studio asks, and replay other frames' here.
+  const sync = createFrameSync((event) => post({ type: "interaction", event }), { navigate: handlers.navigate, location: () => state().location, arm: () => (armedAt = performance.now()) })
+  const syncCaps: FrameCapability[] = options.sync === false ? [] : ["sync-scroll", "sync-interaction", ...(handlers.navigate ? (["sync-navigation"] as const) : [])]
+
+  post({ type: "hello", capabilities: ["draft-css", "content-size", ...syncCaps] })
 
   return {
     /** Call after product navigation the Studio did not ask for, so it can update location and anchors. */
     notifyNavigated: () => {
       if (armed()) markModified()
-      post({ type: "navigated", ...state() })
+      const now = state()
+      post({ type: "navigated", ...now })
+      sync.navigated(now.location)
     },
     /** For state changes the DOM does not show, such as canvas or media. */
     markModified,
     disconnect: () => {
+      sync.dispose()
       observer.disconnect()
       sizes.disconnect()
       sizeChanges.disconnect()

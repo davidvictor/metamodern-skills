@@ -82,6 +82,8 @@ function guideView() {
       <label class="field"><span>Your name</span><input id="guide-name" name="name" autocomplete="off" /></label>
       <label class="field"><span>Password (never sent to the Studio)</span><input id="guide-secret" name="secret" type="password" autocomplete="off" /></label>
       <label class="field"><span>Comments</span><textarea id="guide-comments" name="comments" rows="3"></textarea></label>
+      <label class="field" data-studio-private><span>Private note (never sent to the Studio)</span><input id="guide-private" name="private" autocomplete="off" /></label>
+      <label class="field"><span>Screenshot (never sent)</span><input id="guide-file" name="file" type="file" /></label>
       <button class="btn" data-act="send-feedback" data-studio-anchor="guide-send" style="justify-self:start">Send</button>
       <p class="muted" id="guide-sent" ${s.sent ? "" : "hidden"}>Thanks, ${esc(s.sent ?? "")}.</p>
     </form>
@@ -190,6 +192,8 @@ function mount(inputs: MountInputs) {
   return { appearance: inputs.theme === "dark" ? ("dark" as const) : ("light" as const), location: here() }
 }
 
+// For the starter's acceptance script only: stand in for an older frame client, or a product without navigate.
+const testing = window as unknown as { __studioLegacy?: boolean; __studioNoNavigate?: boolean }
 const frame = connectStudioFrame({
   mount,
   command: (id) => {
@@ -198,9 +202,16 @@ const frame = connectStudioFrame({
     run()
   },
   back: frameBack,
+  // For navigation sync: go to a location another frame reached.
+  navigate: testing.__studioNoNavigate
+    ? undefined
+    : (location) => {
+        const path = location.replace(/ \(New task\)$/, "")
+        if (here() !== path) go(path)
+      },
   canGoBack: () => s.location.length > 1 || !!s.dialog,
   location: () => here() + (s.dialog ? " (New task)" : ""),
-})
+}, { sync: !testing.__studioLegacy })
 
 // Opened directly, outside the Studio: show the default scenario.
 if (window.parent === window) mount({ scenario: "tasks.list", theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light", profile: "desktop", values: {}, commands: [], tokens: {} })

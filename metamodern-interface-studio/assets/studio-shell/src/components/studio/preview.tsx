@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { adapter } from "@/adapter"
 import { captureFor, NO_DRAFT, resolveValues, useStudio, type Draft } from "@/store"
-import { LivePreview, type LivePreviewHandle, type LiveStatus } from "@/studio/live-preview"
+import { LivePreview, type LivePreviewHandle, type LiveStatus, type PreviewSync } from "@/studio/live-preview"
 import { CaptureImage, PreviewFrame, type EmptyState } from "./bits"
 
 /** A view's preview status as Details and the top bar read it. A capture or empty state has no live status. */
@@ -45,6 +45,8 @@ type Props = {
   interactive?: boolean
   className?: string
   onStatus?: (s: LiveStatus | null) => void
+  /** Responsive sync: the channels and where this preview's interactions go. */
+  sync?: PreviewSync
 }
 
 /**
@@ -53,7 +55,7 @@ type Props = {
  * similar scenario, theme or profile.
  */
 export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(function ScenarioPreview(
-  { scenario, theme, profile, size, values, commands = [], draft = NO_DRAFT, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
+  { scenario, theme, profile, size, values, commands = [], draft = NO_DRAFT, sync, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
   ref
 ) {
   const sc = adapter.scenarios.find((x) => x.id === scenario)
@@ -106,6 +108,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
           inputs={{ scenario, theme, profile, values: resolved, commands }}
           mountKey={mountKey}
           draft={draft}
+          sync={sync}
           w={w}
           h={h}
           scale={scale}

@@ -4,6 +4,7 @@ import { toast } from "sonner"
 
 import { adapter } from "@/adapter"
 import type { Scenario, ScenarioInput, Token } from "@/studio/types"
+import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, type DesignDraft, type DesignValues } from "@/studio/design"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 
@@ -17,7 +18,7 @@ export type CompareMode = "side" | "split" | "toggle"
 export type Options = { controls: "dock" | "toolbar"; details: "docked" | "floating"; railLabels: boolean; draftEverywhere: boolean }
 export type PreviewStatus = { status: "loading" | "ready" | "error" | "static" | "empty"; modified: boolean; canGoBack: boolean; location?: string; fingerprint?: string; reason?: string; previous?: boolean }
 
-type State = {
+export type State = {
   view: View
   panelOpen: boolean
   detailsOpen: boolean
@@ -40,6 +41,8 @@ type State = {
   responsive: { layout: string; name: string; frames: ResponsiveFrame[]; arrangement: ResponsiveLayout["arrangement"]; height: ResponsiveLayout["height"]; viewport?: ResponsiveLayout["viewport"]; sync: SyncChannels; dirty: boolean; resetNonce: number }
   /** Layouts saved in this Studio's layouts.json. */
   saved: ResponsiveLayout[]
+  /** What the Responsive frames' clients can do, for the sync switches. */
+  frameCaps: FrameCapability[]
   /** The Design view: which tab, the Adjust values, and whether the stage shows the draft, the product as built, or both. */
   design: { tab: "adjust" | "tokens"; values: DesignValues; show: "draft" | "built" | "split" }
   gallery: { size: number; source: "captures" | "live"; query: string; hidden: string[]; onlyFlagged: boolean }
@@ -207,6 +210,7 @@ const initial: State = {
   present: { tour: A.walkthroughs[0]?.id ?? "", step: 0, playing: false, speed: 1, elapsed: 0 },
   tokens: { selected: A.tokens?.tokens[0]?.name ?? "", drafts: {}, query: "", flag: "all", family: null },
   design: initialDesign,
+  frameCaps: [],
   responsive: initialResponsive(),
   saved: bundledLayouts && !validateLayouts(bundledLayouts).length ? bundledLayouts.layouts : [],
   gallery: { size: 240, source: hasCaptures || !A.frameEntry ? "captures" : "live", query: "", hidden: [], onlyFlagged: false },
