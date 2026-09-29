@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Acceptance script output
+.acceptance
+acceptance-report.json

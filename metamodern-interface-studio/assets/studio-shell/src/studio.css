@@ -10,7 +10,9 @@
   --stage-foreground: oklch(0.99 0 0);
   --stage-muted: oklch(0.93 0 0 / 0.78);
   --stage-grid: oklch(1 0 0 / 0.07);
-  --boundary: oklch(0 0 0 / 0.38);
+  /* Two keylines: a white one against dark or grey edges, a dark one against light edges, so any product edge reaches 3:1 against one of them. */
+  --boundary-inner: oklch(1 0 0);
+  --boundary: oklch(0 0 0 / 0.6);
   --tick: oklch(0.98 0 0 / 0.9);
   --anchor: oklch(0.62 0.19 256);
   --anchor-foreground: oklch(0.99 0 0);
@@ -76,7 +78,7 @@
 /* Preview frame: boundary line plus corner ticks that survive a product matching the shell. */
 .preview-frame {
   position: relative;
-  box-shadow: 0 0 0 1px var(--boundary), 0 18px 48px -24px oklch(0 0 0 / 0.55);
+  box-shadow: 0 0 0 1px var(--boundary-inner), 0 0 0 2px var(--boundary), 0 18px 48px -24px oklch(0 0 0 / 0.55);
   background: white;
   overflow: hidden;
   transition: width 240ms var(--ease-out-quint), height 240ms var(--ease-out-quint), border-radius 240ms var(--ease-out-quint);
@@ -105,6 +107,14 @@
 
 /* Panels that slide open */
 .panel-slide { transition: width 220ms var(--ease-out-quint), opacity 180ms ease-out, transform 220ms var(--ease-out-quint); }
+
+/* Coarse pointers: every control in the bars and docks reaches 44 px. */
+@media (pointer: coarse) {
+  header button,
+  [role="toolbar"] button,
+  nav[aria-label="Views"] button,
+  [aria-label="Studio"] button { min-height: 44px; min-width: 44px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .preview-frame, .preview-img, .panel-slide, .anchor-ring { transition: none !important; animation: none !important; }

@@ -49,6 +49,23 @@ function useGlobalKeys() {
   }, [])
 }
 
+/** Present takes over the stage: remember what opened it and give focus back on exit. */
+function usePresentFocus() {
+  const view = useStudio().view
+  const opener = React.useRef<HTMLElement | null>(null)
+  const prev = React.useRef(view)
+  React.useEffect(() => {
+    if (prev.current !== "present" && view === "present") opener.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null
+    // Only restore when focus was lost with the player; a click elsewhere keeps its own focus.
+    const lost = !document.activeElement || document.activeElement === document.body || !document.activeElement.isConnected
+    if (prev.current === "present" && view !== "present" && lost) {
+      const target = opener.current && opener.current.isConnected ? opener.current : document.querySelector<HTMLElement>('[aria-label="Studio"] button[aria-pressed="true"]')
+      target?.focus({ preventScroll: true })
+    }
+    prev.current = view
+  }, [view])
+}
+
 function StageForView({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
   return (
@@ -177,6 +194,7 @@ function MobileShell() {
 function Shell() {
   const mobile = useIsMobile()
   useGlobalKeys()
+  usePresentFocus()
   return (
     <TooltipProvider delay={350}>
       {mobile ? <MobileShell /> : <DesktopShell />}

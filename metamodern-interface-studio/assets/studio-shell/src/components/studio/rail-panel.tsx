@@ -21,16 +21,12 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
@@ -47,6 +43,7 @@ import { Field, FieldLabel } from "@/components/ui/field"
 import { adapter } from "@/adapter"
 import { areaCount, captureFor, useStudio, type View } from "@/store"
 import type { Scenario } from "@/studio/types"
+import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
 import { staticProblem } from "./views"
 
 /** Joined filter segments sized to fit a 272 px panel: small type, tight padding, never wider than their column. */
@@ -150,22 +147,64 @@ function SearchField({ placeholder, value, onChange, id }: { placeholder: string
   )
 }
 
+type CatalogRow =
+  | { key: string; kind: "area"; areaId: string; label: string; count: number; open: boolean }
+  | { key: string; kind: "scenario"; sc: Scenario; level: 1 | 2; parent: string }
+
+const STEP_ROW = 84
+const AREA_ROW = 30
+const SCENARIO_ROW = 32
+const RING = "outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--sidebar-ring)]"
+
 function CatalogPanel({ compare }: { compare?: boolean }) {
   const s = useStudio()
   const [q, setQ] = React.useState("")
   const [filter, setFilter] = React.useState<string[]>(["all"])
   const all = adapter.scenarios
   const f = filter[0] ?? "all"
+  const filtering = !!q || f !== "all"
   const flagged = (x: Scenario) => x.status === "unresolved" || x.status === "later"
-  const list = all.filter((x) => (!q || `${x.label} ${x.surface} ${x.area} ${x.state ?? ""}`.toLowerCase().includes(q.toLowerCase())) && (f === "all" || (f === "stale" && x.status === "stale") || (f === "unresolved" && flagged(x))))
+  const list = React.useMemo(
+    () => all.filter((x) => (!q || `${x.label} ${x.surface} ${x.area} ${x.state ?? ""}`.toLowerCase().includes(q.toLowerCase())) && (f === "all" || (f === "stale" && x.status === "stale") || (f === "unresolved" && flagged(x)))),
+    [all, q, f]
+  )
   const stale = all.filter((x) => x.status === "stale").length
   const unres = all.filter(flagged).length
   // Under 30 scenarios every group starts open; larger catalogs open only the current group.
   const [openAreas, setOpenAreas] = React.useState<Record<string, boolean>>(() => Object.fromEntries(adapter.areas.map((a) => [a.id, all.length <= 30 || a.id === s.scenarioObj.area])))
+  // A scenario chosen elsewhere (Go to, Gallery) opens its group. Adjusted during render, not in an effect.
+  const [seen, setSeen] = React.useState(s.scenarioObj.id)
+  if (seen !== s.scenarioObj.id) {
+    setSeen(s.scenarioObj.id)
+    if (!openAreas[s.scenarioObj.area]) setOpenAreas({ ...openAreas, [s.scenarioObj.area]: true })
+  }
   const live = !!adapter.frameEntry
+  const rows = React.useMemo(() => {
+    const out: CatalogRow[] = []
+    for (const area of adapter.areas) {
+      const items = list.filter((x) => x.area === area.id)
+      if (items.length === 0 && filtering) continue
+      const open = filtering ? true : !!openAreas[area.id]
+      out.push({ key: `area:${area.id}`, kind: "area", areaId: area.id, label: area.label, count: filtering ? items.length : areaCount(area.id), open })
+      if (!open) continue
+      const ids = new Set(items.map((x) => x.id))
+      for (const x of items.filter((x) => !x.parent || !ids.has(x.parent))) {
+        out.push({ key: x.id, kind: "scenario", sc: x, level: 1, parent: `area:${area.id}` })
+        for (const k of items.filter((k) => k.parent === x.id)) out.push({ key: k.id, kind: "scenario", sc: k, level: 2, parent: x.id })
+      }
+    }
+    return out
+  }, [list, openAreas, filtering])
+  const [activeKey, setActiveKey] = React.useState<string | null>(null)
+  const found = rows.findIndex((r) => r.key === (activeKey ?? s.scenarioObj.id))
+  const active = found >= 0 ? found : 0
+  const handle = React.useRef<VirtualListHandle>(null)
+  const heightOf = React.useCallback((i: number) => (rows[i].kind === "area" ? AREA_ROW : SCENARIO_ROW), [rows])
+  const toggle = (areaId: string) => setOpenAreas((m) => ({ ...m, [areaId]: !m[areaId] }))
+  const reveal = rows.findIndex((r) => r.key === s.scenarioObj.id)
   return (
     <>
-      <PanelHeader title="Catalog" count={q || f !== "all" ? `${list.length} of ${all.length}` : all.length}>
+      <PanelHeader title="Catalog" count={filtering ? `${list.length} of ${all.length}` : all.length}>
         <SearchField id="catalog-search" placeholder="Search scenarios" value={q} onChange={setQ} />
         <ToggleGroup value={filter} onValueChange={(v) => setFilter(v.length ? v : ["all"])} variant="outline" size="sm" spacing={0} className="grid w-full grid-cols-[1fr_1fr_1.45fr]" aria-label="Filter by status">
           <ToggleGroupItem value="all" className={SEG}>All</ToggleGroupItem>
@@ -173,78 +212,92 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
           <ToggleGroupItem value="unresolved" className={SEG}>Unresolved<span className="tabular-nums opacity-55">{unres}</span></ToggleGroupItem>
         </ToggleGroup>
       </PanelHeader>
-      <SidebarContent>
-        {compare && !!adapter.comparisons?.length && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Saved comparisons</SidebarGroupLabel>
-            <SidebarMenu>
-              {adapter.comparisons.map((c) => (
-                <SidebarMenuItem key={c.id}>
-                  <SidebarMenuButton size="sm" onClick={() => { s.set({ compare: { ...s.compare, a: c.a, b: c.b } }); if (c.scenario) s.selectScenario(c.scenario) }}>
-                    <BookmarkIcon />
-                    <span>{c.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroup>
-        )}
-        {adapter.areas.map((area) => {
-          const items = list.filter((x) => x.area === area.id)
-          if (items.length === 0 && (q || f !== "all")) return null
-          const open = q || f !== "all" ? true : !!openAreas[area.id]
-          return (
-            <Collapsible key={area.id} open={open} onOpenChange={(o) => setOpenAreas((m) => ({ ...m, [area.id]: o }))} className="group/collapsible">
-              <SidebarGroup className="py-1">
-                <SidebarGroupLabel render={<CollapsibleTrigger />} className="group/label w-full text-[11px] tracking-wide uppercase hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                  <ChevronRightIcon className="mr-1 transition-transform duration-200 group-data-[open]/collapsible:rotate-90" />
-                  {area.label}
-                  <span className="ml-auto font-normal tracking-normal tabular-nums normal-case opacity-70">{areaCount(area.id)}</span>
-                </SidebarGroupLabel>
-                <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-[ending-style]:h-0 data-[starting-style]:h-0">
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      {items.filter((x) => !x.parent || !items.some((p) => p.id === x.parent)).map((x) => {
-                        const kids = items.filter((k) => k.parent === x.id)
-                        return (
-                          <SidebarMenuItem key={x.id}>
-                            <SidebarMenuButton size="sm" isActive={s.scenarioObj.id === x.id} onClick={() => s.selectScenario(x.id)} className={cn(x.status === "later" && "text-muted-foreground")} title={x.label}>
-                              <span>{x.label}</span>
-                            </SidebarMenuButton>
-                            <StatusMark status={x.status} noCapture={!live && !captureFor(x, s.theme, s.profile)} />
-                            {kids.length > 0 && (
-                              <SidebarMenuSub>
-                                {kids.map((k) => (
-                                  <SidebarMenuSubItem key={k.id}>
-                                    <SidebarMenuSubButton size="sm" isActive={s.scenarioObj.id === k.id} render={<button type="button" onClick={() => s.selectScenario(k.id)} title={k.label} />}>
-                                      <span>{k.label}</span>
-                                      {k.status === "stale" && <TriangleAlertIcon className="ml-auto size-3 text-warning" aria-label="Stale" />}
-                                    </SidebarMenuSubButton>
-                                  </SidebarMenuSubItem>
-                                ))}
-                              </SidebarMenuSub>
-                            )}
-                          </SidebarMenuItem>
-                        )
-                      })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </CollapsibleContent>
-              </SidebarGroup>
-            </Collapsible>
-          )
-        })}
-        {list.length === 0 && <p className="p-4 text-sm text-muted-foreground">No scenario matches. Clear the search or the filter.</p>}
-      </SidebarContent>
+      {compare && !!adapter.comparisons?.length && (
+        <div className="border-b p-2">
+          <p className="px-2 pb-1 text-xs font-medium text-sidebar-foreground/70">Saved comparisons</p>
+          {adapter.comparisons.map((c) => (
+            <SidebarMenuButton key={c.id} size="sm" onClick={() => { s.set({ compare: { ...s.compare, a: c.a, b: c.b } }); if (c.scenario) s.selectScenario(c.scenario) }}>
+              <BookmarkIcon />
+              <span>{c.label}</span>
+            </SidebarMenuButton>
+          ))}
+        </div>
+      )}
+      {rows.length === 0 ? (
+        <p className="p-4 text-sm text-muted-foreground">No scenario matches. Clear the search or the filter.</p>
+      ) : (
+        <VirtualList
+          ref={handle}
+          role="tree"
+          aria-label="Scenarios"
+          className="px-2 py-1"
+          count={rows.length}
+          rowHeight={heightOf}
+          active={active}
+          onActiveChange={(i) => setActiveKey(rows[i].key)}
+          reveal={reveal}
+          label={(i) => { const r = rows[i]; return r.kind === "area" ? r.label : r.sc.label }}
+          onRowKeyDown={(e, i) => {
+            const r = rows[i]
+            if (e.key === "ArrowRight" && r.kind === "area") {
+              e.preventDefault()
+              if (!r.open) toggle(r.areaId)
+              else if (rows[i + 1]?.kind === "scenario") handle.current?.focusIndex(i + 1)
+            } else if (e.key === "ArrowLeft") {
+              e.preventDefault()
+              if (r.kind === "area" && r.open && !filtering) toggle(r.areaId)
+              else if (r.kind === "scenario") handle.current?.focusIndex(rows.findIndex((x) => x.key === r.parent))
+            }
+          }}
+          rowProps={(i) => {
+            const r = rows[i]
+            if (r.kind === "area")
+              return {
+                role: "treeitem",
+                "aria-level": 1,
+                "aria-expanded": r.open,
+                onClick: () => !filtering && toggle(r.areaId),
+                className: cn("flex items-center gap-1 rounded-md px-2 text-[11px] font-medium tracking-wide text-sidebar-foreground/70 uppercase select-none hover:bg-sidebar-accent", RING),
+              }
+            const selected = s.scenarioObj.id === r.sc.id
+            return {
+              role: "treeitem",
+              "aria-level": r.level + 1,
+              "aria-selected": selected,
+              title: r.sc.label,
+              onClick: () => s.selectScenario(r.sc.id),
+              className: cn("flex cursor-default items-center gap-2 rounded-md pr-2 text-[13px] select-none hover:bg-sidebar-accent", r.level === 1 ? "pl-2" : "pl-6", r.sc.status === "later" && "text-muted-foreground", selected && "bg-sidebar-accent font-medium text-sidebar-accent-foreground", RING),
+            }
+          }}
+        >
+          {(i) => {
+            const r = rows[i]
+            if (r.kind === "area")
+              return (
+                <>
+                  <ChevronRightIcon className={cn("size-3.5 shrink-0 transition-transform duration-200", r.open && "rotate-90")} />
+                  <span className="truncate">{r.label}</span>
+                  <span className="ml-auto font-normal tracking-normal tabular-nums normal-case opacity-70">{r.count}</span>
+                </>
+              )
+            return (
+              <>
+                <span className="truncate">{r.sc.label}</span>
+                <RowMark status={r.sc.status} noCapture={!live && !captureFor(r.sc, s.theme, s.profile)} />
+              </>
+            )
+          }}
+        </VirtualList>
+      )}
     </>
   )
 }
 
-function StatusMark({ status, noCapture }: { status?: string; noCapture: boolean }) {
-  if (status === "stale") return <SidebarMenuBadge className="text-warning" title="Stale: source changed since the last evidence"><TriangleAlertIcon className="size-3.5" /></SidebarMenuBadge>
-  if (status === "unresolved") return <SidebarMenuBadge className="text-danger" title="Unresolved: a reference is broken"><CircleAlertIcon className="size-3.5" /></SidebarMenuBadge>
-  if (status === "later") return <SidebarMenuBadge className="text-muted-foreground" title="Later: not designed yet"><CircleDashedIcon className="size-3.5" /></SidebarMenuBadge>
-  if (noCapture) return <SidebarMenuBadge className="text-muted-foreground/60" title="No capture for this theme and profile"><span className="size-1.5 rounded-full border border-current" /></SidebarMenuBadge>
+function RowMark({ status, noCapture }: { status?: string; noCapture: boolean }) {
+  if (status === "stale") return <TriangleAlertIcon className="ml-auto size-3.5 shrink-0 text-warning" aria-label="Stale: source changed since the last evidence" />
+  if (status === "unresolved") return <CircleAlertIcon className="ml-auto size-3.5 shrink-0 text-danger" aria-label="Unresolved: a reference is broken" />
+  if (status === "later") return <CircleDashedIcon className="ml-auto size-3.5 shrink-0 text-muted-foreground" aria-label="Later: not designed yet" />
+  if (noCapture) return <span className="ml-auto size-1.5 shrink-0 rounded-full border border-muted-foreground/60" role="img" aria-label="No capture for this theme and profile" />
   return null
 }
 
@@ -292,31 +345,43 @@ function PresentPanel() {
         </Select>
         <p className="text-xs leading-relaxed text-muted-foreground">{tour.goal}</p>
       </PanelHeader>
-      <SidebarContent className="p-2">
-        <ol className="grid gap-1" aria-label="Steps">
-          {tour.steps.map((st, i) => {
-            const sc = adapter.scenarios.find((x) => x.id === st.scenario)
-            const problem = staticProblem(st)
-            const current = i === s.present.step
-            return (
-              <li key={i}>
-                <button
-                  type="button"
-                  onClick={() => s.set({ present: { ...s.present, step: i, elapsed: 0 } })}
-                  aria-current={current ? "step" : undefined}
-                  className={cn("group flex w-full gap-2.5 rounded-lg p-2 text-left transition-colors outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring", current && "bg-sidebar-accent")}
-                >
-                  <span className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums", problem ? "bg-danger-surface text-danger" : current ? "bg-foreground text-background" : i < s.present.step ? "bg-muted-foreground/25" : "bg-muted")}>{problem ? "!" : i + 1}</span>
-                  <span className="grid min-w-0 gap-0.5">
-                    <span className={cn("line-clamp-3 text-xs leading-snug", problem ? "text-danger" : "text-sidebar-foreground/85")}>{st.narration}</span>
-                    <span className="truncate text-[11px] text-muted-foreground">{sc ? sc.label : st.scenario}{st.commands?.length ? ` · ${st.commands.length} ${st.commands.length === 1 ? "command" : "commands"}` : ""}</span>
-                  </span>
-                </button>
-              </li>
-            )
-          })}
-        </ol>
-      </SidebarContent>
+      <VirtualList
+        role="list"
+        aria-label="Steps"
+        className="p-2"
+        count={tour.steps.length}
+        rowHeight={STEP_ROW}
+        active={s.present.step}
+        onActiveChange={(i) => s.set({ present: { ...s.present, step: i, elapsed: 0 } })}
+        reveal={s.present.step}
+        label={(i) => tour.steps[i].narration}
+        rowProps={(i) => {
+          const st = tour.steps[i]
+          const problem = staticProblem(st)
+          return {
+            role: "listitem",
+            "aria-current": i === s.present.step ? "step" : undefined,
+            onClick: () => s.set({ present: { ...s.present, step: i, elapsed: 0 } }),
+            className: cn("flex cursor-default gap-2.5 rounded-lg p-2 text-left transition-colors select-none hover:bg-sidebar-accent", RING, i === s.present.step && "bg-sidebar-accent", problem && "text-danger"),
+          }
+        }}
+      >
+        {(i) => {
+          const st = tour.steps[i]
+          const sc = adapter.scenarios.find((x) => x.id === st.scenario)
+          const problem = staticProblem(st)
+          const current = i === s.present.step
+          return (
+            <>
+              <span className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums", problem ? "bg-danger-surface text-danger" : current ? "bg-foreground text-background" : i < s.present.step ? "bg-muted-foreground/25" : "bg-muted")}>{problem ? "!" : i + 1}</span>
+              <span className="grid min-w-0 gap-0.5 self-start">
+                <span className={cn("line-clamp-3 text-xs leading-snug", problem ? "text-danger" : "text-sidebar-foreground/85")}>{st.narration}</span>
+                <span className="truncate text-[11px] text-muted-foreground">{sc ? sc.label : st.scenario}{st.commands?.length ? ` · ${st.commands.length} ${st.commands.length === 1 ? "command" : "commands"}` : ""}</span>
+              </span>
+            </>
+          )
+        }}
+      </VirtualList>
       <SidebarFooter className="gap-3 border-t p-3">
         <Field orientation="horizontal" className="justify-between">
           <FieldLabel htmlFor="autoplay" className="font-normal">Autoplay</FieldLabel>
