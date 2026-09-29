@@ -45,7 +45,7 @@ button, input, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 :focus-visible { outline: none; box-shadow: var(--ex-focus); }
 
-.app { display: grid; grid-template-columns: 220px 1fr; height: 100%; }
+.app { display: grid; grid-template-columns: var(--ex-nav, 220px) 1fr; height: 100%; }
 .nav { border-right: 1px solid var(--ex-line); padding: 20px 12px; display: flex; flex-direction: column; gap: 4px; background: var(--ex-surface); }
 .brand { font-weight: 700; font-size: 17px; padding: 4px 10px 16px; display: flex; align-items: center; gap: 8px; }
 .brand i { width: 22px; height: 22px; border-radius: 7px; background: var(--ex-primary); display: inline-block; }

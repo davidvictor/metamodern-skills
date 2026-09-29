@@ -7,12 +7,13 @@ import type { Scenario, ScenarioInput, Token } from "@/studio/types"
 import { decodeDesign, designDraft, encodeDesign, type DesignDraft, type DesignValues } from "@/studio/design"
 
 /** One draft layer, as a preview receives it. */
-export type Draft = { tokens: Record<string, string>; css: string; stylesheets: string[] }
+export type Draft = { tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>> }
 export const NO_DRAFT: Draft = { tokens: {}, css: "", stylesheets: [] }
 
 export type View = "inspect" | "compare" | "gallery" | "present" | "design"
 export type CompareMode = "side" | "split" | "toggle"
-export type Options = { controls: "dock" | "toolbar"; details: "docked" | "floating"; railLabels: boolean }
+/** draftEverywhere: show the design draft in Inspect, Gallery and Compare too. Off by default; Present never shows it. */
+export type Options = { controls: "dock" | "toolbar"; details: "docked" | "floating"; railLabels: boolean; draftEverywhere: boolean }
 export type PreviewStatus = { status: "loading" | "ready" | "error" | "static" | "empty"; modified: boolean; canGoBack: boolean; location?: string; fingerprint?: string; reason?: string; previous?: boolean }
 
 type State = {
@@ -134,10 +135,11 @@ export function resolveValues(sc: Scenario | undefined, values: Record<string, s
 /** The same values with the viewer's dock choices removed, for playing a walkthrough exactly as designed. */
 export const withoutLenses = (values: Record<string, string>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
 /** The axes Compare can change for a scenario: theme, profile and every scenario input it uses. */
-export const compareAxes = (sc?: Scenario) => [{ id: "theme", label: A.axes.themeLabel }, { id: "profile", label: "Profile" }, ...choosableFor(sc).map((i) => ({ id: i.id, label: i.label }))]
+export const compareAxes = (sc?: Scenario, draft = false) => [{ id: "theme", label: A.axes.themeLabel }, { id: "profile", label: "Profile" }, ...choosableFor(sc).map((i) => ({ id: i.id, label: i.label })), ...(draft ? [{ id: "design", label: "Design" }] : [])]
 export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: string }[] => {
   if (axis === "theme") return A.axes.themes.map((t) => ({ id: t.id, label: t.label }))
   if (axis === "profile") return A.axes.profiles.map((p) => ({ id: p.id, label: p.label }))
+  if (axis === "design") return [{ id: "built", label: "As built" }, { id: "draft", label: "Draft" }]
   const input = A.axes.inputs.find((i) => i.id === axis)
   return input ? optionsFor(input, sc) : []
 }
@@ -165,7 +167,7 @@ const initial: State = {
   tokens: { selected: A.tokens?.tokens[0]?.name ?? "", drafts: {}, query: "", flag: "all", family: null },
   design: initialDesign,
   gallery: { size: 240, source: hasCaptures || !A.frameEntry ? "captures" : "live", query: "", hidden: [], onlyFlagged: false },
-  options: { controls: "dock", details: "docked", railLabels: true },
+  options: { controls: "dock", details: "docked", railLabels: true, draftEverywhere: false },
   commandOpen: false,
   shortcutsOpen: false,
   mobilePanel: null,
@@ -193,6 +195,8 @@ type Ctx = State & {
   draftFor: (theme: string) => Draft
   /** Whether any draft exists, from Adjust or from Tokens. */
   hasDraft: boolean
+  /** The draft for Inspect, Gallery and Compare: only when the viewer turned on draft everywhere. */
+  viewDraft: (theme: string) => Draft
   setDesign: (patch: Partial<State["design"]>) => void
 }
 
@@ -288,9 +292,14 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     designFor: (theme) => designDraft(A, state.design.values, theme),
     draftFor: (theme) => {
       const d = designDraft(A, state.design.values, theme)
-      return { tokens: { ...d.tokens, ...handDrafts(state.tokens.drafts, theme) }, css: d.css, stylesheets: d.stylesheets }
+      return { tokens: { ...d.tokens, ...handDrafts(state.tokens.drafts, theme) }, css: d.css, stylesheets: d.stylesheets, scoped: d.scoped }
     },
     hasDraft: Object.keys(state.tokens.drafts).length > 0 || !!encodeDesign(A, state.design.values),
+    viewDraft: (theme) => {
+      if (!state.options.draftEverywhere || (!Object.keys(state.tokens.drafts).length && !encodeDesign(A, state.design.values))) return NO_DRAFT
+      const d = designDraft(A, state.design.values, theme)
+      return { tokens: { ...d.tokens, ...handDrafts(state.tokens.drafts, theme) }, css: d.css, stylesheets: d.stylesheets }
+    },
     setDesign: (patch) => set((s) => ({ design: { ...s.design, ...patch } })),
   }
   return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>

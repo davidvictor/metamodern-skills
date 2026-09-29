@@ -42,6 +42,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useTheme } from "@/components/theme-provider"
+import { download, encodeDesign, variantFile } from "@/studio/design"
 import { adapter } from "@/adapter"
 import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
 import type { CapabilityDimension } from "@/studio/types"
@@ -662,14 +663,10 @@ function TokenEditor() {
     if (!Object.keys(next[tok.name]).length) delete next[tok.name]
     s.set({ tokens: { ...s.tokens, drafts: next } })
   }
-  const exportDrafts = async () => {
-    const file = JSON.stringify({ adapter: adapter.id, revision: adapter.product.revision, tokens: s.tokens.drafts }, null, 2)
-    try {
-      await navigator.clipboard.writeText(file)
-      toast.success("Variant file copied", { description: "Save it with the Studio's presenter material for review." })
-    } catch {
-      toast.error("Couldn't copy the variant file")
-    }
+  const exportDrafts = () => {
+    const f = variantFile(adapter, "Draft", s.draftFor, encodeDesign(adapter, s.design.values))
+    download(f.name, f.text)
+    toast.success(`Saved ${f.name}`, { description: "The one draft layer, Adjust and Tokens together. Commit it to the Studio's variants folder to make it a Token variant." })
   }
   const col = (theme: string) => {
     const base = tok.values[theme] ?? ""
@@ -722,7 +719,7 @@ function TokenEditor() {
       <div className="grid gap-2 border-t p-3">
         <p className="text-xs text-muted-foreground">{count} {count === 1 ? "token draft" : "token drafts"} kept in this browser. Drafts never change the product.</p>
         <div className="flex gap-2">
-          <Button size="sm" onClick={exportDrafts} disabled={!count}>Copy as variant file</Button>
+          <Button size="sm" onClick={exportDrafts} disabled={!count && !s.hasDraft}>Save as variant</Button>
           <Button size="sm" variant="outline" onClick={() => s.set({ tokens: { ...s.tokens, drafts: {} } })} disabled={!count}>Discard drafts</Button>
         </div>
       </div>

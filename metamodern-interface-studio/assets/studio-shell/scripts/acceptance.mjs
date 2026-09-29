@@ -9,7 +9,7 @@
  * A result is pass, fail, or not-measured; nothing is inferred. Set ONLY=AC-03,AC-10 to run a subset.
  */
 import { execFileSync } from "node:child_process"
-import { createReadStream, existsSync, statSync, writeFileSync } from "node:fs"
+import { createReadStream, existsSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { createServer } from "node:http"
 import { extname, join, normalize } from "node:path"
 
@@ -639,7 +639,7 @@ await check("AC-44", async () => {
   const marks = await p.getByRole("button", { name: /^Density (Compact|Comfortable)/ }).allInnerTexts()
   await p.getByRole("button", { name: /^Density Compact/ }).click()
   await wait(600)
-  const compact = [await prop("--ex-row"), await prop("--ex-space")]
+  const compact = [await prop("--ex-row"), await frame().evaluate(() => getComputedStyle(document.querySelector(".app")).getPropertyValue("--ex-space").trim()), await prop("--ex-space"), await prop("--ex-nav")]
   const badge = await p.getByText("Draft design", { exact: true }).isVisible()
   const thumb = p.getByRole("slider", { name: "Density" })
   await thumb.focus()
@@ -671,8 +671,8 @@ await check("AC-44", async () => {
   const tab = await t.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("tab"))
   const pressed = await t.getByRole("radio", { name: "Tokens" }).getAttribute("aria-checked").catch(() => null)
   await t.closeAll()
-  const ok = built === "48px" && marks.join(",") === "Compact,Comfortable" && compact.join(",") === "38px,12px" && badge && between === "43px" && kept === "same document" && peeked === "48px" && released === "43px" && link === "density:0.9" && readout === "0.90×" && reloaded === "43px" && presented === "" && tokensTab && tab === "tokens"
-  return [ok ? "pass" : "fail", `as built --ex-row ${built}; marks ${marks.join(", ")}; Compact mark gave ${compact.join(" and ")}; draft badge ${badge}; 0.90 gave ${between} (between the marks); frame document kept: ${kept}; holding As built showed ${peeked}, release ${released}; link design=${link}; after reload readout ${readout} and ${reloaded}; Present frame override "${presented}"; old view=tokens link opens the Tokens tab ${tokensTab} (tab=${tab}, pressed ${pressed})`]
+  const ok = built === "48px" && marks.join(",") === "Compact,Comfortable" && compact.join(",") === "38px,12px,16px,176px" && badge && between === "43px" && kept === "same document" && peeked === "48px" && released === "43px" && link === "density:0.9" && readout === "0.90×" && reloaded === "43px" && presented === "" && tokensTab && tab === "tokens"
+  return [ok ? "pass" : "fail", `as built --ex-row ${built}; marks ${marks.join(", ")}; Compact mark gave --ex-row ${compact[0]}, --ex-space ${compact[1]} under .app (root still ${compact[2]}), --ex-nav ${compact[3]} from its base value; draft badge ${badge}; 0.90 gave ${between} (between the marks); frame document kept: ${kept}; holding As built showed ${peeked}, release ${released}; link design=${link}; after reload readout ${readout} and ${reloaded}; Present frame override "${presented}"; old view=tokens link opens the Tokens tab ${tokensTab} (tab=${tab}, pressed ${pressed})`]
 })
 
 const designFrame = (p) => p.frames().find((f) => f !== p.mainFrame() && f.url().includes("example"))
@@ -714,7 +714,7 @@ await check("AC-46", async () => {
   const primary = await frameProp(p, "--ex-primary")
   const accent = await frameProp(p, "--ex-accent")
   const ground = await frameProp(p, "--ex-ground")
-  const fixed = await p.getByText(/Won’t follow \(fixed values\)/).innerText()
+  const fixed = await p.getByText(/Won’t follow:/).innerText()
   const before = await p.getByText(/:1 against --ex-primary-ink/).count()
   await p.getByLabel("Primary color", { exact: true }).fill("#9ca3af")
   await p.keyboard.press("Enter")
@@ -728,6 +728,64 @@ await check("AC-46", async () => {
   await p.closeAll()
   const ok = primary === "#b91c1c" && /^color-mix\(in oklch, #b91c1c 18%, white\)$/.test(accent) && /^color-mix\(in oklch, #fafaf9, #ff9a3c 12%\)$/.test(ground) && /--ex-focus/.test(fixed) && before === 0 && /^Primary color: \d\.\d:1/.test(warn) && accent2 === "#1e3a8a" && accentWarn === 1
   return [ok ? "pass" : "fail", `primary ${primary}, derived accent ${accent}; warm neutral ground ${ground}; ${fixed}; a readable primary warns ${before} times, a grey primary warns "${warn}"; an accent set after the primary wins (${accent2}) and is checked against --ex-ink (${accentWarn} warning)`]
+})
+
+const rowOf = (f) => f?.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ex-row").trim())
+const liveFrames = (p) => p.frames().filter((f) => f !== p.mainFrame() && f.url().includes("example"))
+const downloaded = async (p, click) => {
+  const [d] = await Promise.all([p.waitForEvent("download"), click()])
+  return { name: d.suggestedFilename(), text: readFileSync(await d.path(), "utf8") }
+}
+
+// AC-47 Draft everywhere (off by default, per viewer, always labeled, never in Present), a Design axis in Compare, and Save as variant
+await check("AC-47", async () => {
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list&profile=desktop&design=density:0.8" })
+  await wait(800)
+  const off = await rowOf(designFrame(p))
+  const offBadge = await p.getByText("Draft design", { exact: true }).count()
+  await p.getByRole("button", { name: "Design" }).first().click()
+  await wait(800)
+  await p.getByRole("switch", { name: "Show the draft in Inspect, Gallery and Compare" }).click()
+  const file = await downloaded(p, async () => {
+    await p.getByLabel("Save as a variant").fill("Tighter rows")
+    await p.getByRole("button", { name: "Save", exact: true }).click()
+  })
+  const variant = JSON.parse(file.text)
+  await p.getByRole("button", { name: "Inspect" }).first().click()
+  await wait(1500)
+  const on = await rowOf(designFrame(p))
+  const onBadge = await p.getByText("Draft design", { exact: true }).isVisible()
+  await p.getByRole("button", { name: "Gallery" }).first().click()
+  await wait(2500)
+  const thumbs = await Promise.all(liveFrames(p).slice(0, 3).map(rowOf))
+  await p.getByRole("button", { name: "Compare" }).first().click()
+  await wait(1200)
+  await p.getByRole("combobox", { name: "Changing axis" }).click()
+  await p.getByRole("option", { name: "Design" }).click()
+  await wait(2000)
+  const sides = await Promise.all([p.locator('iframe[title^="Side A"]').first(), p.locator('iframe[title^="Side B"]').first()].map(async (el) => rowOf(await (await el.elementHandle()).contentFrame())))
+  const labels = await p.locator("figcaption b").allInnerTexts()
+  await p.getByRole("button", { name: "Present" }).first().click()
+  await wait(2500)
+  const presented = await designFrame(p).evaluate(() => document.documentElement.style.getPropertyValue("--ex-row"))
+  await p.reload()
+  await p.waitForSelector("header")
+  const kept = await p.evaluate(() => JSON.parse(localStorage.getItem(Object.keys(localStorage).find((k) => k.endsWith(".options")) ?? "{}")).draftEverywhere)
+  await p.closeAll()
+  const ok = off === "48px" && offBadge === 0 && on === "38px" && onBadge && thumbs.length > 0 && thumbs.every((x) => x === "38px") && labels.join(",") === "As built,Draft" && sides.join(",") === "48px,38px" && presented === "" && kept === true && file.name === "tighter-rows.json" && variant.id === "variant.tighter-rows" && variant.overrides["--ex-row"]?.light === "38px" && variant.overrides["--ex-row"]?.dark === "38px"
+  return [ok ? "pass" : "fail", `switch off: Inspect ${off}, badges ${offBadge}; on: Inspect ${on} with badge ${onBadge}, Gallery thumbnails ${thumbs.join(" ")}; Compare Design axis ${labels.join(" vs ")} rendered ${sides.join(" and ")}; Present override "${presented}"; switch kept after reload ${kept}; saved ${file.name} as ${variant.id} with --ex-row ${JSON.stringify(variant.overrides["--ex-row"])}`]
+})
+
+// AC-48 Export: the draft as a CSS and a JSON token diff, from and to per theme, labeled a proposal
+await check("AC-48", async () => {
+  const p = await open("normal", { hash: "view=design&scenario=tasks.list&profile=desktop&design=density:0.8;body-font:Georgia" })
+  await wait(800)
+  const css = await downloaded(p, () => p.getByRole("button", { name: "CSS", exact: true }).click())
+  const json = await downloaded(p, () => p.getByRole("button", { name: "JSON", exact: true }).click())
+  await p.closeAll()
+  const diff = JSON.parse(json.text)
+  const ok = css.name === "draft-tokens.css" && /never a decision/.test(css.text) && /Light \(light\) \*\/\n:root \{[\s\S]*--ex-row: 38px; \/\* was 48px \*\//.test(css.text) && /--ex-font: "Georgia", /.test(css.text) && diff.schema === "studio-token-diff/1" && diff.themes.light["--ex-row"].from === "48px" && diff.themes.light["--ex-row"].to === "38px" && diff.themes.dark["--ex-space"].to === "12px" && diff.design === "density:0.8;body-font:Georgia"
+  return [ok ? "pass" : "fail", `${ok ? "" : JSON.stringify(css.text) + " "}${css.name}: ${css.text.split("\n").length} lines with from and to per theme; ${json.name}: light --ex-row ${JSON.stringify(diff.themes.light["--ex-row"])}, dark --ex-space ${JSON.stringify(diff.themes.dark["--ex-space"])}, design ${diff.design}`]
 })
 
 await browser.close()

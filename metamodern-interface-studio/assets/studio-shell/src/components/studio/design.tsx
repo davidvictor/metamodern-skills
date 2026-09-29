@@ -4,7 +4,7 @@
  * exploration; it is always labeled and never reaches Present.
  */
 import * as React from "react"
-import { EyeIcon, RotateCcwIcon, TriangleAlertIcon } from "lucide-react"
+import { DownloadIcon, EyeIcon, RotateCcwIcon, TriangleAlertIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
@@ -16,7 +16,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { adapter } from "@/adapter"
 import { NO_DRAFT, useStudio } from "@/store"
-import { allowedStylesheet, baseValue, isDefault, toPx } from "@/studio/design"
+import { allowedStylesheet, baseValue, download, encodeDesign, isDefault, tokenDiff, toPx, variantFile } from "@/studio/design"
+import { toast } from "sonner"
+import { Switch } from "@/components/ui/switch"
 import type { DesignParameter } from "@/studio/types"
 import { ScaleChip, StatusBadge, useFit } from "./bits"
 import { ScenarioPreview, sizedProfile, useReportStatus } from "./preview"
@@ -110,6 +112,39 @@ function ColorControl({ p }: { p: DesignParameter }) {
   )
 }
 
+/** Where the draft goes: beyond this view (per viewer), into a variant file, or out as a token diff. */
+function ShareDraft() {
+  const s = useStudio()
+  const [label, setLabel] = React.useState("Draft")
+  const design = encodeDesign(adapter, s.design.values)
+  return (
+    <SidebarGroup className="gap-3 border-t px-3 py-3">
+      <Field orientation="horizontal">
+        <Switch id="draft-everywhere" checked={s.options.draftEverywhere} onCheckedChange={(v) => s.set({ options: { ...s.options, draftEverywhere: v } })} />
+        <FieldLabel htmlFor="draft-everywhere" className="text-xs font-normal">Show the draft in Inspect, Gallery and Compare</FieldLabel>
+      </Field>
+      <FieldDescription className="-mt-2 text-xs">For you only, and always labeled. Present never shows a draft.</FieldDescription>
+      <Field>
+        <FieldLabel htmlFor="variant-name" className="text-xs">Save as a variant</FieldLabel>
+        <div className="flex gap-2">
+          <Input id="variant-name" value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 text-xs" />
+          <Button size="sm" disabled={!s.hasDraft || !label.trim()} onClick={() => { const f = variantFile(adapter, label.trim(), s.draftFor, design); download(f.name, f.text); toast.success(`Saved ${f.name}`, { description: "Commit it to the Studio's variants folder to make it a Token variant. It records no decision." }) }}>
+            <DownloadIcon /> Save
+          </Button>
+        </div>
+      </Field>
+      <div className="grid gap-1.5">
+        <span className="text-xs font-medium">Export the draft for review</span>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="flex-1" disabled={!s.hasDraft} onClick={() => download("draft-tokens.css", tokenDiff(adapter, s.draftFor, design).css, "text/css")}>CSS</Button>
+          <Button variant="outline" size="sm" className="flex-1" disabled={!s.hasDraft} onClick={() => download("draft-tokens.json", tokenDiff(adapter, s.draftFor, design).json)}>JSON</Button>
+        </div>
+        <span className="text-[11px] text-muted-foreground">A token diff for the design system team: a proposal, never a decision.</span>
+      </div>
+    </SidebarGroup>
+  )
+}
+
 /** Adjust: the parameters, then what the current values change and what to watch. */
 export function AdjustPanel() {
   const s = useStudio()
@@ -126,6 +161,7 @@ export function AdjustPanel() {
           <RotateCcwIcon /> Back to as built
         </Button>
       </SidebarGroup>
+      <ShareDraft />
       <SidebarGroup className="border-t">
         <SidebarGroupLabel>What changes</SidebarGroupLabel>
         <ul className="grid gap-2 px-2 pb-2 text-xs" aria-label="What changes">
@@ -146,7 +182,7 @@ export function AdjustPanel() {
               <span>{labelOf(w.param)}: {w.text}</span>
             </li>
           ))}
-          {!!d.literal.length && <li className="text-muted-foreground">Won’t follow (fixed values): <code className="font-mono text-[11px]">{d.literal.join(", ")}</code></li>}
+          {!!d.literal.length && <li className="text-muted-foreground">Won’t follow: <code className="font-mono text-[11px]">{d.literal.join(", ")}</code></li>}
         </ul>
       </SidebarGroup>
     </SidebarContent>

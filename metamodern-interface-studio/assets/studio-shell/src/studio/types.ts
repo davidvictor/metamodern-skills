@@ -158,8 +158,18 @@ export type DesignParameter = {
     steps?: Record<string, number>
     /** font and color: tokens set to the value. temperature: the neutral tokens it tints. */
     set?: string[]
-    /** color: tokens derived from the value, each a CSS expression using $value, such as `color-mix(in oklch, $value 12%, white)`. */
-    derive?: Record<string, string>
+    /**
+     * color: tokens derived from the value, each a CSS expression using $value, such as
+     * `color-mix(in oklch, $value 12%, white)`, or one expression per theme ID when the relation differs by theme.
+     */
+    derive?: Record<string, string | Record<string, string>>
+    /**
+     * Tokens the product reads under a selector rather than the root, keyed by selector, such as
+     * `{ ":root [data-density]": ["--control-height"] }`. Their draft values go out as a CSS rule.
+     */
+    scope?: Record<string, string[]>
+    /** Values for tokens outside the token source, such as a framework's own `--spacing`. */
+    base?: Record<string, string>
     /** CSS rules using $value, for what tokens cannot reach, such as fonts baked into utility classes. */
     css?: string
     /** scale and ratio: also scale bare numbers, such as unitless line heights. */
@@ -177,6 +187,8 @@ export type DesignParameter = {
   }
   /** Shown under the control, such as which modes the product ships. */
   note?: string
+  /** What this parameter cannot reach, listed as "won't follow", such as fixed sizes or literal colors inside shadows. */
+  wontFollow?: string[]
 }
 
 export type StudioAdapter = {

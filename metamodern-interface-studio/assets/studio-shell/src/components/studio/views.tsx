@@ -48,7 +48,14 @@ function Stage({ children, controls = true, footer, narrow }: { children: React.
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
       {controls && !dock && <StageControls variant="toolbar" />}
-      <div className="stage-surface relative flex min-h-0 flex-1 flex-col">{children}</div>
+      <div className="stage-surface relative flex min-h-0 flex-1 flex-col">
+        {children}
+        {s.options.draftEverywhere && s.hasDraft && s.view !== "present" && (
+          <div className="pointer-events-none absolute top-3 left-3 z-10">
+            <StatusBadge kind="draft">Draft design</StatusBadge>
+          </div>
+        )}
+      </div>
       {controls && dock && (
         <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center px-3">
           <StageControls variant="dock" />
@@ -89,6 +96,7 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
       profile={s.profile}
       size={resizable ? s.size : null}
       values={s.values}
+      draft={s.viewDraft(s.theme)}
       resetNonce={s.resetNonce}
       scale={scale}
       label={`${areaLabel(sc.area)}: ${sc.label} preview`}
@@ -115,7 +123,7 @@ function useSideStatus() {
 export function CompareStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
   const sc = s.scenarioObj
-  const axes = compareAxes(sc)
+  const axes = compareAxes(sc, s.hasDraft)
   const { mode, split, showB } = s.compare
   // A scoped axis (such as Role) that this scenario does not use falls back to the theme axis.
   const fallback = !axes.some((x) => x.id === s.compare.axis)
@@ -130,7 +138,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const pick = (k: "a" | "b") => (k === "a" ? a : b)
   const sideProfile = (k: "a" | "b") => profileOf(axis === "profile" ? pick(k) : s.profile)
   const sideTheme = (k: "a" | "b") => (axis === "theme" ? pick(k) : s.theme)
-  const sideValues = (k: "a" | "b") => (axis !== "theme" && axis !== "profile" ? { ...s.values, [axis]: pick(k) } : s.values)
+  const sideValues = (k: "a" | "b") => (axis !== "theme" && axis !== "profile" && axis !== "design" ? { ...s.values, [axis]: pick(k) } : s.values)
   const pa = sideProfile("a")
   const pb = sideProfile("b")
   const box = React.useRef<HTMLDivElement>(null)
@@ -148,7 +156,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const changeAxis = (next: string) => {
     if (next === axis) return
     const opts = axisOptions(next, sc)
-    const current = next === "theme" ? s.theme : next === "profile" ? s.profile : (s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
+    const current = next === "design" ? "built" : next === "theme" ? s.theme : next === "profile" ? s.profile : (s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
     const at = Math.max(0, opts.findIndex((o) => o.id === current))
     setC({ axis: next, a: opts[at]?.id ?? "", b: opts[(at + 1) % opts.length]?.id ?? "" })
   }
@@ -178,6 +186,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
         theme={sideTheme(k)}
         profile={sideProfile(k).id}
         values={sideValues(k)}
+        draft={axis === "design" ? (pick(k) === "draft" ? s.draftFor(sideTheme(k)) : NO_DRAFT) : s.viewDraft(sideTheme(k))}
         resetNonce={x.nonce}
         scale={scale}
         interactive={interactive}
@@ -394,7 +403,7 @@ export function GalleryStage() {
                           cap ? <img src={cap.src} alt="" className="size-full object-cover object-top" /> : <div className="flex size-full items-center justify-center p-3 text-center text-xs text-muted-foreground">No capture</div>
                         ) : (
                           <WhenVisible className="absolute inset-0">
-                            {(width) => <ScenarioPreview scenario={x.id} theme={s.theme} profile={s.profile} values={s.values} scale={width / pr.w} interactive={false} label={`${x.label} thumbnail`} className="[&_.preview-ticks]:hidden [&_.preview-frame]:rounded-none! [&_.preview-frame]:shadow-none" />}
+                            {(width) => <ScenarioPreview scenario={x.id} theme={s.theme} profile={s.profile} values={s.values} draft={s.viewDraft(s.theme)} scale={width / pr.w} interactive={false} label={`${x.label} thumbnail`} className="[&_.preview-ticks]:hidden [&_.preview-frame]:rounded-none! [&_.preview-frame]:shadow-none" />}
                           </WhenVisible>
                         )}
                         <div className="absolute top-1.5 left-1.5">

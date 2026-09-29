@@ -10,12 +10,15 @@ export type DesignValues = Record<string, number | string>
 export type DesignChange = { param: DesignParameter; tokens: string[]; css: boolean; missing: string[] }
 export type DesignWarning = { param: string; text: string }
 export type DesignDraft = {
+  /** Values for the root, sent as draft tokens. */
   tokens: Record<string, string>
+  /** Values the product reads under a selector, keyed by selector; sent as CSS rules. */
+  scoped: Record<string, Record<string, string>>
   css: string
   stylesheets: string[]
   changes: DesignChange[]
   warnings: DesignWarning[]
-  /** Tokens that hold fixed values and so do not follow a color change. */
+  /** Tokens that hold fixed values and so do not follow a color change, and what parameters say they cannot reach. */
   literal: string[]
 }
 
@@ -60,10 +63,13 @@ function lerp(a: string, b: string, t: number) {
   return i === bs.length ? out : t < 0.5 ? a : b
 }
 
-/** A token's value for a theme: that theme's, else the first column's, else any. */
+/** A token's value for a theme: that theme's, else the first column's, else any; else a value a parameter supplies. */
 export function baseValue(adapter: StudioAdapter, name: string, theme: string) {
   const token = adapter.tokens?.tokens.find((x) => x.name === name)
-  if (!token) return undefined
+  if (!token) {
+    for (const p of adapter.design?.parameters ?? []) if (p.apply.base?.[name] !== undefined) return p.apply.base[name]
+    return undefined
+  }
   return token.values[theme] ?? token.values[adapter.tokens!.columns[0]] ?? Object.values(token.values)[0]
 }
 
@@ -104,6 +110,7 @@ export function contrast(a: string, b: string) {
 /** Every token name a parameter may touch: the adapter's tokens plus any a stop or rule names. */
 function tokenNames(adapter: StudioAdapter, p: DesignParameter) {
   const names = new Set(adapter.tokens?.tokens.map((x) => x.name) ?? [])
+  for (const n of Object.keys(p.apply.base ?? {})) names.add(n)
   for (const st of p.stops ?? []) for (const n of Object.keys(st.values ?? {})) names.add(n)
   for (const n of Object.keys(p.apply.steps ?? {})) names.add(n)
   for (const n of p.apply.set ?? []) names.add(n)
@@ -112,7 +119,7 @@ function tokenNames(adapter: StudioAdapter, p: DesignParameter) {
 
 /** The draft the current values produce for one theme. Parameters at their defaults produce nothing. */
 export function designDraft(adapter: StudioAdapter, values: DesignValues, theme: string): DesignDraft {
-  const out: DesignDraft = { tokens: {}, css: "", stylesheets: [], changes: [], warnings: [], literal: [] }
+  const out: DesignDraft = { tokens: {}, scoped: {}, css: "", stylesheets: [], changes: [], warnings: [], literal: [] }
   const css: string[] = []
   for (const p of adapter.design?.parameters ?? []) {
     const v = values[p.id]
@@ -121,8 +128,10 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
     const excluded = matcher(p.apply.exclude)
     const floors = Object.entries(p.apply.floor ?? {}).map(([k, px]) => [matcher([k]), px] as const)
     const warns = Object.entries(p.apply.warnBelow ?? {}).map(([k, px]) => [matcher([k]), px] as const)
+    const scopes = Object.entries(p.apply.scope ?? {}).map(([selector, names]) => [selector, matcher(names)] as const)
+    const scopeOf = (name: string) => scopes.find(([, m]) => m(name))?.[0]
     // Parameters compose in declaration order: a later one scales what an earlier one produced.
-    const current = (name: string) => out.tokens[name] ?? baseValue(adapter, name, theme)
+    const current = (name: string) => out.tokens[name] ?? Object.values(out.scoped).find((r) => r[name] !== undefined)?.[name] ?? baseValue(adapter, name, theme)
     const put = (name: string, value: string | undefined) => {
       if (value === undefined) return
       let next = value
@@ -132,10 +141,12 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
       const warn = warns.find(([m]) => m(name))?.[1]
       const after = toPx(next)
       if (warn !== undefined && after !== null && after < warn) out.warnings.push({ param: p.id, text: `${name} is ${after}px, under ${warn}px` })
+      const selector = scopeOf(name)
+      const bucket = selector ? (out.scoped[selector] ??= {}) : out.tokens
       if (next !== baseValue(adapter, name, theme)) {
-        out.tokens[name] = next
-        change.tokens.push(name)
-      } else delete out.tokens[name]
+        bucket[name] = next
+        if (!change.tokens.includes(name)) change.tokens.push(name)
+      } else delete bucket[name]
     }
 
     if (p.kind === "scale") {
@@ -192,7 +203,10 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
         continue
       }
       for (const token of p.apply.set ?? []) put(token, color)
-      for (const [token, expr] of Object.entries(p.apply.derive ?? {})) put(token, expr.replaceAll("$value", color))
+      for (const [token, expr] of Object.entries(p.apply.derive ?? {})) {
+        const e = typeof expr === "string" ? expr : (expr[theme] ?? Object.values(expr)[0])
+        if (e) put(token, e.replaceAll("$value", color))
+      }
       for (const against of p.apply.contrast?.against ?? []) {
         const ground = out.tokens[against] ?? baseValue(adapter, against, theme)
         const ratio = ground ? contrast(color, ground) : null
@@ -201,6 +215,7 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
       for (const x of adapter.tokens?.tokens ?? []) if (x.flags?.includes("literal") && !out.literal.includes(x.name)) out.literal.push(x.name)
     }
 
+    for (const name of p.wontFollow ?? []) if (!out.literal.includes(name)) out.literal.push(name)
     if (p.apply.css) {
       const value = p.kind === "font" ? `"${String(v).replace(/"/g, "")}"` : String(v)
       css.push(p.apply.css.replaceAll("$value", value))
@@ -208,7 +223,8 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
     }
     out.changes.push(change)
   }
-  out.css = css.join("\n")
+  const rules = Object.entries(out.scoped).filter(([, r]) => Object.keys(r).length).map(([selector, r]) => `${selector} { ${Object.entries(r).map(([k, v]) => `${k}: ${v};`).join(" ")} }`)
+  out.css = [...rules, ...css].join("\n")
   return out
 }
 
@@ -233,4 +249,63 @@ export function decodeDesign(adapter: StudioAdapter, text: string | null): Desig
     } else if (raw.trim()) out[p.id] = raw.trim()
   }
   return out
+}
+
+type DraftLike = { tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>> }
+const scopedFor = (d: DraftLike) => Object.fromEntries(Object.entries(d.scoped ?? {}).flatMap(([scope, r]) => Object.entries(r).map(([name, value]) => [name, { value, scope }])))
+const slugOf = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "draft"
+
+/**
+ * A saved variant: the draft as token overrides per appearance (the first theme of each
+ * appearance), the shape a Studio's variants folder reads. It records no decision.
+ */
+export function variantFile(adapter: StudioAdapter, label: string, draftFor: (theme: string) => DraftLike, design: string) {
+  const slug = slugOf(label)
+  const overrides: Record<string, { light?: string; dark?: string }> = {}
+  for (const appearance of ["light", "dark"] as const) {
+    const theme = adapter.axes.themes.find((t) => t.appearance === appearance)
+    if (!theme) continue
+    for (const [name, value] of Object.entries(draftFor(theme.id).tokens)) (overrides[name] ??= {})[appearance] = value
+  }
+  const first = draftFor(adapter.axes.themes[0].id)
+  const file = {
+    schema: "studio-variant/1",
+    id: `variant.${slug}`,
+    kind: "variant",
+    label,
+    product: adapter.product.name,
+    revision: adapter.product.revision,
+    savedAt: new Date().toISOString(),
+    ...(design ? { design } : {}),
+    overrides,
+    ...(first.css ? { css: first.css } : {}),
+    ...(first.stylesheets.length ? { stylesheets: first.stylesheets } : {}),
+  }
+  return { name: `${slug}.json`, text: `${JSON.stringify(file, null, 2)}\n` }
+}
+
+/** The draft as a token diff for a design system team: a proposal, never a decision. */
+export function tokenDiff(adapter: StudioAdapter, draftFor: (theme: string) => DraftLike, design: string) {
+  const themes = adapter.axes.themes.map((t) => {
+    const d = draftFor(t.id)
+    const scoped = Object.entries(scopedFor(d)).map(([name, x]) => ({ name, from: baseValue(adapter, name, t.id) ?? null, to: x.value, scope: x.scope }))
+    return { theme: t, changes: [...Object.entries(d.tokens).map(([name, to]) => ({ name, from: baseValue(adapter, name, t.id) ?? null, to, scope: undefined as string | undefined })), ...scoped], css: d.css, stylesheets: d.stylesheets }
+  })
+  const head = `/*\n * Draft design from the ${adapter.product.name} Studio at ${adapter.product.revision}, ${new Date().toISOString().slice(0, 10)}.\n * A proposal for review, never a decision.${design ? `\n * Design values: ${design}` : ""}\n */`
+  const blocks = themes.filter((x) => x.changes.some((c) => !c.scope)).map((x) => `/* ${x.theme.label} (${x.theme.id}) */\n:root {\n${x.changes.filter((c) => !c.scope).map((c) => `  ${c.name}: ${c.to}; /* was ${c.from ?? "not in the token source"} */`).join("\n")}\n}`)
+  const extra = themes[0]?.css ? [`/* Rules tokens cannot reach */\n${themes[0].css}`] : []
+  const fonts = themes[0]?.stylesheets.length ? [`/* Fonts: ${themes[0].stylesheets.join(" ")} */`] : []
+  const css = `${[head, ...blocks, ...extra, ...fonts].join("\n\n")}\n`
+  const json = `${JSON.stringify({ schema: "studio-token-diff/1", product: adapter.product.name, revision: adapter.product.revision, design, themes: Object.fromEntries(themes.map((x) => [x.theme.id, Object.fromEntries(x.changes.map((c) => [c.name, { from: c.from, to: c.to, ...(c.scope ? { scope: c.scope } : {}) }]))])), css: themes[0]?.css || undefined, stylesheets: themes[0]?.stylesheets.length ? themes[0].stylesheets : undefined }, null, 2)}\n`
+  return { css, json }
+}
+
+/** Hand a text file to the viewer. */
+export function download(name: string, text: string, type = "application/json") {
+  const url = URL.createObjectURL(new Blob([text], { type }))
+  const a = Object.assign(document.createElement("a"), { href: url, download: name })
+  document.body.append(a)
+  a.click()
+  a.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
