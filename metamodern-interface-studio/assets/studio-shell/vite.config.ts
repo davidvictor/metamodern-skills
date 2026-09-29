@@ -1,26 +1,42 @@
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
+import { defineConfig, type Plugin } from "vite"
 
-// The Studio shell (index.html) and the example product's preview entry
-// (example/index.html) build side by side. A real product serves its own
-// preview entry; remove the example input when the adapter points elsewhere.
+import config from "./studio.config"
+import type { StudioConfig } from "./src/studio/config"
+
+// Shell owned: product settings come from studio.config.ts, so an update can
+// replace this file. The Studio (index.html) builds with any extra pages the
+// config names, such as the example product's preview entry.
+const studio: StudioConfig = config
+const root = import.meta.dirname
+const html = (text: string) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!)
+
+const title = (): Plugin => ({
+  name: "studio-title",
+  transformIndexHtml: (page, ctx) => (path.resolve(ctx.filename) === path.resolve(root, "index.html") ? page.replace(/<title>[^<]*<\/title>/, `<title>${html(studio.title)}</title>`) : page),
+})
+
+// npm run acceptance builds the stress and capture-only adapters by pointing
+// "@/adapter" at the acceptance module; a normal build never includes them.
+const acceptance = process.env.VITE_STUDIO_ADAPTER ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, "src/adapters/synthetic.ts") }] : []
+
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), title()],
   build: {
+    outDir: path.resolve(root, studio.outDir ?? "dist"),
+    emptyOutDir: true,
     chunkSizeWarningLimit: 1200,
     rolldownOptions: {
       input: {
-        studio: path.resolve(import.meta.dirname, "index.html"),
-        example: path.resolve(import.meta.dirname, "example/index.html"),
+        studio: path.resolve(root, "index.html"),
+        ...Object.fromEntries(Object.entries(studio.inputs ?? {}).map(([name, file]) => [name, path.resolve(root, file)])),
       },
     },
   },
   resolve: {
-    alias: {
-      "@": path.resolve(import.meta.dirname, "./src"),
-    },
+    alias: [...acceptance, { find: "@", replacement: path.resolve(root, "./src") }],
   },
 })

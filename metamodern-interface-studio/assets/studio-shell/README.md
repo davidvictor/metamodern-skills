@@ -15,21 +15,25 @@ Open the printed local URL. `npm run build` type checks and builds both the Stud
 
 ## What a product changes
 
-A new Studio changes three things and leaves the shell alone.
+A new Studio changes four things and leaves the shell alone. Create it with the skill's `scripts/update-studio.mjs <dir> --create`, which also writes `studio-shell.lock.json` so later shell releases can reach it (see `UPDATING.md`).
 
 | File | Change |
 | --- | --- |
-| `src/adapter.ts` | Point `adapter` at the product's adapter declaration. This is the only import of product data in the shell. |
-| `src/adapters/` | Add the product adapter, generated from the manifest and runtime catalog: product name and mark, target fidelity and capabilities, themes, profiles, scenario inputs, areas, scenarios, walkthroughs, comparisons and tokens. Delete `example.ts` and `synthetic.ts` once the product adapter exists, and reduce `src/adapter.ts` to the product adapter. |
-| The product's preview entry | A route or document in the product that renders one scenario in isolation and calls `connectStudioFrame` from `src/studio/frame-client.ts`. Set the adapter's `frameEntry` to its URL. Delete `example/` and its build input in `vite.config.ts`. |
+| `src/adapter.ts` | Point `adapter` at the product's adapter declaration. This is the only import of product data in the shell, and a product file: updates never change it. |
+| `studio.config.ts` | The page title, the output folder and any extra pages to build. A product file: updates never change it. |
+| `src/adapters/` | Add the product adapter, generated from the manifest and runtime catalog: product name and mark, target fidelity and capabilities, themes, profiles, scenario inputs, areas, scenarios, walkthroughs, comparisons and tokens. The starter's `example.ts` and `synthetic.ts` serve the acceptance suite; keep them with `example/` and `scripts/acceptance.mjs`, or delete all four together and record them as removed with the updater. |
+| The product's preview entry | A route or document in the product that renders one scenario in isolation and calls `connectStudioFrame` from `src/studio/frame-client.ts`. Set the adapter's `frameEntry` to its URL. Import `connectStudioFrame` from the Studio rather than copying it, so shell updates reach it. Remove the example from `inputs` in `studio.config.ts` when `example/` goes. |
 
 A Studio with no live preview, such as native work with recorded captures only, omits `frameEntry` and supplies `captures` on each scenario. The shell then shows captures, disables what a capture cannot do, and says why.
 
 ## Layout of the source
 
 ```text
+studio.config.ts             product settings: title, output folder, extra pages (product file)
+studio-shell.lock.json       shell version and file fingerprints, written by the updater
+UPDATING.md                  what to do by hand for each shell version
 src/
-  adapter.ts                 the one product seam
+  adapter.ts                 the one product seam (product file)
   adapters/example.ts        synthetic example adapter (replace)
   adapters/synthetic.ts      stress and capture-only adapters for the acceptance script
   studio/
@@ -38,6 +42,7 @@ src/
     frame-client.ts          product side of the protocol (framework free)
     live-preview.tsx         preview host: isolated frames, staged swap, timeouts
     virtual-list.tsx         windowed list with one tab stop and type-ahead
+    config.ts                the studio.config.ts type
   store.tsx                  Studio state, URL selection, per-viewer settings
   App.tsx                    desktop and phone shells, global keys
   components/studio/         rail, panels, top bar, stage controls, views, details, resize handles

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.8.0 — 2026-09-29
+
+- Interface Studio 0.6.0: Studios in use can take new shell releases. `scripts/update-studio.mjs` creates a Studio from the starter (`--create`) with a `studio-shell.lock.json` of shell file fingerprints, then reports and applies updates: unedited shell files are replaced, added or deleted; product files (`src/adapter.ts`, `studio.config.ts`, the product adapter, `layouts.json`, anything not from the starter) are never written; a local edit to a shell file blocks until it is replaced or kept with a reason; optional starter files deleted on purpose stay deleted; `package.json` is merged by rule; and an applied update runs install, typecheck, lint, build and, when it can, acceptance. Studios made from 0.2.0 to 0.5.0 are adopted with `--adopt` against `assets/studio-shell.releases.json`, the fingerprints of every released shell.
+- The starter separates product settings from shell files: a new product-owned `studio.config.ts` sets the title, output folder and extra pages; `vite.config.ts` reads it and reaches the acceptance adapters itself, so `src/adapter.ts` is one export; `index.html` asks search engines not to index a Studio; `UPDATING.md` lists what a product does by hand per version. New guide `references/updating.md`. Tested by UP-01 to UP-10 in `tests/interface-studio-update.test.mjs`, and by adopting a copy of a real product Studio made from 0.5.0.
+
 ## 1.7.0 — 2026-09-29
 
 - Interface Studio 0.5.0: scenario inputs can be dock lenses. An input with `placement: "dock"` (such as Role) sits in the dock with its icon and current value; the scenario's own value (`Scenario.designed`) is marked Designed, another choice shows a dot and offers Back, and the choice travels in the link. `scoped` inputs apply only to scenarios that design a value, so their control, their Compare axis and their value are absent elsewhere. The shell sends resolved values to the frame. Present ignores dock choices and plays every step as designed.
