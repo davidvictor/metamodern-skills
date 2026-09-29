@@ -57,6 +57,9 @@ export const exampleAdapter: StudioAdapter = {
     themes: [
       { id: "light", label: "Light", appearance: "light", icon: "sun" },
       { id: "dark", label: "Dark", appearance: "dark", icon: "moon" },
+      // High-contrast versions: the dock shows Light and Dark, and Contrast sits in its Design menu.
+      { id: "light-contrast", label: "Light, high contrast", appearance: "light", icon: "sun-contrast", contrastOf: "light" },
+      { id: "dark-contrast", label: "Dark, high contrast", appearance: "dark", icon: "moon-contrast", contrastOf: "dark" },
     ],
     profiles: [
       { id: "desktop", label: "Desktop", w: 1280, h: 800, kind: "desktop" },
@@ -70,7 +73,7 @@ export const exampleAdapter: StudioAdapter = {
       devices: [{ w: 1180, h: 820, kind: "tablet", label: "Tablet, landscape" }],
     },
     inputs: [
-      { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable", placement: "dock", icon: "density", note: "The densities the product ships. Sign in has only Comfortable." },
+      { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable", placement: "dock", group: "design", icon: "density", note: "The densities the product ships. Sign in has only Comfortable." },
       { id: "role", label: "Role", control: "select", options: [{ id: "owner", label: "Owner" }, { id: "viewer", label: "Viewer" }], placement: "dock", scoped: true, icon: "person", note: "Viewers see tasks without New task." },
     ],
   },

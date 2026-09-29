@@ -303,26 +303,34 @@ await check("AC-09", async () => {
 })
 
 // AC-10 The boundary holds for any product: sample the pixels across the frame edge.
-// Light appearance: the edge reaches 3:1 against a keyline. Dark appearance: the inner keyline is a deliberate faint
-// hairline, so the edge only has to stay distinguishable (1.3:1) while the four corner ticks carry the 3:1 boundary.
+// In both appearances the frame's lines are a deliberate quiet hairline (the outer line at most 20% black), so the
+// edge only has to stay distinguishable (1.3:1) while the four corner ticks carry the 3:1 boundary.
 await check("AC-10", async () => {
   const lum = ([r, g, b]) => [r, g, b].map((v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0)
   const ratio = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a), lum(b)) + 0.05)
   const rows = []
   const worst = { light: 99, dark: 99 }
-  const need = { light: 3, dark: 1.3 }
+  const need = { light: 1.3, dark: 1.3 }
+  const quiet = []
   let ticksWorst = 99
   let structure = true
   for (const appearance of ["light", "dark"]) {
     const p = await open("normal", { appearance, hash: "view=inspect" })
     await p.keyboard.press("Shift+Digit0")
     await wait(600)
+    // 100% zooms around the stage's centre; bring the frame's left edge into view to sample it.
+    await p.evaluate(() => document.querySelector(".preview-frame").closest(".overflow-auto").scrollTo({ left: 0 }))
+    await wait(200)
     const shell = await p.evaluate(() => getComputedStyle(document.body).backgroundColor)
     const stage = await p.evaluate(() => getComputedStyle(document.querySelector(".stage-surface")).backgroundColor)
     const frame = p.frames().find((f) => f !== p.mainFrame())
     const ticks = await p.locator(".preview-ticks i").count()
+    const outer = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--boundary").trim())
+    quiet.push(`${appearance} ${outer}`)
+    // A dark line on the light stage was the loud one; on the dark stage the outer line is dark on dark.
+    if (appearance === "light" && Number(/\/\s*([\d.]+)\s*\)/.exec(outer)?.[1] ?? 1) > 0.2) structure = false
     const fidelityShown = await p.getByText("Illustrative example").first().isVisible().catch(() => false)
-    // Tick colour composited over the stage, as pixels.
+    // Tick color composited over the stage, as pixels.
     const tickRgb = await p.evaluate(() => {
       const canvas = document.createElement("canvas")
       canvas.width = canvas.height = 1
@@ -373,7 +381,7 @@ await check("AC-10", async () => {
     await p.closeAll()
   }
   const ok = structure && worst.light >= need.light && worst.dark >= need.dark && ticksWorst >= 3
-  return [ok ? "pass" : "fail", `worst edge contrast ${worst.light.toFixed(1)}:1 in light (needs 3) and ${worst.dark.toFixed(1)}:1 in dark (needs 1.3, a hairline by design) across ${rows.length} fixtures (${rows.join(", ")}); corner ticks ${ticksWorst.toFixed(1)}:1 against the stage (needs 3); four ticks and the fidelity statement in Details ${structure ? "present" : "missing"}`]
+  return [ok ? "pass" : "fail", `outer line ${quiet.join(", ")} (at most 20% in light); worst edge contrast ${worst.light.toFixed(1)}:1 in light and ${worst.dark.toFixed(1)}:1 in dark (needs 1.3, a hairline by design) across ${rows.length} fixtures (${rows.join(", ")}); corner ticks ${ticksWorst.toFixed(1)}:1 against the stage (needs 3); four ticks, a quiet outer line and the fidelity statement in Details ${structure ? "present" : "missing"}`]
 })
 
 // AC-11 Scale is always disclosed, with 100% one action away
@@ -383,8 +391,8 @@ await check("AC-11", async () => {
     for (const view of ["inspect", "compare", "responsive", "present", "design", "gallery"]) {
       const p = await open("normal", { width, height: 900, touch: width < 768, hash: `view=${view}` })
       const text = await p.locator("body").innerText()
-      // Inspect states size in the Size control and scale in the Zoom control; the other views carry a chip under the frame.
-      const said = view === "gallery" ? /thumbnails at about \d+%/.test(text) : view === "responsive" ? /\d+ × \d+/.test(text) && /one scale, (\d+%|actual size)/.test(text) : view === "inspect" ? /\d+ × \d+/.test(text) && /Fit · \d+%|\b\d+%/.test(text) : /\d+ × \d+ · (\d+%|actual size)/.test(text)
+      // Inspect and Responsive state size in the frame's Size control or label and scale in the Zoom control; the other views carry a chip under the frame.
+      const said = view === "gallery" ? /thumbnails at about \d+%/.test(text) : view === "inspect" || view === "responsive" ? /\d+ × \d+/.test(text) && /Fit · \d+%|\b\d+%/.test(text) : /\d+ × \d+ · (\d+%|actual size)/.test(text)
       const action = view === "gallery" ? true : (await p.getByRole("button", { name: /Show at actual size|Fit to the stage/ }).count()) > 0 || (await p.getByRole("button", { name: /^Zoom/ }).count()) > 0
       if (!said || !action) bad.push(`${view}@${width}${said ? "" : " no scale"}${action ? "" : " no action"}`)
       await p.closeAll()
@@ -603,11 +611,12 @@ await check("AC-43", async () => {
   const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
   const frame = () => p.frames().find((f) => f !== p.mainFrame())
   const density = () => frame().evaluate(() => document.documentElement.dataset.density)
-  const btn = () => p.getByRole("button", { name: /^Density,/ })
-  const designed = await btn().getAttribute("aria-label")
+  // Density is in the dock's Design menu, after Contrast.
+  const btn = () => p.getByRole("button", { name: /^Design,/ })
+  const designed = (await btn().getAttribute("aria-label")).replace(/^Design, (Standard|High) contrast, /, "Density, ")
   await btn().click()
   await p.getByRole("menuitemradio").first().waitFor()
-  const offered = await p.getByRole("menuitemradio").allInnerTexts()
+  const offered = (await p.getByRole("menuitemradio").allInnerTexts()).filter((t) => !/^(Standard|High)/.test(t))
   await p.getByRole("menuitemradio", { name: /^Compact/ }).click()
   await wait(1500)
   const compact = await density()
@@ -618,7 +627,10 @@ await check("AC-43", async () => {
   const back = await density()
   await p.closeAll()
   const q = await open("normal", { hash: "view=inspect&scenario=account.sign-in&density=compact" })
-  const hidden = await q.getByRole("button", { name: /^Density,/ }).count()
+  await q.getByRole("button", { name: /^Design,/ }).click()
+  await wait(300)
+  const hidden = await q.getByRole("group").filter({ hasText: /^Density/ }).count()
+  await q.keyboard.press("Escape")
   const signIn = await q.frames().find((f) => f !== q.mainFrame()).evaluate(() => document.documentElement.dataset.density)
   await q.closeAll()
   const c = await open("normal", { hash: "view=compare&scenario=account.sign-in" })
@@ -791,9 +803,13 @@ await check("AC-48", async () => {
 
 // ---------- Responsive view (AC-18 to AC-27) ----------
 const exFrames = (p) => p.frames().filter((f) => f !== p.mainFrame() && f.url().includes("example"))
-const chip = (p) => p.locator('[aria-label="Scale"]').innerText()
+// The dock's zoom control states the row's one scale.
+const chip = (p) => p.locator('[aria-label^="Zoom, "]').first().getAttribute("aria-label")
 async function allReady(p, n, timeout = 30000) {
-  await p.waitForFunction((count) => new RegExp(`^${count} frames · ${count} ready`).test(document.querySelector('[aria-label="Scale"]')?.textContent?.trim() ?? ""), n, { timeout })
+  await p.waitForFunction((count) => {
+    const fs = [...document.querySelectorAll("[data-frame]")]
+    return fs.length === count && fs.every((f) => f.querySelector("iframe.opacity-100") && !/Loading|Did not start/.test(f.querySelector("figcaption")?.textContent ?? ""))
+  }, n, { timeout })
   await wait(400)
 }
 const frameSizes = async (p) => {
@@ -829,7 +845,7 @@ await check("AC-18", async () => {
   return [ok ? "pass" : "fail", bad.length ? bad.join("; ") : `4 layouts (the adapter's first: "${firstPreset.split("\n")[0]}") each mounted exactly its frames in order, every live document at its declared size, every label naming its size; Details states the fidelity`]
 })
 
-// AC-19 One shared scale, stated once; widths proportional within 1 px; no page scroll from 360 to 1600 px; below the floor only the stage scrolls
+// AC-19 One shared scale, stated once (in the dock's zoom control); widths proportional within 1 px; no page scroll from 360 to 1600 px; below the floor only the stage scrolls
 await check("AC-19", async () => {
   const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop" })
   await allReady(p, 3)
@@ -838,7 +854,10 @@ await check("AC-19", async () => {
   const k = rects[0] / 390
   const stated = await scaleOf(p)
   const drift = Math.max(...[390, 834, 1280].map((w, i) => Math.abs(rects[i] - w * k))) + (Math.abs(stated - k) > 0.006 ? 100 : 0)
-  const hundred = await p.getByRole("button", { name: "Show at actual size" }).count()
+  await p.locator('[aria-label^="Zoom, "]').first().click()
+  await wait(300)
+  const hundred = await p.getByRole("menuitemradio", { name: /^100%/ }).count()
+  await p.keyboard.press("Escape")
   await p.closeAll()
   const scrolled = []
   for (const width of [360, 390, 768, 1024, 1280, 1440, 1600]) {
@@ -1271,7 +1290,7 @@ await check("AC-30", async () => {
   await wait(600)
   const dialog = await inner.getByRole("dialog").count()
   await q.closeAll()
-  const ok = Math.round(v1.x - v0.x) === 100 && Math.round(v1.y - v0.y) === -50 && Math.round(v2.x - v1.x) === 60 && Math.round(v3.y - v2.y) < 0 && v3.z === v2.z && v4.z > v3.z && scrollAfter > scrollBefore && v5.x === v3.x && v5.y === v3.y && v5.z === v3.z && Math.abs(min - 0.1) < 0.001 && Math.abs(max - 2) < 0.001 && dialog === 1
+  const ok = Math.round(v1.x - v0.x) === 100 && Math.round(v1.y - v0.y) === -50 && Math.round(v2.x - v1.x) === 60 && Math.round(v3.y - v2.y) < 0 && v3.z === v2.z && v4.z > v3.z && scrollAfter > scrollBefore && v5.x === v3.x && v5.y === v3.y && v5.z === v3.z && Math.abs(min - 0.1) < 0.001 && Math.abs(max - 4) < 0.001 && dialog === 1
   return [ok ? "pass" : "fail", `drag on empty canvas panned ${Math.round(v1.x - v0.x)}, ${Math.round(v1.y - v0.y)}; Space plus drag over a frame panned ${Math.round(v2.x - v1.x)}, ${Math.round(v2.y - v1.y)}; scroll over empty canvas panned ${Math.round(v3.y - v2.y)} at zoom ${v3.z}; Control plus wheel over ${under} zoomed ${v3.z} to ${v4.z.toFixed(2)}; the wheel over a frame scrolled the product ${scrollBefore} to ${scrollAfter} and left the canvas still (${v5.x === v3.x && v5.y === v3.y && v5.z === v3.z}); keys reached ${min} and ${max}; a click inside a frame opened the product's dialog (${dialog})`]
 })
 
@@ -1380,19 +1399,21 @@ await check("AC-33", async () => {
   }
 })
 
-// AC-34 The zoom is stated whenever it is not 100%, Fit view and 100% are one action each, and labels stay legible at every zoom
+// AC-34 The zoom is stated in the dock's zoom control at every zoom, Fit and 100% are one action each in its menu, and labels stay legible at every zoom
 await check("AC-34", async () => {
   const out = []
   for (const z of [0.1, 1, 2]) {
     const p = await open("normal", { hash: `view=responsive&scenario=tasks.list&layout=phones&frames=390x844:phone@0.0&arrange=canvas&vp=40_120_${z}` })
     await canvasReady(p, 1)
-    const text = await p.locator('[aria-label="Canvas zoom"]').innerText()
+    const text = await chip(p)
     const font = await p.locator("[data-frame-label]").first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize) * (e.getBoundingClientRect().height / e.offsetHeight))
-    out.push({ z, text: text.split("\n")[0].trim(), font, fit: await p.getByRole("button", { name: "Fit view", exact: true }).count(), hundred: await p.locator('[aria-label="Canvas zoom"]').getByRole("button", { name: "100%", exact: true }).count() })
+    await p.locator('[aria-label^="Zoom, "]').first().click()
+    await wait(300)
+    out.push({ z, text, font, fit: await p.getByRole("menuitemradio", { name: /^Fit/ }).count(), hundred: await p.getByRole("menuitemradio", { name: /^100%/ }).count() })
     await p.closeAll()
   }
-  const ok = out[0].text === "Canvas 10%" && out[1].text === "Canvas at actual size" && out[2].text === "Canvas 200%" && out.every((o) => o.font >= 11 && o.fit === 1 && o.hundred === 1)
-  return [ok ? "pass" : "fail", out.map((o) => `${o.z * 100}%: "${o.text}", label text ${o.font.toFixed(1)} px`).join("; ") + "; Fit view and 100% one action each"]
+  const ok = out[0].text === "Zoom, 10%" && out[1].text === "Zoom, 100%" && out[2].text === "Zoom, 200%" && out.every((o) => o.font >= 11 && o.fit === 1 && o.hundred === 1)
+  return [ok ? "pass" : "fail", out.map((o) => `${o.z * 100}%: "${o.text}", label text ${o.font.toFixed(1)} px`).join("; ") + "; Fit and 100% one action each in the zoom menu"]
 })
 
 // AC-35 Every frame is focusable and named; Tab moves between frames; selection and moves are announced; on a phone a canvas layout stacks with a note
@@ -1614,6 +1635,162 @@ await check("AC-42", async () => {
   await p.closeAll()
   const ok = on.every((v) => v === "true") && ys[0] > 0 && ys[1] === 0 && ys[2] === 0 && acted === false
   return [ok ? "pass" : "fail", `a new layout starts with Scroll, Clicks and typing and Navigation on (${on.join(", ")}); with Scroll off the leader went to ${ys[0]} and the others stayed at ${ys[1]} and ${ys[2]}; a replay posted from another window was ignored (${!acted})`]
+})
+
+// Stage navigation helpers: the native stage scroller that holds the frame, and a point over the frame's product.
+const stageScroll = (p) => p.evaluate(() => { const b = document.querySelector(".preview-frame")?.closest(".overflow-auto"); return b ? { x: Math.round(b.scrollLeft), y: Math.round(b.scrollTop) } : null })
+const zoomPct = async (p) => Number(/(\d+)%/.exec((await chip(p)) ?? "")?.[1])
+const overFrame = async (p, sel = ".preview-frame iframe.opacity-100") => {
+  const r = await p.evaluate((q) => {
+    const st = (document.querySelector(".react-flow") ?? document.querySelector(".preview-frame")?.closest(".overflow-auto")).getBoundingClientRect()
+    const seen = (b) => Math.max(0, Math.min(b.right, st.right) - Math.max(b.left, st.left)) * Math.max(0, Math.min(b.bottom, st.bottom) - Math.max(b.top, st.top))
+    const f = [...document.querySelectorAll(q)].map((e) => e.getBoundingClientRect()).sort((a, b) => seen(b) - seen(a))[0]
+    const x = Math.max(f.left, st.left) + Math.min(f.right, st.right)
+    const y = Math.max(f.top, st.top) + Math.min(f.bottom, st.bottom)
+    return { x: x / 2, y: y / 2 }
+  }, sel)
+  await p.mouse.move(r.x, r.y)
+  return r
+}
+
+// AC-49 One navigation on a scrolling stage: a scroll over a frame the page cannot use pans the stage; ⌘ or Ctrl with the
+// wheel zooms at the pointer over the frame; Space and a drag, or a middle drag, pans; + and − step; the zoom menu names the gestures
+await check("AC-49", async () => {
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list&profile=desktop" })
+  await p.keyboard.press("Shift+Digit0")
+  await wait(800)
+  await p.evaluate(() => document.querySelector(".preview-frame").closest(".overflow-auto").scrollTo({ top: 0 }))
+  await wait(200)
+  const start = await stageScroll(p)
+  const at = await overFrame(p)
+  const pageY0 = await p.frames().find((f) => f !== p.mainFrame()).evaluate(() => scrollY)
+  for (let i = 0; i < 6; i++) { await p.mouse.wheel(0, 200); await wait(60) }
+  await wait(400)
+  const pageY1 = await p.frames().find((f) => f !== p.mainFrame()).evaluate(() => Math.round(scrollY))
+  const afterWheel = await stageScroll(p)
+  // The point under the pointer, as a fraction of the frame, before and after a zoom there.
+  const frac = () => p.evaluate(({ x, y }) => { const b = document.querySelector(".preview-frame").getBoundingClientRect(); return { fx: (x - b.left) / b.width, fy: (y - b.top) / b.height } }, at)
+  const f0 = await frac()
+  const z0 = await zoomPct(p)
+  // Zoom in, so the stage overflows on both axes and the point can stay put on both.
+  await p.keyboard.down("Control")
+  await p.mouse.wheel(0, -100)
+  await p.keyboard.up("Control")
+  await wait(700)
+  const z1 = await zoomPct(p)
+  const f1 = await frac()
+  const drift = Math.max(Math.abs(f1.fx - f0.fx), Math.abs(f1.fy - f0.fy))
+  await p.keyboard.press("Shift+Digit0")
+  await wait(700)
+  await p.evaluate(() => document.activeElement?.blur())
+  const s0 = await stageScroll(p)
+  await overFrame(p)
+  const m = await overFrame(p)
+  await p.keyboard.down("Space")
+  await wait(150)
+  await p.mouse.down()
+  await p.mouse.move(m.x + 90, m.y + 60, { steps: 6 })
+  await p.mouse.up()
+  await p.keyboard.up("Space")
+  await wait(300)
+  const s1 = await stageScroll(p)
+  const shieldGone = (await p.locator("[data-stage-shield]").count()) === 0
+  const box = await p.evaluate(() => { const b = document.querySelector(".preview-frame").closest(".overflow-auto").getBoundingClientRect(); return { x: b.left + 6, y: b.top + 6 } })
+  await p.mouse.move(box.x, box.y)
+  await p.mouse.down({ button: "middle" })
+  await p.mouse.move(box.x + 40, box.y + 30, { steps: 4 })
+  await p.mouse.up({ button: "middle" })
+  await wait(200)
+  const s2 = await stageScroll(p)
+  await p.keyboard.press("Equal")
+  await wait(500)
+  const up = await zoomPct(p)
+  await p.keyboard.press("Minus")
+  await p.keyboard.press("Minus")
+  await wait(500)
+  const down = await zoomPct(p)
+  await p.locator('[aria-label^="Zoom, "]').first().click()
+  await wait(300)
+  const hint = await p.locator("[data-navigation-hint]").innerText()
+  await p.closeAll()
+  const ok = afterWheel.y > start.y && z1 > z0 && drift < 0.01 && s1.x < s0.x - 60 && s1.y < s0.y - 40 && shieldGone && s2.x < s1.x && up === 125 && down === 75 && /Scroll to pan/.test(hint) && /pinch to zoom/.test(hint) && /Space/.test(hint)
+  return [ok ? "pass" : "fail", `scroll over the frame (page at ${pageY0} to ${pageY1}) moved the stage ${start.y} to ${afterWheel.y}; Ctrl and the wheel over the frame zoomed ${z0}% to ${z1}% with the point under the pointer drifting ${(drift * 100).toFixed(1)}% of the frame; Space and a drag over the frame panned ${s0.x},${s0.y} to ${s1.x},${s1.y} (shield gone after: ${shieldGone}); a middle drag panned to ${s2.x},${s2.y}; + gave ${up}%, − twice gave ${down}%; hint "${hint}"`]
+})
+
+// AC-50 Responsive: no separate scale chips or canvas buttons; the row pans under a frame; on the canvas a scroll over a
+// frame pans the viewport, Ctrl and the wheel zooms, the dock states the zoom, the map is off until asked for, and Tidy is in the toolbar
+await check("AC-50", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop" })
+  await allReady(p, 3)
+  await p.keyboard.press("Shift+Digit0")
+  await wait(800)
+  const chips = await p.locator('[aria-label="Scale"], [aria-label="Canvas zoom"]').count()
+  const row0 = await p.evaluate(() => { const b = document.querySelector("[data-frame]").closest(".overflow-auto"); return b.scrollLeft })
+  await overFrame(p, "[data-frame] iframe.opacity-100")
+  for (let i = 0; i < 6; i++) { await p.mouse.wheel(250, 0); await wait(60) }
+  await wait(400)
+  const row1 = await p.evaluate(() => { const b = document.querySelector("[data-frame]").closest(".overflow-auto"); return b.scrollLeft })
+  const tidyRow = await p.getByRole("button", { name: "Tidy" }).count()
+  await toCanvas(p)
+  await canvasReady(p, 3)
+  const controls = await p.locator(".react-flow__controls").count()
+  const map0 = await p.locator(".react-flow__minimap").count()
+  const tidy = await p.getByRole("toolbar", { name: "Responsive controls" }).getByRole("button", { name: "Tidy" }).count()
+  const v0 = await vpOf(p)
+  await p.keyboard.press("Shift+Digit0")
+  await wait(500)
+  const v1 = await vpOf(p)
+  await overFrame(p, ".react-flow__node iframe.opacity-100")
+  for (let i = 0; i < 5; i++) { await p.mouse.wheel(0, 200); await wait(60) }
+  await wait(400)
+  const v2 = await vpOf(p)
+  await p.keyboard.down("Control")
+  await p.mouse.wheel(0, 100)
+  await p.keyboard.up("Control")
+  await wait(500)
+  const v3 = await vpOf(p)
+  const stated = await chip(p)
+  await p.locator('[aria-label^="Zoom, "]').first().click()
+  await p.getByRole("menuitemcheckbox", { name: "Show map" }).click()
+  await p.keyboard.press("Escape")
+  await wait(300)
+  const map1 = await p.locator(".react-flow__minimap").count()
+  await p.closeAll()
+  const ok = chips === 0 && row1 > row0 && tidyRow === 0 && controls === 0 && map0 === 0 && tidy === 1 && Math.abs(v1.z - 1) < 0.01 && v2.y < v1.y && v3.z < v2.z && stated === `Zoom, ${Math.round(v3.z * 100)}%` && map1 === 1
+  return [ok ? "pass" : "fail", `scale chips ${chips}; a sideways scroll over a frame moved the row ${Math.round(row0)} to ${Math.round(row1)}; Tidy in the row ${tidyRow}, on the canvas ${tidy}; React Flow controls ${controls}; canvas at ⇧0 ${v1.z}, a scroll over a frame moved it ${Math.round(v1.y)} to ${Math.round(v2.y)}, Ctrl and the wheel zoomed to ${v3.z.toFixed(3)} and the dock said "${stated}"; map ${map0} then ${map1} after Show map`]
+})
+
+// AC-51 The dock shows the standard themes; its Design menu holds Contrast and the design lenses (Density) and leads to the
+// Design view; choosing a theme keeps high contrast; the frame's outer line is quiet in light as in dark (AC-10)
+await check("AC-51", async () => {
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  const frameTheme = () => p.frames().find((f) => f !== p.mainFrame()).evaluate(() => document.documentElement.dataset.theme)
+  const themeButtons = await p.getByRole("group", { name: "Theme" }).getByRole("button").allInnerTexts().catch(() => [])
+  const themeCount = await p.locator('[aria-label="Preview controls"] [aria-label="Theme"] button').count()
+  const densityInDock = await p.getByRole("button", { name: /^Density,/ }).count()
+  await p.getByRole("button", { name: /^Design,/ }).click()
+  await wait(300)
+  const menu = (await p.getByRole("menu").innerText()).replace(/\s+/g, " ")
+  await p.getByRole("menuitemradio", { name: /^High/ }).click()
+  await wait(1500)
+  const high = [await frameTheme(), await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("theme"))]
+  await p.locator('[aria-label="Preview controls"] [aria-label="Theme"] button').nth(1).click()
+  await wait(1500)
+  const dark = await frameTheme()
+  const label = await p.getByRole("button", { name: /^Design,/ }).getAttribute("aria-label")
+  await p.getByRole("button", { name: /^Design,/ }).click()
+  await wait(300)
+  await p.getByRole("menuitemradio", { name: /^Standard/ }).click()
+  await wait(1500)
+  const standard = await frameTheme()
+  await p.getByRole("button", { name: /^Design,/ }).click()
+  await wait(300)
+  await p.getByRole("menuitem", { name: /Draft changes in Design/ }).click()
+  await wait(600)
+  const view = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("view"))
+  await p.closeAll()
+  const ok = themeCount === 2 && densityInDock === 0 && /Contrast/.test(menu) && /Standard/.test(menu) && /High/.test(menu) && /Density/.test(menu) && /Draft changes in Design/.test(menu) && high[0] === "light-contrast" && high[1] === "light-contrast" && dark === "dark-contrast" && /High contrast/.test(label) && standard === "dark" && view === "design"
+  return [ok ? "pass" : "fail", `${themeCount} theme buttons ${themeButtons.join("/")}; Density as its own dock control ${densityInDock}; Design menu: "${menu}"; High rendered ${high[0]} (link ${high[1]}); Dark then rendered ${dark} ("${label}"); Standard rendered ${standard}; Draft changes opened ${view}`]
 })
 
 await browser.close()

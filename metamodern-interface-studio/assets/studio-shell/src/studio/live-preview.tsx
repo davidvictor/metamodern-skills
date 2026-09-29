@@ -6,6 +6,7 @@
  */
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { StageGestureContext } from "./stage-gestures"
 import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type FrameMessage, type MountInputs, type ShellBody, type SyncChannelsMessage, type SyncEvent } from "./protocol"
 
 export const READY_TIMEOUT_MS = 20000
@@ -65,8 +66,9 @@ type Props = {
 export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, inputs, mountKey, draft, w, h, scale, label, interactive = true, onStatus, sync }, ref) {
   const [runtimes, setRuntimes] = React.useState<Runtime[]>([])
   const frames = React.useRef(new Map<string, HTMLIFrameElement>())
-  const latest = React.useRef({ draft, onStatus, inputs, sync })
-  latest.current = { draft, onStatus, inputs, sync }
+  const gesture = React.useContext(StageGestureContext)
+  const latest = React.useRef({ draft, onStatus, inputs, sync, gesture })
+  latest.current = { draft, onStatus, inputs, sync, gesture }
   const replies = React.useRef(new Map<string, (r: { ok: boolean; reason?: string }) => void>())
   const expectedOrigin = origin ?? (location.origin === "null" ? "null" : new URL(src, location.href).origin)
 
@@ -119,6 +121,19 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       else if (m.type === "interaction") {
         // Only the runtime on screen leads; a staged one is not seen by anyone.
         if (rt.phase === "ready") latest.current.sync?.onInteraction(m.event)
+      } else if (m.type === "gesture") {
+        // Stage navigation that began over the frame on screen; a wheel position moves into the Studio's coordinates.
+        const g = m.gesture
+        const on = latest.current.gesture
+        if (!on || rt.phase !== "ready" || !g || typeof g !== "object") return
+        const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.max(-4000, Math.min(4000, v)) : 0)
+        if (g.kind === "space") on({ kind: "space", down: !!g.down })
+        else if (g.kind === "drag") on({ kind: "drag", dx: num(g.dx), dy: num(g.dy) })
+        else if (g.kind === "wheel") {
+          const r = el.getBoundingClientRect()
+          const k = el.offsetWidth ? r.width / el.offsetWidth : 1
+          on({ kind: "wheel", zoom: !!g.zoom, dx: num(g.dx), dy: num(g.dy), x: r.left + num(g.x) * k, y: r.top + num(g.y) * k })
+        }
       } else if (m.type === "reply") {
         const done = replies.current.get(m.requestId)
         if (done) {

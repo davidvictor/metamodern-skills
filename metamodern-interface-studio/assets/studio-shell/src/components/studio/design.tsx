@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch"
 import type { DesignParameter } from "@/studio/types"
 import { ScaleChip, StatusBadge, useFit } from "./bits"
 import { ScenarioPreview, sizedProfile, useReportStatus } from "./preview"
+import { StageNav, useStageNav } from "./stage-nav"
 
 const params = () => adapter.design?.parameters ?? []
 const readout = (p: DesignParameter, v: number | string) =>
@@ -259,6 +260,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
   const sides = show === "split" ? 2 : 1
   const specimen = !narrow && typeChanged(s.design.values)
   const scale = useFit(box, pr.w * sides, pr.h, s.zoom, 64 + (sides - 1) * 32 + (specimen ? 272 : 0))
+  const nav = useStageNav(box, scale)
   const peekOn = { onPointerDown: () => setPeek(true), onPointerUp: () => setPeek(false), onPointerLeave: () => setPeek(false), onKeyDown: (e: React.KeyboardEvent) => (e.key === " " || e.key === "Enter") && (e.preventDefault(), setPeek(true)), onKeyUp: () => setPeek(false), onBlur: () => setPeek(false) }
   const one = (kind: "draft" | "built") => (
     <div className="relative flex flex-col items-center gap-2">
@@ -267,7 +269,8 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
     </div>
   )
   return (
-    <div className="stage-surface flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="stage-surface relative flex min-h-0 min-w-0 flex-1 flex-col">
+      <StageNav nav={nav}>
       <div className="flex flex-wrap items-center justify-center gap-1.5 p-3">
         <ToggleGroup value={[show]} onValueChange={(v) => v[0] && s.setDesign({ show: v[0] as typeof s.design.show })} size="sm" spacing={0} variant="outline" className="bg-background" aria-label="Show">
           <ToggleGroupItem value="built" className="h-7 px-2.5 text-xs">As built</ToggleGroupItem>
@@ -280,7 +283,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
           </Button>
         )}
       </div>
-      <div ref={box} className="flex min-h-0 flex-1 overflow-auto px-4 pb-4">
+      <div ref={box} onPointerDown={nav.onPointerDown} className="flex min-h-0 flex-1 overflow-auto px-4 pb-4">
         <div className="m-auto flex w-max flex-col items-center gap-3">
           <div className="flex items-start gap-8">
             {show === "split" ? (
@@ -297,6 +300,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
           <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">A draft is exploration. It shows here only, travels in the link, and never changes the product or a walkthrough.</p>
         </div>
       </div>
+      </StageNav>
     </div>
   )
 }

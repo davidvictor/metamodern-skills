@@ -70,7 +70,9 @@ export function baseValue(adapter: StudioAdapter, name: string, theme: string) {
     for (const p of adapter.design?.parameters ?? []) if (p.apply.base?.[name] !== undefined) return p.apply.base[name]
     return undefined
   }
-  return token.values[theme] ?? token.values[adapter.tokens!.columns[0]] ?? Object.values(token.values)[0]
+  // A high-contrast theme without its own column reads the theme it is the contrast version of.
+  const base = adapter.axes.themes.find((t) => t.id === theme)?.contrastOf
+  return token.values[theme] ?? (base ? token.values[base] : undefined) ?? token.values[adapter.tokens!.columns[0]] ?? Object.values(token.values)[0]
 }
 
 export const isDefault = (p: DesignParameter, v: number | string | undefined) => v === undefined || String(v) === String(p.default)

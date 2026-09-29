@@ -8,6 +8,8 @@ import {
   LinkIcon,
   MonitorCogIcon,
   MoonIcon,
+  PaletteIcon,
+  PencilRulerIcon,
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
   PanelRightIcon,
@@ -30,7 +32,7 @@ import { Separator } from "@/components/ui/separator"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/components/ui/popover"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -48,6 +50,7 @@ import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, isColor, 
 import type { CapabilityDimension } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
+import { navigationHint, stepZoom, zoomTarget, type ZoomApi } from "./stage-nav"
 
 async function copyLink() {
   try {
@@ -401,12 +404,8 @@ function SizeMenu({ variant, compact }: { variant: "dock" | "toolbar"; compact?:
   )
 }
 
-/**
- * A scenario input that changes how a screen is looked at, such as the role it is seen as, in the dock.
- * The scenario's own value is marked Designed; choosing another overrides it until Reset, and the
- * choice travels in the link. It shows only for scenarios that use the input.
- */
-function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "toolbar"; compact?: boolean }) {
+/** A lens input's choices: the scenario's own value is marked Designed, and a changed one offers the way back. */
+function useInputChoice(id: string) {
   const s = useStudio()
   const inp = adapter.axes.inputs.find((i) => i.id === id)!
   const designed = s.scenarioObj.designed?.[id] ?? inp.default
@@ -415,11 +414,46 @@ function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "to
   const chosen = s.values[id] !== undefined && supports(s.scenarioObj, id, s.values[id]) ? s.values[id] : undefined
   const current = chosen ?? designed
   const overridden = chosen !== undefined && chosen !== designed
-  const label = inp.options.find((o) => o.id === current)?.label ?? current ?? inp.label
+  const labelOf = (v?: string) => inp.options.find((o) => o.id === v)?.label ?? v
+  return { s, inp, designed, options, current, overridden, label: labelOf(current) ?? inp.label, designedLabel: labelOf(designed) ?? "designed" }
+}
+
+function InputChoices({ id, note = true }: { id: string; note?: boolean }) {
+  const { s, inp, designed, options, current, overridden, designedLabel } = useInputChoice(id)
+  return (
+    <>
+      <DropdownMenuGroup>
+        <DropdownMenuLabel>{inp.label}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={current} onValueChange={(v) => s.setValue(id, v === designed ? null : (v as string))}>
+          {options.map((o) => (
+            <DropdownMenuRadioItem key={o.id} value={o.id} closeOnClick>
+              {o.label}
+              {o.id === designed && <DropdownMenuShortcut>Designed</DropdownMenuShortcut>}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        {overridden && (
+          <DropdownMenuItem onClick={() => s.setValue(id, null)}>
+            <RotateCcwIcon /> Back to {designedLabel}
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuGroup>
+      {note && inp.note && <p className="px-2 py-1.5 text-xs text-muted-foreground">{inp.note}</p>}
+    </>
+  )
+}
+
+/**
+ * A scenario input that changes how a screen is looked at, such as the role it is seen as, in the dock.
+ * The scenario's own value is marked Designed; choosing another overrides it until Reset, and the
+ * choice travels in the link. It shows only for scenarios that use the input.
+ */
+function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "toolbar"; compact?: boolean }) {
+  const { inp, label, overridden, designedLabel } = useInputChoice(id)
   const Icon = { person: UserRoundIcon, density: Rows3Icon, sliders: SlidersHorizontalIcon }[inp.icon ?? "sliders"]
   return (
     <DropdownMenu>
-      <Tip label={overridden ? `${inp.label}: ${label}, changed from ${inp.options.find((o) => o.id === designed)?.label ?? "designed"}` : `${inp.label}: ${label}, as designed`}>
+      <Tip label={overridden ? `${inp.label}: ${label}, changed from ${designedLabel}` : `${inp.label}: ${label}, as designed`}>
         <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="relative gap-1.5" aria-label={`${inp.label}, ${label}${overridden ? ", changed" : ""}`} />}>
           <Icon />
           {!compact && <span className="max-w-32 truncate">{label}</span>}
@@ -427,29 +461,68 @@ function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "to
         </DropdownMenuTrigger>
       </Tip>
       <DropdownMenuContent side={variant === "dock" ? "top" : "bottom"} align="start" className="w-64">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>{inp.label}</DropdownMenuLabel>
-          <DropdownMenuRadioGroup value={current} onValueChange={(v) => s.setValue(id, v === designed ? null : (v as string))}>
-            {options.map((o) => (
-              <DropdownMenuRadioItem key={o.id} value={o.id} closeOnClick>
-                {o.label}
-                {o.id === designed && <DropdownMenuShortcut>Designed</DropdownMenuShortcut>}
+        <InputChoices id={id} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/** Themes that declare `contrastOf` pair a standard theme with its high-contrast version. */
+const contrastPairs = () => adapter.axes.themes.some((t) => t.contrastOf)
+const baseTheme = (id: string) => adapter.axes.themes.find((t) => t.id === id)?.contrastOf ?? id
+const contrastTheme = (base: string) => adapter.axes.themes.find((t) => t.contrastOf === base)
+
+/**
+ * The dock's Design menu: the modes the product ships for how a screen looks (contrast and the
+ * "design" group of lens inputs, such as density), with the way into the Design view to draft changes.
+ */
+function DesignMenu({ variant, compact, inputs }: { variant: "dock" | "toolbar"; compact?: boolean; inputs: string[] }) {
+  const s = useStudio()
+  const base = baseTheme(s.theme)
+  const high = contrastTheme(base)
+  const contrastOn = s.theme !== base
+  const live = !!adapter.frameEntry
+  const values = inputs.map((id) => {
+    const inp = adapter.axes.inputs.find((i) => i.id === id)!
+    const designed = s.scenarioObj.designed?.[id] ?? inp.default
+    const chosen = s.values[id] !== undefined && supports(s.scenarioObj, id, s.values[id]) ? s.values[id] : undefined
+    return { inp, current: chosen ?? designed, changed: chosen !== undefined && chosen !== designed }
+  })
+  const changed = contrastOn || values.some((v) => v.changed)
+  const summary = [contrastPairs() && (contrastOn ? "High contrast" : "Standard contrast"), ...values.map((v) => v.inp.options.find((o) => o.id === v.current)?.label ?? v.current)].filter(Boolean).join(", ")
+  return (
+    <DropdownMenu>
+      <Tip label={`Design: ${summary}`}>
+        <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="relative gap-1.5" aria-label={`Design, ${summary}${changed ? ", changed" : ""}`} />}>
+          <PaletteIcon />
+          {!compact && <span>Design</span>}
+          {changed && <span aria-hidden className="size-1.5 rounded-full bg-(--anchor)" />}
+        </DropdownMenuTrigger>
+      </Tip>
+      <DropdownMenuContent side={variant === "dock" ? "top" : "bottom"} align="start" className="w-64">
+        {contrastPairs() && (
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Contrast</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={contrastOn ? "high" : "standard"} onValueChange={(v) => s.setTheme(v === "high" && high ? high.id : base)}>
+              <DropdownMenuRadioItem value="standard" closeOnClick>Standard</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="high" closeOnClick disabled={!high || (!live && !captureFor(s.scenarioObj, high.id, s.profile))}>
+                High{!high && <DropdownMenuShortcut>Not in this theme</DropdownMenuShortcut>}
               </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuGroup>
-        {overridden && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => s.setValue(id, null)}>
-              <RotateCcwIcon /> Back to {inp.options.find((o) => o.id === designed)?.label ?? "designed"}
-            </DropdownMenuItem>
-          </>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuGroup>
         )}
-        {inp.note && (
+        {inputs.map((id, i) => (
+          <React.Fragment key={id}>
+            {(i > 0 || contrastPairs()) && <DropdownMenuSeparator />}
+            <InputChoices id={id} />
+          </React.Fragment>
+        ))}
+        {s.view !== "design" && (
           <>
             <DropdownMenuSeparator />
-            <p className="px-2 py-1.5 text-xs text-muted-foreground">{inp.note}</p>
+            <DropdownMenuItem onClick={() => s.set({ view: "design" })}>
+              <PencilRulerIcon /> Draft changes in Design
+            </DropdownMenuItem>
           </>
         )}
       </DropdownMenuContent>
@@ -457,15 +530,66 @@ function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "to
   )
 }
 
-/** The dock. `lookOnly` keeps what changes how every frame is looked at (theme, dock inputs, zoom), for views with many frames. */
-export function StageControls({ variant, compact, lookOnly, noZoom }: { variant: "dock" | "toolbar"; compact?: boolean; lookOnly?: boolean; noZoom?: boolean }) {
+/** The zoom control: steps, Fit and 100%, the canvas map, and one line naming the gestures. */
+function ZoomMenu({ variant, canvasZoom }: { variant: "dock" | "toolbar"; canvasZoom?: number }) {
+  const s = useStudio()
+  const canvas = canvasZoom !== undefined
+  // Fit names the mode and the percentage names what is shown, so scale is always disclosed.
+  const label = canvas ? `${canvasZoom}%` : s.zoom === "fit" ? `Fit · ${Math.round(s.scale * 100)}%` : `${Math.round(s.zoom)}%`
+  const shown = canvas ? canvasZoom : s.scale * 100
+  const api = (): ZoomApi => zoomTarget.current ?? { zoomIn: () => s.set({ zoom: stepZoom(shown, 1) }), zoomOut: () => s.set({ zoom: stepZoom(shown, -1) }), fit: () => s.set({ zoom: "fit" }), to: (pct) => s.set({ zoom: pct }) }
+  const value = canvas ? "" : s.zoom === "fit" ? "fit" : String(Math.round(s.zoom))
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1 tabular-nums" aria-label={`Zoom, ${label}`} />}>
+        <ZoomInIcon /> {label}
+        <ChevronUpIcon className="size-3 opacity-60" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side={variant === "dock" ? "top" : "bottom"} className="w-60">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Zoom</DropdownMenuLabel>
+          <DropdownMenuItem closeOnClick={false} onClick={() => api().zoomIn()}>Zoom in<DropdownMenuShortcut>+</DropdownMenuShortcut></DropdownMenuItem>
+          <DropdownMenuItem closeOnClick={false} onClick={() => api().zoomOut()}>Zoom out<DropdownMenuShortcut>−</DropdownMenuShortcut></DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup value={value} onValueChange={(v) => (v === "fit" ? api().fit() : api().to(+v))}>
+          <DropdownMenuRadioItem value="fit" closeOnClick>Fit<DropdownMenuShortcut>⇧1</DropdownMenuShortcut></DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="50" closeOnClick>50%</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="100" closeOnClick>100%<DropdownMenuShortcut>⇧0</DropdownMenuShortcut></DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+        {canvas && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuCheckboxItem checked={s.options.map} onCheckedChange={(v) => s.set({ options: { ...s.options, map: !!v } })}>Show map</DropdownMenuCheckboxItem>
+          </>
+        )}
+        <DropdownMenuSeparator />
+        <p className="px-2 py-1.5 text-xs leading-snug text-muted-foreground" data-navigation-hint>{navigationHint()}</p>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/**
+ * The dock. `lookOnly` keeps what changes how every frame is looked at (theme, lenses, zoom), for views with many frames.
+ * `canvasZoom` puts the zoom control on the Responsive canvas; `noZoom` leaves it out.
+ */
+export function StageControls({ variant, compact, lookOnly, noZoom, canvasZoom }: { variant: "dock" | "toolbar"; compact?: boolean; lookOnly?: boolean; noZoom?: boolean; canvasZoom?: number }) {
   const s = useStudio()
   const ax = adapter.axes
   const live = !!adapter.frameEntry
-  // Fit names the mode and the percentage names what is shown, so scale is always disclosed.
-  const zoomLabel = s.zoom === "fit" ? `Fit · ${Math.round(s.scale * 100)}%` : `${s.zoom}%`
   // A live renderer can show any declared combination; a capture-only Studio can show only what was recorded.
   const available = (theme: string, profile: string) => live || !!captureFor(s.scenarioObj, theme, profile)
+  const paired = contrastPairs()
+  const lenses = choosableFor(s.scenarioObj).filter((i) => i.placement === "dock")
+  const designInputs = lenses.filter((i) => i.group === "design").map((i) => i.id)
+  const base = baseTheme(s.theme)
+  // With pairs, the buttons are the standard themes; choosing one keeps high contrast when that theme has it.
+  const themes = ax.themes.filter((t) => (paired ? !t.contrastOf : !compact || !t.icon?.endsWith("contrast")))
+  const chooseTheme = (id: string) => {
+    const high = s.theme !== base ? contrastTheme(id) : undefined
+    s.setTheme(high && available(high.id, s.profile) ? high.id : id)
+  }
   return (
     <div
       role="toolbar"
@@ -477,8 +601,8 @@ export function StageControls({ variant, compact, lookOnly, noZoom }: { variant:
         compact && "w-full justify-between overflow-x-auto"
       )}
     >
-      <ToggleGroup value={[s.theme]} onValueChange={(v) => v[0] && s.setTheme(v[0])} size="sm" spacing={0} aria-label={ax.themeLabel}>
-        {ax.themes.filter((t) => !compact || !t.icon?.endsWith("contrast")).map((t) => {
+      <ToggleGroup value={[paired ? base : s.theme]} onValueChange={(v) => v[0] && (paired ? chooseTheme(v[0]) : s.setTheme(v[0]))} size="sm" spacing={0} aria-label={ax.themeLabel}>
+        {themes.map((t) => {
           const Icon = themeIcon(t)
           const ok = available(t.id, s.profile)
           const swatch = !t.icon || t.icon === "swatch"
@@ -493,27 +617,12 @@ export function StageControls({ variant, compact, lookOnly, noZoom }: { variant:
           )
         })}
       </ToggleGroup>
+      {(paired || designInputs.length > 0) && <DesignMenu variant={variant} compact={compact} inputs={designInputs} />}
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       {!lookOnly && <SizeMenu variant={variant} compact={compact} />}
-      {choosableFor(s.scenarioObj).filter((i) => i.placement === "dock").map((i) => <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />)}
+      {lenses.filter((i) => i.group !== "design").map((i) => <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />)}
       {!noZoom && <Separator orientation="vertical" className="mx-1 h-5! self-center!" />}
-      {!noZoom && <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1 tabular-nums" aria-label={`Zoom, ${zoomLabel}`} />}>
-          <ZoomInIcon /> {zoomLabel}
-          <ChevronUpIcon className="size-3 opacity-60" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side={variant === "dock" ? "top" : "bottom"} className="w-44">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>Preview size</DropdownMenuLabel>
-            <DropdownMenuRadioGroup value={String(s.zoom)} onValueChange={(v) => s.set({ zoom: v === "fit" ? "fit" : +v })}>
-              <DropdownMenuRadioItem value="fit">Fit<DropdownMenuShortcut>⇧1</DropdownMenuShortcut></DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="50">50%</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="75">75%</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="100">100%<DropdownMenuShortcut>⇧0</DropdownMenuShortcut></DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>}
+      {!noZoom && <ZoomMenu variant={variant} canvasZoom={canvasZoom} />}
  {!lookOnly && (<>
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       <Tip label={!live ? "Product back: unavailable for captures" : s.preview.canGoBack ? "Product back: the preview's own history" : "Product back: no product history yet"}>

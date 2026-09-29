@@ -189,7 +189,7 @@ function mount(inputs: MountInputs) {
   render()
   // For the starter's acceptance script only: the inputs this runtime was mounted with.
   ;(window as unknown as { __studioMounted: MountInputs }).__studioMounted = inputs
-  return { appearance: inputs.theme === "dark" ? ("dark" as const) : ("light" as const), location: here() }
+  return { appearance: inputs.theme.startsWith("dark") ? ("dark" as const) : ("light" as const), location: here() }
 }
 
 // For the starter's acceptance script only: stand in for an older frame client, or a product without navigate.

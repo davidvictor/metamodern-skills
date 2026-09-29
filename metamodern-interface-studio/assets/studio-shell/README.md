@@ -54,7 +54,7 @@ src/
   components/theme-provider.tsx   Studio appearance and brand color
   index.css, studio.css      shadcn tokens plus the Studio extensions
 example/                     synthetic example product preview entry (replace)
-scripts/acceptance.mjs       measures AC-01 to AC-48 in headless Chromium
+scripts/acceptance.mjs       measures AC-01 to AC-51 in headless Chromium
 ```
 
 ## Keep these rules

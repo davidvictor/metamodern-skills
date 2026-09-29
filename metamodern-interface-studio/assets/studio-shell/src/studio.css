@@ -12,7 +12,8 @@
   --stage-grid: oklch(0 0 0 / 0.06);
   /* Two keylines: a white one against dark or grey edges, a dark one against light edges, so any product edge reaches 3:1 against one of them. */
   --boundary-inner: oklch(1 0 0);
-  --boundary: oklch(0 0 0 / 0.6);
+  /* The frame's outer line: quiet against the stage; the corner ticks carry the edge at 3:1. */
+  --boundary: oklch(0 0 0 / 0.14);
   --tick: oklch(0.25 0 0 / 0.85);
   --anchor: oklch(0.54 0.2 256);
   --anchor-foreground: oklch(0.99 0 0);

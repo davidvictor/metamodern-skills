@@ -23,7 +23,17 @@ export type MountInputs = {
 }
 
 /** What a frame client can do beyond the base protocol, announced in `hello`. */
-export type FrameCapability = "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation"
+export type FrameCapability = "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation" | "stage-gestures"
+
+/**
+ * Stage navigation that starts over a frame, for the Studio to apply to its stage. Wheel positions are in the
+ * frame's CSS pixels; wheel deltas are in pixels as the person scrolled them; drag movement is in screen pixels.
+ * wheel: ⌘ or Ctrl held, or a pinch, zooms; otherwise it is the part of a scroll the page could not use.
+ */
+export type StageGesture =
+  | { kind: "wheel"; zoom: boolean; dx: number; dy: number; x: number; y: number }
+  | { kind: "drag"; dx: number; dy: number }
+  | { kind: "space"; down: boolean }
 
 /**
  * How a synced target is found in another frame, most stable first: a Studio anchor, a sync ID,
@@ -77,6 +87,8 @@ export type FrameBody =
   | { type: "content-size"; height: number }
   /** A person's interaction here, for the Studio to replay in other frames (only for channels the Studio asked for). */
   | { type: "interaction"; event: SyncEvent }
+  /** Navigation of the Studio's stage that began over this frame (capability stage-gestures). */
+  | { type: "gesture"; gesture: StageGesture }
 
 export type ShellMessage = Envelope & ShellBody
 export type FrameMessage = Envelope & FrameBody
