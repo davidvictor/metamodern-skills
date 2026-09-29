@@ -45,3 +45,8 @@ Nothing to do by hand. `vite.config.ts` passes lint again.
 - The Responsive row's scale chip and the canvas's own zoom buttons are gone; the dock's zoom control states and sets the zoom everywhere, and Tidy is in the Responsive toolbar. Checks that read `[aria-label="Scale"]`, "Canvas zoom", "Fit view" or "Show at actual size" should read the dock's `Zoom, …` control instead.
 - The dock can group what the product ships for how a screen looks into a Design menu. Give each high-contrast theme `contrastOf: "<its standard theme>"` and the dock shows only the standard themes, with Contrast in the menu. Give a dock input `group: "design"` (such as density) to move it into the menu; it is still a lens. Checks that press a `Density, …` button should open the `Design, …` menu instead.
 - The frame's outer line in light is now 14% black instead of 60%.
+
+## 0.9.1
+
+- In the Responsive row, dragging a frame's label places the frame where it is dropped instead of reordering; the Frames list still reorders. Checks that dragged a label to reorder should use the list, or the Back to a row icon to return to a flowing row.
+- Resize handles hug the frame at every zoom. Nothing to do by hand.

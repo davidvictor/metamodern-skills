@@ -13,7 +13,7 @@ export type ResponsiveFrame = {
   /** The adapter profile this size counts as: it decides input context. */
   profile: string
   label?: string
-  /** Canvas position at 100%, for canvas layouts. */
+  /** Position at 100%: on the canvas the frame's top-left; in a row whose frames were dragged, its label's top-left. */
   x?: number
   y?: number
 }

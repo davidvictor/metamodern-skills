@@ -27,11 +27,15 @@ const nearest = (v: number, list: number[], tol: number) => {
  *
  * Widths and heights are drawn to the profiles' own sizes (and the adapter's breakpoints) unless
  * Shift is held. Releasing on exactly a profile's size selects that profile.
+ *
+ * The handles hug the frame, not the column around it, and keep a constant size on screen: the grips
+ * shrink with a small frame (30% of its edge, 12 to 40 px), and inside a zoomed layer (`zoomed`, the
+ * Responsive canvas) they are counter-scaled so the zoom does not shrink or grow them.
  */
 /** Who owns the size: Inspect's store by default, or a Responsive frame. `centred` frames grow both ways from their centre. */
 export type ResizeControl = { profile: string; setSize: (size: { w: number; h: number } | null) => void; setProfile: (id: string) => void; centred: boolean; label?: string }
 
-export function ResizeHandles({ w, h, scale, onDragChange, control, children }: { w: number; h: number; scale: number; onDragChange: (frozen: { scale: number } | null) => void; control?: ResizeControl; children: React.ReactNode }) {
+export function ResizeHandles({ w, h, scale, zoomed, onDragChange, control, children }: { w: number; h: number; scale: number; zoomed?: boolean; onDragChange: (frozen: { scale: number } | null) => void; control?: ResizeControl; children: React.ReactNode }) {
   const store = useStudio()
   const s: ResizeControl = control ?? { profile: store.profile, setSize: store.setSize, setProfile: store.setProfile, centred: true }
   const lim = adapter.axes.resizable!
@@ -118,9 +122,15 @@ export function ResizeHandles({ w, h, scale, onDragChange, control, children }: 
 
   const grip = "bg-[color-mix(in_oklch,var(--stage-foreground)_38%,transparent)] transition-colors group-hover:bg-[color-mix(in_oklch,var(--stage-foreground)_80%,transparent)] group-focus-visible:bg-(--stage-foreground) group-data-[active=true]:bg-(--anchor)"
   const common = { onPointerMove: move, onPointerUp: end, onPointerCancel: end, onDoubleClick: reset }
+  // Screen pixels to the handles' own pixels, and grip lengths that follow the frame's size on screen.
+  const k = zoomed ? 1 / scale : 1
+  const hit = 20 * k
+  const inset = 6 * k
+  const thick = 4 * k
+  const along = (edge: number) => Math.max(12, Math.min(40, edge * scale * 0.3)) * k
 
   return (
-    <div ref={wrap} className="relative">
+    <div ref={wrap} className="relative w-fit">
       {children}
       <div
         role="slider"
@@ -133,13 +143,14 @@ export function ResizeHandles({ w, h, scale, onDragChange, control, children }: 
         aria-valuetext={`${w} pixels`}
         title="Drag to resize. Double-click to return to the profile's size."
         data-active={active === "e" || active === "se"}
-        className="nopan nodrag group absolute inset-y-0 -right-5 flex w-5 cursor-ew-resize touch-none items-center pl-1.5 outline-none"
+        className="nopan nodrag group absolute inset-y-0 flex cursor-ew-resize touch-none items-center outline-none"
+        style={{ right: -hit, width: hit, paddingLeft: inset }}
         {...common}
         data-edge="e"
         onPointerDown={begin}
         onKeyDown={nudge("w")}
       >
-        <i className={cn("h-10 w-1 rounded-full group-focus-visible:ring-2 group-focus-visible:ring-ring", grip)} />
+        <i className={cn("rounded-full group-focus-visible:ring-2 group-focus-visible:ring-ring", grip)} style={{ height: along(h), width: thick }} />
       </div>
       <div
         role="slider"
@@ -152,27 +163,29 @@ export function ResizeHandles({ w, h, scale, onDragChange, control, children }: 
         aria-valuetext={`${h} pixels`}
         title="Drag to resize. Double-click to return to the profile's size."
         data-active={active === "s" || active === "se"}
-        className="nopan nodrag group absolute inset-x-0 -bottom-5 flex h-5 cursor-ns-resize touch-none justify-center pt-1.5 outline-none"
+        className="nopan nodrag group absolute inset-x-0 flex cursor-ns-resize touch-none justify-center outline-none"
+        style={{ bottom: -hit, height: hit, paddingTop: inset }}
         {...common}
         data-edge="s"
         onPointerDown={begin}
         onKeyDown={nudge("h")}
       >
-        <i className={cn("h-1 w-10 rounded-full group-focus-visible:ring-2 group-focus-visible:ring-ring", grip)} />
+        <i className={cn("rounded-full group-focus-visible:ring-2 group-focus-visible:ring-ring", grip)} style={{ width: along(w), height: thick }} />
       </div>
       <div
         aria-hidden
         data-active={active === "se"}
-        className="nopan nodrag group absolute -right-5 -bottom-5 flex size-5 cursor-nwse-resize touch-none items-start justify-start pt-1.5 pl-1.5"
+        className="nopan nodrag group absolute flex cursor-nwse-resize touch-none items-start justify-start"
+        style={{ right: -hit, bottom: -hit, width: hit, height: hit, paddingTop: inset, paddingLeft: inset }}
         {...common}
         data-edge="se"
         onPointerDown={begin}
       >
-        <i className={cn("size-1.5 rounded-full", grip)} />
+        <i className={cn("rounded-full", grip)} style={{ width: inset, height: inset }} />
       </div>
       {readout && (
         <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center">
-          <Badge className="h-6 gap-1.5 px-2.5 text-xs tabular-nums shadow-md">
+          <Badge className="h-6 gap-1.5 px-2.5 text-xs tabular-nums shadow-md" style={zoomed ? { transform: `scale(${k})` } : undefined}>
             {readout.w} × {readout.h}
             {readout.name && <span className="opacity-70">· {readout.name}</span>}
           </Badge>

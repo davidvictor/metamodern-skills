@@ -980,34 +980,60 @@ async function ac21() {
   return [ok ? "pass" : "fail", `Custom size… focused the panel's width field (${focused}); a profile, a device and a typed size reached ${six} frames and Add frame was then disabled ${disabled}; 5000 × 800 was refused ("${refused.replace(/\s+/g, " ").slice(0, 90)}"); removing one left ${after} frames within a second; ten layout switches left ${iframes} iframes for ${shown} frames; the last frame's Remove disabled ${last}; a captures Studio refused a typed size ("${capRefused.replace(/\s+/g, " ").slice(0, 60)}")`]
 }
 
-// AC-22 Reorder by pointer on the label, and by Alt plus an arrow key on a label or list row; focus stays and the move is announced
+// AC-22 A frame is placed anywhere by dragging its label: it follows the pointer, the others stay, its page is kept, the stage grows
+// to reach it, the place survives a reload and travels in the link; Alt and an arrow moves it 8 px; Back to a row returns the flowing
+// row; the Frames list still reorders with Alt and an arrow
 await check("AC-22", async () => {
   const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones" })
   await allReady(p, 3)
   const order = () => p.locator("[data-frame] figcaption").evaluateAll((els) => els.map((e) => e.textContent.match(/\d+ × \d+/)[0]))
-  const start = await order()
+  const rects = () => p.locator("[data-frame] .preview-frame").evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top, k: r.width / Number(e.closest("[data-frame]").querySelector("figcaption").textContent.match(/(\d+) ×/)[1]) } }))
+  // Placement at 100%: each frame's offset from the second frame, divided by the scale on screen.
+  const units = (rs) => rs.map((q) => ({ x: (q.x - rs[1].x) / q.k, y: (q.y - rs[1].y) / q.k }))
+  const stageH = () => p.evaluate(() => document.querySelector("[data-frame]").closest(".overflow-auto").scrollHeight)
+  const doc = await (await p.locator("[data-frame] iframe.opacity-100").first().elementHandle()).contentFrame()
+  await doc.evaluate(() => (window.__kept = "same document"))
+  const r0 = await rects()
+  const h0 = await stageH()
   const a = await p.locator("[data-frame-label]").nth(0).boundingBox()
-  const c3 = await p.locator("[data-frame]").nth(2).boundingBox()
   await p.mouse.move(a.x + 20, a.y + a.height / 2)
   await p.mouse.down()
-  await p.mouse.move(a.x + 60, a.y + a.height / 2, { steps: 4 })
-  await p.mouse.move(c3.x + c3.width / 2, a.y + a.height / 2, { steps: 10 })
+  for (let i = 1; i <= 20; i++) {
+    await p.mouse.move(a.x + 20 + i * 9, a.y + a.height / 2 + i * 18)
+    await wait(16)
+  }
   await p.mouse.up()
-  await wait(400)
-  const dragged = await order()
+  await wait(500)
+  const r1 = await rects()
+  const h1 = await stageH()
+  const kept = await (await (await p.locator("[data-frame] iframe.opacity-100").first().elementHandle()).contentFrame()).evaluate(() => window.__kept)
+  const moved = { x: r1[0].x - r0[0].x, y: r1[0].y - r0[0].y }
+  const others = Math.max(...[1, 2].map((i) => Math.max(Math.abs(r1[i].x - r0[i].x), Math.abs(r1[i].y - r0[i].y))))
+  const link = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("frames"))
+  await p.reload()
+  await allReady(p, 3)
+  const r2 = await rects()
+  const u1 = units(r1)
+  const reloaded = Math.max(...units(r2).map((q, i) => Math.max(Math.abs(q.x - u1[i].x), Math.abs(q.y - u1[i].y))))
   await p.locator("[data-frame-label]").nth(0).focus()
+  const k0 = (await rects())[0]
   await p.keyboard.press("Alt+ArrowRight")
   await wait(300)
-  const keyed = await order()
-  const focus = await p.evaluate(() => document.activeElement?.closest("[data-frame]")?.querySelector("figcaption")?.textContent?.match(/\d+ × \d+/)?.[0])
+  const k1 = (await rects())[0]
   const said = await p.locator("p[aria-live=polite]").allInnerTexts()
+  await p.getByRole("button", { name: "Back to a row" }).click()
+  await wait(500)
+  const back = await rects()
+  const flowing = Math.abs(back[0].y - back[1].y) < 1 && Math.abs(back[1].y - back[2].y) < 1
+  const start = await order()
   await p.locator('ul[aria-label="Frames"] li').nth(2).focus()
   await p.keyboard.press("Alt+ArrowUp")
   await wait(300)
   const listed = await order()
   await p.closeAll()
-  const ok = start.join() === "360 × 780,390 × 844,430 × 932" && dragged[2] === "360 × 780" && keyed[1] === dragged[0] && focus === dragged[0] && said.some((t) => /Moved \d+ by \d+ to position 2 of 3/.test(t)) && listed[1] === keyed[2]
-  return [ok ? "pass" : "fail", `start ${start.join(", ")}; dragging the first label past the third gave ${dragged.join(", ")}; Alt+Right gave ${keyed.join(", ")} with focus on ${focus}; announced "${said.filter(Boolean).join(" ")}"; Alt+Up in the frame list gave ${listed.join(", ")}`]
+  const step = Math.round((k1.x - k0.x) / k0.k)
+  const ok = Math.abs(moved.x - 180) <= 5 && Math.abs(moved.y - 360) <= 5 && others <= 3 && kept === "same document" && h1 > h0 && /@\d+\.\d+/.test(link ?? "") && reloaded <= 2 && step === 8 && said.some((t) => /Moved \d+ by \d+/.test(t)) && flowing && listed[1] === start[2]
+  return [ok ? "pass" : "fail", `a 180, 360 px label drag moved the frame ${Math.round(moved.x)}, ${Math.round(moved.y)} and the others at most ${others.toFixed(1)} px; its page was kept (${kept}); the stage grew ${h0} to ${h1} px; link frames=${link}; after a reload the placement at 100% was within ${reloaded.toFixed(1)} px; Alt+Right moved it ${step} px at 100%; announced "${said.filter(Boolean).join(" ")}"; Back to a row flowing ${flowing}; Alt+Up in the frame list gave ${listed.join(", ")}`]
 })
 
 // AC-23 Saving: the dev server writes a valid layouts.json that restores exactly; rename, duplicate, delete; presets stay read only; a built Studio loads but cannot save; unsaved edits persist and travel in the link; the endpoint refuses what it should
@@ -1791,6 +1817,36 @@ await check("AC-51", async () => {
   await p.closeAll()
   const ok = themeCount === 2 && densityInDock === 0 && /Contrast/.test(menu) && /Standard/.test(menu) && /High/.test(menu) && /Density/.test(menu) && /Draft changes in Design/.test(menu) && high[0] === "light-contrast" && high[1] === "light-contrast" && dark === "dark-contrast" && /High contrast/.test(label) && standard === "dark" && view === "design"
   return [ok ? "pass" : "fail", `${themeCount} theme buttons ${themeButtons.join("/")}; Density as its own dock control ${densityInDock}; Design menu: "${menu}"; High rendered ${high[0]} (link ${high[1]}); Dark then rendered ${dark} ("${label}"); Standard rendered ${standard}; Draft changes opened ${view}`]
+})
+
+// AC-52 Resize handles hug each frame, not the column around it, and keep their size on screen: in a row zoomed out below the label
+// width and on the canvas at 10%, every grip sits 6 px off its frame's edge, the bottom grip is centered on the frame, and grips are 12 to 40 px
+await check("AC-52", async () => {
+  const measure = (p) => p.evaluate(() => [...document.querySelectorAll("[data-frame]")].map((fr) => {
+    const f = fr.querySelector(".preview-frame").getBoundingClientRect()
+    const e = fr.querySelector('[data-edge="e"] i').getBoundingClientRect()
+    const s = fr.querySelector('[data-edge="s"] i').getBoundingClientRect()
+    return { eGap: e.left - f.right, sGap: s.top - f.bottom, center: s.left + s.width / 2 - (f.left + f.width / 2), eLen: e.height, sLen: s.width }
+  }))
+  const bad = []
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones" })
+  await allReady(p, 3)
+  for (let i = 0; i < 4; i++) await p.keyboard.press("Minus")
+  await wait(800)
+  const row = await measure(p)
+  await toCanvas(p)
+  await canvasReady(p, 3)
+  await p.keyboard.press("Minus")
+  await p.keyboard.press("Minus")
+  await wait(600)
+  const canvas = await measure(p)
+  const zoom = await chip(p)
+  await p.closeAll()
+  for (const [where, list] of [["row", row], ["canvas", canvas]])
+    list.forEach((m, i) => {
+      if (Math.abs(m.eGap - 6) > 1 || Math.abs(m.sGap - 6) > 1 || Math.abs(m.center) > 1 || m.eLen < 11.5 || m.eLen > 40.5 || m.sLen < 11.5 || m.sLen > 40.5) bad.push(`${where} frame ${i + 1} ${JSON.stringify(Object.fromEntries(Object.entries(m).map(([k, v]) => [k, Math.round(v)])))}`)
+    })
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `row at 10% and canvas at "${zoom}": every grip 6 px off its frame, bottom grips centered, grip lengths ${[...row, ...canvas].map((m) => Math.round(m.eLen)).join(", ")} px`]
 })
 
 await browser.close()
