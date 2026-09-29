@@ -45,14 +45,14 @@ src/
   components/theme-provider.tsx   Studio appearance and brand color
   index.css, studio.css      shadcn tokens plus the Studio extensions
 example/                     synthetic example product preview entry (replace)
-scripts/acceptance.mjs       measures AC-01 to AC-15 in headless Chromium
+scripts/acceptance.mjs       measures AC-01 to AC-16 in headless Chromium
 ```
 
 ## Keep these rules
 
 - The shell never renders product UI and never reads product tokens. Previews run in their own frames; captures are images with provenance.
 - Product theme and Studio appearance are separate controls. The brand color tints Studio accents only: primary buttons, switches, focus rings, the rail marker and the mark. The stage, preview boundary, status and fidelity colors stay fixed.
-- Every preview carries its tab: fidelity, product, theme, profile and scale. Scale is always disclosed.
+- Fidelity is always stated (Details, and the top bar for static captures and recreations) and scale is always disclosed (the Zoom control, or a chip under the frame).
 - A broken reference shows as unresolved. Nothing is substituted.
 - Modified means a person changed product state. Clicks that change nothing do not count, and the badge is a state, not a count.
 

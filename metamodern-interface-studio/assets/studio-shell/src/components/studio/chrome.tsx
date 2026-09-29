@@ -138,6 +138,10 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
       <div className="ml-1 hidden sm:block" aria-live="polite">
         {s.view === "inspect" && <StatusNow />}
       </div>
+      {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
+      {s.view === "inspect" && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
+        <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden sm:inline-flex">{adapter.target.label}</FidelityBadge>
+      )}
       <div className="ml-auto flex shrink-0 items-center gap-1">
         {!mobile && (
           <Button variant="outline" size="sm" className="hidden w-52 justify-start gap-2 text-muted-foreground xl:inline-flex" onClick={() => s.set({ commandOpen: true })}>
@@ -398,7 +402,8 @@ export function StageControls({ variant, compact }: { variant: "dock" | "toolbar
   const s = useStudio()
   const ax = adapter.axes
   const live = !!adapter.frameEntry
-  const zoomLabel = s.zoom === "fit" ? "Fit" : `${s.zoom}%`
+  // Fit names the mode and the percentage names what is shown, so scale is always disclosed.
+  const zoomLabel = s.zoom === "fit" ? `Fit · ${Math.round(s.scale * 100)}%` : `${s.zoom}%`
   // A live renderer can show any declared combination; a capture-only Studio can show only what was recorded.
   const available = (theme: string, profile: string) => live || !!captureFor(s.scenarioObj, theme, profile)
   return (
