@@ -1,0 +1,71 @@
+# Updating a Studio's shell
+
+Read this when a Studio already in use should get the newest shell: new features, design refinements and fixes released in this skill. It covers the shell only. Reconciling the product's scenarios, evidence and presenter work is the Update operation in [manifest.md](manifest.md).
+
+## Ownership
+
+Every file in a Studio has one owner.
+
+| Owner | Files | The updater |
+| --- | --- | --- |
+| Product | `src/adapter.ts`, `studio.config.ts`, the product adapter under `src/adapters/`, `layouts.json`, captures, and every file that did not come from the starter | Never writes them. `src/adapter.ts` and `studio.config.ts` are created once, when missing. |
+| Shell | Every other starter file: `src/studio/`, `src/components/`, `src/store.tsx`, `src/App.tsx`, the CSS, `index.html`, `vite.config.ts`, the TypeScript and lint configs, `UPDATING.md` | Replaces them whole. A local edit blocks the update. |
+| Shell, optional | `README.md`, `example/`, `src/adapters/example.ts`, `src/adapters/synthetic.ts`, `scripts/acceptance.mjs` | As shell files, but a Studio may delete them on purpose and record that. |
+| Merged | `package.json` | The shell's packages take the shell's versions; packages and scripts the Studio added stay; a script the Studio removed stays removed; a package the previous shell declared and the new one dropped is removed. `name`, `version` and `private` stay the Studio's. |
+| Regenerated | `package-lock.json` | Replaced when the shell's lockfile changed, then refreshed by `npm install`. |
+
+Product needs belong in the adapter or `studio.config.ts`, never in shell files. A shell defect found in a Studio is fixed in this skill and reaches every Studio through an update.
+
+## Commands
+
+```bash
+node ~/.agents/skills/metamodern-interface-studio/scripts/update-studio.mjs <new-dir> --create
+node ~/.agents/skills/metamodern-interface-studio/scripts/update-studio.mjs <studio-dir>
+node ~/.agents/skills/metamodern-interface-studio/scripts/update-studio.mjs <studio-dir> --apply
+node ~/.agents/skills/metamodern-interface-studio/scripts/update-studio.mjs <studio-dir> --adopt
+```
+
+- `--create` copies the starter into an empty folder and writes `studio-shell.lock.json`. Use it for Build instead of copying by hand.
+- Without `--apply` the updater writes nothing. It lists every action, every blocked file with a diff against the new shell file, the update notes between the two versions, and the files recorded as removed.
+- `--apply` writes only when nothing is blocked and no shell file has uncommitted Git changes (`--allow-dirty` overrides the Git check). It then runs `npm install`, `typecheck`, `lint`, `build`, and `acceptance` when the acceptance script, the example, the acceptance adapters and Playwright are all present. A failing check is reported by name with its output; the files stay updated, so fix it in place and let Git hold the previous state.
+- `--skip-checks` skips the install and checks. `--json` prints the result as JSON.
+
+Update in this order: publish and install the skill release (`bash skills/install.sh` in the Agency), then run the updater on each Studio, review the report, apply, and commit the Studio.
+
+## Blocked files
+
+Nothing is written until every blocked file is resolved. Each flag may repeat and takes a file or a folder ending in `/`.
+
+| Blocked because | Resolve with |
+| --- | --- |
+| A shell file was edited in the Studio | Move the change into this skill and release it; or `--replace <path>` to take the shell's version; or `--keep <path> --reason "<why>"` to keep the edit. A kept file is listed on every update, with the shell's diff whenever the shell changes it. |
+| A shell file is missing | `--replace <path>` restores it. For an optional file deleted on purpose, `--removed <path>`. |
+| A Studio file collides with a file the new shell adds | Rename the Studio's file, or `--replace <path>`. |
+| A file recorded as removed exists again | Delete it, or `--replace <path>` to take it back into the shell's care. |
+
+## The lock
+
+`studio-shell.lock.json` sits in the Studio root, is written only by the updater, and is committed with the Studio.
+
+| Field | Holds |
+| --- | --- |
+| `shell` | The shell version the Studio is on. |
+| `files` | The SHA-256 of every shell file as the shell shipped it. A local file that differs has been edited. |
+| `package` | The shell's dependencies, dev dependencies and scripts, for the `package.json` merge. |
+| `packageLock` | The SHA-256 of the shell's `package-lock.json`. |
+| `removed` | Optional files or folders the Studio deleted on purpose. |
+| `kept` | Shell files kept with a local edit: path, reason and the version it was kept since. |
+
+## Adopting a Studio made before the lock
+
+Studios made from shell 0.2.0 to 0.5.0 have no lock. `--adopt` compares the Studio with every released shell in [studio-shell.releases.json](../assets/studio-shell.releases.json), picks the best match (the newer one on a tie), and treats that release as the Studio's starting point. The report lists every shell file that differs from it; resolve them as above and apply with `--adopt --apply`. The first adoption also creates `studio.config.ts` from the Studio's own `index.html` title and `vite.config.ts` output folder.
+
+## Releasing a shell change
+
+For every change to `assets/studio-shell/`:
+
+1. Bump `PACKAGE_VERSION` and the catalog entry.
+2. Add a section to `assets/studio-shell/UPDATING.md` for anything a product must do by hand: new required adapter fields, frame-client changes the preview entry must pick up, protocol changes, renamed product files. Write "Nothing to do by hand." when there is nothing.
+3. Regenerate the release fingerprints with `node scripts/generate-studio-shell-releases.mjs` in the skill collection repository.
+4. Run the collection tests, then publish, pin and install as usual.
+5. Update one real Studio with the new release and report what the updater said.

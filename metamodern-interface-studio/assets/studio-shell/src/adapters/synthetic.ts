@@ -2,7 +2,7 @@
  * Stress adapter: 1,000 scenarios in 12 areas, 1,000 tokens in 14 families, and a
  * 40-step walkthrough with deliberately broken steps. It exists to measure the
  * shell (npm run acceptance) and is never shown unless VITE_STUDIO_ADAPTER=synthetic
- * is set at build time. Delete it with the example when a product adapter is in place.
+ * is set at build time (vite.config.ts points "@/adapter" here). Delete it with the example when a product adapter is in place.
  */
 import { exampleAdapter } from "@/adapters/example"
 import type { Scenario, Step, StudioAdapter, Token } from "@/studio/types"
@@ -63,3 +63,6 @@ export const capturesAdapter: StudioAdapter = {
   target: { ...exampleAdapter.target, fidelity: "static-capture", label: "Static capture" },
   scenarios: exampleAdapter.scenarios.map((x, i) => (i === 0 ? { ...x, captures: { "light:desktop": { src: `data:image/svg+xml;utf8,${encodeURIComponent(captureSvg)}`, w: 1280, h: 800, digest: "illustrative", recordedAt: "Fixed", source: "starter" } } } : x)),
 }
+
+/** What "@/adapter" resolves to in an acceptance build (see vite.config.ts): VITE_STUDIO_ADAPTER picks the stress or capture-only adapter. */
+export const adapter = import.meta.env.VITE_STUDIO_ADAPTER === "captures" ? capturesAdapter : syntheticAdapter

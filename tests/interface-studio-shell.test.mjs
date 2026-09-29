@@ -17,7 +17,7 @@ test('shell starter ships source only', () => {
   for (const excluded of ['node_modules/', 'dist/', '.git/']) {
     assert.ok(!rel.some((file) => file.startsWith(excluded)), `${excluded} must not be packaged`);
   }
-  for (const required of ['README.md', 'package.json', 'package-lock.json', 'index.html', 'vite.config.ts', 'src/adapter.ts', 'src/studio/types.ts', 'src/studio/protocol.ts', 'src/studio/frame-client.ts', 'src/studio/live-preview.tsx', 'example/index.html', 'example/main.ts', 'src/studio/virtual-list.tsx', 'src/adapters/synthetic.ts', 'scripts/acceptance.mjs']) {
+  for (const required of ['README.md', 'package.json', 'package-lock.json', 'index.html', 'vite.config.ts', 'src/adapter.ts', 'src/studio/types.ts', 'src/studio/protocol.ts', 'src/studio/frame-client.ts', 'src/studio/live-preview.tsx', 'example/index.html', 'example/main.ts', 'src/studio/virtual-list.tsx', 'src/adapters/synthetic.ts', 'scripts/acceptance.mjs', 'studio.config.ts', 'src/studio/config.ts', 'UPDATING.md']) {
     assert.ok(rel.includes(required), `${required} is missing`);
   }
 });

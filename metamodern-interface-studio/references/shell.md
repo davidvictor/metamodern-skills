@@ -7,11 +7,11 @@ The starter in [assets/studio-shell](../assets/studio-shell/README.md) implement
 ## Start a Studio
 
 1. Inspect the application first (see [SKILL.md](../SKILL.md)). Decide the target, fidelity and preview strategy before copying anything.
-2. Copy `assets/studio-shell/` into the location the user chose for the Studio. A folder inside the product repository, such as `studio/`, keeps the adapter next to the source it describes; a separate repository needs pinned source imports as described in [manifest.md](manifest.md). Do not copy `node_modules` or `dist`.
+2. Create the Studio with `node scripts/update-studio.mjs <dir> --create` from this skill, in the location the user chose. A folder inside the product repository, such as `studio/`, keeps the adapter next to the source it describes; a separate repository needs pinned source imports as described in [manifest.md](manifest.md). The command copies the starter without `node_modules` or `dist` and writes `studio-shell.lock.json`, which later shell updates need (see [updating.md](updating.md)).
 3. Run `npm install` and `npm run dev` and confirm the example runs before changing anything. This separates shell problems from integration problems.
 4. Write the product adapter in `src/adapters/`, generated from the manifest and runtime catalog, and point `src/adapter.ts` at it. The adapter is data: IDs, labels, axes, capabilities, scenarios, walkthroughs and tokens. It never contains rendering code.
 5. Build the product's preview entry with `connectStudioFrame` and set the adapter's `frameEntry`, or supply captures for a capture-only Studio. Follow [web.md](web.md) or [native.md](native.md) for the boundary.
-6. Delete `src/adapters/example.ts`, `src/adapters/synthetic.ts`, `example/` and the example input in `vite.config.ts`, and reduce `src/adapter.ts` to the product adapter. Keep `scripts/acceptance.mjs` and point its example-specific checks at the product (see Check the shell).
+6. Set the title, output folder and extra pages in `studio.config.ts`, and reduce `src/adapter.ts` to the product adapter. These two files belong to the product; the rest of the starter belongs to the shell and is replaced by updates, so product needs never go there. The acceptance suite measures the shell with the example product: keep `example/`, `src/adapters/example.ts`, `src/adapters/synthetic.ts` and `scripts/acceptance.mjs` together to keep it runnable, or delete them together, remove the example from `studio.config.ts`, and record them with the updater's `--removed`.
 7. Verify with the acceptance criteria below and [verification.md](verification.md).
 
 Product development chrome that would sit inside every preview (a "development preview" strip, a role picker, links back to a catalogue) belongs to the Studio, not the frame: replace it in the frame build with an empty substitute, declare it as a presentation override, and move any control it carried into a dock input. Never edit the product's source to do this.
@@ -102,7 +102,7 @@ Status reads from the preview runtime: Loading, Ready, Capture, No capture, Did 
 
 `npm run acceptance` in the starter builds the Studio three ways (the example product, a stress adapter with 1,000 scenarios, 1,000 tokens and a 40-step walkthrough with four broken steps, and a capture-only adapter), serves them locally and measures AC-01 to AC-17 in headless Chromium. It needs Playwright (`npm i -D playwright` and `npx playwright install chromium`, or `PLAYWRIGHT_MODULE` pointing at an existing install). It prints each result, writes `acceptance-report.json` and exits non-zero on a failure. `ONLY=AC-03,AC-10` runs a subset. The stress and capture adapters build only when `VITE_STUDIO_ADAPTER` is set, and drop out of a normal build.
 
-Run it after any change to the shell. Before connecting a product, run it unchanged to prove the shell; after connecting, replace the example-specific selectors (the New task button, the example scenario names) with the product's own and keep the rest. A product Studio can also run the shell checks against its own adapter.
+Run it after any change to the shell, in the skill's starter; every shell release passes it there. Before connecting a product, run it unchanged in the new Studio to prove the shell. The script is a shell file, so a Studio does not edit it: it measures the shell with the example product, and the product's own checks belong in the product's verification (see [verification.md](verification.md)), which can reuse the criteria that need no stress data.
 
 ## Acceptance criteria
 

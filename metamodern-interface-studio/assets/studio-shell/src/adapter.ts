@@ -1,11 +1,8 @@
 /*
- * The one product seam in the shell. Point this at the product's adapter
+ * The one product seam in the shell, and a product-owned file: the shell
+ * update never changes it. Point `adapter` at the product's adapter declaration
  * (generated from the manifest and runtime catalog) and at nothing else.
- * The other branches exist for the acceptance script (npm run acceptance)
- * and drop out of a normal build.
  */
 import { exampleAdapter } from "@/adapters/example"
-import { capturesAdapter, syntheticAdapter } from "@/adapters/synthetic"
 
-const variant = import.meta.env.VITE_STUDIO_ADAPTER
-export const adapter = variant === "synthetic" ? syntheticAdapter : variant === "captures" ? capturesAdapter : exampleAdapter
+export const adapter = exampleAdapter

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.7.0",
+  "collectionVersion": "1.8.0",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -40,7 +40,7 @@
     {
       "name": "metamodern-interface-studio",
       "path": "metamodern-interface-studio",
-      "version": "0.5.0",
+      "version": "0.6.0",
       "category": "delivery-and-engineering",
       "summary": "Build and maintain reproducible interface review and presentation Studios from existing UI kits and applications, starting from a shared shell."
     },
