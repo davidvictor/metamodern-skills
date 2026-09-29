@@ -126,7 +126,7 @@ await check("AC-02", async () => {
 await check("AC-03", async () => {
   const bad = []
   for (const width of [360, 390, 430]) {
-    for (const view of ["inspect", "compare", "gallery", "present", "design"]) {
+    for (const view of ["inspect", "compare", "responsive", "gallery", "present", "design"]) {
       const p = await open("normal", { width, height: 844, touch: true, hash: `view=${view}` })
       const m = await p.evaluate(() => {
         const wide = [...document.querySelectorAll("body *")].filter((e) => {
@@ -139,7 +139,7 @@ await check("AC-03", async () => {
       await p.closeAll()
     }
   }
-  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : "5 views at 360, 390 and 430 px: document and every wide region fit"]
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : "6 views at 360, 390 and 430 px: document and every wide region fit"]
 })
 
 // AC-04 Panels are reachable, trap focus, close and return focus; targets reach 44 px
@@ -380,17 +380,17 @@ await check("AC-10", async () => {
 await check("AC-11", async () => {
   const bad = []
   for (const width of [1440, 1024, 390]) {
-    for (const view of ["inspect", "compare", "present", "design", "gallery"]) {
+    for (const view of ["inspect", "compare", "responsive", "present", "design", "gallery"]) {
       const p = await open("normal", { width, height: 900, touch: width < 768, hash: `view=${view}` })
       const text = await p.locator("body").innerText()
       // Inspect states size in the Size control and scale in the Zoom control; the other views carry a chip under the frame.
-      const said = view === "gallery" ? /thumbnails at about \d+%/.test(text) : view === "inspect" ? /\d+ × \d+/.test(text) && /Fit · \d+%|\b\d+%/.test(text) : /\d+ × \d+ · (\d+%|actual size)/.test(text)
+      const said = view === "gallery" ? /thumbnails at about \d+%/.test(text) : view === "responsive" ? /\d+ × \d+/.test(text) && /one scale, (\d+%|actual size)/.test(text) : view === "inspect" ? /\d+ × \d+/.test(text) && /Fit · \d+%|\b\d+%/.test(text) : /\d+ × \d+ · (\d+%|actual size)/.test(text)
       const action = view === "gallery" ? true : (await p.getByRole("button", { name: /Show at actual size|Fit to the stage/ }).count()) > 0 || (await p.getByRole("button", { name: /^Zoom/ }).count()) > 0
       if (!said || !action) bad.push(`${view}@${width}${said ? "" : " no scale"}${action ? "" : " no action"}`)
       await p.closeAll()
     }
   }
-  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : "5 views at 1440, 1024 and 390 px state size and percentage; a 100% or Fit action is present (Gallery states its thumbnail scale and a card opens Inspect)"]
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : "6 views at 1440, 1024 and 390 px state size and percentage; a 100% or Fit action is present (Gallery states its thumbnail scale and a card opens Inspect)"]
 })
 
 // AC-12 The Gallery size control keeps working under a pointer drag and the keyboard
@@ -544,7 +544,7 @@ await check("AC-15", async () => {
 
 // AC-16 The rail names its views by default, including for a viewer whose stored options predate the default
 await check("AC-16", async () => {
-  const names = ["Inspect", "Compare", "Gallery", "Present", "Design"]
+  const names = ["Inspect", "Compare", "Responsive", "Gallery", "Present", "Design"]
   const shown = async (seed) => {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
     if (seed) await context.addInitScript(([k, v]) => localStorage.setItem(k, v), seed)
@@ -857,9 +857,9 @@ await check("AC-19", async () => {
   return [ok ? "pass" : "fail", `one scale ${Math.round(k * 100)}%, widest drift from proportional ${drift.toFixed(2)} px, 100% one action (${hundred}); page scroll at ${scrolled.length ? scrolled.join(", ") : "no width from 360 to 1600"}; at 1024 px the desktops stop at "${floor.split("·").pop().trim()}" and the stage scrolls ${stage} px inside itself`]
 })
 
-// AC-20 Frames differ only in size and profile; a change restages all with the previous shown until ready; interaction modifies one frame; an error stays in its frame
+// AC-20 Frames differ only in size and profile; a change restages all with the previous shown until ready; with sync off, interaction modifies one frame; an error stays in its frame
 await check("AC-20", async () => {
-  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop" })
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop&sync=off" })
   await allReady(p, 3)
   const before = await frameSizes(p)
   const strip = (m) => JSON.stringify({ ...m, profile: undefined })

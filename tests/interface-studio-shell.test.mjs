@@ -17,7 +17,7 @@ test('shell starter ships source only', () => {
   for (const excluded of ['node_modules/', 'dist/', '.git/']) {
     assert.ok(!rel.some((file) => file.startsWith(excluded)), `${excluded} must not be packaged`);
   }
-  for (const required of ['README.md', 'package.json', 'package-lock.json', 'index.html', 'vite.config.ts', 'src/adapter.ts', 'src/studio/types.ts', 'src/studio/protocol.ts', 'src/studio/frame-client.ts', 'src/studio/live-preview.tsx', 'example/index.html', 'example/main.ts', 'src/studio/virtual-list.tsx', 'src/adapters/synthetic.ts', 'scripts/acceptance.mjs', 'studio.config.ts', 'src/studio/config.ts', 'UPDATING.md']) {
+  for (const required of ['README.md', 'package.json', 'package-lock.json', 'index.html', 'vite.config.ts', 'src/adapter.ts', 'src/studio/types.ts', 'src/studio/protocol.ts', 'src/studio/frame-client.ts', 'src/studio/live-preview.tsx', 'example/index.html', 'example/main.ts', 'src/studio/virtual-list.tsx', 'src/adapters/synthetic.ts', 'scripts/acceptance.mjs', 'studio.config.ts', 'src/studio/config.ts', 'UPDATING.md', 'src/studio/layouts.ts', 'src/studio/frame-sync.ts', 'src/studio/design.ts']) {
     assert.ok(rel.includes(required), `${required} is missing`);
   }
 });
@@ -62,6 +62,17 @@ test('frame protocol is versioned and validates origin and source on both sides'
   assert.match(host, /e\.origin !== expectedOrigin/);
 });
 
+test('frame sync stays framework free and never reports private fields', () => {
+  const sync = read('src/studio/frame-sync.ts');
+  assert.doesNotMatch(sync, /from "(react|@\/)/, 'frame sync must stay framework free');
+  assert.match(sync, /el\.type === "password" \|\| el\.type === "file"/);
+  assert.match(sync, /closest\("\[data-studio-private\]"\)/);
+  assert.match(sync, /e\.isTrusted/);
+  const layouts = read('src/studio/layouts.ts');
+  assert.doesNotMatch(layouts, /from "(react|@\/)/, 'the layout model is shared with the dev server and stays pure');
+  assert.match(read('vite.config.ts'), /Only this Studio can save its layouts/);
+});
+
 test('modified is a state set by real changes, not a click count', () => {
   const client = read('src/studio/frame-client.ts');
   assert.match(client, /MutationObserver/);
@@ -91,8 +102,9 @@ test('starter documents local edits and the shell reference exists', () => {
 
 test('the frame can be resized in place and the Size menu lists every profile', () => {
   const handles = read('src/components/studio/resize-handles.tsx');
-  assert.match(handles, /aria-label="Frame width"/);
-  assert.match(handles, /aria-label="Frame height"/);
+  // Named "Frame width" in Inspect, and after its frame in the Responsive view.
+  assert.match(handles, /aria-label=\{`\$\{s\.label \?\? "Frame"\} width`\}/);
+  assert.match(handles, /aria-label=\{`\$\{s\.label \?\? "Frame"\} height`\}/);
   assert.match(read('src/studio/types.ts'), /export type Resizable/);
   assert.match(read('src/components/studio/chrome.tsx'), /function SizeMenu/);
   assert.match(read('src/adapters/example.ts'), /resizable:/);

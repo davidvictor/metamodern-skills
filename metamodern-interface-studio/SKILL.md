@@ -9,7 +9,7 @@ Build a review environment around existing product behavior. The Studio is remov
 
 ## Route the request
 
-Select the requested operation; compose operations only within the authorized scope. Internal scanning, reconciliation, repair, capture, and export are steps, not extra modes. The Studio's interface **views** are Inspect, Compare, Gallery, and Present, plus Design when the product declares design parameters or has a token source; they are distinct from these six operations.
+Select the requested operation; compose operations only within the authorized scope. Internal scanning, reconciliation, repair, capture, and export are steps, not extra modes. The Studio's interface **views** are Inspect, Compare, Gallery, and Present, plus Responsive (one screen at several sizes) and Design when the product declares design parameters or has a token source; they are distinct from these six operations.
 
 | Operation | Outcome and references |
 | --- | --- |
