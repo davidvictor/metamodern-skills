@@ -133,7 +133,7 @@ export function ResizeHandles({ w, h, scale, onDragChange, control, children }: 
         aria-valuetext={`${w} pixels`}
         title="Drag to resize. Double-click to return to the profile's size."
         data-active={active === "e" || active === "se"}
-        className="group absolute inset-y-0 -right-5 flex w-5 cursor-ew-resize touch-none items-center pl-1.5 outline-none"
+        className="nopan nodrag group absolute inset-y-0 -right-5 flex w-5 cursor-ew-resize touch-none items-center pl-1.5 outline-none"
         {...common}
         data-edge="e"
         onPointerDown={begin}
@@ -152,7 +152,7 @@ export function ResizeHandles({ w, h, scale, onDragChange, control, children }: 
         aria-valuetext={`${h} pixels`}
         title="Drag to resize. Double-click to return to the profile's size."
         data-active={active === "s" || active === "se"}
-        className="group absolute inset-x-0 -bottom-5 flex h-5 cursor-ns-resize touch-none justify-center pt-1.5 outline-none"
+        className="nopan nodrag group absolute inset-x-0 -bottom-5 flex h-5 cursor-ns-resize touch-none justify-center pt-1.5 outline-none"
         {...common}
         data-edge="s"
         onPointerDown={begin}
@@ -163,7 +163,7 @@ export function ResizeHandles({ w, h, scale, onDragChange, control, children }: 
       <div
         aria-hidden
         data-active={active === "se"}
-        className="group absolute -right-5 -bottom-5 flex size-5 cursor-nwse-resize touch-none items-start justify-start pt-1.5 pl-1.5"
+        className="nopan nodrag group absolute -right-5 -bottom-5 flex size-5 cursor-nwse-resize touch-none items-start justify-start pt-1.5 pl-1.5"
         {...common}
         data-edge="se"
         onPointerDown={begin}

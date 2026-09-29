@@ -55,6 +55,8 @@ export function sizeProblem(w: number, h: number) {
   return null
 }
 
+const Canvas = React.lazy(() => import("./canvas"))
+
 function useResponsive() {
   const s = useStudio()
   const r = s.responsive
@@ -75,7 +77,14 @@ function useResponsive() {
     s.set({ responsive: { layout: layout.id, name: layout.name, frames: layout.frames.map((f) => ({ ...f })), arrangement: layout.arrangement, height: layout.height, viewport: layout.viewport, sync: layout.sync ?? before.sync, dirty: false, resetNonce: before.resetNonce } })
     if (before.dirty) toast(`Unsaved changes to ${before.name} were set aside`, { action: { label: "Undo", onClick: () => s.set({ responsive: before }) } })
   }
-  return { s, r, set, all, isSaved, toLayout, persist, open }
+  /** Row keeps the canvas order, read left to right, then top to bottom. */
+  const arrange = (a: "row" | "canvas") => {
+    if (a === r.arrangement) return
+    if (a === "row") set({ arrangement: "row", frames: [...r.frames].sort((x, y) => (x.x ?? 0) - (y.x ?? 0) || (x.y ?? 0) - (y.y ?? 0)) })
+    // Each frame starts where it sits in the row, at the row's scale.
+    else set({ arrangement: "canvas", viewport: undefined, frames: r.frames.map(({ x: _x, y: _y, ...f }) => (void _x, void _y, f)) })
+  }
+  return { s, r, set, all, isSaved, toLayout, persist, open, arrange }
 }
 
 /* ---------------- panel ---------------- */
@@ -192,7 +201,7 @@ export function LayoutActions() {
 
 /** Height, and the frame list with keyboard and pointer reordering. */
 export function ResponsivePanel() {
-  const { s, r, set, open } = useResponsive()
+  const { s, r, set, open, arrange } = useResponsive()
   const rows = React.useRef(new Map<string, HTMLElement>())
   const [said, setSaid] = React.useState("")
   const [focus, setFocus] = React.useState<string | null>(null)
@@ -218,6 +227,10 @@ export function ResponsivePanel() {
         <ToggleGroup value={[r.height]} onValueChange={(v) => v[0] && set({ height: v[0] as "screen" | "full" })} variant="outline" size="sm" spacing={0} className="grid w-full grid-cols-2" aria-label="Frame height">
           <ToggleGroupItem value="screen" className="h-7 text-xs">Screen</ToggleGroupItem>
           <ToggleGroupItem value="full" className="h-7 text-xs">Full page</ToggleGroupItem>
+        </ToggleGroup>
+        <ToggleGroup value={[r.arrangement]} onValueChange={(v) => v[0] && arrange(v[0] as "row" | "canvas")} variant="outline" size="sm" spacing={0} className="grid w-full grid-cols-2" aria-label="Arrangement">
+          <ToggleGroupItem value="row" className="h-7 text-xs">Row</ToggleGroupItem>
+          <ToggleGroupItem value="canvas" className="h-7 text-xs">Canvas</ToggleGroupItem>
         </ToggleGroup>
       </SidebarGroup>
       <SidebarGroup>
@@ -382,11 +395,18 @@ function rowScale(frames: { w: number; h: number }[], boxW: number, boxH: number
 /** For loop detection: the frame height before the last change, the height the content was measured at, and that content. */
 type Tracked = { prevFrameH: number; frameH: number; contentH: number; tracking: number }
 
-function FrameCard({ frame, index, count, scale, narrow, onStatus, status, dragging, onDragStart, labelRef }: {
+export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrapLabel, selected, narrow, onStatus, status, dragging, onDragStart, labelRef }: {
   frame: ResponsiveFrame
   index: number
   count: number
+  /** The scale the preview renders at. On the canvas this is 1 and the canvas zoom scales it. */
   scale: number
+  /** The scale on screen, for the resize handles; defaults to `scale`. */
+  shownScale?: number
+  /** On the canvas: the frame is exactly its size, and the label is placed by the canvas so it never scales. */
+  canvas?: boolean
+  wrapLabel?: (label: React.ReactNode) => React.ReactNode
+  selected?: boolean
   narrow?: boolean
   onStatus: (id: string, st: LiveStatus | null) => void
   status: LiveStatus | null
@@ -400,7 +420,8 @@ function FrameCard({ frame, index, count, scale, narrow, onStatus, status, dragg
   const live = !!adapter.frameEntry
   const [nonce, setNonce] = React.useState(0)
   const [frozen, setFrozen] = React.useState<{ scale: number } | null>(null)
-  const shown = frozen?.scale ?? scale
+  const shown = canvas ? scale : (frozen?.scale ?? scale)
+  const onScreen = canvas ? (shownScale ?? 1) : shown
   // Full page: the frame follows the content, unless the page sizes itself to the frame.
   const track = React.useRef<Tracked>({ prevFrameH: frame.h, frameH: frame.h, contentH: 0, tracking: 0 })
   const full = r.height === "full"
@@ -464,9 +485,8 @@ function FrameCard({ frame, index, count, scale, narrow, onStatus, status, dragg
         onStatus={(st) => onStatus(frame.id, st)}
       />
     )
-  return (
-    <figure className={cn("m-0 flex shrink-0 flex-col gap-2 transition-opacity", dragging && "opacity-60")} style={{ width: narrow ? w : Math.max(w, MIN_COLUMN) }} data-frame={frame.id}>
-      <figcaption className="flex h-7 min-w-0 items-center gap-1 rounded-lg bg-background/92 pr-0.5 pl-1 text-xs shadow-sm backdrop-blur">
+  const label = (
+      <figcaption className={cn("flex h-7 min-w-0 items-center gap-1 rounded-lg bg-background/92 pr-0.5 pl-1 text-xs shadow-sm backdrop-blur", canvas && "w-max", selected && "ring-2 ring-(--anchor)")} style={canvas ? { maxWidth: Math.max(frame.w * (shownScale ?? 1), 132) } : undefined} data-frame-caption={frame.id}>
         <button
           ref={labelRef}
           type="button"
@@ -501,11 +521,15 @@ function FrameCard({ frame, index, count, scale, narrow, onStatus, status, dragg
           </DropdownMenuContent>
         </DropdownMenu>
       </figcaption>
+  )
+  return (
+    <figure className={cn("m-0 flex shrink-0 flex-col gap-2 transition-opacity", dragging && "opacity-60")} style={{ width: canvas ? frame.w : narrow ? w : Math.max(w, MIN_COLUMN) }} data-frame={frame.id}>
+      {wrapLabel ? wrapLabel(label) : label}
       {adapter.axes.resizable && live && !problem && !narrow ? (
         <ResizeHandles
           w={frame.w}
           h={h}
-          scale={shown}
+          scale={onScreen}
           onDragChange={setFrozen}
           control={{ profile: frame.profile, centred: false, label: `${frame.w} by ${frame.h} frame`, setSize: (size) => setFrame(size ?? { w: prof.w, h: prof.h }), setProfile: (id) => { const p = profileOf(id); setFrame({ profile: id, w: p.w, h: p.h }) } }}
         >
@@ -514,13 +538,14 @@ function FrameCard({ frame, index, count, scale, narrow, onStatus, status, dragg
       ) : (
         preview
       )}
-      {(note || cut) && <p className="text-[11px] leading-snug text-stage-muted" style={{ width: Math.max(w, MIN_COLUMN) }}>{note ?? `Cut at ${FULL_PAGE_MAX.toLocaleString()} px; the page is ${status?.contentHeight?.toLocaleString()} px tall.`}</p>}
+      {(note || cut) && <p className="text-[11px] leading-snug text-stage-muted" style={{ width: canvas ? frame.w : Math.max(w, MIN_COLUMN), fontSize: canvas ? 11 / (shownScale ?? 1) : undefined }}>{note ?? `Cut at ${FULL_PAGE_MAX.toLocaleString()} px; the page is ${status?.contentHeight?.toLocaleString()} px tall.`}</p>}
     </figure>
   )
 }
 
 export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
-  const { s, r, set } = useResponsive()
+  const { s, r, set, arrange } = useResponsive()
+  const onCanvas = r.arrangement === "canvas" && !narrow
   const box = React.useRef<HTMLDivElement>(null)
   const [dims, setDims] = React.useState({ w: 1200, h: 800 })
   React.useLayoutEffect(() => {
@@ -539,6 +564,21 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
   const anyModified = live.some((x) => x.modified)
   React.useEffect(() => setStudio({ preview: { status: summary, modified: anyModified, canGoBack: false } }), [setStudio, summary, anyModified])
 
+  // Where the row shows each frame, so switching to the canvas moves nothing.
+  const lastRow = React.useRef<{ positions: Record<string, { x: number; y: number }>; viewport: { x: number; y: number; zoom: number } } | null>(null)
+  React.useLayoutEffect(() => {
+    const el = box.current
+    if (!el || onCanvas) return
+    const b = el.getBoundingClientRect()
+    const rects = r.frames.map((f) => [f.id, el.querySelector(`[data-frame="${f.id}"] .preview-frame`)?.getBoundingClientRect()] as const)
+    const first = rects[0]?.[1]
+    if (!first) return
+    const k = first.width / r.frames[0].w
+    lastRow.current = {
+      positions: Object.fromEntries(rects.filter(([, rc]) => rc).map(([id, rc]) => [id, { x: (rc!.left - first.left) / k, y: (rc!.top - first.top) / k }])),
+      viewport: { x: first.left - b.left, y: first.top - b.top, zoom: k },
+    }
+  })
   const widest = Math.max(...r.frames.map((f) => f.w))
   const fit = narrow ? Math.max(0.05, Math.min(1, dims.w / widest)) : rowScale(r.frames, dims.w, dims.h, r.height === "full")
   const scale = s.zoom === "fit" ? fit : s.zoom / 100
@@ -607,10 +647,22 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
             <ToggleGroupItem value="screen" className="text-xs">Screen</ToggleGroupItem>
             <ToggleGroupItem value="full" className="text-xs">Full page</ToggleGroupItem>
           </ToggleGroup>
+          <ToggleGroup value={[r.arrangement]} onValueChange={(v) => v[0] && arrange(v[0] as "row" | "canvas")} size="sm" spacing={0} aria-label="Arrangement">
+            <ToggleGroupItem value="row" className="text-xs">Row</ToggleGroupItem>
+            <ToggleGroupItem value="canvas" className="text-xs" disabled={narrow}>Canvas</ToggleGroupItem>
+          </ToggleGroup>
           <AddFrame compact />
           <Button variant="ghost" size="sm" onClick={() => set({ resetNonce: r.resetNonce + 1 }, false)}><RotateCcwIcon /> Reset all</Button>
         </div>
       </div>
+      {r.arrangement === "canvas" && narrow && <p className="px-4 pt-2 text-center text-xs text-stage-muted">This layout is a canvas. The canvas opens on wider screens; here its frames stack.</p>}
+      {onCanvas ? (
+        <div ref={box} className="relative min-h-0 flex-1">
+          <React.Suspense fallback={<p className="p-6 text-center text-xs text-stage-muted">Opening the canvas…</p>}>
+            <Canvas statuses={statuses} onStatus={onStatus} rowPlacement={() => lastRow.current} onAnnounce={setSaid} />
+          </React.Suspense>
+        </div>
+      ) : (
       <div ref={box} className="flex min-h-0 flex-1 overflow-auto p-6" onKeyDown={onKey}>
         <div className={cn("m-auto flex w-max items-start", narrow ? "flex-col" : "flex-row")} style={{ gap: GAP }}>
           {r.frames.map((f, i) => (
@@ -618,14 +670,15 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
           ))}
         </div>
       </div>
+      )}
       <div className="pointer-events-none flex flex-wrap items-center justify-center gap-2 px-3 pb-3">
-        {!narrow && <StageControls variant="dock" lookOnly />}
-        <span className="pointer-events-auto inline-flex items-center gap-2 rounded-lg bg-background/92 px-2 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur" aria-label="Scale">
+        {!narrow && <StageControls variant="dock" lookOnly noZoom={onCanvas} />}
+        {!onCanvas && <span className="pointer-events-auto inline-flex items-center gap-2 rounded-lg bg-background/92 px-2 py-1 text-xs text-muted-foreground shadow-sm backdrop-blur" aria-label="Scale">
           <span className="tabular-nums">{r.frames.length} frames{adapter.frameEntry ? ` · ${ready} ready` : ""} · one scale, {Math.abs(scale - 1) < 0.005 ? "actual size" : `${Math.round(scale * 100)}%`}</span>
           <Button variant="ghost" size="xs" className="h-5 px-1.5 text-xs" onClick={() => s.set({ zoom: Math.abs(scale - 1) < 0.005 ? "fit" : 100 })} aria-label={Math.abs(scale - 1) < 0.005 ? "Fit to the stage" : "Show at actual size"}>
             {Math.abs(scale - 1) < 0.005 ? "Fit" : "100%"}
           </Button>
-        </span>
+        </span>}
       </div>
       <p className="sr-only" aria-live="polite">{said}</p>
     </div>

@@ -9,9 +9,10 @@
  * A result is pass, fail, or not-measured; nothing is inferred. Set ONLY=AC-03,AC-10 to run a subset.
  */
 import { execFileSync, spawn } from "node:child_process"
-import { copyFileSync, createReadStream, existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { copyFileSync, createReadStream, existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { createServer } from "node:http"
 import { extname, join, normalize } from "node:path"
+import { gzipSync } from "node:zlib"
 
 const root = new URL("..", import.meta.url).pathname
 let chromium
@@ -1143,6 +1144,280 @@ await check("AC-27", async () => {
   await p.closeAll()
   const ok = view === "responsive" && next !== "tasks.list" && before !== after && cmd > 0 && labels === 3 && menus === 3
   return [ok ? "pass" : "fail", `6 opened ${view}; ] moved to ${next}; Reset all remounted every frame ${before !== after}; the command menu opened ${cmd > 0}; every frame has a focusable label and an actions menu (${labels}, ${menus})`]
+})
+
+// ---------- Responsive canvas (AC-28 to AC-35) ----------
+const vpOf = (p) => p.locator(".react-flow__viewport").evaluate((e) => { const m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)\s*scale\(([\d.]+)\)/.exec(e.style.transform); return m ? { x: +m[1], y: +m[2], z: +m[3] } : null })
+const hashFrames = (p) => p.evaluate(() => (new URLSearchParams(location.hash.slice(1)).get("frames") ?? "").split(",").filter(Boolean).map((t) => { const m = /^(\d+)x(\d+):[\w.-]+(?:@(-?\d+)\.(-?\d+))?$/.exec(t); return { w: +m[1], h: +m[2], x: m[3] === undefined ? null : +m[3], y: m[4] === undefined ? null : +m[4] } }))
+async function canvasReady(p, n, timeout = 30000) {
+  await p.waitForFunction((count) => document.querySelectorAll("[data-frame] iframe.opacity-100").length === count && document.querySelectorAll(".react-flow__node").length === count, n, { timeout })
+  await wait(1200)
+}
+const toCanvas = async (p) => { await p.getByRole("toolbar", { name: "Responsive controls" }).getByRole("button", { name: "Canvas" }).click() }
+// A point on the canvas clear of every frame, label, the minimap, the controls and the zoom chip.
+const emptySpot = (p) =>
+  p.evaluate(() => {
+    const pane = document.querySelector(".react-flow__pane").getBoundingClientRect()
+    const blocked = [...document.querySelectorAll(".react-flow__node, .react-flow__minimap, .react-flow__controls, .react-flow__node-toolbar, [aria-label='Canvas zoom'], [aria-label='Preview controls']")].map((e) => e.getBoundingClientRect())
+    for (let y = pane.top + 40; y < pane.bottom - 40; y += 20)
+      for (let x = pane.left + 60; x < pane.right - 60; x += 20)
+        if (!blocked.some((b) => x > b.left - 12 && x < b.right + 12 && y > b.top - 12 && y < b.bottom + 12)) return { x, y }
+    return { x: pane.left + 20, y: pane.top + 20 }
+  })
+
+// AC-28 The canvas is its own chunk, loaded only when a canvas layout opens; the initial Studio bundle carries none of it
+await check("AC-28", async () => {
+  const dir = join(root, ".acceptance", "normal", "assets")
+  const files = readdirSync(dir)
+  const main = files.find((f) => /^studio-.*\.js$/.test(f))
+  const canvas = files.find((f) => /^canvas-.*\.js$/.test(f))
+  const mainText = readFileSync(join(dir, main), "utf8")
+  const gz = (f) => gzipSync(readFileSync(join(dir, f))).length
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  const requested = []
+  p.on("request", (r) => requested.push(r.url()))
+  await p.getByRole("button", { name: "Responsive" }).first().click()
+  await wait(1500)
+  const before = requested.some((u) => /canvas-/.test(u))
+  await toCanvas(p)
+  await wait(1500)
+  const after = requested.some((u) => /canvas-/.test(u))
+  await p.closeAll()
+  const ok = !!canvas && !/react-flow__pane/.test(mainText) && !before && after
+  return [ok ? "pass" : "fail", `initial Studio chunk ${main} ${(gz(main) / 1024).toFixed(1)} KB gzipped with no canvas code; canvas chunk ${canvas} ${(gz(canvas) / 1024).toFixed(1)} KB gzipped, requested before opening a canvas ${before}, after ${after}`]
+})
+
+// AC-29 Row to canvas keeps every frame where it was within 1 px; canvas to row keeps the order
+await check("AC-29", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phone-tablet-laptop" })
+  await allReady(p, 3)
+  const rects = () => p.locator("[data-frame] .preview-frame").evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return [b.left, b.top, b.width] }))
+  const row = await rects()
+  await toCanvas(p)
+  await canvasReady(p, 3)
+  const canvas = await rects()
+  const drift = Math.max(...row.flatMap((r, i) => r.map((v, j) => Math.abs(v - canvas[i][j]))))
+  await p.getByRole("toolbar", { name: "Responsive controls" }).getByRole("button", { name: "Row" }).click()
+  await wait(1500)
+  const order = await p.locator("[data-frame] figcaption").evaluateAll((els) => els.map((e) => e.textContent.match(/\d+ × \d+/)[0]))
+  await p.closeAll()
+  const ok = drift <= 1 && order.join() === "390 × 844,834 × 1112,1280 × 800"
+  return [ok ? "pass" : "fail", `largest change in a frame's on-screen left, top or width on switching ${drift.toFixed(2)} px; back to Row the order is ${order.join(", ")}`]
+})
+
+// AC-30 Pan and zoom: empty canvas drag, Space plus drag, trackpad scroll, modifier plus wheel, keys, limits; over a live frame the wheel scrolls the product and a click reaches it
+await check("AC-30", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=help.guide&layout=phones&frames=390x844:phone@0.0,834x1112:tablet@480.0&arrange=canvas&vp=40_60_0.5" })
+  await canvasReady(p, 2)
+  const at = await emptySpot(p)
+  const v0 = await vpOf(p)
+  await p.mouse.move(at.x, at.y)
+  await p.mouse.down()
+  for (let i = 1; i <= 5; i++) {
+    await p.mouse.move(at.x + i * 20, at.y - i * 10)
+    await wait(30)
+  }
+  await p.mouse.up()
+  await wait(300)
+  const v1 = await vpOf(p)
+  const frameBox = await p.locator(".react-flow__node").first().boundingBox()
+  const doc = await (await p.locator("[data-frame] iframe.opacity-100").first().elementHandle()).contentFrame()
+  await p.keyboard.down("Space")
+  await wait(100)
+  await p.mouse.move(frameBox.x + frameBox.width / 2, frameBox.y + frameBox.height / 2)
+  await p.mouse.down()
+  for (let i = 1; i <= 6; i++) {
+    await p.mouse.move(frameBox.x + frameBox.width / 2 + i * 10, frameBox.y + frameBox.height / 2 + i * 5)
+    await wait(30)
+  }
+  await p.mouse.up()
+  await p.keyboard.up("Space")
+  await wait(300)
+  const v2 = await vpOf(p)
+  const at2 = await emptySpot(p)
+  await p.mouse.move(at2.x, at2.y)
+  await p.mouse.wheel(0, 120)
+  await wait(300)
+  const v3 = await vpOf(p)
+  const fb = await p.locator(".react-flow__node").first().boundingBox()
+  const scrollBefore = await doc.evaluate(() => scrollY)
+  await p.mouse.move(fb.x + fb.width / 2, fb.y + Math.min(fb.height / 2, 200))
+  await p.mouse.wheel(0, 300)
+  await wait(500)
+  const scrollAfter = await doc.evaluate(() => scrollY)
+  const v5 = await vpOf(p)
+  const at3 = await emptySpot(p)
+  const under = await p.evaluate(({ x, y }) => { const e = document.elementFromPoint(x, y); return `${e?.tagName}.${String(e?.className?.baseVal ?? e?.className).split(" ")[0]}` }, at3)
+  await p.mouse.move(at3.x, at3.y)
+  await p.keyboard.down("Control")
+  await p.mouse.wheel(0, -200)
+  await p.keyboard.up("Control")
+  await wait(300)
+  const v4 = await vpOf(p)
+  await p.locator("[data-frame-label]").first().focus()
+  for (let i = 0; i < 30; i++) await p.keyboard.press("-")
+  await wait(400)
+  const min = (await vpOf(p)).z
+  for (let i = 0; i < 40; i++) await p.keyboard.press("=")
+  await wait(400)
+  const max = (await vpOf(p)).z
+  await p.closeAll()
+  const q = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones&frames=390x844:phone@0.0&arrange=canvas&vp=40_60_0.6" })
+  await canvasReady(q, 1)
+  const inner = await (await q.locator("[data-frame] iframe.opacity-100").first().elementHandle()).contentFrame()
+  // Boxes of elements inside a frame come back in page coordinates, zoom included.
+  const btn = await inner.getByRole("button", { name: "New task" }).boundingBox()
+  await q.mouse.click(btn.x + btn.width / 2, btn.y + btn.height / 2)
+  await wait(600)
+  const dialog = await inner.getByRole("dialog").count()
+  await q.closeAll()
+  const ok = Math.round(v1.x - v0.x) === 100 && Math.round(v1.y - v0.y) === -50 && Math.round(v2.x - v1.x) === 60 && Math.round(v3.y - v2.y) < 0 && v3.z === v2.z && v4.z > v3.z && scrollAfter > scrollBefore && v5.x === v3.x && v5.y === v3.y && v5.z === v3.z && Math.abs(min - 0.1) < 0.001 && Math.abs(max - 2) < 0.001 && dialog === 1
+  return [ok ? "pass" : "fail", `drag on empty canvas panned ${Math.round(v1.x - v0.x)}, ${Math.round(v1.y - v0.y)}; Space plus drag over a frame panned ${Math.round(v2.x - v1.x)}, ${Math.round(v2.y - v1.y)}; scroll over empty canvas panned ${Math.round(v3.y - v2.y)} at zoom ${v3.z}; Control plus wheel over ${under} zoomed ${v3.z} to ${v4.z.toFixed(2)}; the wheel over a frame scrolled the product ${scrollBefore} to ${scrollAfter} and left the canvas still (${v5.x === v3.x && v5.y === v3.y && v5.z === v3.z}); keys reached ${min} and ${max}; a click inside a frame opened the product's dialog (${dialog})`]
+})
+
+// AC-31 Frames move by their label, snap to 8 px, move by keys (8 and 64 px), even across another frame's product; Tidy returns a row grouped by kind
+await check("AC-31", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones&frames=1280x800:desktop@0.0,390x844:phone@1400.0,834x1112:tablet@1900.0&arrange=canvas&vp=20_80_0.4" })
+  await canvasReady(p, 3)
+  const f0 = await hashFrames(p)
+  const label = p.locator("[data-frame-label]").nth(1)
+  const lb = await label.boundingBox()
+  const over = await p.locator(".react-flow__node").nth(0).boundingBox()
+  await p.mouse.move(lb.x + 30, lb.y + lb.height / 2)
+  await p.mouse.down()
+  await p.mouse.move(over.x + over.width / 2, over.y + over.height / 2, { steps: 8 })
+  await p.mouse.move(lb.x + 30 + 97, lb.y + lb.height / 2 + 41, { steps: 8 })
+  await p.mouse.up()
+  await wait(500)
+  const f1 = await hashFrames(p)
+  await label.focus()
+  await p.keyboard.press("ArrowRight")
+  await p.keyboard.press("Shift+ArrowDown")
+  await wait(400)
+  const f2 = await hashFrames(p)
+  const said = await p.locator("p[aria-live=polite]").allInnerTexts()
+  await p.getByRole("button", { name: "Tidy" }).click()
+  await wait(800)
+  const f3 = await hashFrames(p)
+  await p.closeAll()
+  const want = (d) => Math.round(d / 0.4 / 8) * 8
+  const moved = f1[1].x - f0[1].x === want(97) && f1[1].y - f0[1].y === want(41) && f1[1].x % 8 === 0 && f1[1].y % 8 === 0
+  const keyed = f2[1].x - f1[1].x === 8 && f2[1].y - f1[1].y === 64
+  const tidy = f3.map((f) => `${f.w}`).join() === "390,834,1280" && f3.every((f) => f.y === 0) && f3[1].x > f3[0].x && f3[2].x > f3[1].x
+  const ok = moved && keyed && tidy && said.some((t) => /Moved 390 by 844 to/.test(t))
+  return [ok ? "pass" : "fail", `a label drag of 97, 41 screen px at 40% moved the phone ${f1[1].x - f0[1].x}, ${f1[1].y - f0[1].y} (snapped, passing over the desktop frame's product); Right and Shift+Down moved it ${f2[1].x - f1[1].x}, ${f2[1].y - f1[1].y}; announced "${said.filter(Boolean).pop()}"; Tidy gave ${f3.map((f) => `${f.w}@${f.x},${f.y}`).join(" ")}`]
+})
+
+// AC-32 Resizing on the canvas follows the pointer divided by the zoom, without reloading the frame
+await check("AC-32", async () => {
+  const results = []
+  for (const z of [0.5, 1.5]) {
+    const p = await open("normal", { hash: `view=responsive&scenario=tasks.list&layout=phones&frames=390x844:phone@0.0&arrange=canvas&vp=40_100_${z}` })
+    await canvasReady(p, 1)
+    const doc = await (await p.locator("[data-frame] iframe.opacity-100").first().elementHandle()).contentFrame()
+    await doc.evaluate(() => (window.__kept = "same"))
+    const handle = p.getByRole("slider", { name: /frame width$/ })
+    const hb = await handle.boundingBox()
+    await p.mouse.move(hb.x + hb.width / 2, hb.y + Math.min(hb.height / 2, 200))
+    await p.mouse.down()
+    await p.mouse.move(hb.x + hb.width / 2 + 60, hb.y + Math.min(hb.height / 2, 200), { steps: 8 })
+    await p.mouse.up()
+    await wait(600)
+    const [f] = await hashFrames(p)
+    const kept = await doc.evaluate(() => window.__kept).catch(() => "reloaded")
+    results.push({ z, got: f.w - 390, want: 60 / z, kept })
+    await p.closeAll()
+  }
+  const ok = results.every((r) => Math.abs(r.got - r.want) <= 1 && r.kept === "same")
+  return [ok ? "pass" : "fail", results.map((r) => `at ${r.z * 100}% a 60 px drag widened the frame ${r.got} px (expected ${r.want.toFixed(1)}), document ${r.kept}`).join("; ")]
+})
+
+// AC-33 Save keeps positions and the viewport; a reload and a fresh browser with the link both restore them
+await check("AC-33", async () => {
+  const file = join(root, "layouts.json")
+  const backup = existsSync(file) ? `${file}.acceptance-backup` : null
+  if (backup) copyFileSync(file, backup)
+  const port = 5392
+  const dev = spawn("npx", ["vite", "--port", String(port), "--strictPort", "--logLevel", "error"], { cwd: root, stdio: "ignore" })
+  try {
+    const url = `http://localhost:${port}/`
+    for (let i = 0; i < 60 && !(await fetch(url).then((r) => r.ok).catch(() => false)); i++) await wait(500)
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+    const p = await context.newPage()
+    await p.goto(`${url}#view=responsive&scenario=tasks.list&layout=phones&frames=390x844:phone@0.0,834x1112:tablet@520.160&arrange=canvas&vp=60_90_0.45`)
+    await p.waitForSelector("header")
+    await canvasReady(p, 2)
+    await p.getByRole("button", { name: /Save as/ }).first().click()
+    await p.getByLabel("Save as a new layout").fill("Canvas board")
+    await p.getByRole("button", { name: "Save", exact: true }).last().click()
+    await wait(800)
+    const saved = JSON.parse(readFileSync(file, "utf8")).layouts.find((l) => l.name === "Canvas board")
+    const positions = () => p.locator(".react-flow__node").evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top)] }))
+    const before = await positions()
+    await p.goto(`${url}#view=responsive&scenario=tasks.list&layout=phones`)
+    await p.reload()
+    await p.waitForSelector("header")
+    await wait(2000)
+    await p.getByRole("button", { name: "Canvas board" }).first().click()
+    await canvasReady(p, 2)
+    const restored = await positions()
+    const link = await p.evaluate(() => location.hash)
+    await context.close()
+    const fresh = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+    const q = await fresh.newPage()
+    await q.goto(`${url}${link}`)
+    await q.waitForSelector("header")
+    await canvasReady(q, 2)
+    const linked = await q.locator(".react-flow__node").evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top)] }))
+    await fresh.close()
+    const same = (a, b) => a.length === b.length && a.every((x, i) => Math.abs(x[0] - b[i][0]) <= 1 && Math.abs(x[1] - b[i][1]) <= 1)
+    const ok = saved?.arrangement === "canvas" && saved.frames[1].x === 520 && saved.frames[1].y === 160 && saved.viewport?.zoom === 0.45 && same(before, restored) && same(before, linked)
+    return [ok ? "pass" : "fail", `layouts.json kept ${saved?.arrangement} with the tablet at ${saved?.frames[1].x}, ${saved?.frames[1].y} and zoom ${saved?.viewport?.zoom}; frames on screen ${JSON.stringify(before)}, after reopening ${JSON.stringify(restored)}, from the link in a fresh browser ${JSON.stringify(linked)}`]
+  } finally {
+    dev.kill()
+    if (backup) copyFileSync(backup, file), rmSync(backup)
+    else rmSync(file, { force: true })
+  }
+})
+
+// AC-34 The zoom is stated whenever it is not 100%, Fit view and 100% are one action each, and labels stay legible at every zoom
+await check("AC-34", async () => {
+  const out = []
+  for (const z of [0.1, 1, 2]) {
+    const p = await open("normal", { hash: `view=responsive&scenario=tasks.list&layout=phones&frames=390x844:phone@0.0&arrange=canvas&vp=40_120_${z}` })
+    await canvasReady(p, 1)
+    const text = await p.locator('[aria-label="Canvas zoom"]').innerText()
+    const font = await p.locator("[data-frame-label]").first().evaluate((e) => parseFloat(getComputedStyle(e).fontSize) * (e.getBoundingClientRect().height / e.offsetHeight))
+    out.push({ z, text: text.split("\n")[0].trim(), font, fit: await p.getByRole("button", { name: "Fit view", exact: true }).count(), hundred: await p.locator('[aria-label="Canvas zoom"]').getByRole("button", { name: "100%", exact: true }).count() })
+    await p.closeAll()
+  }
+  const ok = out[0].text === "Canvas 10%" && out[1].text === "Canvas at actual size" && out[2].text === "Canvas 200%" && out.every((o) => o.font >= 11 && o.fit === 1 && o.hundred === 1)
+  return [ok ? "pass" : "fail", out.map((o) => `${o.z * 100}%: "${o.text}", label text ${o.font.toFixed(1)} px`).join("; ") + "; Fit view and 100% one action each"]
+})
+
+// AC-35 Every frame is focusable and named; Tab moves between frames; selection and moves are announced; on a phone a canvas layout stacks with a note
+await check("AC-35", async () => {
+  const p = await open("normal", { hash: "view=responsive&scenario=tasks.list&layout=phones&frames=390x844:phone@0.0,834x1112:tablet@480.0,1280x800:desktop@1400.0&arrange=canvas&vp=20_80_0.4" })
+  await canvasReady(p, 3)
+  const names = await p.locator("[data-frame-label]").evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")))
+  await p.locator("[data-frame-label]").first().focus()
+  let reached = null
+  for (let i = 0; i < 6 && !reached; i++) {
+    await p.keyboard.press("Tab")
+    reached = await p.evaluate(() => (document.activeElement?.hasAttribute("data-frame-label") ? document.activeElement.getAttribute("aria-label") : null))
+  }
+  await p.locator("[data-frame-label]").nth(2).click()
+  await wait(300)
+  const selected = await p.locator("p[aria-live=polite]").allInnerTexts()
+  await p.closeAll()
+  const q = await open("normal", { width: 390, height: 800, touch: true, hash: "view=responsive&scenario=tasks.list&layout=phones&frames=390x844:phone@0.0,834x1112:tablet@480.0&arrange=canvas" })
+  await wait(2000)
+  const note = await q.getByText(/The canvas opens on wider screens/).count()
+  const stacked = await q.evaluate(() => { const r = [...document.querySelectorAll("[data-frame]")].map((e) => e.getBoundingClientRect()); return r.length === 2 && r[1].top >= r[0].bottom })
+  const scroll = await q.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+  await q.closeAll()
+  const ok = names.length === 3 && names.every((n) => /^\d+ by \d+, counts as .*frame \d of 3/.test(n)) && reached === names[1] && selected.some((t) => /Selected 1280 by 800/.test(t)) && note === 1 && stacked && scroll <= 1
+  return [ok ? "pass" : "fail", `labels named "${names[0]}" and so on; Tab from the first reached "${reached?.slice(0, 40)}"; clicking a label announced "${selected.filter(Boolean).pop()}"; at 390 px the canvas layout stacked ${stacked} with the note (${note}) and no page scroll (${scroll}px)`]
 })
 
 await browser.close()

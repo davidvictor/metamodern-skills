@@ -90,6 +90,11 @@ const initialResponsive = (): State["responsive"] => {
   return { layout: p.id, name: p.name, frames: p.frames, arrangement: p.arrangement, height: p.height, sync: DEFAULT_SYNC, dirty: false, resetNonce: 0 }
 }
 const profileIds = A.axes.profiles.map((p) => p.id)
+/** A canvas viewport in a link: `x_y_zoom`. */
+function parseViewport(text: string | null) {
+  const m = /^(-?\d+)_(-?\d+)_(\d*\.?\d+)$/.exec(text ?? "")
+  return m && +m[3] >= 0.1 && +m[3] <= 2 ? { x: +m[1], y: +m[2], zoom: +m[3] } : undefined
+}
 
 /** A link that names a scenario this Studio does not have. It is said out loud, never replaced silently. */
 let unresolvedLink: string | null = null
@@ -132,6 +137,7 @@ function readHash(): Partial<State> {
       arrangement: q.get("arrange") === "canvas" ? "canvas" : q.get("arrange") === "row" ? "row" : base.arrangement,
       height: q.get("height") === "full" ? "full" : q.get("height") === "screen" ? "screen" : base.height,
       sync: sync === null ? (base.sync ?? DEFAULT_SYNC) : { scroll: sync.includes("scroll"), interaction: sync.includes("interaction"), navigation: sync.includes("navigation") },
+      viewport: parseViewport(q.get("vp")) ?? base.viewport,
       dirty: !!inline,
     }
   }
@@ -298,6 +304,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       if (r.dirty) q.set("frames", encodeFrames(r.frames))
       if (r.height === "full") q.set("height", "full")
       if (r.arrangement === "canvas") q.set("arrange", "canvas")
+      if (r.arrangement === "canvas" && r.viewport) q.set("vp", `${r.viewport.x}_${r.viewport.y}_${r.viewport.zoom}`)
       const sync = (Object.keys(r.sync) as (keyof SyncChannels)[]).filter((k) => r.sync[k])
       if (sync.length !== 3) q.set("sync", sync.join("-") || "off")
     }
