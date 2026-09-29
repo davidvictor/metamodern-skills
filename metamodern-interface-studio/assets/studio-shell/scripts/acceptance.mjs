@@ -9,7 +9,7 @@
  * A result is pass, fail, or not-measured; nothing is inferred. Set ONLY=AC-03,AC-10 to run a subset.
  */
 import { execFileSync } from "node:child_process"
-import { createReadStream, existsSync, statSync, writeFileSync } from "node:fs"
+import { createReadStream, existsSync, readFileSync, statSync, writeFileSync } from "node:fs"
 import { createServer } from "node:http"
 import { extname, join, normalize } from "node:path"
 
@@ -125,7 +125,7 @@ await check("AC-02", async () => {
 await check("AC-03", async () => {
   const bad = []
   for (const width of [360, 390, 430]) {
-    for (const view of ["inspect", "compare", "gallery", "present", "tokens"]) {
+    for (const view of ["inspect", "compare", "gallery", "present", "design"]) {
       const p = await open("normal", { width, height: 844, touch: true, hash: `view=${view}` })
       const m = await p.evaluate(() => {
         const wide = [...document.querySelectorAll("body *")].filter((e) => {
@@ -379,7 +379,7 @@ await check("AC-10", async () => {
 await check("AC-11", async () => {
   const bad = []
   for (const width of [1440, 1024, 390]) {
-    for (const view of ["inspect", "compare", "present", "tokens", "gallery"]) {
+    for (const view of ["inspect", "compare", "present", "design", "gallery"]) {
       const p = await open("normal", { width, height: 900, touch: width < 768, hash: `view=${view}` })
       const text = await p.locator("body").innerText()
       // Inspect states size in the Size control and scale in the Zoom control; the other views carry a chip under the frame.
@@ -543,7 +543,7 @@ await check("AC-15", async () => {
 
 // AC-16 The rail names its views by default, including for a viewer whose stored options predate the default
 await check("AC-16", async () => {
-  const names = ["Inspect", "Compare", "Gallery", "Present", "Tokens"]
+  const names = ["Inspect", "Compare", "Gallery", "Present", "Design"]
   const shown = async (seed) => {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
     if (seed) await context.addInitScript(([k, v]) => localStorage.setItem(k, v), seed)
@@ -595,6 +595,197 @@ await check("AC-17", async () => {
   await c.closeAll()
   const ok = /^Role, Owner$/.test(designed ?? "") && ownerSees > 0 && /Viewer, changed$/.test(changed ?? "") && viewerSees === 0 && hash === "viewer" && kept === changed && back > 0 && scoped === 0 && axes.includes("Role")
   return [ok ? "pass" : "fail", `opened "${designed}", New task ${ownerSees}; Viewer: "${changed}", New task ${viewerSees}, link role=${hash}, after reload "${kept}"; Back to Owner New task ${back}; a screen without the lens shows it ${scoped} times; Compare axes ${axes.join(", ")}`]
+})
+
+// AC-43 A scenario offers only the input options it supports (Scenario.supports); the designed one is marked
+await check("AC-43", async () => {
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  const frame = () => p.frames().find((f) => f !== p.mainFrame())
+  const density = () => frame().evaluate(() => document.documentElement.dataset.density)
+  const btn = () => p.getByRole("button", { name: /^Density,/ })
+  const designed = await btn().getAttribute("aria-label")
+  await btn().click()
+  await p.getByRole("menuitemradio").first().waitFor()
+  const offered = await p.getByRole("menuitemradio").allInnerTexts()
+  await p.getByRole("menuitemradio", { name: /^Compact/ }).click()
+  await wait(1500)
+  const compact = await density()
+  const link = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("density"))
+  await btn().click()
+  await p.getByRole("menuitem", { name: /Back to Comfortable/ }).click()
+  await wait(1500)
+  const back = await density()
+  await p.closeAll()
+  const q = await open("normal", { hash: "view=inspect&scenario=account.sign-in&density=compact" })
+  const hidden = await q.getByRole("button", { name: /^Density,/ }).count()
+  const signIn = await q.frames().find((f) => f !== q.mainFrame()).evaluate(() => document.documentElement.dataset.density)
+  await q.closeAll()
+  const c = await open("normal", { hash: "view=compare&scenario=account.sign-in" })
+  await c.getByRole("combobox", { name: "Changing axis" }).click()
+  await wait(400)
+  const axes = await c.getByRole("option").allInnerTexts()
+  await c.closeAll()
+  const ok = designed === "Density, Comfortable" && offered.length === 2 && /Comfortable[\s\S]*Designed/.test(offered[0]) && compact === "compact" && link === "compact" && back === "comfortable" && hidden === 0 && signIn === "comfortable" && !axes.includes("Density")
+  return [ok ? "pass" : "fail", `opened "${designed}", offered ${offered.map((o) => o.replace(/\s+/g, " ")).join(" / ")}; Compact rendered ${compact}, link density=${link}; Back rendered ${back}; Sign in (supports Comfortable only, link asks Compact): control shown ${hidden} times, rendered ${signIn}; its Compare axes ${axes.join(", ")}`]
+})
+
+// AC-44 Design view: Adjust drafts reach the live frame without a remount, marks sit at shipped modes, the link carries the draft, Present and the Tokens tab are untouched
+await check("AC-44", async () => {
+  const p = await open("normal", { hash: "view=design&scenario=tasks.list&profile=desktop" })
+  const frame = () => p.frames().find((f) => f !== p.mainFrame() && f.url().includes("example"))
+  const prop = (name) => frame().evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name)
+  await frame().evaluate(() => (window.__kept = "same document"))
+  const built = await prop("--ex-row")
+  const marks = await p.getByRole("button", { name: /^Density (Compact|Comfortable)/ }).allInnerTexts()
+  await p.getByRole("button", { name: /^Density Compact/ }).click()
+  await wait(600)
+  const compact = [await prop("--ex-row"), await frame().evaluate(() => getComputedStyle(document.querySelector(".app")).getPropertyValue("--ex-space").trim()), await prop("--ex-space"), await prop("--ex-nav")]
+  const badge = await p.getByText("Draft design", { exact: true }).isVisible()
+  const thumb = p.getByRole("slider", { name: "Density" })
+  await thumb.focus()
+  for (let i = 0; i < 10; i++) await p.keyboard.press("ArrowRight")
+  await wait(600)
+  const between = await prop("--ex-row")
+  const kept = await frame().evaluate(() => window.__kept)
+  const hold = p.getByRole("button", { name: /Hold to see as built/ })
+  const box = await hold.boundingBox()
+  await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await p.mouse.down()
+  await wait(500)
+  const peeked = await prop("--ex-row")
+  await p.mouse.up()
+  await wait(500)
+  const released = await prop("--ex-row")
+  const link = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("design"))
+  await p.reload()
+  await p.waitForSelector("header")
+  await wait(2000)
+  const readout = await p.locator("output").first().innerText()
+  const reloaded = await prop("--ex-row")
+  await p.getByRole("button", { name: "Present" }).first().click()
+  await wait(2500)
+  const presented = await p.frames().find((f) => f !== p.mainFrame() && f.url().includes("example")).evaluate(() => document.documentElement.style.getPropertyValue("--ex-row"))
+  await p.closeAll()
+  const t = await open("normal", { hash: "view=tokens" })
+  const tokensTab = (await t.getByRole("treegrid", { name: "Tokens" }).count()) === 1
+  const tab = await t.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("tab"))
+  const pressed = await t.getByRole("radio", { name: "Tokens" }).getAttribute("aria-checked").catch(() => null)
+  await t.closeAll()
+  const ok = built === "48px" && marks.join(",") === "Compact,Comfortable" && compact.join(",") === "38px,12px,16px,176px" && badge && between === "43px" && kept === "same document" && peeked === "48px" && released === "43px" && link === "density:0.9" && readout === "0.90×" && reloaded === "43px" && presented === "" && tokensTab && tab === "tokens"
+  return [ok ? "pass" : "fail", `as built --ex-row ${built}; marks ${marks.join(", ")}; Compact mark gave --ex-row ${compact[0]}, --ex-space ${compact[1]} under .app (root still ${compact[2]}), --ex-nav ${compact[3]} from its base value; draft badge ${badge}; 0.90 gave ${between} (between the marks); frame document kept: ${kept}; holding As built showed ${peeked}, release ${released}; link design=${link}; after reload readout ${readout} and ${reloaded}; Present frame override "${presented}"; old view=tokens link opens the Tokens tab ${tokensTab} (tab=${tab}, pressed ${pressed})`]
+})
+
+const designFrame = (p) => p.frames().find((f) => f !== p.mainFrame() && f.url().includes("example"))
+const frameProp = (p, name) => designFrame(p).evaluate((n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(), name)
+
+// AC-45 Typography: typefaces from Google Fonts only, type scale and base size compose, line height, a specimen, and size warnings
+await check("AC-45", async () => {
+  const p = await open("normal", { hash: "view=design&scenario=tasks.list&profile=desktop&design=type-scale:1.9;text-size:0.75;leading:1.2" })
+  await wait(1200)
+  const title = await frameProp(p, "--ex-title")
+  const text = await frameProp(p, "--ex-text")
+  const leading = await frameProp(p, "--ex-leading")
+  const warning = await p.getByText(/--ex-text is 11\.25px, under 12px/).isVisible()
+  await p.getByLabel("Typeface, any Google Font name").fill("Inter")
+  await p.keyboard.press("Enter")
+  await wait(800)
+  const font = await designFrame(p).evaluate(() => getComputedStyle(document.body).fontFamily)
+  const specimen = await p.getByRole("complementary", { name: "Type specimen" }).innerText()
+  // A stylesheet from any other host is never loaded, even if a message asks for it.
+  await p.evaluate(() => {
+    const f = [...document.querySelectorAll("iframe")].find((x) => x.style.opacity !== "0" && x.className.includes("opacity-100"))
+    f.contentWindow.postMessage({ protocol: "studio-preview/1", instance: f.name, type: "draft-overrides", requestId: "probe", tokens: {}, css: "", stylesheets: ["https://example.com/font.css", "https://fonts.googleapis.com/css2?family=Inter&display=swap"] }, "*")
+  })
+  await wait(500)
+  const links = await designFrame(p).evaluate(() => [...document.querySelectorAll("link[data-studio-draft]")].map((l) => new URL(l.href).host))
+  await p.getByRole("combobox", { name: "Typeface typeface" }).click()
+  await p.getByRole("option", { name: "Georgia" }).click()
+  await wait(800)
+  const local = await designFrame(p).evaluate(() => [getComputedStyle(document.body).fontFamily, document.querySelectorAll("link[data-studio-draft]").length])
+  await p.closeAll()
+  const ok = title === "21.38px" && text === "11.25px" && leading === "1.74" && warning && /^Inter,/.test(font) && /Typeface · Inter/.test(specimen) && links.length === 1 && links[0] === "fonts.googleapis.com" && /^Georgia,/.test(local[0]) && local[1] === 0
+  return [ok ? "pass" : "fail", `type scale 1.9 then text size 0.75 gave --ex-title ${title} and --ex-text ${text}; line height 1.2 gave ${leading}; size warning shown ${warning}; Inter reached the body as ${font.split(",")[0]}; specimen lists ${specimen.split("\n")[1]}; draft stylesheet hosts after a request for two: ${links.join(", ")}; Georgia (local) gave ${local[0].split(",")[0]} with ${local[1]} stylesheets`]
+})
+
+// AC-46 Color: brand and accent colors, derived tokens follow, contrast is checked against the product's own grounds, fixed values are listed, neutral temperature tints grounds
+await check("AC-46", async () => {
+  const p = await open("normal", { hash: "view=design&scenario=tasks.list&profile=desktop&design=primary:%23b91c1c;neutral:1" })
+  await wait(1200)
+  const primary = await frameProp(p, "--ex-primary")
+  const accent = await frameProp(p, "--ex-accent")
+  const ground = await frameProp(p, "--ex-ground")
+  const fixed = await p.getByText(/Won’t follow:/).innerText()
+  const before = await p.getByText(/:1 against --ex-primary-ink/).count()
+  await p.getByLabel("Primary color", { exact: true }).fill("#9ca3af")
+  await p.keyboard.press("Enter")
+  await wait(600)
+  const warn = await p.getByText(/:1 against --ex-primary-ink, under 4\.5:1/).innerText().catch(() => "")
+  await p.getByLabel("Accent color", { exact: true }).fill("#1e3a8a")
+  await p.keyboard.press("Enter")
+  await wait(600)
+  const accent2 = await frameProp(p, "--ex-accent")
+  const accentWarn = await p.getByText(/:1 against --ex-ink, under 4\.5:1/).count()
+  await p.closeAll()
+  const ok = primary === "#b91c1c" && /^color-mix\(in oklch, #b91c1c 18%, white\)$/.test(accent) && /^color-mix\(in oklch, #fafaf9, #ff9a3c 12%\)$/.test(ground) && /--ex-focus/.test(fixed) && before === 0 && /^Primary color: \d\.\d:1/.test(warn) && accent2 === "#1e3a8a" && accentWarn === 1
+  return [ok ? "pass" : "fail", `primary ${primary}, derived accent ${accent}; warm neutral ground ${ground}; ${fixed}; a readable primary warns ${before} times, a grey primary warns "${warn}"; an accent set after the primary wins (${accent2}) and is checked against --ex-ink (${accentWarn} warning)`]
+})
+
+const rowOf = (f) => f?.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--ex-row").trim())
+const liveFrames = (p) => p.frames().filter((f) => f !== p.mainFrame() && f.url().includes("example"))
+const downloaded = async (p, click) => {
+  const [d] = await Promise.all([p.waitForEvent("download"), click()])
+  return { name: d.suggestedFilename(), text: readFileSync(await d.path(), "utf8") }
+}
+
+// AC-47 Draft everywhere (off by default, per viewer, always labeled, never in Present), a Design axis in Compare, and Save as variant
+await check("AC-47", async () => {
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list&profile=desktop&design=density:0.8" })
+  await wait(800)
+  const off = await rowOf(designFrame(p))
+  const offBadge = await p.getByText("Draft design", { exact: true }).count()
+  await p.getByRole("button", { name: "Design" }).first().click()
+  await wait(800)
+  await p.getByRole("switch", { name: "Show the draft in Inspect, Gallery and Compare" }).click()
+  const file = await downloaded(p, async () => {
+    await p.getByLabel("Save as a variant").fill("Tighter rows")
+    await p.getByRole("button", { name: "Save", exact: true }).click()
+  })
+  const variant = JSON.parse(file.text)
+  await p.getByRole("button", { name: "Inspect" }).first().click()
+  await wait(1500)
+  const on = await rowOf(designFrame(p))
+  const onBadge = await p.getByText("Draft design", { exact: true }).isVisible()
+  await p.getByRole("button", { name: "Gallery" }).first().click()
+  await wait(2500)
+  const thumbs = await Promise.all(liveFrames(p).slice(0, 3).map(rowOf))
+  await p.getByRole("button", { name: "Compare" }).first().click()
+  await wait(1200)
+  await p.getByRole("combobox", { name: "Changing axis" }).click()
+  await p.getByRole("option", { name: "Design" }).click()
+  await wait(2000)
+  const sides = await Promise.all([p.locator('iframe[title^="Side A"]').first(), p.locator('iframe[title^="Side B"]').first()].map(async (el) => rowOf(await (await el.elementHandle()).contentFrame())))
+  const labels = await p.locator("figcaption b").allInnerTexts()
+  await p.getByRole("button", { name: "Present" }).first().click()
+  await wait(2500)
+  const presented = await designFrame(p).evaluate(() => document.documentElement.style.getPropertyValue("--ex-row"))
+  await p.reload()
+  await p.waitForSelector("header")
+  const kept = await p.evaluate(() => JSON.parse(localStorage.getItem(Object.keys(localStorage).find((k) => k.endsWith(".options")) ?? "{}")).draftEverywhere)
+  await p.closeAll()
+  const ok = off === "48px" && offBadge === 0 && on === "38px" && onBadge && thumbs.length > 0 && thumbs.every((x) => x === "38px") && labels.join(",") === "As built,Draft" && sides.join(",") === "48px,38px" && presented === "" && kept === true && file.name === "tighter-rows.json" && variant.id === "variant.tighter-rows" && variant.overrides["--ex-row"]?.light === "38px" && variant.overrides["--ex-row"]?.dark === "38px"
+  return [ok ? "pass" : "fail", `switch off: Inspect ${off}, badges ${offBadge}; on: Inspect ${on} with badge ${onBadge}, Gallery thumbnails ${thumbs.join(" ")}; Compare Design axis ${labels.join(" vs ")} rendered ${sides.join(" and ")}; Present override "${presented}"; switch kept after reload ${kept}; saved ${file.name} as ${variant.id} with --ex-row ${JSON.stringify(variant.overrides["--ex-row"])}`]
+})
+
+// AC-48 Export: the draft as a CSS and a JSON token diff, from and to per theme, labeled a proposal
+await check("AC-48", async () => {
+  const p = await open("normal", { hash: "view=design&scenario=tasks.list&profile=desktop&design=density:0.8;body-font:Georgia" })
+  await wait(800)
+  const css = await downloaded(p, () => p.getByRole("button", { name: "CSS", exact: true }).click())
+  const json = await downloaded(p, () => p.getByRole("button", { name: "JSON", exact: true }).click())
+  await p.closeAll()
+  const diff = JSON.parse(json.text)
+  const ok = css.name === "draft-tokens.css" && /never a decision/.test(css.text) && /Light \(light\) \*\/\n:root \{[\s\S]*--ex-row: 38px; \/\* was 48px \*\//.test(css.text) && /--ex-font: "Georgia", /.test(css.text) && diff.schema === "studio-token-diff/1" && diff.themes.light["--ex-row"].from === "48px" && diff.themes.light["--ex-row"].to === "38px" && diff.themes.dark["--ex-space"].to === "12px" && diff.design === "density:0.8;body-font:Georgia"
+  return [ok ? "pass" : "fail", `${ok ? "" : JSON.stringify(css.text) + " "}${css.name}: ${css.text.split("\n").length} lines with from and to per theme; ${json.name}: light --ex-row ${JSON.stringify(diff.themes.light["--ex-row"])}, dark --ex-space ${JSON.stringify(diff.themes.dark["--ex-space"])}, design ${diff.design}`]
 })
 
 await browser.close()

@@ -1,6 +1,6 @@
 # Interface Studio shell
 
-The product-neutral starter for an Interface Studio. It is a complete, running Studio: the grey stage, the icon rail with contextual panels, the five views, the details panel, the command menu, the walkthrough player, the Tokens view and the Studio settings. A synthetic example product runs live inside it so every part can be seen working before a real product is connected.
+The product-neutral starter for an Interface Studio. It is a complete, running Studio: the grey stage, the icon rail with contextual panels, the five views, the details panel, the command menu, the walkthrough player, the Design view (Adjust and Tokens) and the Studio settings. A synthetic example product runs live inside it so every part can be seen working before a real product is connected.
 
 Read `references/shell.md` and `references/frame-protocol.md` in the `metamodern-interface-studio` skill before changing the shell.
 
@@ -43,14 +43,15 @@ src/
     live-preview.tsx         preview host: isolated frames, staged swap, timeouts
     virtual-list.tsx         windowed list with one tab stop and type-ahead
     config.ts                the studio.config.ts type
+    design.ts                the Design view's draft: parameters to tokens, CSS and fonts; variant and token diff files
   store.tsx                  Studio state, URL selection, per-viewer settings
   App.tsx                    desktop and phone shells, global keys
-  components/studio/         rail, panels, top bar, stage controls, views, details, resize handles
+  components/studio/         rail, panels, top bar, stage controls, views, Design view, details, resize handles
   components/ui/             shadcn components (base: Base UI, style: Rhea)
   components/theme-provider.tsx   Studio appearance and brand color
   index.css, studio.css      shadcn tokens plus the Studio extensions
 example/                     synthetic example product preview entry (replace)
-scripts/acceptance.mjs       measures AC-01 to AC-17 in headless Chromium
+scripts/acceptance.mjs       measures AC-01 to AC-17 and AC-43 to AC-48 in headless Chromium
 ```
 
 ## Keep these rules

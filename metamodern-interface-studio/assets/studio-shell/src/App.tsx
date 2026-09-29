@@ -8,10 +8,11 @@ import { Toaster } from "@/components/ui/sonner"
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { adapter } from "@/adapter"
-import { StudioProvider, useStudio } from "@/store"
+import { designTab, StudioProvider, useStudio } from "@/store"
 import { ContextPanel, MobilePanel, Rail, VIEWS } from "@/components/studio/rail-panel"
 import { DetailsContent, StageControls, TopBar } from "@/components/studio/chrome"
 import { CompareStage, GalleryStage, InspectStage, PresentStage, TokensStage } from "@/components/studio/views"
+import { DesignStage } from "@/components/studio/design"
 import { CommandMenu, ShortcutsDialog } from "@/components/studio/command"
 
 function useGlobalKeys() {
@@ -74,7 +75,7 @@ function StageForView({ narrow }: { narrow?: boolean }) {
       {s.view === "compare" && <CompareStage narrow={narrow} />}
       {s.view === "gallery" && <GalleryStage />}
       {s.view === "present" && <PresentStage narrow={narrow} />}
-      {s.view === "tokens" && adapter.tokens && <TokensStage />}
+      {s.view === "design" && (designTab(s.design.tab) === "tokens" ? <TokensStage /> : <DesignStage narrow={narrow} />)}
     </div>
   )
 }

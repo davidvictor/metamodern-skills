@@ -19,3 +19,12 @@ Each section below lists what a product does by hand when it updates to that ver
 - `index.html`, `vite.config.ts` and `tsconfig.app.json` are shell files again. Once their product settings are in `studio.config.ts`, take the shell versions with `--replace`. `index.html` now tells search engines not to index the Studio.
 - `src/adapter.ts` only exports the product adapter. The acceptance build reaches its stress and capture-only adapters through `vite.config.ts`, so any `VITE_STUDIO_ADAPTER` branch in `src/adapter.ts` can go.
 - Record deliberately deleted starter files with `--removed`, for example `--removed example/ --removed src/adapters/example.ts --removed src/adapters/synthetic.ts --removed scripts/acceptance.mjs`.
+
+## 0.7.0
+
+- The Tokens view is now the Design view, with Adjust and Tokens tabs over one draft layer. Links with `view=tokens` still open the Tokens tab. Nothing to do unless the Studio's own checks name the Tokens rail item; it is now called Design.
+- To offer Adjust, add `design.parameters` to the adapter (see `frame-protocol.md` in the skill): typically density with `stops` at the modes the product ships, corner radius, typefaces, a type scale, text size, line height, brand and accent colors and a neutral temperature. Declare only levers that move the product; probe them first.
+- Scenarios can declare `supports`, the options of an input they can render. An input the product ships as modes (such as density) fits as a dock lens: `placement: "dock"`, `icon: "density"`, with each scenario's `designed` value and its `supports`.
+- The frame client now announces `draft-css` in `hello` and applies draft CSS rules and Google Fonts stylesheets. A preview entry that imports `connectStudioFrame` from the Studio gets this with the update. A product that passes its own `applyTokens` keeps it; CSS and fonts still apply through the default `applyCss` unless it passes its own.
+- Save as variant downloads `{ id, kind, label, overrides: { "--token": { light, dark } }, css, stylesheets, design }`. A Studio whose variants folder reads another shape should read this one.
+

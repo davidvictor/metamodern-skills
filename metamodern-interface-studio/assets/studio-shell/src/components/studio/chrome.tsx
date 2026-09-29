@@ -42,8 +42,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useTheme } from "@/components/theme-provider"
+import { download, encodeDesign, variantFile } from "@/studio/design"
 import { adapter } from "@/adapter"
-import { areaLabel, captureFor, draftIsValid, inputsFor, isColor, useStudio } from "@/store"
+import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
 import type { CapabilityDimension } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
@@ -108,7 +109,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
   const s = useStudio()
   const [more, setMore] = React.useState(false)
   const { theme, setTheme } = useTheme()
-  const viewLabel = { inspect: "Inspect", compare: "Compare", gallery: "Gallery", present: "Present", tokens: "Tokens" }[s.view]
+  const viewLabel = { inspect: "Inspect", compare: "Compare", gallery: "Gallery", present: "Present", design: "Design" }[s.view]
   return (
     <header className="flex h-12 shrink-0 items-center gap-1.5 border-b bg-background px-2 md:gap-2 md:px-3">
       {!mobile && (
@@ -409,8 +410,11 @@ function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "to
   const s = useStudio()
   const inp = adapter.axes.inputs.find((i) => i.id === id)!
   const designed = s.scenarioObj.designed?.[id] ?? inp.default
-  const current = s.values[id] ?? designed
-  const overridden = s.values[id] !== undefined && s.values[id] !== designed
+  const options = optionsFor(inp, s.scenarioObj)
+  // A choice this scenario cannot render (carried from another scenario or a link) does not apply here.
+  const chosen = s.values[id] !== undefined && supports(s.scenarioObj, id, s.values[id]) ? s.values[id] : undefined
+  const current = chosen ?? designed
+  const overridden = chosen !== undefined && chosen !== designed
   const label = inp.options.find((o) => o.id === current)?.label ?? current ?? inp.label
   const Icon = { person: UserRoundIcon, density: Rows3Icon, sliders: SlidersHorizontalIcon }[inp.icon ?? "sliders"]
   return (
@@ -426,7 +430,7 @@ function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "to
         <DropdownMenuGroup>
           <DropdownMenuLabel>{inp.label}</DropdownMenuLabel>
           <DropdownMenuRadioGroup value={current} onValueChange={(v) => s.setValue(id, v === designed ? null : (v as string))}>
-            {inp.options.map((o) => (
+            {options.map((o) => (
               <DropdownMenuRadioItem key={o.id} value={o.id} closeOnClick>
                 {o.label}
                 {o.id === designed && <DropdownMenuShortcut>Designed</DropdownMenuShortcut>}
@@ -490,7 +494,7 @@ export function StageControls({ variant, compact }: { variant: "dock" | "toolbar
       </ToggleGroup>
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       <SizeMenu variant={variant} compact={compact} />
-      {inputsFor(s.scenarioObj).filter((i) => i.placement === "dock").map((i) => <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />)}
+      {choosableFor(s.scenarioObj).filter((i) => i.placement === "dock").map((i) => <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />)}
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1 tabular-nums" aria-label={`Zoom, ${zoomLabel}`} />}>
@@ -537,7 +541,7 @@ const DIMENSIONS: [CapabilityDimension, string][] = [
 /** Details: the summary is always visible; Scenario, Fidelity and Evidence as line tabs. */
 export function DetailsContent({ onClose }: { onClose?: () => void }) {
   const s = useStudio()
-  if (s.view === "tokens" && adapter.tokens) return <TokenEditor />
+  if (s.view === "design" && designTab(s.design.tab) === "tokens") return <TokenEditor />
   const sc = s.scenarioObj
   const list = adapter.scenarios
   const i = list.findIndex((x) => x.id === sc.id)
@@ -579,26 +583,26 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
               <dt className="text-muted-foreground">Source</dt><dd className="font-mono text-xs break-all">{sc.source}</dd>
               {s.preview.location && (<><dt className="text-muted-foreground">Location</dt><dd className="font-mono text-xs break-all">{s.preview.location}</dd></>)}
             </dl>
-            {inputsFor(sc).some((i) => i.placement !== "dock") && (
+            {choosableFor(sc).some((i) => i.placement !== "dock") && (
               <FieldSet>
                 <FieldLegend variant="label">Scenario inputs</FieldLegend>
                 <FieldDescription className="text-xs">Declared by the {adapter.product.name} adapter. A change rebuilds the preview from the scenario.</FieldDescription>
                 <FieldGroup className="gap-4">
-                  {inputsFor(sc).filter((i) => i.placement !== "dock").map((inp) =>
+                  {choosableFor(sc).filter((i) => i.placement !== "dock").map((inp) =>
                     inp.control === "presets" ? (
                       <Field key={inp.id}>
                         <FieldLabel>{inp.label}</FieldLabel>
-                        <ToggleGroup value={[s.values[inp.id]]} variant="outline" size="sm" spacing={0} className="w-full" onValueChange={(v) => v[0] && s.setValue(inp.id, v[0])} aria-label={inp.label}>
-                          {inp.options.map((o) => <ToggleGroupItem key={o.id} value={o.id} className="flex-1 px-1 text-xs">{o.label}</ToggleGroupItem>)}
+                        <ToggleGroup value={[resolveValues(sc, s.values)[inp.id]]} variant="outline" size="sm" spacing={0} className="w-full" onValueChange={(v) => v[0] && s.setValue(inp.id, v[0])} aria-label={inp.label}>
+                          {optionsFor(inp, sc).map((o) => <ToggleGroupItem key={o.id} value={o.id} className="flex-1 px-1 text-xs">{o.label}</ToggleGroupItem>)}
                         </ToggleGroup>
                         {inp.note && <FieldDescription className="text-xs">{inp.note}</FieldDescription>}
                       </Field>
                     ) : (
                       <Field key={inp.id}>
                         <FieldLabel>{inp.label}</FieldLabel>
-                        <Select value={s.values[inp.id] ?? sc.designed?.[inp.id] ?? inp.default} items={Object.fromEntries(inp.options.map((o) => [o.id, o.label]))} onValueChange={(v) => v && s.setValue(inp.id, v as string)}>
+                        <Select value={resolveValues(sc, s.values)[inp.id]} items={Object.fromEntries(optionsFor(inp, sc).map((o) => [o.id, o.label]))} onValueChange={(v) => v && s.setValue(inp.id, v as string)}>
                           <SelectTrigger className="w-full" aria-label={inp.label}><SelectValue /></SelectTrigger>
-                          <SelectContent>{inp.options.map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
+                          <SelectContent>{optionsFor(inp, sc).map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
                         </Select>
                         {inp.note && <FieldDescription className="text-xs">{inp.note}</FieldDescription>}
                       </Field>
@@ -659,14 +663,10 @@ function TokenEditor() {
     if (!Object.keys(next[tok.name]).length) delete next[tok.name]
     s.set({ tokens: { ...s.tokens, drafts: next } })
   }
-  const exportDrafts = async () => {
-    const file = JSON.stringify({ adapter: adapter.id, revision: adapter.product.revision, tokens: s.tokens.drafts }, null, 2)
-    try {
-      await navigator.clipboard.writeText(file)
-      toast.success("Variant file copied", { description: "Save it with the Studio's presenter material for review." })
-    } catch {
-      toast.error("Couldn't copy the variant file")
-    }
+  const exportDrafts = () => {
+    const f = variantFile(adapter, "Draft", s.draftFor, encodeDesign(adapter, s.design.values))
+    download(f.name, f.text)
+    toast.success(`Saved ${f.name}`, { description: "The one draft layer, Adjust and Tokens together. Commit it to the Studio's variants folder to make it a Token variant." })
   }
   const col = (theme: string) => {
     const base = tok.values[theme] ?? ""
@@ -719,7 +719,7 @@ function TokenEditor() {
       <div className="grid gap-2 border-t p-3">
         <p className="text-xs text-muted-foreground">{count} {count === 1 ? "token draft" : "token drafts"} kept in this browser. Drafts never change the product.</p>
         <div className="flex gap-2">
-          <Button size="sm" onClick={exportDrafts} disabled={!count}>Copy as variant file</Button>
+          <Button size="sm" onClick={exportDrafts} disabled={!count && !s.hasDraft}>Save as variant</Button>
           <Button size="sm" variant="outline" onClick={() => s.set({ tokens: { ...s.tokens, drafts: {} } })} disabled={!count}>Discard drafts</Button>
         </div>
       </div>

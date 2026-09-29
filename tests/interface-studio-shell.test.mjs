@@ -22,6 +22,14 @@ test('shell starter ships source only', () => {
   }
 });
 
+test('the whole package names no client', () => {
+  const pkg = fileURLToPath(new URL('../metamodern-interface-studio/', import.meta.url));
+  const forbidden = /(autostak|caelo)/i;
+  for (const file of files(pkg).filter((f) => !f.includes('node_modules') && !f.includes('/dist/') && /\.(md|mjs|ts|tsx|json|css|html)$/.test(f) && !f.endsWith('package-lock.json'))) {
+    assert.doesNotMatch(readFileSync(file, 'utf8'), forbidden, `${relative(pkg, file)} names a client`);
+  }
+});
+
 test('shell starter stays product-neutral and portable', () => {
   const forbidden = /(autostak|caelo|@kit\/ui|\/Users\/|file:\/\/)/i;
   for (const file of all) {

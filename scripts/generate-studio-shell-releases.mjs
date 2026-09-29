@@ -23,8 +23,9 @@ const git = (...args) => execFileSync('git', ['-C', repo, ...args], { maxBuffer:
 const packageBase = (pkg) => ({ dependencies: pkg.dependencies ?? {}, devDependencies: pkg.devDependencies ?? {}, scripts: pkg.scripts ?? {} });
 
 const versions = {};
-// Newest commit first; the newest commit carrying a version is that version's release.
-for (const commit of git('log', '--format=%H', '--', skill).toString().trim().split('\n')) {
+// Released versions are the merges on main's first-parent line; newest first, so the newest
+// commit carrying a version is that version's release. Branch work in progress never counts.
+for (const commit of git('log', '--first-parent', '--format=%H', 'main', '--', skill).toString().trim().split('\n')) {
   let version;
   try {
     version = git('show', `${commit}:${skill}/PACKAGE_VERSION`).toString().trim().replace(/^.*@/, '');

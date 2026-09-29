@@ -20,6 +20,8 @@ export type FrameHandlers = {
   location?: () => string
   /** Apply draft token overrides. Defaults to custom properties on the root element. */
   applyTokens?: (tokens: Record<string, string>) => void
+  /** Apply draft CSS rules and font stylesheets. Defaults to one style element and allowlisted links in the head. */
+  applyCss?: (css: string, stylesheets: string[]) => void
   /** Resolve when the rendering is settled: fonts, required assets, controlled async work. */
   settle?: () => Promise<void>
   /** Digest of the resolved inputs and the resulting state and navigation. Defaults to the inputs alone. */
@@ -39,6 +41,25 @@ export function readAnchors(): AnchorRect[] {
   })
 }
 
+/** Draft fonts load only from Google Fonts' stylesheet API; its CSS then loads files from fonts.gstatic.com. */
+const FONT_STYLESHEET = "https://fonts.googleapis.com/css2?"
+function defaultApplyCss(css: string, stylesheets: string[]) {
+  let style = document.getElementById("studio-draft-css") as HTMLStyleElement | null
+  if (!style) {
+    style = document.createElement("style")
+    style.id = "studio-draft-css"
+    document.head.append(style)
+  }
+  style.textContent = css
+  const wanted = stylesheets.filter((url) => url.startsWith(FONT_STYLESHEET))
+  for (const link of document.querySelectorAll<HTMLLinkElement>("link[data-studio-draft]")) if (!wanted.includes(link.href)) link.remove()
+  for (const url of wanted) {
+    if (document.querySelector(`link[data-studio-draft][href="${CSS.escape(url)}"]`)) continue
+    document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: url, crossOrigin: "anonymous" }))
+    document.head.lastElementChild!.setAttribute("data-studio-draft", "")
+  }
+}
+
 let applied: string[] = []
 function defaultApplyTokens(tokens: Record<string, string>) {
   const root = document.documentElement.style
@@ -55,6 +76,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
   const parentOrigin = document.referrer ? new URL(document.referrer).origin : allowed[0]
   const post = (message: FrameBody) => window.parent.postMessage({ protocol: PROTOCOL, instance, ...message }, allowed.includes(parentOrigin) ? parentOrigin : allowed[0])
   const applyTokens = handlers.applyTokens ?? defaultApplyTokens
+  const applyCss = handlers.applyCss ?? defaultApplyCss
   const settle = handlers.settle ?? (async () => { await document.fonts?.ready; await nextFrame() })
   const state = () => ({ location: handlers.location?.() ?? location.pathname, canGoBack: handlers.canGoBack?.() ?? false, anchors: readAnchors() })
 
@@ -87,6 +109,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
     try {
       if (m.type === "mount") {
         applyTokens(m.inputs.tokens)
+        applyCss(m.inputs.css ?? "", m.inputs.stylesheets ?? [])
         const { appearance } = await handlers.mount(m.inputs)
         for (const id of m.inputs.commands) {
           if (!handlers.command) throw new Error(`This preview has no commands; cannot run "${id}"`)
@@ -107,6 +130,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
         post({ type: "navigated", ...state() })
       } else if (m.type === "draft-overrides") {
         applyTokens(m.tokens)
+        applyCss(m.css ?? "", m.stylesheets ?? [])
         await nextFrame()
         post({ type: "reply", requestId: m.requestId, ok: true })
       }
@@ -115,7 +139,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
     }
   }
   window.addEventListener("message", onMessage)
-  post({ type: "hello" })
+  post({ type: "hello", capabilities: ["draft-css"] })
 
   return {
     /** Call after product navigation the Studio did not ask for, so it can update location and anchors. */

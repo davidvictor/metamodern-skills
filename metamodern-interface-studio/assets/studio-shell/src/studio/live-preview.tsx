@@ -6,7 +6,7 @@
  */
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameMessage, type MountInputs, type ShellBody } from "./protocol"
+import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type FrameMessage, type MountInputs, type ShellBody } from "./protocol"
 
 export const READY_TIMEOUT_MS = 20000
 
@@ -21,12 +21,17 @@ export type LiveStatus = {
   reason?: string
   /** An error or timeout left the previous preview on screen. */
   previous?: boolean
+  /** What the frame client announced, such as draft-css. */
+  capabilities: FrameCapability[]
   anchors: AnchorRect[]
 }
 
 export type LivePreviewHandle = { back: () => void; command: (id: string) => void }
 
-type Runtime = { instance: string; key: string; requestId: string; inputs: MountInputs; phase: "loading" | "ready" | "error"; ready?: FrameMessage & { type: "ready" }; modified: boolean }
+type Runtime = { instance: string; key: string; requestId: string; inputs: MountInputs; phase: "loading" | "ready" | "error"; ready?: FrameMessage & { type: "ready" }; modified: boolean; capabilities?: FrameCapability[] }
+/** The draft a preview shows: token values, CSS rules and font stylesheets. */
+export type PreviewDraft = { tokens: Record<string, string>; css: string; stylesheets: string[] }
+const draftKey = (d: { tokens: Record<string, string>; css?: string; stylesheets?: string[] }) => JSON.stringify({ tokens: d.tokens, css: d.css ?? "", stylesheets: d.stylesheets ?? [] })
 
 let seq = 0
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`
@@ -34,10 +39,10 @@ const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(3
 type Props = {
   src: string
   origin?: string
-  inputs: Omit<MountInputs, "tokens">
-  /** Changing the key mounts a fresh runtime (Reset bumps it). Token drafts never remount. */
+  inputs: Omit<MountInputs, "tokens" | "css" | "stylesheets">
+  /** Changing the key mounts a fresh runtime (Reset bumps it). Drafts never remount. */
   mountKey: string
-  tokens: Record<string, string>
+  draft: PreviewDraft
   w: number
   h: number
   scale: number
@@ -46,11 +51,11 @@ type Props = {
   onStatus?: (s: LiveStatus) => void
 }
 
-export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, inputs, mountKey, tokens, w, h, scale, label, interactive = true, onStatus }, ref) {
+export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, inputs, mountKey, draft, w, h, scale, label, interactive = true, onStatus }, ref) {
   const [runtimes, setRuntimes] = React.useState<Runtime[]>([])
   const frames = React.useRef(new Map<string, HTMLIFrameElement>())
-  const latest = React.useRef({ tokens, onStatus, inputs })
-  latest.current = { tokens, onStatus, inputs }
+  const latest = React.useRef({ draft, onStatus, inputs })
+  latest.current = { draft, onStatus, inputs }
   const expectedOrigin = origin ?? (location.origin === "null" ? "null" : new URL(src, location.href).origin)
 
   const post = React.useCallback((instance: string, message: ShellBody) => {
@@ -63,7 +68,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
 
   // A new key stages a new runtime next to the current one.
   React.useEffect(() => {
-    const rt: Runtime = { instance: uid("pv"), key: mountKey, requestId: uid("mount"), inputs: { ...latest.current.inputs, tokens: latest.current.tokens }, phase: "loading", modified: false }
+    const rt: Runtime = { instance: uid("pv"), key: mountKey, requestId: uid("mount"), inputs: { ...latest.current.inputs, ...latest.current.draft }, phase: "loading", modified: false }
     setRuntimes((list) => [...list.filter((r) => r.phase === "ready").slice(-1), rt])
     const timer = window.setTimeout(() => {
       failure.current = { instance: rt.instance, reason: `No ready signal within ${READY_TIMEOUT_MS / 1000} s` }
@@ -81,7 +86,10 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       if (!el || e.source !== el.contentWindow || (expectedOrigin !== "null" && e.origin !== expectedOrigin)) return
       const rt = runtimesRef.current.find((r) => r.instance === m.instance)
       if (!rt) return
-      if (m.type === "hello") post(rt.instance, { type: "mount", requestId: rt.requestId, inputs: rt.inputs })
+      if (m.type === "hello") {
+        update(rt.instance, () => ({ capabilities: m.capabilities ?? [] }))
+        post(rt.instance, { type: "mount", requestId: rt.requestId, inputs: rt.inputs })
+      }
       else if (m.type === "ready") {
         if (m.requestId !== rt.requestId) return // a late answer to an older request
         // Product code that focuses a field during mount must not take the keyboard from the Studio.
@@ -104,18 +112,18 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   const current = [...runtimes].reverse().find((r) => r.phase === "ready")
   const newest = runtimes[runtimes.length - 1]
 
-  // Live token drafts go to the runtime on screen without a remount. Compare with what that
+  // Live drafts go to the runtime on screen without a remount. Compare with what that
   // runtime last received, not with what it mounted with: returning to the mounted values
   // (discarding a draft) must reach the frame too.
-  const tokenKey = JSON.stringify(tokens)
-  const sentTokens = React.useRef(new Map<string, string>())
+  const key = draftKey(draft)
+  const sent = React.useRef(new Map<string, string>())
   React.useEffect(() => {
     if (!current) return
-    const last = sentTokens.current.get(current.instance) ?? JSON.stringify(current.inputs.tokens)
-    if (last === tokenKey) return
-    sentTokens.current.set(current.instance, tokenKey)
-    post(current.instance, { type: "draft-overrides", requestId: uid("tokens"), tokens: JSON.parse(tokenKey) })
-  }, [tokenKey, current, post])
+    const last = sent.current.get(current.instance) ?? draftKey(current.inputs)
+    if (last === key) return
+    sent.current.set(current.instance, key)
+    post(current.instance, { type: "draft-overrides", requestId: uid("draft"), ...(JSON.parse(key) as PreviewDraft) })
+  }, [key, current, post])
 
   React.useImperativeHandle(ref, () => ({
     back: () => current && post(current.instance, { type: "product-back", requestId: uid("back") }),
@@ -135,6 +143,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       reason,
       previous: failed && !!current,
       anchors: current?.ready?.anchors ?? [],
+      capabilities: current?.capabilities ?? newest?.capabilities ?? [],
     }
   }, [newest, current])
   const statusKey = JSON.stringify(status)

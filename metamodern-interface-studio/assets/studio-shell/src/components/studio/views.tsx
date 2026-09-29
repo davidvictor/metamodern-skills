@@ -31,13 +31,13 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { adapter } from "@/adapter"
-import { areaLabel, axisOptions, captureFor, compareAxes, isColor, useStudio, withoutLenses } from "@/store"
+import { areaLabel, axisOptions, captureFor, compareAxes, isColor, NO_DRAFT, useStudio, withoutLenses } from "@/store"
 import type { LiveStatus } from "@/studio/live-preview"
 import type { Step } from "@/studio/types"
 import { FidelityBadge, ScaleChip, StatusBadge, useFit } from "./bits"
 import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
 import { StageControls } from "./chrome"
-import { ScenarioPreview, inspectHandle, profileOf, themeOf } from "./preview"
+import { ScenarioPreview, inspectHandle, profileOf, themeOf, useReportStatus } from "./preview"
 import { ResizeHandles } from "./resize-handles"
 
 /** The grey stage with its controls in the chosen placement. */
@@ -48,7 +48,14 @@ function Stage({ children, controls = true, footer, narrow }: { children: React.
   return (
     <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
       {controls && !dock && <StageControls variant="toolbar" />}
-      <div className="stage-surface relative flex min-h-0 flex-1 flex-col">{children}</div>
+      <div className="stage-surface relative flex min-h-0 flex-1 flex-col">
+        {children}
+        {s.options.draftEverywhere && s.hasDraft && s.view !== "present" && (
+          <div className="pointer-events-none absolute top-3 left-3 z-10">
+            <StatusBadge kind="draft">Draft design</StatusBadge>
+          </div>
+        )}
+      </div>
       {controls && dock && (
         <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center px-3">
           <StageControls variant="dock" />
@@ -89,6 +96,7 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
       profile={s.profile}
       size={resizable ? s.size : null}
       values={s.values}
+      draft={s.viewDraft(s.theme)}
       resetNonce={s.resetNonce}
       scale={scale}
       label={`${areaLabel(sc.area)}: ${sc.label} preview`}
@@ -115,20 +123,22 @@ function useSideStatus() {
 export function CompareStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
   const sc = s.scenarioObj
-  const axes = compareAxes(sc)
+  const axes = compareAxes(sc, s.hasDraft)
   const { mode, split, showB } = s.compare
   // A scoped axis (such as Role) that this scenario does not use falls back to the theme axis.
   const fallback = !axes.some((x) => x.id === s.compare.axis)
   const axis = fallback ? "theme" : s.compare.axis
-  const a = fallback ? adapter.axes.themes[0].id : s.compare.a
-  const b = fallback ? adapter.axes.themes[adapter.axes.themes.length - 1].id : s.compare.b
-  const options = axisOptions(axis)
+  const options = axisOptions(axis, sc)
+  // A saved pair that names an option this scenario cannot render falls back to the first two it can.
+  const valid = (id: string) => options.some((o) => o.id === id)
+  const a = fallback ? adapter.axes.themes[0].id : valid(s.compare.a) ? s.compare.a : (options[0]?.id ?? "")
+  const b = fallback ? adapter.axes.themes[adapter.axes.themes.length - 1].id : valid(s.compare.b) && s.compare.b !== a ? s.compare.b : (options.find((o) => o.id !== a)?.id ?? "")
   const optionLabel = (id: string) => options.find((o) => o.id === id)?.label ?? id
   // Each side is one full set of resolved inputs: everything the viewer chose, except the one axis that changes.
   const pick = (k: "a" | "b") => (k === "a" ? a : b)
   const sideProfile = (k: "a" | "b") => profileOf(axis === "profile" ? pick(k) : s.profile)
   const sideTheme = (k: "a" | "b") => (axis === "theme" ? pick(k) : s.theme)
-  const sideValues = (k: "a" | "b") => (axis !== "theme" && axis !== "profile" ? { ...s.values, [axis]: pick(k) } : s.values)
+  const sideValues = (k: "a" | "b") => (axis !== "theme" && axis !== "profile" && axis !== "design" ? { ...s.values, [axis]: pick(k) } : s.values)
   const pa = sideProfile("a")
   const pb = sideProfile("b")
   const box = React.useRef<HTMLDivElement>(null)
@@ -145,8 +155,8 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const setC = (patch: Partial<typeof s.compare>) => s.set({ compare: { ...s.compare, ...patch } })
   const changeAxis = (next: string) => {
     if (next === axis) return
-    const opts = axisOptions(next)
-    const current = next === "theme" ? s.theme : next === "profile" ? s.profile : (s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
+    const opts = axisOptions(next, sc)
+    const current = next === "design" ? "built" : next === "theme" ? s.theme : next === "profile" ? s.profile : (s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
     const at = Math.max(0, opts.findIndex((o) => o.id === current))
     setC({ axis: next, a: opts[at]?.id ?? "", b: opts[(at + 1) % opts.length]?.id ?? "" })
   }
@@ -176,6 +186,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
         theme={sideTheme(k)}
         profile={sideProfile(k).id}
         values={sideValues(k)}
+        draft={axis === "design" ? (pick(k) === "draft" ? s.draftFor(sideTheme(k)) : NO_DRAFT) : s.viewDraft(sideTheme(k))}
         resetNonce={x.nonce}
         scale={scale}
         interactive={interactive}
@@ -392,7 +403,7 @@ export function GalleryStage() {
                           cap ? <img src={cap.src} alt="" className="size-full object-cover object-top" /> : <div className="flex size-full items-center justify-center p-3 text-center text-xs text-muted-foreground">No capture</div>
                         ) : (
                           <WhenVisible className="absolute inset-0">
-                            {(width) => <ScenarioPreview scenario={x.id} theme={s.theme} profile={s.profile} values={s.values} scale={width / pr.w} interactive={false} label={`${x.label} thumbnail`} className="[&_.preview-ticks]:hidden [&_.preview-frame]:rounded-none! [&_.preview-frame]:shadow-none" />}
+                            {(width) => <ScenarioPreview scenario={x.id} theme={s.theme} profile={s.profile} values={s.values} draft={s.viewDraft(s.theme)} scale={width / pr.w} interactive={false} label={`${x.label} thumbnail`} className="[&_.preview-ticks]:hidden [&_.preview-frame]:rounded-none! [&_.preview-frame]:shadow-none" />}
                           </WhenVisible>
                         )}
                         <div className="absolute top-1.5 left-1.5">
@@ -671,6 +682,7 @@ export function TokensStage() {
   const pr = profileOf(s.profile)
   const scale = useFit(box, pr.w, pr.h, s.zoom, 40)
   const COLS = "grid-cols-[minmax(0,42%)_minmax(0,1fr)_minmax(0,1fr)]"
+  const report = useReportStatus()
   return (
     <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
       <ResizablePanel defaultSize="60" minSize="40">
@@ -775,12 +787,12 @@ export function TokensStage() {
               <Separator orientation="vertical" className="h-4! self-center!" />
               <ToggleGroup value={[showDraft ? "draft" : "baseline"]} onValueChange={(v) => v[0] && setShowDraft(v[0] === "draft")} size="sm" spacing={0} aria-label="Values">
                 <ToggleGroupItem value="baseline" className="h-6 px-2 text-xs">Baseline</ToggleGroupItem>
-                <ToggleGroupItem value="draft" className="h-6 px-2 text-xs" disabled={!drafts}>Draft{drafts ? ` · ${drafts}` : ""}</ToggleGroupItem>
+                <ToggleGroupItem value="draft" className="h-6 px-2 text-xs" disabled={!s.hasDraft}>Draft{drafts ? ` · ${drafts}` : ""}</ToggleGroupItem>
               </ToggleGroup>
             </div>
-            <ScenarioPreview scenario={s.scenario} theme={showTheme} profile={s.profile} values={s.values} tokens={showDraft ? s.draftsFor(showTheme) : {}} scale={scale} label="Token preview" />
+            <ScenarioPreview scenario={s.scenario} theme={showTheme} profile={s.profile} values={s.values} draft={showDraft ? s.draftFor(showTheme) : NO_DRAFT} onStatus={report} scale={scale} label="Token preview" />
             <ScaleChip w={pr.w} h={pr.h} scale={scale} />
-            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">Drafts apply to this preview only and stay in this browser. They never change the product.</p>
+            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">One draft layer: Adjust's values, with tokens edited here winning. It applies in the Design view only and never changes the product.</p>
            </div>
           </div>
         </div>

@@ -26,6 +26,11 @@ const tokens: Token[] = [
   t("--ex-done", "Status", "#15803d", "#4ade80", { reads: 2 }),
   t("--ex-radius", "Radius and density", "10px", "10px", { reads: 12 }),
   t("--ex-row", "Radius and density", "48px", "48px", { reads: 4 }),
+  t("--ex-space", "Radius and density", "16px", "16px", { reads: 7 }),
+  t("--ex-text", "Type", "15px", "15px", { reads: 1 }),
+  t("--ex-title", "Type", "24px", "24px", { reads: 1 }),
+  t("--ex-leading", "Type", "1.45", "1.45", { reads: 1 }),
+  t("--ex-font", "Type", 'ui-rounded, "SF Pro Rounded", system-ui, sans-serif', 'ui-rounded, "SF Pro Rounded", system-ui, sans-serif', { reads: 1 }),
 ]
 const families = [...new Set(tokens.map((x) => x.family))].map((name) => ({ name, count: tokens.filter((x) => x.family === name).length }))
 
@@ -60,7 +65,7 @@ export const exampleAdapter: StudioAdapter = {
     ],
     resizable: { min: { w: 280, h: 320 }, max: { w: 2560, h: 1600 }, snapWidths: [640, 768, 1024, 1280] },
     inputs: [
-      { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable" },
+      { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable", placement: "dock", icon: "density", note: "The densities the product ships. Sign in has only Comfortable." },
       { id: "role", label: "Role", control: "select", options: [{ id: "owner", label: "Owner" }, { id: "viewer", label: "Viewer" }], placement: "dock", scoped: true, icon: "person", note: "Viewers see tasks without New task." },
     ],
   },
@@ -79,7 +84,7 @@ export const exampleAdapter: StudioAdapter = {
     { id: "tasks.new", label: "New task", area: "tasks", surface: "New task dialog", state: "Dialog open", description: "The form for a new task over the list.", fixture, source: src, clock },
     { id: "task.detail", label: "Task", area: "task", surface: "Task detail", description: "One task with its notes and history.", fixture, source: src, clock },
     { id: "account.settings", label: "Settings", area: "account", surface: "Settings", description: "Name, notifications and appearance.", fixture, source: src, clock },
-    { id: "account.sign-in", label: "Sign in", area: "account", surface: "Sign in", description: "The sign-in page.", fixture, source: src, clock },
+    { id: "account.sign-in", label: "Sign in", area: "account", surface: "Sign in", description: "The sign-in page. It ships at one density.", fixture, source: src, clock, supports: { density: ["comfortable"] } },
     { id: "reports.overview", label: "Overview", area: "reports", surface: "Reports", description: "Not designed yet.", fixture, source: src, clock, status: "later" },
   ] as Scenario[]).map((x) => (x.area === "tasks" || x.area === "task" ? { ...x, designed: { role: "owner" } } : x)),
   walkthroughs: [
@@ -97,6 +102,35 @@ export const exampleAdapter: StudioAdapter = {
       ],
     },
   ],
+  // Design parameters for the Adjust tab. The stops are the densities the example ships.
+  design: {
+    parameters: [
+      {
+        id: "density",
+        label: "Density",
+        kind: "scale",
+        default: 1,
+        min: 0.7,
+        max: 1.3,
+        step: 0.01,
+        stops: [
+          { at: 0.8, label: "Compact", values: { "--ex-row": "38px", "--ex-space": "12px" } },
+          { at: 1, label: "Comfortable", values: { "--ex-row": "48px", "--ex-space": "16px" } },
+        ],
+        // --ex-space is read under .app in this example, as some products read density tokens under a wrapper; --ex-nav is not in the token source.
+        apply: { scale: ["--ex-row", "--ex-space", "--ex-nav"], floor: { "--ex-row": 32 }, scope: { ":root .app": ["--ex-space"] }, base: { "--ex-nav": "220px" } },
+        note: "Marks sit at the densities the product ships; anything between is exploration.",
+      },
+      { id: "radius", label: "Corner radius", kind: "scale", default: 1, min: 0, max: 2, step: 0.05, apply: { scale: ["--ex-radius"] } },
+      { id: "body-font", label: "Typeface", kind: "font", default: "system-ui", options: ["Inter", "IBM Plex Sans", "Source Serif 4", "Georgia"], apply: { set: ["--ex-font"] }, note: "Google Fonts only; the font loads in the preview frame." },
+      { id: "type-scale", label: "Type scale", kind: "ratio", default: 1.6, min: 1.2, max: 2, step: 0.01, apply: { steps: { "--ex-title": 1 }, warnBelow: { "--ex-title": 18 } } },
+      { id: "text-size", label: "Text size", kind: "scale", default: 1, min: 0.75, max: 1.25, step: 0.01, apply: { scale: ["--ex-text", "--ex-title"], warnBelow: { "--ex-text": 12 } }, wontFollow: ["the 12 px tab labels"] },
+      { id: "leading", label: "Line height", kind: "scale", default: 1, min: 0.85, max: 1.3, step: 0.01, apply: { scale: ["--ex-leading"], unitless: true } },
+      { id: "neutral", label: "Neutral temperature", kind: "temperature", default: 0, min: -1, max: 1, step: 0.05, apply: { set: ["--ex-ground", "--ex-surface", "--ex-line"] }, note: "Tints the grounds and lines toward warm or cool." },
+      { id: "primary", label: "Primary color", kind: "color", default: "#0f766e", apply: { set: ["--ex-primary"], derive: { "--ex-accent": "color-mix(in oklch, $value 18%, white)" }, contrast: { against: ["--ex-primary-ink"], min: 4.5 } }, note: "Contrast is checked against the text on primary buttons." },
+      { id: "accent", label: "Accent color", kind: "color", default: "#ccfbf1", note: "Set after Primary, so it wins over the accent Primary derives.", apply: { set: ["--ex-accent"], contrast: { against: ["--ex-ink"], min: 4.5 } } },
+    ],
+  },
   comparisons: [{ id: "list-light-dark", label: "Today in Light and Dark", scenario: "tasks.list", a: "light", b: "dark" }],
   tokens: { source: "example/product.css", columns: ["light", "dark"], grounds: { light: "#fafaf9", dark: "#0c0a09" }, families, total: tokens.length, tokens },
 }
