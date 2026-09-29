@@ -21,6 +21,8 @@ type State = {
   size: { w: number; h: number } | null
   values: Record<string, string>
   zoom: "fit" | number
+  /** The scale Inspect is showing the frame at, for the dock's Zoom control to state. */
+  scale: number
   /** Bumped by Reset: a fresh runtime is mounted from the same scenario. */
   resetNonce: number
   preview: PreviewStatus
@@ -37,6 +39,8 @@ type State = {
 const A = adapter
 const OPTIONS_KEY = `studio.${A.id}.options`
 const DRAFTS_KEY = `studio.${A.id}.token-drafts`
+/** Written only after the viewer flips the switch, so a changed default reaches everyone who never chose. */
+const RAIL_KEY = `studio.${A.id}.rail-labels`
 const VIEWS: View[] = ["inspect", "compare", "gallery", "present", "tokens"]
 const firstScenario = A.scenarios.find((x) => x.status !== "later") ?? A.scenarios[0]
 const hasCaptures = A.scenarios.some((x) => Object.keys(x.captures ?? {}).length > 0)
@@ -100,13 +104,14 @@ const initial: State = {
   size: null,
   values: defaultValues(),
   zoom: "fit",
+  scale: 1,
   resetNonce: 0,
   preview: { status: "loading", modified: false, canGoBack: false },
   compare: { axis: A.comparisons?.[0]?.axis ?? "theme", a: A.comparisons?.[0]?.a ?? A.axes.themes[0].id, b: A.comparisons?.[0]?.b ?? A.axes.themes[A.axes.themes.length - 1].id, mode: "side", split: 50, showB: false },
   present: { tour: A.walkthroughs[0]?.id ?? "", step: 0, playing: false, speed: 1, elapsed: 0 },
   tokens: { selected: A.tokens?.tokens[0]?.name ?? "", drafts: {}, query: "", flag: "all", family: null },
   gallery: { size: 240, source: hasCaptures || !A.frameEntry ? "captures" : "live", query: "", hidden: [], onlyFlagged: false },
-  options: { controls: "dock", details: "docked", railLabels: false },
+  options: { controls: "dock", details: "docked", railLabels: true },
   commandOpen: false,
   shortcutsOpen: false,
   mobilePanel: null,
@@ -147,7 +152,8 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<State>(() => {
     const options = readJSON<Partial<Options>>(OPTIONS_KEY)
     const drafts = readJSON<State["tokens"]["drafts"]>(DRAFTS_KEY)
-    return { ...initial, ...readHash(), options: { ...initial.options, ...options }, tokens: { ...initial.tokens, drafts: drafts ?? {} } }
+    const railLabels = readJSON<boolean>(RAIL_KEY)
+    return { ...initial, ...readHash(), options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} } }
   })
   const set = React.useCallback((patch: Partial<State> | ((s: State) => Partial<State>)) => {
     setState((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) }))
@@ -156,7 +162,14 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     if (unresolvedLink) toast.warning("That link names a scenario this Studio does not have", { description: `${unresolvedLink} is not in the catalog. Showing the first scenario instead.`, duration: 12000 })
     unresolvedLink = null
   }, [])
-  React.useEffect(() => writeJSON(OPTIONS_KEY, state.options), [state.options])
+  const railStart = React.useRef(state.options.railLabels)
+  const railChosen = React.useRef(false)
+  React.useEffect(() => {
+    const { railLabels, ...rest } = state.options
+    writeJSON(OPTIONS_KEY, rest)
+    if (railLabels !== railStart.current) railChosen.current = true
+    if (railChosen.current) writeJSON(RAIL_KEY, railLabels)
+  }, [state.options])
   React.useEffect(() => writeJSON(DRAFTS_KEY, state.tokens.drafts), [state.tokens.drafts])
   React.useEffect(() => {
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })

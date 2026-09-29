@@ -10,14 +10,14 @@ Read this when connecting a product to the [shell](shell.md), or when a preview 
 | --- | --- |
 | `id`, `version`, `protocol` | Stable Studio identity, adapter version, and `"studio-preview/1"`. |
 | `product` | Name, a two-letter mark, an optional `markSvg` (`viewBox` and path data, drawn in the tile's foreground colour instead of the letters), the source revision, an optional brand color offered in Studio settings, and `brandDefault` to start on it instead of neutral. |
-| `target` | Platform, fidelity class (`actual`, `actual-substituted`, `instrumented-native`, `static-capture`, `recreation`), the label shown on the preview tab, and a mode with a reason for each of rendering, behavior, navigation, data and operating system. |
+| `target` | Platform, fidelity class (`actual`, `actual-substituted`, `instrumented-native`, `static-capture`, `recreation`), the label shown in Details (and in the top bar for static captures and recreations), and a mode with a reason for each of rendering, behavior, navigation, data and operating system. |
 | `frameEntry`, `frameOrigin` | URL of the product's isolated preview document, and its origin when it differs from the Studio's. Omit `frameEntry` for a capture-only Studio. |
 | `axes` | The theme axis label and values (each with the appearance of its product ground), profiles with pixel sizes and a kind (`phone`, `tablet`, `laptop` or `desktop`, which groups and icons the Size menu), scenario inputs with options and a default, an optional `defaultProfile` that opens on every screen size, and an optional `resizable` (`min`, `max` and `snapWidths`) that lets Inspect drag a live frame to any size in that range. |
 | `areas`, `scenarios` | Stable IDs, labels, surface and state, optional parent for nested variants, fixture ID, version and provenance, source, clock, status (`stale`, `unresolved`, `later`), optional captures keyed `theme:profile`, and independent design, delivery and evidence statuses. |
 | `walkthroughs` | Steps with a scenario, optional theme and profile, product commands to replay, an optional anchor, narration and the expected outcome. |
 | `comparisons` | Saved pairs on one axis: `theme` (the default), `profile`, or a scenario input's ID, with the two option IDs. |
 | `tokens` | Optional: source, the two theme columns, product grounds, families with counts, total, and tokens with values per theme, read counts and flags (`unread`, `literal`, `coupled`). |
-| `presentationOverrides` | Anything the Studio changes about product rendering, shown on every preview tab. |
+| `presentationOverrides` | Anything the Studio changes about product rendering, listed in Details under Fidelity. |
 
 Selection is stored in the URL hash as stable IDs only: view, scenario, theme and profile. Never put fixture values in it.
 

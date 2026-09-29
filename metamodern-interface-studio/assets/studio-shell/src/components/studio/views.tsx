@@ -34,30 +34,11 @@ import { adapter } from "@/adapter"
 import { areaLabel, axisOptions, captureFor, compareAxes, isColor, useStudio } from "@/store"
 import type { LiveStatus } from "@/studio/live-preview"
 import type { Step } from "@/studio/types"
-import { FidelityBadge, ScaleChip, StatusBadge, lookOf, useFit } from "./bits"
+import { FidelityBadge, ScaleChip, StatusBadge, useFit } from "./bits"
 import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
 import { StageControls } from "./chrome"
 import { ScenarioPreview, inspectHandle, profileOf, themeOf } from "./preview"
 import { ResizeHandles } from "./resize-handles"
-
-function PreviewTab({ theme, profile, size, scale, extra }: { theme: string; profile: string; size?: { w: number; h: number } | null; scale: number; extra?: React.ReactNode }) {
-  const pr = size ? { ...profileOf(profile), ...size, label: "Custom" } : profileOf(profile)
-  return (
-    <div className="flex max-w-[min(calc(100vw-2rem),40rem)] flex-wrap items-center justify-center gap-1.5 rounded-lg bg-background/92 px-1.5 py-1 text-xs text-muted-foreground shadow-sm ring-1 ring-black/5 backdrop-blur">
-      <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="h-5">{adapter.target.label}</FidelityBadge>
-      <span className="font-medium text-foreground">{adapter.product.name}</span>
-      <span>{themeOf(theme).label}</span>
-      <span className="opacity-40">·</span>
-      <span>{pr.label}</span>
-      <span className="opacity-40">·</span>
-      <ScaleChip w={pr.w} h={pr.h} scale={scale} className="bg-transparent p-0 shadow-none backdrop-blur-none" />
-      {adapter.presentationOverrides?.map((o) => (
-        <Badge key={o.id} variant="outline" className="h-5 border-dashed">{o.label}</Badge>
-      ))}
-      {extra}
-    </div>
-  )
-}
 
 /** The grey stage with its controls in the chosen placement. */
 function Stage({ children, controls = true, footer, narrow }: { children: React.ReactNode; controls?: boolean; footer?: React.ReactNode; narrow?: boolean }) {
@@ -91,6 +72,8 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
   const fit = useFit(box, pr.w, pr.h, s.zoom, narrow ? 32 : 64, narrow)
   const scale = frozen?.scale ?? fit
   const set = s.set
+  // The dock's Zoom control states the shown scale, so the stage carries no caption of its own.
+  React.useEffect(() => set({ scale }), [set, scale])
   const onStatus = React.useCallback(
     (st: LiveStatus | null) => {
       if (st) set({ preview: { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous } })
@@ -116,7 +99,6 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
     <Stage narrow={narrow}>
       <div ref={box} className={cn("flex min-h-0 flex-1 flex-col px-4 pt-4", frozen ? "overflow-hidden select-none" : "overflow-auto", dock && !narrow ? "pb-20" : "pb-4")}>
         <div className={cn("mx-auto flex w-max flex-col items-center gap-3", !narrow && "my-auto")}>
-        <PreviewTab theme={s.theme} profile={s.profile} size={resizable ? s.size : null} scale={scale} />
         {resizable ? <ResizeHandles w={pr.w} h={pr.h} scale={scale} onDragChange={setFrozen}>{preview}</ResizeHandles> : preview}
         </div>
       </div>
@@ -494,7 +476,6 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
       <div className="stage-surface relative flex min-h-0 flex-1 flex-col">
         <div ref={box} className="flex min-h-0 flex-1 flex-col overflow-auto p-4">
          <div className="mx-auto my-auto flex w-max flex-col items-center gap-3">
-          {!staticProblem(step) && <PreviewTab theme={theme} profile={profile} scale={scale} />}
           {staticProblem(step) ? (
             <div className="flex max-w-sm flex-col items-center gap-2 rounded-xl bg-background/95 p-6 text-center text-sm shadow-sm">
               <TriangleAlertIcon className="size-5 text-danger" />
@@ -516,6 +497,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
               onStatus={setSt}
             />
           )}
+          {!staticProblem(step) && <ScaleChip w={pr.w} h={pr.h} scale={scale} />}
          </div>
         </div>
       </div>

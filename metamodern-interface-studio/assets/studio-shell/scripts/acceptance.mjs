@@ -249,7 +249,7 @@ await check("AC-07", async () => {
   await wait(800)
   await q.keyboard.press("Escape")
   await wait(500)
-  const back = await q.evaluate(() => document.activeElement?.getAttribute("aria-label"))
+  const back = await q.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? document.activeElement?.textContent?.trim())
   await q.closeAll()
   const ok = segments === 0 && listRows <= 40 && listStops === 1 && allSteps && counted && playing && paused && restored && back === "Present"
   return [ok ? "pass" : "fail", `segments ${segments}, list rows in DOM ${listRows}, list tab stops ${listStops}, All steps ${allSteps}, arrow key advanced ${counted}, Space plays ${playing}, touching pauses ${paused}, Restore works ${restored}, focus after Esc on "${back}"`]
@@ -320,7 +320,7 @@ await check("AC-10", async () => {
     const stage = await p.evaluate(() => getComputedStyle(document.querySelector(".stage-surface")).backgroundColor)
     const frame = p.frames().find((f) => f !== p.mainFrame())
     const ticks = await p.locator(".preview-ticks i").count()
-    const tab = await p.getByText("Illustrative example").first().locator("xpath=../..").innerText()
+    const fidelityShown = await p.getByText("Illustrative example").first().isVisible().catch(() => false)
     // Tick colour composited over the stage, as pixels.
     const tickRgb = await p.evaluate(() => {
       const canvas = document.createElement("canvas")
@@ -368,11 +368,11 @@ await check("AC-10", async () => {
       worst[appearance] = Math.min(worst[appearance], best)
       rows.push(`${appearance}/${name} ${best.toFixed(1)}:1`)
     }
-    if (ticks !== 4 || !/Example Tasks/.test(tab) || !/Desktop/.test(tab)) structure = false
+    if (ticks !== 4 || !fidelityShown) structure = false
     await p.closeAll()
   }
   const ok = structure && worst.light >= need.light && worst.dark >= need.dark && ticksWorst >= 3
-  return [ok ? "pass" : "fail", `worst edge contrast ${worst.light.toFixed(1)}:1 in light (needs 3) and ${worst.dark.toFixed(1)}:1 in dark (needs 1.3, a hairline by design) across ${rows.length} fixtures (${rows.join(", ")}); corner ticks ${ticksWorst.toFixed(1)}:1 against the stage (needs 3); four ticks and a tab naming fidelity, product, theme and profile ${structure ? "present" : "missing"}`]
+  return [ok ? "pass" : "fail", `worst edge contrast ${worst.light.toFixed(1)}:1 in light (needs 3) and ${worst.dark.toFixed(1)}:1 in dark (needs 1.3, a hairline by design) across ${rows.length} fixtures (${rows.join(", ")}); corner ticks ${ticksWorst.toFixed(1)}:1 against the stage (needs 3); four ticks and the fidelity statement in Details ${structure ? "present" : "missing"}`]
 })
 
 // AC-11 Scale is always disclosed, with 100% one action away
@@ -382,7 +382,8 @@ await check("AC-11", async () => {
     for (const view of ["inspect", "compare", "present", "tokens", "gallery"]) {
       const p = await open("normal", { width, height: 900, touch: width < 768, hash: `view=${view}` })
       const text = await p.locator("body").innerText()
-      const said = view === "gallery" ? /thumbnails at about \d+%/.test(text) : /\d+ × \d+ · (\d+%|actual size)/.test(text)
+      // Inspect states size in the Size control and scale in the Zoom control; the other views carry a chip under the frame.
+      const said = view === "gallery" ? /thumbnails at about \d+%/.test(text) : view === "inspect" ? /\d+ × \d+/.test(text) && /Fit · \d+%|\b\d+%/.test(text) : /\d+ × \d+ · (\d+%|actual size)/.test(text)
       const action = view === "gallery" ? true : (await p.getByRole("button", { name: /Show at actual size|Fit to the stage/ }).count()) > 0 || (await p.getByRole("button", { name: /^Zoom/ }).count()) > 0
       if (!said || !action) bad.push(`${view}@${width}${said ? "" : " no scale"}${action ? "" : " no action"}`)
       await p.closeAll()
@@ -538,6 +539,27 @@ await check("AC-15", async () => {
   const square = Math.abs(collapsed.width - collapsed.height) < 0.5 && Math.abs(open_.width - open_.height) < 0.5
   const ok = square && folded.inert && folded.width <= 2 && off.length === 0 && title && title.width > 40 && overflow <= 0 && folded2 === "false"
   return [ok ? "pass" : "fail", `folded actions inert ${folded.inert} and ${folded.width}px wide; open: ${off.length ? off.join(", ") + " off screen" : "all four on screen"}, title ${Math.round(title?.width ?? 0)} px, sideways scroll ${overflow}px; Esc folds ${folded2 === "false"}; tile ${collapsed.width}x${collapsed.height} folded and ${open_.width}x${open_.height} open`]
+})
+
+// AC-16 The rail names its views by default, including for a viewer whose stored options predate the default
+await check("AC-16", async () => {
+  const names = ["Inspect", "Compare", "Gallery", "Present", "Tokens"]
+  const shown = async (seed) => {
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+    if (seed) await context.addInitScript(([k, v]) => localStorage.setItem(k, v), seed)
+    const p = await context.newPage()
+    await p.goto(servers.normal.url + "#view=inspect")
+    await p.waitForSelector("header")
+    await wait(1200)
+    const got = await p.evaluate((list) => list.filter((n) => [...document.querySelectorAll('[data-slot="sidebar"] span')].some((el) => el.textContent.trim() === n && el.getBoundingClientRect().width > 0 && !el.classList.contains("sr-only"))), names)
+    await context.close()
+    return got
+  }
+  const fresh = await shown(null)
+  const legacy = await shown(["studio.example-tasks.options", JSON.stringify({ controls: "dock", details: "docked", railLabels: false })])
+  const chosen = await shown(["studio.example-tasks.rail-labels", "false"])
+  const ok = fresh.length === names.length && legacy.length === names.length && chosen.length === 0
+  return [ok ? "pass" : "fail", `first visit shows ${fresh.length} of ${names.length} labels, older stored options ${legacy.length}, a viewer who turned them off ${chosen.length}`]
 })
 
 await browser.close()

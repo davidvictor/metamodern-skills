@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.1 — 2026-09-29
+
+- Interface Studio 0.4.1: remove the caption above the preview. It repeated the dock and Details. Fidelity is stated in Details (and in the top bar for static captures and recreations), Inspect's Zoom control states the shown scale ("Fit · 54%") beside the Size control's pixels, and other views keep a size chip under the frame.
+- Labels under the rail icons are on by default on desktop; only a viewer's explicit choice is stored, so older stored options do not keep them off. Acceptance grows to AC-01 to AC-16 and AC-10, AC-11 and the walkthrough-exit focus check follow the new layout. All sixteen pass for the starter.
+
 ## 1.6.0 — 2026-09-29
 
 - Interface Studio 0.4.0: profiles become a range of sizes. The dock's profile icons become one Size menu grouped by profile kind (phone, tablet, laptop, desktop), and with a live frame and `axes.resizable` Inspect's frame can be dragged by its right edge, bottom edge or corner to any size. Edges snap to profile sizes and adapter breakpoints, the scale is frozen during a drag, a readout names the profile a drag lands on, the size travels in the link, the handles are keyboard sliders, and a double-click returns to the profile. The frame is resized in place, so a product must lay itself out from its own viewport.
