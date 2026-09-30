@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.10.1",
+  "collectionVersion": "1.12.0",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -24,6 +24,13 @@
       "summary": "Guide evidence-led brand strategy, identity, and Brand System development."
     },
     {
+      "name": "metamodern-execute-development",
+      "path": "metamodern-execute-development",
+      "version": "0.1.0",
+      "category": "delivery-and-engineering",
+      "summary": "Deliver authorized outcomes with focused evidence."
+    },
+    {
       "name": "metamodern-explore-brand-expression",
       "path": "metamodern-explore-brand-expression",
       "version": "0.3.1",
@@ -31,9 +38,16 @@
       "summary": "Vary, refine, expand, and lock a brand's visual expression from a fixed identity on Higgsfield."
     },
     {
+      "name": "metamodern-fix-development",
+      "path": "metamodern-fix-development",
+      "version": "0.1.0",
+      "category": "delivery-and-engineering",
+      "summary": "Diagnose failures and repair affected behavior."
+    },
+    {
       "name": "metamodern-initiate-engineering",
       "path": "metamodern-initiate-engineering",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "category": "delivery-and-engineering",
       "summary": "Establish proportional engineering instructions and a verified first-task handoff for web apps, mobile apps, and websites."
     },
@@ -57,6 +71,13 @@
       "version": "0.1.0",
       "category": "communication",
       "summary": "Name meetings with candid premises and funny video style parentheticals."
+    },
+    {
+      "name": "metamodern-plan-development",
+      "path": "metamodern-plan-development",
+      "version": "0.1.0",
+      "category": "delivery-and-engineering",
+      "summary": "Define outcomes and coherent delivery batches."
     },
     {
       "name": "metamodern-prepare-project",
@@ -85,6 +106,13 @@
       "version": "0.1.3",
       "category": "communication",
       "summary": "Refine existing drafts without changing meaning or flattening the author's voice."
+    },
+    {
+      "name": "metamodern-review-development",
+      "path": "metamodern-review-development",
+      "version": "0.1.0",
+      "category": "delivery-and-engineering",
+      "summary": "Review integrated outcomes and concrete risks."
     },
     {
       "name": "metamodern-setup-form-delivery",

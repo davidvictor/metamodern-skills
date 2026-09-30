@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Execute Development"
+  short_description: "Deliver authorized outcomes with focused evidence"
+  default_prompt: "Use $metamodern-execute-development to carry this authorized development outcome through implementation, proportionate validation, and its requested endpoint."

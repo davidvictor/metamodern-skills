@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Review Development"
+  short_description: "Review integrated outcomes and concrete risks"
+  default_prompt: "Use $metamodern-review-development to review this integrated software change against its intended outcome, replacement boundaries, and concrete risks."
