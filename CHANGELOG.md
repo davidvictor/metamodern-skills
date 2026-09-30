@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.12.0 — 2026-09-30
+
+- Add Plan, Execute, Fix and Review Development as four focused skills. They translate conversational direction into outcome briefs and appropriately sized, normally sequential delivery worktrees while preserving project-required tests, independent review, resource isolation and release authority.
+- Initiate Engineering 0.1.2 hands prepared tasks into the development method without another initiation pass. The four helpers can be used independently and load only the operation needed.
+
 ## 1.11.1 — 2026-09-29
 
 - Interface Studio 0.9.1: frames in the Responsive row drag. A label drag places the frame where it is dropped (it follows the pointer, the others stay, its page is not reloaded), the zoom holds while the stage grows to reach every frame, and the places are kept in the viewer's browser and the link. Alt and an arrow on a label moves it 8 px (64 with Shift); the Frames list still reorders. An icon in the Responsive toolbar puts the frames back in a row.
