@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Plan Development"
+  short_description: "Define outcomes and coherent delivery batches"
+  default_prompt: "Use $metamodern-plan-development to prepare this software outcome as a concise implementation brief and proportionate delivery batches."

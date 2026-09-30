@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Fix Development"
+  short_description: "Diagnose failures and repair affected behavior"
+  default_prompt: "Use $metamodern-fix-development to diagnose and correct this development failure, then verify the affected behavior without replaying unrelated checks."

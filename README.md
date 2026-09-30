@@ -7,6 +7,37 @@ Reusable working methods for **Codex and Claude Code**, from shaping a prompt to
 
 These are the methods behind Metamodern's creative and technical work. Each skill gives an agent a focused workflow: what evidence to read, which decisions belong to the user, what to produce, and how to check the result. Install the ones you need. Your projects, private documents, accounts, and approvals stay yours.
 
+## Develop software around an outcome
+
+Four focused skills carry a shared outcome brief through development. They are independently usable; a clear small build does not need four separate stages. Project instructions retain authority over requirements, checks, branches and releases.
+
+| Skill | Use it for |
+| --- | --- |
+| [$metamodern-plan-development](./metamodern-plan-development/SKILL.md) | Turn direction into acceptance, preservation/replacement boundaries and coherent delivery batches. |
+| [$metamodern-execute-development](./metamodern-execute-development/SKILL.md) | Complete an authorized build or resume it with focused checks and required integrated validation. |
+| [$metamodern-fix-development](./metamodern-fix-development/SKILL.md) | Separate product defects, obsolete assertions, environment failures and unrelated baseline failures, then repair the affected behavior. |
+| [$metamodern-review-development](./metamodern-review-development/SKILL.md) | Independently review the integrated outcome and concrete risks, with grouped corrections and targeted re-review. |
+
+The user supplies direction and material decisions. The agent resolves reversible implementation choices and carries existing authorization through to its endpoint. Planning alone stays read-only; release actions use the current request and standing project authority. Component families can be implementation steps within one delivery batch. Checks follow failure consequence, uncertainty and reversibility, including every required project check.
+
+These skills augment the existing engineering process. The agent translates ordinary conversational direction into a brief and appropriately sized, usually sequential delivery worktrees. Every delivery boundary retains required testing and independent review; the user does not need to specify the engineering machinery.
+
+```text
+Use $metamodern-execute-development to replace the settings controls
+with our selected UI library. Preserve submitted values, validation,
+keyboard operation and focus return. Component structure and styling may
+change. Finish at a checked, reviewed pull request; deployment is separate.
+```
+
+Install the four skills together, or choose only the one you need:
+
+```bash
+bash install.sh --skill metamodern-plan-development \
+  --skill metamodern-execute-development \
+  --skill metamodern-fix-development \
+  --skill metamodern-review-development
+```
+
 ## Start with a better prompt
 
 ```text

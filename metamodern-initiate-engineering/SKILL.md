@@ -34,3 +34,5 @@ Use [Readiness and handoff](references/readiness-and-handoff.md) to turn evidenc
 ## Closeout
 
 Return the selected mode, source revision, established decisions and their state, preservation boundaries, actual environment and resources, checks/review, readiness state, dependencies and owners, authorized delivery endpoint, and next action. State context preparation, local readiness, repository delivery readiness, deployment readiness, and live verification separately.
+
+When the first task is defined, hand its outcome, preservation/replacement boundaries and delivery endpoint to `metamodern-plan-development` when available. A clear implementation request can continue through `metamodern-execute-development`; an Inspect or preparation-only request ends with its handoff. These companion skills do not require another initiation pass. If they are absent, use the owning project's development method.
