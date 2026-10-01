@@ -50,3 +50,12 @@ Nothing to do by hand. `vite.config.ts` passes lint again.
 
 - In the Responsive row, dragging a frame's label places the frame where it is dropped instead of reordering; the Frames list still reorders. Checks that dragged a label to reorder should use the list, or the Back to a row icon to return to a flowing row.
 - Resize handles hug the frame at every zoom. Nothing to do by hand.
+
+## 0.10.0
+
+- Scenario inputs can declare `control: "range"`, numeric bounds and steps, presets, and time formatting (`time` for minutes or `time-hours` for decimal hours). Values may be strings or finite numbers in the frame protocol; range values are validated and normalized before mounting. Declare the range instead of enumerating every clock value as an option.
+- Design parameters can declare `kind: "enum"` or `"range"`, `themes`, `defaultsByTheme`, and `apply.input`. Input-backed adjustments reach the product as `MountInputs.design`; implement that field in the preview's mount handler. Existing token and CSS drafts continue to work. Draft settings are retained independently for each theme or visual variant.
+- Walkthrough steps can declare stable `id`, `values`, `duration` and `hidden` fields. `values` materializes the authored scenario inputs; duration is in seconds. Hidden steps remain authored material and are deliberately excluded from playback. Add stable step IDs before importing presenter edits when array order can change.
+- Presenter edits are a separate browser overlay with import/export, narration, goals, timing and hidden-step edits. An import does not alter generated adapter material. Product-specific legacy browser exports need a product-owned conversion into the overlay format; a new origin cannot read another origin's storage.
+- Saved comparisons can declare `values` for up to four values on one axis, with independent runtimes. Existing `a` and `b` pairs continue to work.
+- A frame may supply `diagnostics()` rows through `connectStudioFrame`; the shell displays those measurements and their budgets in Details. Diagnostics are review evidence, not source approval or a universal product budget.

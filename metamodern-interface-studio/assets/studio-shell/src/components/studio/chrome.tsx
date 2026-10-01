@@ -41,10 +41,12 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle, ItemActions } from "@/components/ui/item"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { useTheme } from "@/components/theme-provider"
 import { download, encodeDesign, variantFile } from "@/studio/design"
+import { formatClock } from "@/studio/format"
 import { adapter } from "@/adapter"
 import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
 import type { CapabilityDimension } from "@/studio/types"
@@ -55,9 +57,13 @@ import { navigationHint, stepZoom, zoomTarget, type ZoomApi } from "./stage-nav"
 async function copyLink() {
   try {
     await navigator.clipboard.writeText(location.href)
-    toast("Link copied", { description: "The link holds stable IDs only, never fixture values." })
+    toast("Link copied", {
+      description: "The link holds stable IDs only, never fixture values.",
+    })
   } catch {
-    toast.error("Couldn't copy the link", { description: "Copy it from the address bar instead." })
+    toast.error("Couldn't copy the link", {
+      description: "Copy it from the address bar instead.",
+    })
   }
 }
 
@@ -67,7 +73,13 @@ function Tip({ label, keys, children }: { label: string; keys?: string[]; childr
       <TooltipTrigger render={children} />
       <TooltipContent>
         {label}
-        {keys && <KbdGroup>{keys.map((k) => <Kbd key={k}>{k}</Kbd>)}</KbdGroup>}
+        {keys && (
+          <KbdGroup>
+            {keys.map((k) => (
+              <Kbd key={k}>{k}</Kbd>
+            ))}
+          </KbdGroup>
+        )}
       </TooltipContent>
     </Tooltip>
   )
@@ -94,11 +106,7 @@ function MobileFold({ mobile, open, onOpenChange, children }: { mobile?: boolean
   if (!mobile) return <>{children}</>
   return (
     <div className="flex shrink-0 items-center" onKeyDown={(e) => e.key === "Escape" && open && onOpenChange(false)}>
-      <div
-        id="header-actions"
-        inert={!open}
-        className={cn("grid transition-[grid-template-columns] duration-300 ease-(--ease-out-quint) motion-reduce:transition-none", open ? "grid-cols-[1fr]" : "grid-cols-[0fr]")}
-      >
+      <div id="header-actions" inert={!open} className={cn("grid transition-[grid-template-columns] duration-300 ease-(--ease-out-quint) motion-reduce:transition-none", open ? "grid-cols-[1fr]" : "grid-cols-[0fr]")}>
         <div className={cn("flex min-w-0 items-center gap-0.5 overflow-hidden transition-[opacity,translate] duration-300 ease-(--ease-out-quint) motion-reduce:transition-none", open ? "translate-x-0 p-0.5 opacity-100" : "translate-x-3 opacity-0")}>{children}</div>
       </div>
       <Button variant="ghost" size="icon-sm" aria-label={open ? "Hide actions" : "More actions"} aria-expanded={open} aria-controls="header-actions" onClick={() => onOpenChange(!open)}>
@@ -112,7 +120,14 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
   const s = useStudio()
   const [more, setMore] = React.useState(false)
   const { theme, setTheme } = useTheme()
-  const viewLabel = { inspect: "Inspect", compare: "Compare", responsive: "Responsive", gallery: "Gallery", present: "Present", design: "Design" }[s.view]
+  const viewLabel = {
+    inspect: "Inspect",
+    compare: "Compare",
+    responsive: "Responsive",
+    gallery: "Gallery",
+    present: "Present",
+    design: "Design",
+  }[s.view]
   return (
     <header className="flex h-12 shrink-0 items-center gap-1.5 border-b bg-background px-2 md:gap-2 md:px-3">
       {!mobile && (
@@ -122,7 +137,11 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
           </Button>
         </Tip>
       )}
-      {mobile && <span className="flex aspect-square size-7 shrink-0 items-center justify-center rounded-md bg-(--mark-fill,var(--primary)) text-[11px] font-semibold text-(--mark-ink,var(--primary-foreground))"><ProductMark width={17} /></span>}
+      {mobile && (
+        <span className="flex aspect-square size-7 shrink-0 items-center justify-center rounded-md bg-(--mark-fill,var(--primary)) text-[11px] font-semibold text-(--mark-ink,var(--primary-foreground))">
+          <ProductMark width={17} />
+        </span>
+      )}
       <Breadcrumb className="min-w-0">
         <BreadcrumbList className="flex-nowrap">
           <BreadcrumbItem className="hidden lg:inline-flex">{adapter.product.name}</BreadcrumbItem>
@@ -133,7 +152,9 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
               <BreadcrumbSeparator className="hidden sm:inline-flex" />
               <BreadcrumbItem className="min-w-0">
                 <button className="flex min-w-0 items-center gap-1 rounded-md px-1 py-0.5 text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.set({ commandOpen: true })}>
-                  <BreadcrumbPage className="truncate">{areaLabel(s.scenarioObj.area)}: {s.scenarioObj.label}</BreadcrumbPage>
+                  <BreadcrumbPage className="truncate">
+                    {areaLabel(s.scenarioObj.area)}: {s.scenarioObj.label}
+                  </BreadcrumbPage>
                   <ChevronDownIcon className="size-3.5 opacity-60" />
                 </button>
               </BreadcrumbItem>
@@ -146,34 +167,55 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
       </div>
       {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
       {s.view === "inspect" && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
-        <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden sm:inline-flex">{adapter.target.label}</FidelityBadge>
+        <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden sm:inline-flex">
+          {adapter.target.label}
+        </FidelityBadge>
       )}
       <div className="ml-auto flex shrink-0 items-center gap-1">
         {!mobile && (
           <Button variant="outline" size="sm" className="hidden w-52 justify-start gap-2 text-muted-foreground xl:inline-flex" onClick={() => s.set({ commandOpen: true })}>
             <SearchIcon />
             <span className="flex-1 text-left">Go to scenario…</span>
-            <KbdGroup><Kbd>⌘</Kbd><Kbd>K</Kbd></KbdGroup>
+            <KbdGroup>
+              <Kbd>⌘</Kbd>
+              <Kbd>K</Kbd>
+            </KbdGroup>
           </Button>
         )}
         <MobileFold mobile={mobile} open={more} onOpenChange={setMore}>
-          <Button variant="ghost" size="icon-sm" className={cn(!mobile && "xl:hidden")} aria-label="Go to scenario" onClick={() => { s.set({ commandOpen: true }); setMore(false) }}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className={cn(!mobile && "xl:hidden")}
+            aria-label="Go to scenario"
+            onClick={() => {
+              s.set({ commandOpen: true })
+              setMore(false)
+            }}
+          >
             <SearchIcon />
           </Button>
           <LayoutOptions />
           <DropdownMenu>
             <Tip label="Studio appearance">
-              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Studio appearance" />}>
-                {theme === "dark" ? <MoonIcon /> : theme === "light" ? <SunIcon /> : <MonitorCogIcon />}
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Studio appearance" />}>{theme === "dark" ? <MoonIcon /> : theme === "light" ? <SunIcon /> : <MonitorCogIcon />}</DropdownMenuTrigger>
             </Tip>
             <DropdownMenuContent align="end" className="w-60">
               <DropdownMenuGroup>
                 <DropdownMenuLabel>Studio appearance</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={theme} onValueChange={(v) => setTheme(v)}>
-                  <DropdownMenuRadioItem value="system"><MonitorCogIcon />System</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="light"><SunIcon />Light</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="dark"><MoonIcon />Dark</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="system">
+                    <MonitorCogIcon />
+                    System
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="light">
+                    <SunIcon />
+                    Light
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="dark">
+                    <MoonIcon />
+                    Dark
+                  </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
@@ -181,7 +223,15 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
             </DropdownMenuContent>
           </DropdownMenu>
           <Tip label="Copy link to this view">
-            <Button variant="ghost" size="icon-sm" aria-label="Copy link" onClick={() => { copyLink(); setMore(false) }}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label="Copy link"
+              onClick={() => {
+                copyLink()
+                setMore(false)
+              }}
+            >
               <LinkIcon />
             </Button>
           </Tip>
@@ -217,7 +267,7 @@ function BrandColor() {
     setDraft(brand ?? "")
   }
   const valid = !draft || CSS.supports("color", draft)
-  const value = brand === null ? "neutral" : product && brand.toLowerCase() === product.toLowerCase() ? "product" : BRAND_PRESETS.find(([, c]) => c === brand)?.[1] ?? "custom"
+  const value = brand === null ? "neutral" : product && brand.toLowerCase() === product.toLowerCase() ? "product" : (BRAND_PRESETS.find(([, c]) => c === brand)?.[1] ?? "custom")
   const swatch = (c: string) => <span className="size-3.5 rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)]" style={{ background: c }} />
   const item = "size-7 p-0 rounded-full data-[pressed]:ring-2 data-[pressed]:ring-ring data-[pressed]:ring-offset-1 data-[pressed]:ring-offset-popover"
   return (
@@ -239,16 +289,22 @@ function BrandColor() {
           aria-label="Brand color"
         >
           <Tip label="Neutral">
-            <ToggleGroupItem value="neutral" aria-label="Neutral" className={item}>{swatch("linear-gradient(135deg, oklch(0.205 0 0) 50%, oklch(0.97 0 0) 50%)")}</ToggleGroupItem>
+            <ToggleGroupItem value="neutral" aria-label="Neutral" className={item}>
+              {swatch("linear-gradient(135deg, oklch(0.205 0 0) 50%, oklch(0.97 0 0) 50%)")}
+            </ToggleGroupItem>
           </Tip>
           {product && (
             <Tip label={`${adapter.product.name} brand · ${product}`}>
-              <ToggleGroupItem value="product" aria-label={`${adapter.product.name} brand`} className={item}>{swatch(product)}</ToggleGroupItem>
+              <ToggleGroupItem value="product" aria-label={`${adapter.product.name} brand`} className={item}>
+                {swatch(product)}
+              </ToggleGroupItem>
             </Tip>
           )}
           {BRAND_PRESETS.map(([n, c]) => (
             <Tip key={c} label={n}>
-              <ToggleGroupItem value={c} aria-label={n} className={item}>{swatch(c)}</ToggleGroupItem>
+              <ToggleGroupItem value={c} aria-label={n} className={item}>
+                {swatch(c)}
+              </ToggleGroupItem>
             </Tip>
           ))}
         </ToggleGroup>
@@ -257,7 +313,15 @@ function BrandColor() {
         <InputGroupAddon className="pl-2">
           <label className="relative size-3.5 cursor-pointer overflow-hidden rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)]" style={{ background: valid && draft ? draft : "transparent" }}>
             <span className="sr-only">Pick a color</span>
-            <input type="color" className="absolute inset-0 cursor-pointer opacity-0" value={/^#[0-9a-f]{6}$/i.test(draft) ? draft : "#000000"} onChange={(e) => { setDraft(e.target.value); setBrand(e.target.value) }} />
+            <input
+              type="color"
+              className="absolute inset-0 cursor-pointer opacity-0"
+              value={/^#[0-9a-f]{6}$/i.test(draft) ? draft : "#000000"}
+              onChange={(e) => {
+                setDraft(e.target.value)
+                setBrand(e.target.value)
+              }}
+            />
           </label>
         </InputGroupAddon>
         <InputGroupInput
@@ -276,7 +340,9 @@ function BrandColor() {
         />
         {brand && (
           <InputGroupAddon align="inline-end">
-            <InputGroupButton size="icon-xs" aria-label="Back to neutral" onClick={() => setBrand(null)}><RotateCcwIcon /></InputGroupButton>
+            <InputGroupButton size="icon-xs" aria-label="Back to neutral" onClick={() => setBrand(null)}>
+              <RotateCcwIcon />
+            </InputGroupButton>
           </InputGroupAddon>
         )}
       </InputGroup>
@@ -307,19 +373,45 @@ function LayoutOptions() {
           <FieldSet>
             <FieldLegend variant="label">Presentation controls</FieldLegend>
             <RadioGroup value={o.controls} onValueChange={(v) => setO({ controls: v as typeof o.controls })}>
-              <Label className="flex items-start gap-2 font-normal"><RadioGroupItem value="dock" /><span><b className="font-medium">Floating dock</b><span className="block text-xs text-muted-foreground">Under the preview, where the eye already is</span></span></Label>
-              <Label className="flex items-start gap-2 font-normal"><RadioGroupItem value="toolbar" /><span><b className="font-medium">Stage toolbar</b><span className="block text-xs text-muted-foreground">A strip across the top of the stage</span></span></Label>
+              <Label className="flex items-start gap-2 font-normal">
+                <RadioGroupItem value="dock" />
+                <span>
+                  <b className="font-medium">Floating dock</b>
+                  <span className="block text-xs text-muted-foreground">Under the preview, where the eye already is</span>
+                </span>
+              </Label>
+              <Label className="flex items-start gap-2 font-normal">
+                <RadioGroupItem value="toolbar" />
+                <span>
+                  <b className="font-medium">Stage toolbar</b>
+                  <span className="block text-xs text-muted-foreground">A strip across the top of the stage</span>
+                </span>
+              </Label>
             </RadioGroup>
           </FieldSet>
           <FieldSet>
             <FieldLegend variant="label">Details</FieldLegend>
             <RadioGroup value={o.details} onValueChange={(v) => setO({ details: v as typeof o.details })}>
-              <Label className="flex items-start gap-2 font-normal"><RadioGroupItem value="docked" /><span><b className="font-medium">Docked panel</b><span className="block text-xs text-muted-foreground">Pushes the stage; nothing covers the preview</span></span></Label>
-              <Label className="flex items-start gap-2 font-normal"><RadioGroupItem value="floating" /><span><b className="font-medium">Floating card</b><span className="block text-xs text-muted-foreground">Keeps the grey edge to edge</span></span></Label>
+              <Label className="flex items-start gap-2 font-normal">
+                <RadioGroupItem value="docked" />
+                <span>
+                  <b className="font-medium">Docked panel</b>
+                  <span className="block text-xs text-muted-foreground">Pushes the stage; nothing covers the preview</span>
+                </span>
+              </Label>
+              <Label className="flex items-start gap-2 font-normal">
+                <RadioGroupItem value="floating" />
+                <span>
+                  <b className="font-medium">Floating card</b>
+                  <span className="block text-xs text-muted-foreground">Keeps the grey edge to edge</span>
+                </span>
+              </Label>
             </RadioGroup>
           </FieldSet>
           <Field orientation="horizontal" className="justify-between">
-            <FieldLabel htmlFor="rail-labels" className="font-normal">Labels under rail icons</FieldLabel>
+            <FieldLabel htmlFor="rail-labels" className="font-normal">
+              Labels under rail icons
+            </FieldLabel>
             <Switch id="rail-labels" checked={o.railLabels} onCheckedChange={(v) => setO({ railLabels: v })} />
           </Field>
         </FieldGroup>
@@ -343,9 +435,7 @@ function SizeMenu({ variant, compact }: { variant: "dock" | "toolbar"; compact?:
   const live = !!adapter.frameEntry
   const base = profileOf(s.profile)
   const shown = s.size ? { ...base, ...s.size, label: "Custom" } : base
-  const groups = ["Phone", "Tablet", "Laptop and desktop"]
-    .map((g) => [g, ax.profiles.filter((p) => sizeGroup(p.kind) === g).sort((a, b) => a.w - b.w || a.h - b.h)] as const)
-    .filter(([, list]) => list.length)
+  const groups = ["Phone", "Tablet", "Laptop and desktop"].map((g) => [g, ax.profiles.filter((p) => sizeGroup(p.kind) === g).sort((a, b) => a.w - b.w || a.h - b.h)] as const).filter(([, list]) => list.length)
   const available = (id: string) => live || !!captureFor(s.scenarioObj, s.theme, id)
   const dims = `${shown.w} × ${shown.h}`
   return (
@@ -364,7 +454,7 @@ function SizeMenu({ variant, compact }: { variant: "dock" | "toolbar"; compact?:
               <DropdownMenuRadioItem value="custom" closeOnClick>
                 <ProfileIcon profile={base} />
                 Custom
-                <DropdownMenuShortcut className="tabular-nums whitespace-nowrap">{dims}</DropdownMenuShortcut>
+                <DropdownMenuShortcut className="whitespace-nowrap tabular-nums">{dims}</DropdownMenuShortcut>
               </DropdownMenuRadioItem>
               <DropdownMenuSeparator />
             </DropdownMenuGroup>
@@ -378,7 +468,9 @@ function SizeMenu({ variant, compact }: { variant: "dock" | "toolbar"; compact?:
                   <DropdownMenuRadioItem key={p.id} value={p.id} disabled={!available(p.id)} closeOnClick>
                     <ProfileIcon profile={p} />
                     {p.label}
-                    <DropdownMenuShortcut className="tabular-nums whitespace-nowrap">{p.w} × {p.h}</DropdownMenuShortcut>
+                    <DropdownMenuShortcut className="whitespace-nowrap tabular-nums">
+                      {p.w} × {p.h}
+                    </DropdownMenuShortcut>
                   </DropdownMenuRadioItem>
                 )
               })}
@@ -391,7 +483,10 @@ function SizeMenu({ variant, compact }: { variant: "dock" | "toolbar"; compact?:
             <p className="px-2 py-1.5 text-xs text-muted-foreground">
               {s.size ? (
                 <>
-                  Drag any edge to resize. <button className="rounded-sm underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.setSize(null)}>Back to {base.label}</button>
+                  Drag any edge to resize.{" "}
+                  <button className="rounded-sm underline underline-offset-2 outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.setSize(null)}>
+                    Back to {base.label}
+                  </button>
                 </>
               ) : (
                 "Drag the frame's right or bottom edge in Inspect to set any size."
@@ -414,12 +509,73 @@ function useInputChoice(id: string) {
   const chosen = s.values[id] !== undefined && supports(s.scenarioObj, id, s.values[id]) ? s.values[id] : undefined
   const current = chosen ?? designed
   const overridden = chosen !== undefined && chosen !== designed
-  const labelOf = (v?: string) => inp.options.find((o) => o.id === v)?.label ?? v
-  return { s, inp, designed, options, current, overridden, label: labelOf(current) ?? inp.label, designedLabel: labelOf(designed) ?? "designed" }
+  const labelOf = (v?: string | number) => {
+    const numeric = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : Number.NaN
+    return inp.options?.find((o) => o.id === v)?.label ?? (inp.format && Number.isFinite(numeric) ? formatClock(numeric, inp.format) : v === undefined ? undefined : String(v))
+  }
+  return {
+    s,
+    inp,
+    designed,
+    options,
+    current,
+    overridden,
+    label: labelOf(current) ?? inp.label,
+    designedLabel: labelOf(designed) ?? "designed",
+  }
+}
+
+/** A stable formatter hint keeps adapter data serializable while supporting continuous clocks. */
+function RangeChoices({ id, note = true }: { id: string; note?: boolean }) {
+  const { s, inp, designed, current, overridden, designedLabel } = useInputChoice(id)
+  const min = inp.min ?? 0
+  const max = inp.max ?? 100
+  const step = inp.step ?? 1
+  const value = typeof current === "number" ? current : Number(current ?? min)
+  const set = (next: number) => s.setValue(id, next === designed ? null : next)
+  const label = inp.format ? formatClock(value, inp.format) : String(value)
+  return (
+    <DropdownMenuGroup>
+      <DropdownMenuLabel className="flex items-center justify-between gap-2">
+        <span>{inp.label}</span>
+        <output className="font-mono text-xs font-normal text-muted-foreground">{label}</output>
+      </DropdownMenuLabel>
+      <div className="grid gap-3 px-2 py-2">
+        <Slider
+          min={min}
+          max={max}
+          step={step}
+          value={[Number.isFinite(value) ? value : min]}
+          onValueChange={(next) => {
+            const n = Array.isArray(next) ? next[0] : next
+            if (Number.isFinite(n)) set(n)
+          }}
+          aria-label={inp.label}
+          aria-valuetext={label}
+        />
+        {!!inp.presets?.length && (
+          <div className="flex flex-wrap gap-1">
+            {inp.presets.map((preset) => (
+              <Button key={preset.value} size="sm" variant={Math.abs(value - preset.value) < step / 2 ? "secondary" : "outline"} className="h-6 px-2 text-[11px]" onClick={() => set(preset.value)}>
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+      {overridden && (
+        <DropdownMenuItem onClick={() => s.setValue(id, null)}>
+          <RotateCcwIcon /> Back to {designedLabel}
+        </DropdownMenuItem>
+      )}
+      {note && inp.note && <p className="px-2 py-1.5 text-xs text-muted-foreground">{inp.note}</p>}
+    </DropdownMenuGroup>
+  )
 }
 
 function InputChoices({ id, note = true }: { id: string; note?: boolean }) {
   const { s, inp, designed, options, current, overridden, designedLabel } = useInputChoice(id)
+  if (inp.control === "range") return <RangeChoices id={id} note={note} />
   return (
     <>
       <DropdownMenuGroup>
@@ -450,7 +606,11 @@ function InputChoices({ id, note = true }: { id: string; note?: boolean }) {
  */
 function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "toolbar"; compact?: boolean }) {
   const { inp, label, overridden, designedLabel } = useInputChoice(id)
-  const Icon = { person: UserRoundIcon, density: Rows3Icon, sliders: SlidersHorizontalIcon }[inp.icon ?? "sliders"]
+  const Icon = {
+    person: UserRoundIcon,
+    density: Rows3Icon,
+    sliders: SlidersHorizontalIcon,
+  }[inp.icon ?? "sliders"]
   return (
     <DropdownMenu>
       <Tip label={overridden ? `${inp.label}: ${label}, changed from ${designedLabel}` : `${inp.label}: ${label}, as designed`}>
@@ -486,10 +646,19 @@ function DesignMenu({ variant, compact, inputs }: { variant: "dock" | "toolbar";
     const inp = adapter.axes.inputs.find((i) => i.id === id)!
     const designed = s.scenarioObj.designed?.[id] ?? inp.default
     const chosen = s.values[id] !== undefined && supports(s.scenarioObj, id, s.values[id]) ? s.values[id] : undefined
-    return { inp, current: chosen ?? designed, changed: chosen !== undefined && chosen !== designed }
+    return {
+      inp,
+      current: chosen ?? designed,
+      changed: chosen !== undefined && chosen !== designed,
+    }
   })
   const changed = contrastOn || values.some((v) => v.changed)
-  const summary = [contrastPairs() && (contrastOn ? "High contrast" : "Standard contrast"), ...values.map((v) => v.inp.options.find((o) => o.id === v.current)?.label ?? v.current)].filter(Boolean).join(", ")
+  const summary = [contrastPairs() && (contrastOn ? "High contrast" : "Standard contrast"), ...values.map((v) => {
+    const numeric = typeof v.current === "number" ? v.current : typeof v.current === "string" && v.current.trim() !== "" ? Number(v.current) : Number.NaN
+    return v.inp.options?.find((o) => o.id === v.current)?.label ?? (v.inp.format && Number.isFinite(numeric) ? formatClock(numeric, v.inp.format) : v.current)
+  })]
+    .filter(Boolean)
+    .join(", ")
   return (
     <DropdownMenu>
       <Tip label={`Design: ${summary}`}>
@@ -504,9 +673,12 @@ function DesignMenu({ variant, compact, inputs }: { variant: "dock" | "toolbar";
           <DropdownMenuGroup>
             <DropdownMenuLabel>Contrast</DropdownMenuLabel>
             <DropdownMenuRadioGroup value={contrastOn ? "high" : "standard"} onValueChange={(v) => s.setTheme(v === "high" && high ? high.id : base)}>
-              <DropdownMenuRadioItem value="standard" closeOnClick>Standard</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="standard" closeOnClick>
+                Standard
+              </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="high" closeOnClick disabled={!high || (!live && !captureFor(s.scenarioObj, high.id, s.profile))}>
-                High{!high && <DropdownMenuShortcut>Not in this theme</DropdownMenuShortcut>}
+                High
+                {!high && <DropdownMenuShortcut>Not in this theme</DropdownMenuShortcut>}
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
           </DropdownMenuGroup>
@@ -537,7 +709,13 @@ function ZoomMenu({ variant, canvasZoom }: { variant: "dock" | "toolbar"; canvas
   // Fit names the mode and the percentage names what is shown, so scale is always disclosed.
   const label = canvas ? `${canvasZoom}%` : s.zoom === "fit" ? `Fit · ${Math.round(s.scale * 100)}%` : `${Math.round(s.zoom)}%`
   const shown = canvas ? canvasZoom : s.scale * 100
-  const api = (): ZoomApi => zoomTarget.current ?? { zoomIn: () => s.set({ zoom: stepZoom(shown, 1) }), zoomOut: () => s.set({ zoom: stepZoom(shown, -1) }), fit: () => s.set({ zoom: "fit" }), to: (pct) => s.set({ zoom: pct }) }
+  const api = (): ZoomApi =>
+    zoomTarget.current ?? {
+      zoomIn: () => s.set({ zoom: stepZoom(shown, 1) }),
+      zoomOut: () => s.set({ zoom: stepZoom(shown, -1) }),
+      fit: () => s.set({ zoom: "fit" }),
+      to: (pct) => s.set({ zoom: pct }),
+    }
   const value = canvas ? "" : s.zoom === "fit" ? "fit" : String(Math.round(s.zoom))
   return (
     <DropdownMenu>
@@ -548,23 +726,37 @@ function ZoomMenu({ variant, canvasZoom }: { variant: "dock" | "toolbar"; canvas
       <DropdownMenuContent side={variant === "dock" ? "top" : "bottom"} className="w-60">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Zoom</DropdownMenuLabel>
-          <DropdownMenuItem closeOnClick={false} onClick={() => api().zoomIn()}>Zoom in<DropdownMenuShortcut>+</DropdownMenuShortcut></DropdownMenuItem>
-          <DropdownMenuItem closeOnClick={false} onClick={() => api().zoomOut()}>Zoom out<DropdownMenuShortcut>−</DropdownMenuShortcut></DropdownMenuItem>
+          <DropdownMenuItem closeOnClick={false} onClick={() => api().zoomIn()}>
+            Zoom in<DropdownMenuShortcut>+</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem closeOnClick={false} onClick={() => api().zoomOut()}>
+            Zoom out<DropdownMenuShortcut>−</DropdownMenuShortcut>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup value={value} onValueChange={(v) => (v === "fit" ? api().fit() : api().to(+v))}>
-          <DropdownMenuRadioItem value="fit" closeOnClick>Fit<DropdownMenuShortcut>⇧1</DropdownMenuShortcut></DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="50" closeOnClick>50%</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="100" closeOnClick>100%<DropdownMenuShortcut>⇧0</DropdownMenuShortcut></DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="fit" closeOnClick>
+            Fit<DropdownMenuShortcut>⇧1</DropdownMenuShortcut>
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="50" closeOnClick>
+            50%
+          </DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="100" closeOnClick>
+            100%<DropdownMenuShortcut>⇧0</DropdownMenuShortcut>
+          </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         {canvas && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem checked={s.options.map} onCheckedChange={(v) => s.set({ options: { ...s.options, map: !!v } })}>Show map</DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem checked={s.options.map} onCheckedChange={(v) => s.set({ options: { ...s.options, map: !!v } })}>
+              Show map
+            </DropdownMenuCheckboxItem>
           </>
         )}
         <DropdownMenuSeparator />
-        <p className="px-2 py-1.5 text-xs leading-snug text-muted-foreground" data-navigation-hint>{navigationHint()}</p>
+        <p className="px-2 py-1.5 text-xs leading-snug text-muted-foreground" data-navigation-hint>
+          {navigationHint()}
+        </p>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -596,7 +788,7 @@ export function StageControls({ variant, compact, lookOnly, noZoom, canvasZoom }
       aria-label="Preview controls"
       className={cn(
         "flex items-center gap-1",
-        variant === "dock" && "pointer-events-auto max-w-full overflow-x-auto rounded-xl border bg-popover/95 p-1 text-popover-foreground shadow-[var(--dock-shadow)] backdrop-blur-md animate-in fade-in-0 slide-in-from-bottom-2 duration-300",
+        variant === "dock" && "pointer-events-auto max-w-full animate-in overflow-x-auto rounded-xl border bg-popover/95 p-1 text-popover-foreground shadow-[var(--dock-shadow)] backdrop-blur-md duration-300 fade-in-0 slide-in-from-bottom-2",
         variant === "toolbar" && !compact && "w-full border-b bg-background/95 px-2 py-1 backdrop-blur",
         compact && "w-full justify-between overflow-x-auto"
       )}
@@ -620,24 +812,30 @@ export function StageControls({ variant, compact, lookOnly, noZoom, canvasZoom }
       {(paired || designInputs.length > 0) && <DesignMenu variant={variant} compact={compact} inputs={designInputs} />}
       <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
       {!lookOnly && <SizeMenu variant={variant} compact={compact} />}
-      {lenses.filter((i) => i.group !== "design").map((i) => <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />)}
+      {lenses
+        .filter((i) => i.group !== "design")
+        .map((i) => (
+          <InputMenu key={i.id} id={i.id} variant={variant} compact={compact} />
+        ))}
       {!noZoom && <Separator orientation="vertical" className="mx-1 h-5! self-center!" />}
       {!noZoom && <ZoomMenu variant={variant} canvasZoom={canvasZoom} />}
- {!lookOnly && (<>
-      <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
-      <Tip label={!live ? "Product back: unavailable for captures" : s.preview.canGoBack ? "Product back: the preview's own history" : "Product back: no product history yet"}>
-        <span className="inline-flex">
-          <Button variant="ghost" size="icon-sm" aria-label="Product back" disabled={!s.preview.canGoBack} onClick={() => inspectHandle.current?.back()}>
-            <CornerUpLeftIcon />
-          </Button>
-        </span>
-      </Tip>
-      <Tip label={live ? "Reset preview" : "Reload capture"} keys={["R"]}>
-        <Button variant="ghost" size="icon-sm" aria-label={live ? "Reset preview" : "Reload capture"} onClick={s.reset}>
-          <RotateCcwIcon />
-        </Button>
-      </Tip>
-      </>)}
+      {!lookOnly && (
+        <>
+          <Separator orientation="vertical" className="mx-1 h-5! self-center!" />
+          <Tip label={!live ? "Product back: unavailable for captures" : s.preview.canGoBack ? "Product back: the preview's own history" : "Product back: no product history yet"}>
+            <span className="inline-flex">
+              <Button variant="ghost" size="icon-sm" aria-label="Product back" disabled={!s.preview.canGoBack} onClick={() => inspectHandle.current?.back()}>
+                <CornerUpLeftIcon />
+              </Button>
+            </span>
+          </Tip>
+          <Tip label={live ? "Reset preview" : "Reload capture"} keys={["R"]}>
+            <Button variant="ghost" size="icon-sm" aria-label={live ? "Reset preview" : "Reload capture"} onClick={s.reset}>
+              <RotateCcwIcon />
+            </Button>
+          </Tip>
+        </>
+      )}
     </div>
   )
 }
@@ -662,16 +860,32 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
     <div className="flex h-full min-h-0 flex-col">
       <div className="grid gap-2 border-b p-4">
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <span className="tabular-nums">{i + 1} of {list.length}</span>
+          <span className="tabular-nums">
+            {i + 1} of {list.length}
+          </span>
           <span>·</span>
           <span className="truncate">{areaLabel(sc.area)}</span>
           <div className="ml-auto flex gap-0.5">
-            <Tip label="Previous scenario" keys={["["]}><Button variant="ghost" size="icon-xs" aria-label="Previous scenario" onClick={() => s.step(-1)}><ChevronUpIcon /></Button></Tip>
-            <Tip label="Next scenario" keys={["]"]}><Button variant="ghost" size="icon-xs" aria-label="Next scenario" onClick={() => s.step(1)}><ChevronDownIcon /></Button></Tip>
-            {onClose && <Button variant="ghost" size="icon-xs" aria-label="Close details" onClick={onClose}><PanelRightIcon /></Button>}
+            <Tip label="Previous scenario" keys={["["]}>
+              <Button variant="ghost" size="icon-xs" aria-label="Previous scenario" onClick={() => s.step(-1)}>
+                <ChevronUpIcon />
+              </Button>
+            </Tip>
+            <Tip label="Next scenario" keys={["]"]}>
+              <Button variant="ghost" size="icon-xs" aria-label="Next scenario" onClick={() => s.step(1)}>
+                <ChevronDownIcon />
+              </Button>
+            </Tip>
+            {onClose && (
+              <Button variant="ghost" size="icon-xs" aria-label="Close details" onClick={onClose}>
+                <PanelRightIcon />
+              </Button>
+            )}
           </div>
         </div>
-        <h2 className="font-heading text-base leading-snug font-semibold text-balance">{areaLabel(sc.area)}: {sc.label}</h2>
+        <h2 className="font-heading text-base leading-snug font-semibold text-balance">
+          {areaLabel(sc.area)}: {sc.label}
+        </h2>
         <p className="text-xs leading-relaxed text-muted-foreground">{sc.description}</p>
         <div className="flex flex-wrap gap-1.5">
           <FidelityBadge mode={lookOf(adapter.target.fidelity)}>{adapter.target.label}</FidelityBadge>
@@ -681,45 +895,90 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
       </div>
       <Tabs defaultValue="scenario" className="min-h-0 flex-1 gap-0">
         <TabsList variant="line" className="w-full justify-start gap-3 border-b px-4">
-          <TabsTrigger value="scenario" className="flex-none">Scenario</TabsTrigger>
-          <TabsTrigger value="fidelity" className="flex-none">Fidelity</TabsTrigger>
-          <TabsTrigger value="evidence" className="flex-none">Evidence</TabsTrigger>
+          <TabsTrigger value="scenario" className="flex-none">
+            Scenario
+          </TabsTrigger>
+          <TabsTrigger value="fidelity" className="flex-none">
+            Fidelity
+          </TabsTrigger>
+          <TabsTrigger value="evidence" className="flex-none">
+            Evidence
+          </TabsTrigger>
         </TabsList>
         <ScrollArea className="min-h-0 flex-1">
           <TabsContent value="scenario" className="grid gap-5 p-4">
             <dl className="grid grid-cols-[84px_1fr] gap-x-3 gap-y-2 text-[13px]">
-              <dt className="text-muted-foreground">Surface</dt><dd>{sc.surface}</dd>
-              {sc.state && (<><dt className="text-muted-foreground">State</dt><dd>{sc.state}</dd></>)}
-              <dt className="text-muted-foreground">Fixture</dt><dd>{sc.fixture.id} v{sc.fixture.version}<span className="block text-xs text-muted-foreground">{sc.fixture.provenance}</span></dd>
-              <dt className="text-muted-foreground">Clock</dt><dd>{sc.clock}</dd>
-              <dt className="text-muted-foreground">Source</dt><dd className="font-mono text-xs break-all">{sc.source}</dd>
-              {s.preview.location && (<><dt className="text-muted-foreground">Location</dt><dd className="font-mono text-xs break-all">{s.preview.location}</dd></>)}
+              <dt className="text-muted-foreground">Surface</dt>
+              <dd>{sc.surface}</dd>
+              {sc.state && (
+                <>
+                  <dt className="text-muted-foreground">State</dt>
+                  <dd>{sc.state}</dd>
+                </>
+              )}
+              <dt className="text-muted-foreground">Fixture</dt>
+              <dd>
+                {sc.fixture.id} v{sc.fixture.version}
+                <span className="block text-xs text-muted-foreground">{sc.fixture.provenance}</span>
+              </dd>
+              <dt className="text-muted-foreground">Clock</dt>
+              <dd>{sc.clock}</dd>
+              <dt className="text-muted-foreground">Source</dt>
+              <dd className="font-mono text-xs break-all">{sc.source}</dd>
+              {s.preview.location && (
+                <>
+                  <dt className="text-muted-foreground">Location</dt>
+                  <dd className="font-mono text-xs break-all">{s.preview.location}</dd>
+                </>
+              )}
             </dl>
             {choosableFor(sc).some((i) => i.placement !== "dock") && (
               <FieldSet>
                 <FieldLegend variant="label">Scenario inputs</FieldLegend>
                 <FieldDescription className="text-xs">Declared by the {adapter.product.name} adapter. A change rebuilds the preview from the scenario.</FieldDescription>
                 <FieldGroup className="gap-4">
-                  {choosableFor(sc).filter((i) => i.placement !== "dock").map((inp) =>
-                    inp.control === "presets" ? (
-                      <Field key={inp.id}>
-                        <FieldLabel>{inp.label}</FieldLabel>
-                        <ToggleGroup value={[resolveValues(sc, s.values)[inp.id]]} variant="outline" size="sm" spacing={0} className="w-full" onValueChange={(v) => v[0] && s.setValue(inp.id, v[0])} aria-label={inp.label}>
-                          {optionsFor(inp, sc).map((o) => <ToggleGroupItem key={o.id} value={o.id} className="flex-1 px-1 text-xs">{o.label}</ToggleGroupItem>)}
-                        </ToggleGroup>
-                        {inp.note && <FieldDescription className="text-xs">{inp.note}</FieldDescription>}
-                      </Field>
-                    ) : (
-                      <Field key={inp.id}>
-                        <FieldLabel>{inp.label}</FieldLabel>
-                        <Select value={resolveValues(sc, s.values)[inp.id]} items={Object.fromEntries(optionsFor(inp, sc).map((o) => [o.id, o.label]))} onValueChange={(v) => v && s.setValue(inp.id, v as string)}>
-                          <SelectTrigger className="w-full" aria-label={inp.label}><SelectValue /></SelectTrigger>
-                          <SelectContent>{optionsFor(inp, sc).map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
-                        </Select>
-                        {inp.note && <FieldDescription className="text-xs">{inp.note}</FieldDescription>}
-                      </Field>
-                    )
-                  )}
+                  {choosableFor(sc)
+                    .filter((i) => i.placement !== "dock")
+                    .map((inp) =>
+                      inp.control === "range" ? (
+                        <Field key={inp.id}>
+                          <FieldLabel>{inp.label}</FieldLabel>
+                          <div className="pt-2">
+                            <RangeChoices id={inp.id} note={false} />
+                          </div>
+                          {inp.note && <FieldDescription className="text-xs">{inp.note}</FieldDescription>}
+                        </Field>
+                      ) : inp.control === "presets" ? (
+                        <Field key={inp.id}>
+                          <FieldLabel>{inp.label}</FieldLabel>
+                          <ToggleGroup value={[String(resolveValues(sc, s.values)[inp.id] ?? "")]} variant="outline" size="sm" spacing={0} className="w-full" onValueChange={(v) => v[0] && s.setValue(inp.id, v[0])} aria-label={inp.label}>
+                            {optionsFor(inp, sc).map((o) => (
+                              <ToggleGroupItem key={o.id} value={o.id} className="flex-1 px-1 text-xs">
+                                {o.label}
+                              </ToggleGroupItem>
+                            ))}
+                          </ToggleGroup>
+                          {inp.note && <FieldDescription className="text-xs">{inp.note}</FieldDescription>}
+                        </Field>
+                      ) : (
+                        <Field key={inp.id}>
+                          <FieldLabel>{inp.label}</FieldLabel>
+                          <Select value={String(resolveValues(sc, s.values)[inp.id] ?? "")} items={Object.fromEntries(optionsFor(inp, sc).map((o) => [o.id, o.label]))} onValueChange={(v) => v && s.setValue(inp.id, v as string)}>
+                            <SelectTrigger className="w-full" aria-label={inp.label}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {optionsFor(inp, sc).map((o) => (
+                                <SelectItem key={o.id} value={o.id}>
+                                  {o.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {inp.note && <FieldDescription className="text-xs">{inp.note}</FieldDescription>}
+                        </Field>
+                      )
+                    )}
                 </FieldGroup>
               </FieldSet>
             )}
@@ -734,7 +993,9 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
                       <ItemTitle className="text-[13px]">{label}</ItemTitle>
                       <ItemDescription className="text-xs">{c.reason}</ItemDescription>
                     </ItemContent>
-                    <ItemActions><FidelityBadge mode={c.mode}>{c.mode[0].toUpperCase() + c.mode.slice(1)}</FidelityBadge></ItemActions>
+                    <ItemActions>
+                      <FidelityBadge mode={c.mode}>{c.mode[0].toUpperCase() + c.mode.slice(1)}</FidelityBadge>
+                    </ItemActions>
                   </Item>
                 )
               })}
@@ -747,13 +1008,27 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
           </TabsContent>
           <TabsContent value="evidence" className="grid gap-4 p-4">
             <dl className="grid grid-cols-[84px_1fr] gap-x-3 gap-y-2 text-[13px]">
-              <dt className="text-muted-foreground">Design</dt><dd>{st.design ?? "Unknown"}</dd>
-              <dt className="text-muted-foreground">Delivery</dt><dd>{st.delivery ?? "Unknown"}</dd>
-              <dt className="text-muted-foreground">Evidence</dt><dd>{st.evidence ?? "Unverified"}</dd>
-              <dt className="text-muted-foreground">Fingerprint</dt><dd className="font-mono text-xs">{s.preview.fingerprint ?? st.fingerprint ?? "None"}</dd>
-              <dt className="text-muted-foreground">Since open</dt><dd>{s.preview.modified ? "Changed by interaction. Reset restores the scenario." : "Unchanged"}</dd>
+              <dt className="text-muted-foreground">Design</dt>
+              <dd>{st.design ?? "Unknown"}</dd>
+              <dt className="text-muted-foreground">Delivery</dt>
+              <dd>{st.delivery ?? "Unknown"}</dd>
+              <dt className="text-muted-foreground">Evidence</dt>
+              <dd>{st.evidence ?? "Unverified"}</dd>
+              <dt className="text-muted-foreground">Fingerprint</dt>
+              <dd className="font-mono text-xs">{s.preview.fingerprint ?? st.fingerprint ?? "None"}</dd>
+              <dt className="text-muted-foreground">Since open</dt>
+              <dd>{s.preview.modified ? "Changed by interaction. Reset restores the scenario." : "Unchanged"}</dd>
             </dl>
-            <Button variant="outline" size="sm" className="justify-self-start" onClick={() => toast("Verification is a separate operation", { description: "Run the verification harness to append evidence." })}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="justify-self-start"
+              onClick={() =>
+                toast("Verification is a separate operation", {
+                  description: "Run the verification harness to append evidence.",
+                })
+              }
+            >
               <RefreshCwIcon /> Re-check this scenario
             </Button>
           </TabsContent>
@@ -778,7 +1053,9 @@ function TokenEditor() {
   const exportDrafts = () => {
     const f = variantFile(adapter, "Draft", s.draftFor, encodeDesign(adapter, s.design.values))
     download(f.name, f.text)
-    toast.success(`Saved ${f.name}`, { description: "The one draft layer, Adjust and Tokens together. Commit it to the Studio's variants folder to make it a Token variant." })
+    toast.success(`Saved ${f.name}`, {
+      description: "The one draft layer, Adjust and Tokens together. Commit it to the Studio's variants folder to make it a Token variant.",
+    })
   }
   const col = (theme: string) => {
     const base = tok.values[theme] ?? ""
@@ -801,7 +1078,9 @@ function TokenEditor() {
           <InputGroupInput id={`tok-${theme}`} value={v} placeholder="Baseline" disabled={locked} aria-invalid={!valid} onChange={(e) => setDraft(theme, e.target.value)} onKeyDown={(e) => e.key === "Escape" && setDraft(theme, "")} />
           {v && (
             <InputGroupAddon align="inline-end">
-              <InputGroupButton size="icon-xs" aria-label="Back to baseline" onClick={() => setDraft(theme, "")}><RotateCcwIcon /></InputGroupButton>
+              <InputGroupButton size="icon-xs" aria-label="Back to baseline" onClick={() => setDraft(theme, "")}>
+                <RotateCcwIcon />
+              </InputGroupButton>
             </InputGroupAddon>
           )}
         </InputGroup>
@@ -829,10 +1108,16 @@ function TokenEditor() {
         </FieldGroup>
       </ScrollArea>
       <div className="grid gap-2 border-t p-3">
-        <p className="text-xs text-muted-foreground">{count} {count === 1 ? "token draft" : "token drafts"} kept in this browser. Drafts never change the product.</p>
+        <p className="text-xs text-muted-foreground">
+          {count} {count === 1 ? "token draft" : "token drafts"} kept in this browser. Drafts never change the product.
+        </p>
         <div className="flex gap-2">
-          <Button size="sm" onClick={exportDrafts} disabled={!count && !s.hasDraft}>Save as variant</Button>
-          <Button size="sm" variant="outline" onClick={() => s.set({ tokens: { ...s.tokens, drafts: {} } })} disabled={!count}>Discard drafts</Button>
+          <Button size="sm" onClick={exportDrafts} disabled={!count && !s.hasDraft}>
+            Save as variant
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => s.set({ tokens: { ...s.tokens, drafts: {} } })} disabled={!count}>
+            Discard drafts
+          </Button>
         </div>
       </div>
     </div>

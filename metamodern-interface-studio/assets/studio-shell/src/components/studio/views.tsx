@@ -14,8 +14,10 @@ import {
   XIcon,
   ListIcon,
   ImagesIcon,
+  PencilIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -32,6 +34,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { adapter } from "@/adapter"
 import { areaLabel, axisOptions, captureFor, compareAxes, isColor, NO_DRAFT, useStudio, withoutLenses } from "@/store"
+import { normalizeScenarioInput } from "@/studio/input"
 import type { LiveStatus } from "@/studio/live-preview"
 import type { Step } from "@/studio/types"
 import { FidelityBadge, ScaleChip, StatusBadge, useFit } from "./bits"
@@ -40,6 +43,7 @@ import { StageControls } from "./chrome"
 import { ScenarioPreview, inspectHandle, profileOf, themeOf, useReportStatus } from "./preview"
 import { ResizeHandles } from "./resize-handles"
 import { StageNav, useStageNav } from "./stage-nav"
+import { firstVisibleIndex, importedOverlay, isPresenterOverlay, nextVisibleIndex, stepId } from "@/studio/presenter-overlay"
 
 /** The grey stage with its controls in the chosen placement. */
 function Stage({ children, controls = true, footer, narrow }: { children: React.ReactNode; controls?: boolean; footer?: React.ReactNode; narrow?: boolean }) {
@@ -84,7 +88,7 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
   const nav = useStageNav(box, scale)
   const onStatus = React.useCallback(
     (st: LiveStatus | null) => {
-      if (st) set({ preview: { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous } })
+      if (st) set({ preview: { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous, diagnostics: st.diagnostics } })
       else set({ preview: { status: captureFor(sc, s.theme, s.profile) ? "static" : "empty", modified: false, canGoBack: false } })
     },
     [set, sc, s.theme, s.profile]
@@ -134,26 +138,40 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const options = axisOptions(axis, sc)
   // A saved pair that names an option this scenario cannot render falls back to the first two it can.
   const valid = (id: string) => options.some((o) => o.id === id)
-  const a = fallback ? adapter.axes.themes[0].id : valid(s.compare.a) ? s.compare.a : (options[0]?.id ?? "")
-  const b = fallback ? adapter.axes.themes[adapter.axes.themes.length - 1].id : valid(s.compare.b) && s.compare.b !== a ? s.compare.b : (options.find((o) => o.id !== a)?.id ?? "")
+  const saved = s.compare.values.length ? s.compare.values : [s.compare.a, s.compare.b]
+  const a = fallback ? adapter.axes.themes[0].id : valid(saved[0]) ? saved[0] : (options[0]?.id ?? "")
+  const b = fallback ? adapter.axes.themes[adapter.axes.themes.length - 1].id : valid(saved[1]) && saved[1] !== a ? saved[1] : (options.find((o) => o.id !== a)?.id ?? "")
+  // A saved n-up comparison carries one tuple. Values remain independently mounted previews;
+  // we never collapse them to a substitute when one becomes unavailable for this scenario.
+  const count = Math.max(2, Math.min(4, s.compare.count)) as 2 | 3 | 4
+  const compared = (saved.length ? saved : [a, b]).filter((id, index, all) => valid(id) && all.indexOf(id) === index).slice(0, count)
+  while (compared.length < count) {
+    const next = options.find((o) => !compared.includes(o.id))?.id
+    if (!next) break
+    compared.push(next)
+  }
   const optionLabel = (id: string) => options.find((o) => o.id === id)?.label ?? id
   // Each side is one full set of resolved inputs: everything the viewer chose, except the one axis that changes.
   const pick = (k: "a" | "b") => (k === "a" ? a : b)
   const sideProfile = (k: "a" | "b") => profileOf(axis === "profile" ? pick(k) : s.profile)
   const sideTheme = (k: "a" | "b") => (axis === "theme" ? pick(k) : s.theme)
-  const sideValues = (k: "a" | "b") => (axis !== "theme" && axis !== "profile" && axis !== "design" ? { ...s.values, [axis]: pick(k) } : s.values)
+  const axisValue = (value: string) => adapter.axes.inputs.find((input) => input.id === axis)?.control === "range" ? Number(value) : value
+  const sideValues = (k: "a" | "b") => (axis !== "theme" && axis !== "profile" && axis !== "design" ? { ...s.values, [axis]: axisValue(pick(k)) } : s.values)
   const pa = sideProfile("a")
   const pb = sideProfile("b")
   const box = React.useRef<HTMLDivElement>(null)
   // Split overlays the sides, which only makes sense at one size.
   const splitOk = axis !== "profile"
-  const requested = mode === "split" && !splitOk ? "side" : mode
-  const effectiveMode = narrow && requested === "side" ? "toggle" : requested
+  const requested = count > 2 || (mode === "split" && !splitOk) ? "side" : mode
+  const effectiveMode = narrow && count === 2 && requested === "side" ? "toggle" : requested
   const sides = effectiveMode === "side" ? 2 : 1
   const fitW = Math.max(pa.w, pb.w)
   const fitH = Math.max(pa.h, pb.h)
   // The 40 px between two sides is fixed, not scaled, so it comes off the box instead of the preview widths; a narrow profile's caption is wider than its frame, so the profile axis leaves room for it.
-  const scale = useFit(box, effectiveMode === "side" ? pa.w + pb.w : fitW, fitH, s.zoom, 64 + (sides - 1) * 40 + (sides === 2 && axis === "profile" ? 56 : 0))
+  const extraProfiles = compared.slice(2).map((value) => profileOf(axis === "profile" ? value : s.profile))
+  const nupWidth = [pa, pb, ...extraProfiles].reduce((sum, profile) => sum + profile.w, 0)
+  const nupHeight = Math.max(pa.h, pb.h, ...extraProfiles.map((profile) => profile.h))
+  const scale = useFit(box, effectiveMode === "side" ? nupWidth : fitW, effectiveMode === "side" ? nupHeight : fitH, s.zoom, 64 + (count - 1) * 40 + (count > 1 && axis === "profile" ? 56 : 0))
   // Space flips the sides here, so panning is by scroll and middle drag.
   const nav = useStageNav(box, scale, { space: false })
   const label = optionLabel
@@ -163,19 +181,22 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
     const opts = axisOptions(next, sc)
     const current = next === "design" ? "built" : next === "theme" ? s.theme : next === "profile" ? s.profile : (s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
     const at = Math.max(0, opts.findIndex((o) => o.id === current))
-    setC({ axis: next, a: opts[at]?.id ?? "", b: opts[(at + 1) % opts.length]?.id ?? "" })
+    const values = Array.from({ length: count }, (_, index) => opts[(at + index) % opts.length]?.id ?? "")
+    setC({ axis: next, a: values[0], b: values[1], values })
   }
   const A = useSideStatus()
   const B = useSideStatus()
+  const C = useSideStatus()
+  const D = useSideStatus()
   // Details and the top bar read one status: the pair's, so Compare never shows a stale Inspect state.
   const set = s.set
   React.useEffect(() => {
-    const sts = [A.st, B.st]
+    const sts = [A.st, B.st, ...(count > 2 ? [C.st] : []), ...(count > 3 ? [D.st] : [])]
     const failed = sts.find((x) => x?.status === "error")
     const status = failed ? "error" : sts.some((x) => !x || x.status === "loading") ? "loading" : "ready"
     set({ preview: { status, modified: sts.some((x) => x?.modified), canGoBack: false, reason: failed?.reason } })
-  }, [A.st, B.st, set])
-  const diverged = !!A.st?.modified || !!B.st?.modified
+  }, [A.st, B.st, C.st, D.st, count, set])
+  const diverged = !!A.st?.modified || !!B.st?.modified || (count > 2 && !!C.st?.modified) || (count > 3 && !!D.st?.modified)
   const drag = React.useRef<HTMLDivElement>(null)
   const onDrag = (e: React.PointerEvent) => {
     const el = drag.current
@@ -200,6 +221,25 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
       />
     )
   }
+  const extraSide = (value: string, index: 2 | 3) => {
+    const x = index === 2 ? C : D
+    const profile = axis === "profile" ? profileOf(value) : profileOf(s.profile)
+    const theme = axis === "theme" ? value : s.theme
+    const values = axis !== "theme" && axis !== "profile" && axis !== "design" ? { ...s.values, [axis]: axisValue(value) } : s.values
+    return (
+      <ScenarioPreview
+        scenario={sc.id}
+        theme={theme}
+        profile={profile.id}
+        values={values}
+        draft={axis === "design" ? (value === "draft" ? s.draftFor(theme) : NO_DRAFT) : s.viewDraft(theme)}
+        resetNonce={x.nonce}
+        scale={scale}
+        label={`Side ${String.fromCharCode(65 + index)}: ${label(value)}`}
+        onStatus={x.setSt}
+      />
+    )
+  }
   const sideStatus = (st: LiveStatus | null) =>
     !st ? null : st.status === "loading" ? <StatusBadge kind="loading">Loading</StatusBadge> : st.status === "error" ? <StatusBadge kind="unresolved">Did not start</StatusBadge> : st.modified ? <StatusBadge kind="modified">Modified</StatusBadge> : <StatusBadge kind="ready">Ready</StatusBadge>
   return (
@@ -207,13 +247,18 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
       <StageNav nav={nav}>
       <div className="flex flex-wrap items-center justify-center gap-2 px-3 pt-3">
         <div className="flex flex-wrap items-center gap-1 rounded-xl border bg-popover/95 p-1 shadow-[var(--dock-shadow)] backdrop-blur-md">
-          <Select value={axis} items={Object.fromEntries(axes.map((x) => [x.id, x.label]))} onValueChange={(v) => v && changeAxis(v as string)}>
+          <Select value={axis} items={Object.fromEntries(axes.map((x) => [x.id, x.label]))} onValueChange={(v) => v && changeAxis(v as string)} disabled={!s.compare.editable}>
             <SelectTrigger size="sm" className="border-0 shadow-none" aria-label="Changing axis"><SelectValue /></SelectTrigger>
             <SelectContent>{axes.map((x) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}</SelectContent>
           </Select>
           <Separator orientation="vertical" className="h-5! self-center!" />
           {(["a", "b"] as const).map((k) => (
-            <Select key={k} value={pick(k)} items={Object.fromEntries(options.map((o) => [o.id, o.label]))} onValueChange={(v) => setC({ axis, a, b, [k]: v as string })}>
+            <Select key={k} value={pick(k)} items={Object.fromEntries(options.map((o) => [o.id, o.label]))} onValueChange={(v) => {
+              const values = [...compared]
+              const index = k === "a" ? 0 : 1
+              values[index] = v as string
+              setC({ axis, a: values[0], b: values[1], values })
+            }} disabled={!s.compare.editable}>
               <SelectTrigger size="sm" className="gap-1 border-0 shadow-none" aria-label={k === "a" ? "Side A" : "Side B"}>
                 <Badge variant="secondary" className="h-4 px-1 text-[10px]">{k.toUpperCase()}</Badge>
                 <SelectValue />
@@ -221,8 +266,25 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
               <SelectContent>{options.map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
             </Select>
           ))}
+          {compared.slice(2).map((value, index) => {
+            const slot = index + 2
+            const all = [...compared]
+            return (
+              <Select key={slot} value={value} items={Object.fromEntries(options.map((o) => [o.id, o.label]))} onValueChange={(v) => {
+                const values = [...all]
+                values[slot] = v as string
+                setC({ a: values[0], b: values[1], values })
+              }} disabled={!s.compare.editable}>
+                <SelectTrigger size="sm" className="gap-1 border-0 shadow-none" aria-label={`Side ${String.fromCharCode(65 + slot)}`}>
+                  <Badge variant="secondary" className="h-4 px-1 text-[10px]">{String.fromCharCode(65 + slot)}</Badge>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>{options.map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
+              </Select>
+            )
+          })}
           <Tooltip>
-            <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Swap sides" onClick={() => setC({ axis, a: b, b: a })} />}><ArrowLeftRightIcon /></TooltipTrigger>
+            <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Swap sides" onClick={() => setC({ axis, a: b, b: a, values: [b, a, ...compared.slice(2)] })} />}><ArrowLeftRightIcon /></TooltipTrigger>
             <TooltipContent>Swap sides</TooltipContent>
           </Tooltip>
           <Separator orientation="vertical" className="h-5! self-center!" />
@@ -236,11 +298,16 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
             </Tooltip>
             <ToggleGroupItem value="toggle" aria-label="Flip"><ImagesIcon /><span className="hidden xl:inline">Flip</span></ToggleGroupItem>
           </ToggleGroup>
+          <ToggleGroup value={[String(count)]} onValueChange={(v) => v[0] && setC({ count: Number(v[0]) as 2 | 3 | 4, mode: Number(v[0]) > 2 ? "side" : s.compare.mode })} size="sm" spacing={0} aria-label="Comparison count">
+            <ToggleGroupItem value="2">2-up</ToggleGroupItem>
+            <ToggleGroupItem value="3" disabled={options.length < 3}>3-up</ToggleGroupItem>
+            <ToggleGroupItem value="4" disabled={options.length < 4}>4-up</ToggleGroupItem>
+          </ToggleGroup>
         </div>
         {diverged && (
           <Badge variant="outline" className="gap-1.5 bg-background/90 pr-0.5 text-warning backdrop-blur">
             <TriangleAlertIcon /> Sides diverged: reset to compare
-            <Button variant="ghost" size="xs" onClick={() => { A.reset(); B.reset() }}><RotateCcwIcon /> Reset both</Button>
+            <Button variant="ghost" size="xs" onClick={() => { A.reset(); B.reset(); if (count > 2) C.reset(); if (count > 3) D.reset() }}><RotateCcwIcon /> {count > 2 ? "Reset all" : "Reset both"}</Button>
           </Badge>
         )}
       </div>
@@ -259,6 +326,21 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
               {side(k)}
             </figure>
           ))}
+        {effectiveMode === "side" && compared.slice(2).map((value, index) => {
+          const sideIndex = (index + 2) as 2 | 3
+          const state = sideIndex === 2 ? C : D
+          return (
+            <figure key={`${sideIndex}:${value}`} className="m-0 flex flex-col items-center gap-2">
+              <figcaption className="flex items-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs shadow-sm backdrop-blur">
+                <Badge variant="secondary" className="h-4 px-1 text-[10px]">{String.fromCharCode(65 + sideIndex)}</Badge>
+                <b className="font-medium">{label(value)}</b>
+                {sideStatus(state.st)}
+                <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${String.fromCharCode(65 + sideIndex)}`} onClick={state.reset}><RotateCcwIcon /></Button>
+              </figcaption>
+              {extraSide(value, sideIndex)}
+            </figure>
+          )
+        })}
         {effectiveMode === "split" && (
           <div className="flex flex-col items-center gap-2">
             <div className="flex w-full justify-between text-xs"><Badge className="bg-background/92 text-foreground">A · {label(a)}</Badge><Badge className="bg-background/92 text-foreground">B · {label(b)}</Badge></div>
@@ -438,6 +520,10 @@ export function GalleryStage() {
 export function staticProblem(st: Step) {
   const sc = adapter.scenarios.find((x) => x.id === st.scenario)
   if (!sc) return `Scenario ${st.scenario} is not in the catalog. Nothing was substituted.`
+  for (const [id, value] of Object.entries(st.values ?? {})) {
+    const input = adapter.axes.inputs.find((candidate) => candidate.id === id)
+    if (!input || (input.scoped && sc.designed?.[id] === undefined) || normalizeScenarioInput(input, sc, value) === undefined) return `The authored input ${id} is not supported by this step. Nothing was substituted.`
+  }
   if (sc.status === "later") return `${sc.surface} is marked Later: it has no designed screen. Nothing was substituted.`
   if (!adapter.frameEntry && st.commands?.length) return "This step runs product commands, and this Studio has no live preview."
   if (!adapter.frameEntry && !captureFor(sc, st.theme ?? adapter.axes.themes[0].id, st.profile ?? adapter.axes.profiles[0].id)) return "No capture exists for this step."
@@ -448,9 +534,24 @@ const MAX_SEGMENTS = 24
 
 export function PresentStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
-  const tour = adapter.walkthroughs.find((t) => t.id === s.present.tour) ?? adapter.walkthroughs[0]
+  const priorPanels = React.useRef({ panelOpen: s.panelOpen, detailsOpen: s.detailsOpen })
+  const focusActive = React.useRef(false)
+  React.useEffect(() => {
+    if (s.present.focus && !focusActive.current) {
+      priorPanels.current = { panelOpen: s.panelOpen, detailsOpen: s.detailsOpen }
+      focusActive.current = true
+      s.set({ panelOpen: false, detailsOpen: false })
+    } else if (!s.present.focus && focusActive.current) {
+      focusActive.current = false
+      s.set(priorPanels.current)
+    }
+  }, [s.present.focus, s.panelOpen, s.detailsOpen, s.set])
+  const restorePanels = s.set
+  React.useEffect(() => () => { if (focusActive.current) restorePanels(priorPanels.current) }, [restorePanels])
+  const tour = s.walkthroughs.find((t) => t.id === s.present.tour) ?? s.walkthroughs[0]
   const box = React.useRef<HTMLDivElement>(null)
   const [st, setSt] = React.useState<LiveStatus | null>(null)
+  const [statusKey, setStatusKey] = React.useState("")
   const [nonce, setNonce] = React.useState(0)
   const i = tour ? Math.min(s.present.step, tour.steps.length - 1) : 0
   const step = tour?.steps[i]
@@ -458,16 +559,28 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
   const profile = step?.profile ?? s.profile
   const pr = profileOf(profile)
   const scale = useFit(box, pr.w, pr.h, s.zoom, 48)
+  const stepKey = `${tour?.id ?? "none"}:${stepId(tour ?? { id: "none" }, step ?? { scenario: "none", narration: "" }, i)}:${JSON.stringify(step?.values ?? {})}:${nonce}`
+  // A frame can report its final status after a new step has mounted. Only the
+  // callback from this exact step may affect readiness, anchors, or playback.
+  const currentStatus = statusKey === stepKey ? st : null
   // Runtime problems count too: a failed command or a missing anchor stops the step.
-  const problem = !step ? null : staticProblem(step) ?? (st?.status === "error" && !st.previous ? `The step did not run: ${st.reason}` : st?.status === "ready" && step.anchor && !st.anchors.some((a) => a.id === step.anchor) ? `Anchor ${step.anchor} is missing from the preview. Nothing was highlighted in its place.` : null)
-  const ready = !problem && (adapter.frameEntry ? st?.status === "ready" : true)
-  const explored = !!st?.modified
+  const problem = !step ? null : staticProblem(step) ?? (currentStatus?.status === "error" && !currentStatus.previous ? `The step did not run: ${currentStatus.reason}` : currentStatus?.status === "ready" && step.anchor && !currentStatus.anchors.some((a) => a.id === step.anchor) ? `Anchor ${step.anchor} is missing from the preview. Nothing was highlighted in its place.` : null)
+  const ready = !problem && (adapter.frameEntry ? currentStatus?.status === "ready" : true)
+  const explored = !!currentStatus?.modified
   const go = (d: number) => tour && s.set({ present: { ...s.present, step: Math.max(0, Math.min(tour.steps.length - 1, i + d)), elapsed: 0 } })
-  const secs = step ? Math.round(Math.min(14, Math.max(5, step.narration.split(/\s+/).length * 0.4 + 2.5)) / s.present.speed) : 5
+  const authoredSeconds = step?.duration != null ? Math.max(0.5, step.duration) : Math.min(14, Math.max(5, step?.narration.split(/\s+/).length * 0.4 + 2.5))
+  const secs = authoredSeconds / s.present.speed
   const set = s.set
   React.useEffect(() => {
     if (explored && s.present.playing) set((x) => ({ present: { ...x.present, playing: false } }))
   }, [explored, s.present.playing, set])
+  // Hidden steps remain reviewable, but playback never gives one a timer. This
+  // also catches a presenter hiding the current step while it is playing.
+  React.useEffect(() => {
+    if (!s.present.playing || !tour || !step?.hidden) return
+    const next = nextVisibleIndex(tour, i)
+    set((x) => next >= 0 ? { present: { ...x.present, step: next, elapsed: 0 } } : { present: { ...x.present, playing: false, elapsed: 0 } })
+  }, [s.present.playing, tour, step?.hidden, i, set])
   // Autoplay advances only from a ready, resolved step; a problem stops playback.
   React.useEffect(() => {
     if (!s.present.playing || !tour) return
@@ -479,8 +592,12 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
     const t = window.setInterval(() => set((x) => {
       const e = x.present.elapsed + 0.1
       if (e < secs) return { present: { ...x.present, elapsed: e } }
-      const last = x.present.step + 1 >= tour.steps.length - 1
-      return { present: { ...x.present, step: Math.min(tour.steps.length - 1, x.present.step + 1), elapsed: 0, playing: last ? false : x.present.playing } }
+      const next = nextVisibleIndex(tour, x.present.step)
+      const last = next < 0
+      if (!last) return { present: { ...x.present, step: next, elapsed: 0 } }
+      const tourIndex = s.walkthroughs.findIndex((candidate) => candidate.id === tour.id)
+      const nextTour = x.present.playlist ? s.walkthroughs.slice(tourIndex + 1).find((candidate) => firstVisibleIndex(candidate) >= 0) : undefined
+      return { present: nextTour ? { ...x.present, tour: nextTour.id, step: firstVisibleIndex(nextTour), elapsed: 0 } : { ...x.present, playing: false, playlist: false } }
     }), 100)
     return () => window.clearInterval(t)
   }, [s.present.playing, i, secs, problem, ready, tour, set])
@@ -512,13 +629,13 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
               scenario={step.scenario}
               theme={theme}
               profile={profile}
-              values={withoutLenses(s.values)}
+              values={{ ...withoutLenses(s.values), ...step.values }}
               commands={step.commands}
               anchor={explored ? undefined : step.anchor}
               scale={scale}
               label={`Step ${i + 1} preview`}
               className="animate-in fade-in-0 zoom-in-[0.98] duration-300"
-              onStatus={setSt}
+              onStatus={(next) => { setSt(next); setStatusKey(stepKey) }}
             />
           )}
           {!staticProblem(step) && <ScaleChip w={pr.w} h={pr.h} scale={scale} />}
@@ -565,15 +682,23 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
                 <Button size="xs" variant="outline" onClick={() => setNonce((n) => n + 1)}>Restore this step</Button>
               </p>
             )}
+            {step.hidden && <p className="text-xs text-muted-foreground">This step is hidden from autoplay. It remains available here for review.</p>}
           </div>
-          <div role="group" aria-label="Walkthrough controls" className="flex items-center gap-1">
+          <div role="group" aria-label="Walkthrough controls" className="flex flex-wrap items-center gap-1">
             <Button variant="outline" size="icon" aria-label="Previous step" disabled={i === 0} onClick={() => go(-1)}><ChevronLeftIcon /></Button>
             <Button size="icon" aria-label={s.present.playing ? "Pause" : "Play"} onClick={() => s.set({ present: { ...s.present, playing: !s.present.playing } })} disabled={!!problem}>
               {s.present.playing ? <PauseIcon /> : <PlayIcon />}
             </Button>
+            <Button variant="outline" size="sm" aria-label="Play all walkthroughs" onClick={() => {
+              const first = s.walkthroughs.find((candidate) => firstVisibleIndex(candidate) >= 0)
+              if (first) s.set({ present: { ...s.present, tour: first.id, step: firstVisibleIndex(first), elapsed: 0, playing: true, playlist: true } })
+            }}>Play all</Button>
             <Button variant="outline" size="icon" aria-label="Next step" disabled={i === tour.steps.length - 1} onClick={() => go(1)}><ChevronRightIcon /></Button>
             <StepsPopover tour={tour} current={i} onPick={(j) => s.set({ present: { ...s.present, step: j, elapsed: 0 } })} />
-            <Button variant="ghost" size="icon" aria-label="Exit walkthrough" onClick={() => s.set({ view: "inspect", present: { ...s.present, playing: false } })}><XIcon /></Button>
+            <PresenterEditor key={`${tour.id}:${stepId(tour, step, i)}`} tour={tour} step={step} index={i} />
+            <PresenterTransfer />
+            <Button variant="ghost" size="sm" aria-label="Focus presentation" aria-pressed={s.present.focus} onClick={() => s.set({ present: { ...s.present, focus: !s.present.focus } })}>Focus</Button>
+            <Button variant="ghost" size="icon" aria-label="Exit walkthrough" onClick={() => s.set({ view: "inspect", present: { ...s.present, playing: false, playlist: false } })}><XIcon /></Button>
           </div>
         </div>
         {!narrow && (
@@ -583,6 +708,77 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
         )}
       </section>
     </div>
+  )
+}
+
+function PresenterTransfer() {
+  const s = useStudio()
+  const input = React.useRef<HTMLInputElement>(null)
+  const exportOverlay = () => {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(s.presenter, null, 2)], { type: "application/json" }))
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "presenter-overlay.json"
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+  const importOverlay = async (file: File | undefined) => {
+    if (!file) return
+    try {
+      if (file.size > 512 * 1024) throw new Error("The overlay is larger than 512 KB.")
+      const value: unknown = JSON.parse(await file.text())
+      if (!isPresenterOverlay(value)) throw new Error("Expected a valid version 1 presenter overlay")
+      s.set({ presenter: importedOverlay(s.presenter, value) })
+      toast.success("Presenter overlay imported")
+    } catch (error) {
+      toast.error("Presenter overlay was not imported", { description: error instanceof Error ? error.message : "The file is not valid JSON." })
+    }
+  }
+  return (
+    <Popover>
+      <PopoverTrigger render={<Button variant="ghost" size="icon" aria-label="Import or export presenter overlay" />}><ArrowLeftRightIcon /></PopoverTrigger>
+      <PopoverContent side="top" align="end" className="grid w-64 gap-2 text-xs">
+        <p className="text-muted-foreground">Presenter changes are stored locally and can be exchanged as raw JSON without changing generated adapter data.</p>
+        <Button size="sm" variant="outline" onClick={exportOverlay}>Export raw JSON</Button>
+        <input ref={input} type="file" accept="application/json,.json" className="sr-only" onChange={(event) => void importOverlay(event.target.files?.[0])} />
+        <Button size="sm" variant="outline" onClick={() => input.current?.click()}>Import raw JSON</Button>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/** A deliberately small, local editor for presenter-owned material. Generated adapter records stay read-only. */
+function PresenterEditor({ tour, step, index }: { tour: { id: string; name: string; goal: string; steps: Step[] }; step: Step; index: number }) {
+  const s = useStudio()
+  const [open, setOpen] = React.useState(false)
+  const [name, setName] = React.useState(tour.name)
+  const [goal, setGoal] = React.useState(tour.goal)
+  const [narration, setNarration] = React.useState(step.narration)
+  const [seconds, setSeconds] = React.useState(String(step.duration ?? ""))
+  const save = () => {
+    const duration = Number(seconds)
+    const id = stepId(tour, step, index)
+    const steps = { ...s.presenter.tours[tour.id]?.steps, [id]: { ...s.presenter.tours[tour.id]?.steps?.[id], narration, ...(Number.isFinite(duration) && duration > 0 ? { duration } : {}) } }
+    s.updatePresenter(tour.id, { name, goal, steps })
+    setOpen(false)
+  }
+  const setHidden = (hidden: boolean) => {
+    const id = stepId(tour, step, index)
+    const steps = { ...s.presenter.tours[tour.id]?.steps, [id]: { ...s.presenter.tours[tour.id]?.steps?.[id], hidden } }
+    s.updatePresenter(tour.id, { steps })
+  }
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger render={<Button variant="ghost" size="icon" aria-label="Edit walkthrough" />}><PencilIcon /></PopoverTrigger>
+      <PopoverContent side="top" align="end" className="grid w-80 gap-3">
+        <label className="grid gap-1 text-xs">Walkthrough name<input className="h-8 rounded-md border bg-background px-2 text-sm" value={name} onChange={(e) => setName(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Goal<textarea className="min-h-16 rounded-md border bg-background p-2 text-sm" value={goal} onChange={(e) => setGoal(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Step narration<textarea className="min-h-20 rounded-md border bg-background p-2 text-sm" value={narration} onChange={(e) => setNarration(e.target.value)} /></label>
+        <label className="grid gap-1 text-xs">Seconds<input className="h-8 rounded-md border bg-background px-2 text-sm" type="number" min="0.5" step="0.5" placeholder="Automatic" value={seconds} onChange={(e) => setSeconds(e.target.value)} /></label>
+        <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!step.hidden} onChange={(e) => setHidden(e.target.checked)} /> Hide from autoplay</label>
+        <Button size="sm" onClick={save}>Save presenter overlay</Button>
+      </PopoverContent>
+    </Popover>
   )
 }
 
