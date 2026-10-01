@@ -90,7 +90,7 @@
   box-shadow: 0 0 0 1px var(--boundary-inner), 0 0 0 2px var(--boundary), 0 18px 48px -24px oklch(0 0 0 / 0.55);
   background: white;
   overflow: hidden;
-  transition: width 240ms var(--ease-out-quint), height 240ms var(--ease-out-quint), border-radius 240ms var(--ease-out-quint);
+  /* Bounds and clipping follow the same zoom as the content, without an independent lag. */
 }
 .preview-ticks { position: absolute; inset: -9px; pointer-events: none; }
 .preview-ticks > i { position: absolute; width: 10px; height: 10px; border: 0 solid var(--tick); }

@@ -59,3 +59,9 @@ Nothing to do by hand. `vite.config.ts` passes lint again.
 - Presenter edits are a separate browser overlay with import/export, narration, goals, timing and hidden-step edits. An import does not alter generated adapter material. Product-specific legacy browser exports need a product-owned conversion into the overlay format; a new origin cannot read another origin's storage.
 - Saved comparisons can declare `values` for up to four values on one axis, with independent runtimes. Existing `a` and `b` pairs continue to work.
 - A frame may supply `diagnostics()` rows through `connectStudioFrame`; the shell displays those measurements and their budgets in Details. Diagnostics are review evidence, not source approval or a universal product budget.
+
+## 0.10.1
+
+- Profiles can declare `frameRadius` in unscaled CSS pixels. Match the outermost shape the preview actually draws: a renderer with a device bezel uses its bezel radius, a bare screen uses its screen radius, and a flat viewport uses 0.
+- Phone and tablet boundaries now scale continuously with zoom, without rounding or a minimum radius that changes the shape. Tablets have a separate 28 px default; phone and desktop defaults remain 44 px and 8 px. Declare `frameRadius` whenever a product draws a different shape.
+- The same geometry applies in Inspect, Compare, Gallery, Present, Design and Responsive, including empty/capture previews. No product artwork or internal radius is changed by a shell update.

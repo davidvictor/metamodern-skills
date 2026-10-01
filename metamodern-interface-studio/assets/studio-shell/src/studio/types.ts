@@ -38,6 +38,8 @@ export type Profile = {
   w: number
   h: number
   kind: "desktop" | "laptop" | "tablet" | "phone"
+  /** Outer preview/device radius in unscaled CSS pixels. Use 0 for a flat viewport. */
+  frameRadius?: number
 }
 
 /** Inspect may drag a live frame to any size in this range. Widths in `snapWidths` attract the edge, as do the profiles' own sizes. */

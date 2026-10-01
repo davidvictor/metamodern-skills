@@ -52,6 +52,8 @@ The preview host (`src/studio/live-preview.tsx`) mounts one frame per runtime. A
 
 ## The product side
 
+Profiles may declare `frameRadius`, the outer preview boundary's radius in source CSS pixels. A preview that already draws a device frame declares its outer bezel radius, not the inner display radius. A bare viewport may declare 0. The shell scales this radius with its frame at every zoom; phone and tablet defaults are separate. This field describes clipping and boundary geometry only and never overrides the product's artwork.
+
 The product adds one preview entry: a route, page or recreation document that renders a single scenario in isolation, with fixtures injected at its existing seams. It calls `connectStudioFrame` from `src/studio/frame-client.ts` once. Copy that file into the product or import it; it has no dependencies.
 
 ```ts
