@@ -7,7 +7,13 @@
 import type { DesignParameter, StudioAdapter } from "./types"
 
 export type DesignValues = Record<string, number | string>
-export type DesignChange = { param: DesignParameter; tokens: string[]; css: boolean; missing: string[] }
+export type DesignValuesByTheme = Record<string, DesignValues>
+export type DesignChange = {
+  param: DesignParameter
+  tokens: string[]
+  css: boolean
+  missing: string[]
+}
 export type DesignWarning = { param: string; text: string }
 export type DesignDraft = {
   /** Values for the root, sent as draft tokens. */
@@ -75,7 +81,21 @@ export function baseValue(adapter: StudioAdapter, name: string, theme: string) {
   return token.values[theme] ?? (base ? token.values[base] : undefined) ?? token.values[adapter.tokens!.columns[0]] ?? Object.values(token.values)[0]
 }
 
-export const isDefault = (p: DesignParameter, v: number | string | undefined) => v === undefined || String(v) === String(p.default)
+/** The product value for a parameter in one theme. A contrast theme inherits its base theme. */
+export function parameterDefault(adapter: StudioAdapter, p: DesignParameter, theme?: string) {
+  if (!theme) return p.default
+  const base = adapter.axes.themes.find((t) => t.id === theme)?.contrastOf
+  return p.defaultsByTheme?.[theme] ?? (base ? p.defaultsByTheme?.[base] : undefined) ?? p.default
+}
+
+export const parameterAvailable = (p: DesignParameter, theme?: string) => !p.themes?.length || !theme || p.themes.includes(theme)
+export const isDefault = (p: DesignParameter, v: number | string | undefined, fallback: number | string = p.default) => v === undefined || String(v) === String(fallback)
+
+/** Applies shared settings plus the selected direction's private settings. */
+export function valuesForTheme(adapter: StudioAdapter, shared: DesignValues, valuesByTheme: DesignValuesByTheme, theme: string): DesignValues {
+  const scoped = new Set((adapter.design?.parameters ?? []).filter((p) => p.themes?.length).map((p) => p.id))
+  return { ...Object.fromEntries(Object.entries(shared).filter(([id]) => !scoped.has(id))), ...(valuesByTheme[theme] ?? {}) }
+}
 
 /** A Google Fonts stylesheet for a family, or nothing for a font the browser already has. */
 export function fontStylesheet(name: string) {
@@ -88,7 +108,10 @@ export const allowedStylesheet = (url: string) => url.startsWith(`${FONT_HOST}?`
 let ctx: CanvasRenderingContext2D | null = null
 function rgb(color: string): [number, number, number] | null {
   if (typeof document === "undefined") return null
-  ctx ??= Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d", { willReadFrequently: true })
+  ctx ??= Object.assign(document.createElement("canvas"), {
+    width: 1,
+    height: 1,
+  }).getContext("2d", { willReadFrequently: true })
   if (!ctx || !CSS.supports("color", color)) return null
   ctx.clearRect(0, 0, 1, 1)
   ctx.fillStyle = "#000"
@@ -121,12 +144,27 @@ function tokenNames(adapter: StudioAdapter, p: DesignParameter) {
 
 /** The draft the current values produce for one theme. Parameters at their defaults produce nothing. */
 export function designDraft(adapter: StudioAdapter, values: DesignValues, theme: string): DesignDraft {
-  const out: DesignDraft = { tokens: {}, scoped: {}, css: "", stylesheets: [], changes: [], warnings: [], literal: [] }
+  const out: DesignDraft = {
+    tokens: {},
+    scoped: {},
+    css: "",
+    stylesheets: [],
+    changes: [],
+    warnings: [],
+    literal: [],
+  }
   const css: string[] = []
   for (const p of adapter.design?.parameters ?? []) {
+    if (!parameterAvailable(p, theme)) continue
     const v = values[p.id]
-    if (isDefault(p, v)) continue
-    const change: DesignChange = { param: p, tokens: [], css: false, missing: [] }
+    const defaultValue = parameterDefault(adapter, p, theme)
+    if (isDefault(p, v, defaultValue)) continue
+    const change: DesignChange = {
+      param: p,
+      tokens: [],
+      css: false,
+      missing: [],
+    }
     const excluded = matcher(p.apply.exclude)
     const floors = Object.entries(p.apply.floor ?? {}).map(([k, px]) => [matcher([k]), px] as const)
     const warns = Object.entries(p.apply.warnBelow ?? {}).map(([k, px]) => [matcher([k]), px] as const)
@@ -142,7 +180,11 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
       if (floor !== undefined && px !== null && px < floor) next = setPx(next, floor)
       const warn = warns.find(([m]) => m(name))?.[1]
       const after = toPx(next)
-      if (warn !== undefined && after !== null && after < warn) out.warnings.push({ param: p.id, text: `${name} is ${after}px, under ${warn}px` })
+      if (warn !== undefined && after !== null && after < warn)
+        out.warnings.push({
+          param: p.id,
+          text: `${name} is ${after}px, under ${warn}px`,
+        })
       const selector = scopeOf(name)
       const bucket = selector ? (out.scoped[selector] ??= {}) : out.tokens
       if (next !== baseValue(adapter, name, theme)) {
@@ -153,7 +195,7 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
 
     if (p.kind === "scale") {
       const x = Number(v)
-      const d = Number(p.default)
+      const d = Number(defaultValue)
       const scaled = matcher(p.apply.scale)
       const marks = (p.stops ?? []).filter((st) => st.values).sort((a, b) => a.at - b.at)
       for (const name of tokenNames(adapter, p)) {
@@ -174,7 +216,7 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
       }
       for (const name of p.apply.scale ?? []) if (!name.includes("*") && baseValue(adapter, name, theme) === undefined && !marks.some((st) => st.values![name])) change.missing.push(name)
     } else if (p.kind === "ratio") {
-      const factor = Number(v) / Number(p.default)
+      const factor = Number(v) / Number(defaultValue)
       for (const [name, step] of Object.entries(p.apply.steps ?? {})) {
         const base = current(name)
         if (base === undefined) change.missing.push(name)
@@ -212,9 +254,15 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
       for (const against of p.apply.contrast?.against ?? []) {
         const ground = out.tokens[against] ?? baseValue(adapter, against, theme)
         const ratio = ground ? contrast(color, ground) : null
-        if (ratio !== null && ratio < p.apply.contrast!.min) out.warnings.push({ param: p.id, text: `${ratio.toFixed(1)}:1 against ${against}, under ${p.apply.contrast!.min}:1` })
+        if (ratio !== null && ratio < p.apply.contrast!.min)
+          out.warnings.push({
+            param: p.id,
+            text: `${ratio.toFixed(1)}:1 against ${against}, under ${p.apply.contrast!.min}:1`,
+          })
       }
       for (const x of adapter.tokens?.tokens ?? []) if (x.flags?.includes("literal") && !out.literal.includes(x.name)) out.literal.push(x.name)
+    } else if (p.kind === "enum" || p.kind === "range") {
+      // These controls change product markup or behavior. Token changes remain opt-in through the other apply fields.
     }
 
     for (const name of p.wontFollow ?? []) if (!out.literal.includes(name)) out.literal.push(name)
@@ -225,8 +273,28 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
     }
     out.changes.push(change)
   }
-  const rules = Object.entries(out.scoped).filter(([, r]) => Object.keys(r).length).map(([selector, r]) => `${selector} { ${Object.entries(r).map(([k, v]) => `${k}: ${v};`).join(" ")} }`)
+  const rules = Object.entries(out.scoped)
+    .filter(([, r]) => Object.keys(r).length)
+    .map(
+      ([selector, r]) =>
+        `${selector} { ${Object.entries(r)
+          .map(([k, v]) => `${k}: ${v};`)
+          .join(" ")} }`
+    )
   out.css = [...rules, ...css].join("\n")
+  return out
+}
+
+/**
+ * Values that must reach the product's mount handler because they alter markup or a graphic.
+ * Token-only controls intentionally stay on the draft channel, avoiding a frame remount while a slider moves.
+ */
+export function frameDesignValues(adapter: StudioAdapter, values: DesignValues, theme: string): Record<string, string | number> {
+  const out: Record<string, string | number> = {}
+  for (const p of adapter.design?.parameters ?? []) {
+    if (!p.apply.input || !parameterAvailable(p, theme)) continue
+    out[p.apply.input] = values[p.id] ?? parameterDefault(adapter, p, theme)
+  }
   return out
 }
 
@@ -245,17 +313,29 @@ export function decodeDesign(adapter: StudioAdapter, text: string | null): Desig
     const p = adapter.design?.parameters.find((x) => x.id === part.slice(0, i))
     const raw = part.slice(i + 1)
     if (!p) continue
-    if (p.kind === "scale" || p.kind === "ratio" || p.kind === "temperature") {
+    if (p.kind === "scale" || p.kind === "ratio" || p.kind === "temperature" || p.kind === "range") {
       const n = Number(raw)
       if (Number.isFinite(n) && (p.min === undefined || n >= p.min) && (p.max === undefined || n <= p.max)) out[p.id] = n
+    } else if (p.kind === "enum") {
+      const value = raw.trim()
+      if (value && (p.choices ?? p.options?.map((id) => ({ id, label: id })) ?? []).some((choice) => choice.id === value)) out[p.id] = value
     } else if (raw.trim()) out[p.id] = raw.trim()
   }
   return out
 }
 
-type DraftLike = { tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>> }
+type DraftLike = {
+  tokens: Record<string, string>
+  css: string
+  stylesheets: string[]
+  scoped?: Record<string, Record<string, string>>
+}
 const scopedFor = (d: DraftLike) => Object.fromEntries(Object.entries(d.scoped ?? {}).flatMap(([scope, r]) => Object.entries(r).map(([name, value]) => [name, { value, scope }])))
-const slugOf = (label: string) => label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "draft"
+const slugOf = (label: string) =>
+  label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "draft"
 
 /**
  * A saved variant: the draft as token overrides per appearance (the first theme of each
@@ -290,11 +370,37 @@ export function variantFile(adapter: StudioAdapter, label: string, draftFor: (th
 export function tokenDiff(adapter: StudioAdapter, draftFor: (theme: string) => DraftLike, design: string) {
   const themes = adapter.axes.themes.map((t) => {
     const d = draftFor(t.id)
-    const scoped = Object.entries(scopedFor(d)).map(([name, x]) => ({ name, from: baseValue(adapter, name, t.id) ?? null, to: x.value, scope: x.scope }))
-    return { theme: t, changes: [...Object.entries(d.tokens).map(([name, to]) => ({ name, from: baseValue(adapter, name, t.id) ?? null, to, scope: undefined as string | undefined })), ...scoped], css: d.css, stylesheets: d.stylesheets }
+    const scoped = Object.entries(scopedFor(d)).map(([name, x]) => ({
+      name,
+      from: baseValue(adapter, name, t.id) ?? null,
+      to: x.value,
+      scope: x.scope,
+    }))
+    return {
+      theme: t,
+      changes: [
+        ...Object.entries(d.tokens).map(([name, to]) => ({
+          name,
+          from: baseValue(adapter, name, t.id) ?? null,
+          to,
+          scope: undefined as string | undefined,
+        })),
+        ...scoped,
+      ],
+      css: d.css,
+      stylesheets: d.stylesheets,
+    }
   })
   const head = `/*\n * Draft design from the ${adapter.product.name} Studio at ${adapter.product.revision}, ${new Date().toISOString().slice(0, 10)}.\n * A proposal for review, never a decision.${design ? `\n * Design values: ${design}` : ""}\n */`
-  const blocks = themes.filter((x) => x.changes.some((c) => !c.scope)).map((x) => `/* ${x.theme.label} (${x.theme.id}) */\n:root {\n${x.changes.filter((c) => !c.scope).map((c) => `  ${c.name}: ${c.to}; /* was ${c.from ?? "not in the token source"} */`).join("\n")}\n}`)
+  const blocks = themes
+    .filter((x) => x.changes.some((c) => !c.scope))
+    .map(
+      (x) =>
+        `/* ${x.theme.label} (${x.theme.id}) */\n:root {\n${x.changes
+          .filter((c) => !c.scope)
+          .map((c) => `  ${c.name}: ${c.to}; /* was ${c.from ?? "not in the token source"} */`)
+          .join("\n")}\n}`
+    )
   const extra = themes[0]?.css ? [`/* Rules tokens cannot reach */\n${themes[0].css}`] : []
   const fonts = themes[0]?.stylesheets.length ? [`/* Fonts: ${themes[0].stylesheets.join(" ")} */`] : []
   const css = `${[head, ...blocks, ...extra, ...fonts].join("\n\n")}\n`
@@ -305,7 +411,10 @@ export function tokenDiff(adapter: StudioAdapter, draftFor: (theme: string) => D
 /** Hand a text file to the viewer. */
 export function download(name: string, text: string, type = "application/json") {
   const url = URL.createObjectURL(new Blob([text], { type }))
-  const a = Object.assign(document.createElement("a"), { href: url, download: name })
+  const a = Object.assign(document.createElement("a"), {
+    href: url,
+    download: name,
+  })
   document.body.append(a)
   a.click()
   a.remove()

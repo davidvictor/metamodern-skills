@@ -87,7 +87,7 @@ const layouts = (): Plugin => ({
 
 // npm run acceptance builds the stress and capture-only adapters by pointing
 // "@/adapter" at the acceptance module; a normal build never includes them.
-const acceptance = process.env.VITE_STUDIO_ADAPTER ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, "src/adapters/synthetic.ts") }] : []
+const acceptance = process.env.VITE_STUDIO_ADAPTER ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, process.env.VITE_STUDIO_ADAPTER === "example" ? "src/adapters/example.ts" : "src/adapters/synthetic.ts") }] : []
 
 export default defineConfig({
   base: "./",
@@ -100,6 +100,7 @@ export default defineConfig({
       input: {
         studio: path.resolve(root, "index.html"),
         ...Object.fromEntries(Object.entries(studio.inputs ?? {}).map(([name, file]) => [name, path.resolve(root, file)])),
+        ...(process.env.VITE_STUDIO_ADAPTER ? { example: path.resolve(root, "example/index.html") } : {}),
       },
     },
   },

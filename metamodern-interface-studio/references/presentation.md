@@ -26,9 +26,13 @@ Keep visual variant, theme, structural revision, profile, and target as separate
 
 Each side starts from a fresh isolated runtime or matching evidence. Interacting with one side marks that side modified and invalidates baseline equivalence until reset or a declared equivalent command replay. Cross-target semantic equivalence needs evidence; matching scenario IDs alone does not prove it. Unsupported combinations remain unavailable. A stale capture alongside a current preview is a disclosed historical comparison, not a current token-only comparison.
 
+The starter supports a pair or an explicit set of up to four values of one axis. A set holds one scenario and the remaining resolved inputs constant, except disclosed target coupling. Every column owns an independent runtime. Preserve a product's authored three-direction overview as a set rather than silently replacing it with pairwise views.
+
 ## Walkthrough contract
 
 Steps reference stable scenario IDs and optional semantic anchors, expected outcomes, commands, narration, and timing. Resolve each step before playback against current target capabilities and source/evidence freshness. A missing scenario, removed surface, stale assumption, unsupported command, or missing anchor remains an explicit unresolved step. Do not silently skip it, substitute a similar scenario, or invent an outcome. A presenter may deliberately revise the story through Prepare.
+
+The starter's `Step.values` supplies authored scenario inputs, `duration` supplies seconds, and an optional stable `id` keys presenter edits across reorderings. A deliberate `hidden` edit suppresses playback without deleting the authored step. Without an explicit ID the starter uses the tour and original step position, so add IDs before changing order. Browser overlays have a separate versioned import/export envelope; preserve the original export when a source revision removes a tour or step. Play all sequences the authored tours, while manual next/back, pause, focus mode and interruption remain available. Presenter overlays never grant new preview capabilities or source approval.
 
 Implement equivalent player behavior with these semantics:
 

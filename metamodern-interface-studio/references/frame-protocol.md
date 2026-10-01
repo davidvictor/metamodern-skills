@@ -76,6 +76,14 @@ const frame = connectStudioFrame({
 
 Opened outside the Studio, the preview entry should still render a default scenario so developers can load it directly.
 
+### Declared design inputs and diagnostics
+
+A numeric scenario range declares bounds, step and optional presets. `MountInputs.values` accepts strings or finite numbers; the shell validates and normalizes declared inputs. Use `format: "time"` for minutes or `"time-hours"` for decimal hours. Validate the supported range at the product boundary as well. A walkthrough's explicit step values take precedence over viewer lenses.
+
+For markup-driven design choices, declare an enum/range design parameter with `apply.input` naming the product input, optional `themes`, and `defaultsByTheme`. The shell sends resolved overrides in `MountInputs.design`. The product's mount handler applies them through its own renderer. Existing CSS/token adjustments still use their draft channel. Draft settings are stored per theme/variant and must never reach Present implicitly.
+
+An optional `FrameHandlers.diagnostics()` returns neutral measurement rows with an ID, label, value, optional unit/budget/status/note. Rows accompany the ready preview state and display in Details. The product owns the measurement algorithm and applicable budget; the shell owns presentation. State the measurement scope and limits rather than treating a budget pass as product acceptance.
+
 ## Capture-only Studios
 
 Omit `frameEntry` and supply `captures` on scenarios with their provenance. The shell shows the capture, labels it static, disables product back and product commands, disables theme and profile values with no recorded capture, and shows an explicit empty state for a missing combination. A walkthrough step that needs commands stops with the reason. A native instrumented stream that is not a web page needs its own host behind the same handle contract; keep the declaration and the shell unchanged.

@@ -7,7 +7,13 @@
 import { connectStudioFrame } from "../src/studio/frame-client"
 import type { MountInputs } from "../src/studio/protocol"
 
-type Task = { id: string; title: string; due: string; done?: boolean; isNew?: boolean }
+type Task = {
+  id: string
+  title: string
+  due: string
+  done?: boolean
+  isNew?: boolean
+}
 type State = {
   scenario: string
   /** The name last sent from the guide's form. */
@@ -29,10 +35,22 @@ const FIXTURE: Task[] = [
 ]
 
 const app = document.getElementById("app")!
-let s: State = { scenario: "", role: "owner", location: ["/tasks"], tasks: [], dialog: null, loading: false, failed: false }
+let s: State = {
+  scenario: "",
+  role: "owner",
+  location: ["/tasks"],
+  tasks: [],
+  dialog: null,
+  loading: false,
+  failed: false,
+}
 const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!)
 const here = () => s.location[s.location.length - 1]
-const go = (path: string) => { s.location = [...s.location, path]; render(); frame.notifyNavigated() }
+const go = (path: string) => {
+  s.location = [...s.location, path]
+  render()
+  frame.notifyNavigated()
+}
 
 function nav() {
   const link = (path: string, label: string) => `<a href="#" data-go="${path}" ${here().startsWith(path) ? 'aria-current="page"' : ""}>${label}</a>`
@@ -49,7 +67,10 @@ function listView() {
   if (s.failed) return head + '<div class="failed" role="alert"><strong>Tasks didn’t load</strong><p class="muted">Check the connection, then try again.</p><button class="btn ghost" data-act="retry">Retry</button></div>'
   if (!s.tasks.length) return head + `<div class="empty"><h2>No tasks yet</h2><p class="muted">Tasks you add appear here, newest first.</p>${owner ? '<button class="btn" data-act="new">Add your first task</button>' : ""}</div>`
   const rows = s.tasks
-    .map((t, i) => `<button class="row${t.done ? " done" : ""}${t.isNew ? " new" : ""}" data-open="${t.id}" ${i === 0 ? 'data-studio-anchor="first-task" data-studio-anchor-label="Newest task"' : ""}><span class="check"></span><span class="title">${esc(t.title)}</span><span class="due">${esc(t.due)}</span></button>`)
+    .map(
+      (t, i) =>
+        `<button class="row${t.done ? " done" : ""}${t.isNew ? " new" : ""}" data-open="${t.id}" ${i === 0 ? 'data-studio-anchor="first-task" data-studio-anchor-label="Newest task"' : ""}><span class="check"></span><span class="title">${esc(t.title)}</span><span class="due">${esc(t.due)}</span></button>`
+    )
     .join("")
   return head + `<div class="list" data-studio-anchor="task-list" data-studio-anchor-label="Task list">${rows}</div>`
 }
@@ -98,7 +119,8 @@ function page() {
   const path = here()
   if (s.scenario === "help.guide") return guideView()
   if (s.scenario === "help.welcome") return welcomeView()
-  if (s.scenario === "account.sign-in") return `<div class="center"><div class="card" style="width:min(380px,100%)"><div class="brand"><i></i>Example Tasks</div><label class="field"><span>Email</span><input placeholder="you@example.com" /></label><button class="btn" data-studio-anchor="sign-in">Continue</button></div></div>`
+  if (s.scenario === "account.sign-in")
+    return `<div class="center"><div class="card" style="width:min(380px,100%)"><div class="brand"><i></i>Example Tasks</div><label class="field"><span>Email</span><input placeholder="you@example.com" /></label><button class="btn" data-studio-anchor="sign-in">Continue</button></div></div>`
   const { side, tabs } = nav()
   let body: string
   if (path.startsWith("/tasks/")) {
@@ -120,17 +142,38 @@ function render() {
 
 // Product behavior: the same functions run for clicks and for Studio commands.
 const actions: Record<string, () => void> = {
-  "open-new-task": () => { s.dialog = { title: "" }; render(); frame.notifyNavigated(); document.getElementById("title")?.focus() },
-  "fill-title": () => { if (!s.dialog) throw new Error("The New task dialog is not open"); s.dialog.title = "Prepare the demo script"; render() },
+  "open-new-task": () => {
+    s.dialog = { title: "" }
+    render()
+    frame.notifyNavigated()
+    document.getElementById("title")?.focus()
+  },
+  "fill-title": () => {
+    if (!s.dialog) throw new Error("The New task dialog is not open")
+    s.dialog.title = "Prepare the demo script"
+    render()
+  },
   "save-task": () => {
     if (!s.dialog?.title.trim()) throw new Error("Save is unavailable without a title")
-    s.tasks = [{ id: `n${Date.now()}`, title: s.dialog.title.trim(), due: "Today", isNew: true }, ...s.tasks]
+    s.tasks = [
+      {
+        id: `n${Date.now()}`,
+        title: s.dialog.title.trim(),
+        due: "Today",
+        isNew: true,
+      },
+      ...s.tasks,
+    ]
     s.dialog = null
     render()
     frame.notifyNavigated()
   },
   "open-first-task": () => go(`/tasks/${s.tasks[0]?.id}`),
-  retry: () => { s.failed = false; s.tasks = FIXTURE.map((t) => ({ ...t })); render() },
+  retry: () => {
+    s.failed = false
+    s.tasks = FIXTURE.map((t) => ({ ...t }))
+    render()
+  },
 }
 
 app.addEventListener("click", (e) => {
@@ -141,8 +184,11 @@ app.addEventListener("click", (e) => {
   if (el.dataset.open) return go(`/tasks/${el.dataset.open}`)
   const act = el.dataset.act
   if (act === "new") actions["open-new-task"]()
-  else if (act === "cancel") { s.dialog = null; render(); frame.notifyNavigated() }
-  else if (act === "save") actions["save-task"]()
+  else if (act === "cancel") {
+    s.dialog = null
+    render()
+    frame.notifyNavigated()
+  } else if (act === "save") actions["save-task"]()
   else if (act === "retry") actions.retry()
   else if (act === "back") frameBack()
   else if (act === "send-feedback") {
@@ -160,7 +206,12 @@ app.addEventListener("input", (e) => {
 })
 
 function frameBack() {
-  if (s.dialog) { s.dialog = null; render(); frame.notifyNavigated(); return true }
+  if (s.dialog) {
+    s.dialog = null
+    render()
+    frame.notifyNavigated()
+    return true
+  }
   if (s.location.length < 2) return false
   s.location = s.location.slice(0, -1)
   render()
@@ -171,7 +222,7 @@ function frameBack() {
 function mount(inputs: MountInputs) {
   const root = document.documentElement
   root.dataset.theme = inputs.theme
-  root.dataset.density = inputs.values.density ?? "comfortable"
+  root.dataset.density = String(inputs.values.density ?? "comfortable")
   const known = ["tasks.list", "tasks.list.empty", "tasks.list.loading", "tasks.list.failed", "tasks.new", "task.detail", "account.settings", "account.sign-in", "help.guide", "help.welcome"]
   root.dataset.page = inputs.scenario.startsWith("help.") ? "document" : "app"
   if (!known.includes(inputs.scenario) && !inputs.scenario.startsWith("syn.")) throw new Error(`Scenario ${inputs.scenario} has no preview in this product`)
@@ -179,7 +230,7 @@ function mount(inputs: MountInputs) {
   if (innerWidth < 300) throw new Error(`Example Tasks has no layout narrower than 300 px; this frame is ${innerWidth} px`)
   s = {
     scenario: inputs.scenario,
-    role: inputs.values.role ?? "owner",
+    role: String(inputs.values.role ?? "owner"),
     location: [inputs.scenario === "account.settings" ? "/settings" : inputs.scenario === "task.detail" ? "/tasks/t1" : "/tasks"],
     tasks: inputs.scenario === "tasks.list.empty" ? [] : FIXTURE.map((t) => ({ ...t })),
     dialog: inputs.scenario === "tasks.new" ? { title: "" } : null,
@@ -189,29 +240,46 @@ function mount(inputs: MountInputs) {
   render()
   // For the starter's acceptance script only: the inputs this runtime was mounted with.
   ;(window as unknown as { __studioMounted: MountInputs }).__studioMounted = inputs
-  return { appearance: inputs.theme.startsWith("dark") ? ("dark" as const) : ("light" as const), location: here() }
+  return {
+    appearance: inputs.theme.startsWith("dark") ? ("dark" as const) : ("light" as const),
+    location: here(),
+  }
 }
 
 // For the starter's acceptance script only: stand in for an older frame client, or a product without navigate.
-const testing = window as unknown as { __studioLegacy?: boolean; __studioNoNavigate?: boolean }
-const frame = connectStudioFrame({
-  mount,
-  command: (id) => {
-    const run = actions[id]
-    if (!run) throw new Error(`Unknown command ${id}`)
-    run()
+const testing = window as unknown as {
+  __studioLegacy?: boolean
+  __studioNoNavigate?: boolean
+}
+const frame = connectStudioFrame(
+  {
+    mount,
+    command: (id) => {
+      const run = actions[id]
+      if (!run) throw new Error(`Unknown command ${id}`)
+      run()
+    },
+    back: frameBack,
+    // For navigation sync: go to a location another frame reached.
+    navigate: testing.__studioNoNavigate
+      ? undefined
+      : (location) => {
+          const path = location.replace(/ \(New task\)$/, "")
+          if (here() !== path) go(path)
+        },
+    canGoBack: () => s.location.length > 1 || !!s.dialog,
+    location: () => here() + (s.dialog ? " (New task)" : ""),
   },
-  back: frameBack,
-  // For navigation sync: go to a location another frame reached.
-  navigate: testing.__studioNoNavigate
-    ? undefined
-    : (location) => {
-        const path = location.replace(/ \(New task\)$/, "")
-        if (here() !== path) go(path)
-      },
-  canGoBack: () => s.location.length > 1 || !!s.dialog,
-  location: () => here() + (s.dialog ? " (New task)" : ""),
-}, { sync: !testing.__studioLegacy })
+  { sync: !testing.__studioLegacy }
+)
 
 // Opened directly, outside the Studio: show the default scenario.
-if (window.parent === window) mount({ scenario: "tasks.list", theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light", profile: "desktop", values: {}, commands: [], tokens: {} })
+if (window.parent === window)
+  mount({
+    scenario: "tasks.list",
+    theme: matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+    profile: "desktop",
+    values: {},
+    commands: [],
+    tokens: {},
+  })

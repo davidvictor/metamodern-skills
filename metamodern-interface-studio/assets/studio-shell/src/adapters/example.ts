@@ -145,3 +145,6 @@ export const exampleAdapter: StudioAdapter = {
   comparisons: [{ id: "list-light-dark", label: "Today in Light and Dark", scenario: "tasks.list", a: "light", b: "dark" }],
   tokens: { source: "example/product.css", columns: ["light", "dark"], grounds: { light: "#fafaf9", dark: "#0c0a09" }, families, total: tokens.length, tokens },
 }
+
+// The shell acceptance build always uses the example, even in an adopted product Studio.
+export { exampleAdapter as adapter }

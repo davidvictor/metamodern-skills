@@ -7,7 +7,7 @@
  * The frame never trusts a message it did not expect: it answers only its
  * parent window, only from an allowed origin, and only for its own instance.
  */
-import { PROTOCOL, fingerprint, isShellMessage, type AnchorRect, type FrameBody, type FrameCapability, type MountInputs } from "./protocol"
+import { PROTOCOL, fingerprint, isShellMessage, type AnchorRect, type FrameBody, type FrameCapability, type FrameDiagnostic, type MountInputs } from "./protocol"
 import { createFrameSync } from "./frame-sync"
 import { createFrameGestures } from "./frame-gestures"
 
@@ -30,13 +30,19 @@ export type FrameHandlers = {
   navigate?: (location: string) => void
   /** Digest of the resolved inputs and the resulting state and navigation. Defaults to the inputs alone. */
   fingerprint?: (inputs: MountInputs) => Promise<string> | string
+  /** Neutral measurements shown in Studio Details after the preview settles. */
+  diagnostics?: (inputs: MountInputs) => Promise<FrameDiagnostic[]> | FrameDiagnostic[]
 }
 
 /**
  * sync: false keeps this preview out of scroll, click, typing and navigation sync.
  * gestures: false keeps every scroll, pinch and Space press in the page, so the Studio's stage cannot pan or zoom over it.
  */
-export type FrameOptions = { allowedOrigins?: string[]; sync?: boolean; gestures?: boolean }
+export type FrameOptions = {
+  allowedOrigins?: string[]
+  sync?: boolean
+  gestures?: boolean
+}
 
 const nextFrame = () => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
 
@@ -45,7 +51,16 @@ export function readAnchors(): AnchorRect[] {
     const r = el.getBoundingClientRect()
     if (r.width === 0 || r.height === 0) return []
     const label = el.dataset.studioAnchorLabel ?? el.getAttribute("aria-label") ?? el.textContent?.trim().slice(0, 40) ?? el.dataset.studioAnchor!
-    return [{ id: el.dataset.studioAnchor!, label, x: r.left, y: r.top, w: r.width, h: r.height }]
+    return [
+      {
+        id: el.dataset.studioAnchor!,
+        label,
+        x: r.left,
+        y: r.top,
+        w: r.width,
+        h: r.height,
+      },
+    ]
   })
 }
 
@@ -63,7 +78,13 @@ function defaultApplyCss(css: string, stylesheets: string[]) {
   for (const link of document.querySelectorAll<HTMLLinkElement>("link[data-studio-draft]")) if (!wanted.includes(link.href)) link.remove()
   for (const url of wanted) {
     if (document.querySelector(`link[data-studio-draft][href="${CSS.escape(url)}"]`)) continue
-    document.head.append(Object.assign(document.createElement("link"), { rel: "stylesheet", href: url, crossOrigin: "anonymous" }))
+    document.head.append(
+      Object.assign(document.createElement("link"), {
+        rel: "stylesheet",
+        href: url,
+        crossOrigin: "anonymous",
+      })
+    )
     document.head.lastElementChild!.setAttribute("data-studio-draft", "")
   }
 }
@@ -79,14 +100,28 @@ function defaultApplyTokens(tokens: Record<string, string>) {
 export function connectStudioFrame(handlers: FrameHandlers, options: FrameOptions = {}) {
   const allowed = options.allowedOrigins ?? [location.origin]
   const instance = window.name
-  if (window.parent === window || !instance) return { notifyNavigated: () => undefined, markModified: () => undefined, disconnect: () => undefined }
+  if (window.parent === window || !instance)
+    return {
+      notifyNavigated: () => undefined,
+      markModified: () => undefined,
+      disconnect: () => undefined,
+    }
 
   const parentOrigin = document.referrer ? new URL(document.referrer).origin : allowed[0]
   const post = (message: FrameBody) => window.parent.postMessage({ protocol: PROTOCOL, instance, ...message }, allowed.includes(parentOrigin) ? parentOrigin : allowed[0])
   const applyTokens = handlers.applyTokens ?? defaultApplyTokens
   const applyCss = handlers.applyCss ?? defaultApplyCss
-  const settle = handlers.settle ?? (async () => { await document.fonts?.ready; await nextFrame() })
-  const state = () => ({ location: handlers.location?.() ?? location.pathname, canGoBack: handlers.canGoBack?.() ?? false, anchors: readAnchors() })
+  const settle =
+    handlers.settle ??
+    (async () => {
+      await document.fonts?.ready
+      await nextFrame()
+    })
+  const state = () => ({
+    location: handlers.location?.() ?? location.pathname,
+    canGoBack: handlers.canGoBack?.() ?? false,
+    anchors: readAnchors(),
+  })
 
   // Modified means a person changed product state, not that they clicked. A trusted
   // pointer or key event arms a short window; only a DOM change or product
@@ -106,7 +141,12 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
   const observer = new MutationObserver(() => {
     if (armed()) markModified()
   })
-  observer.observe(document.documentElement, { subtree: true, childList: true, attributes: true, characterData: true })
+  observer.observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    characterData: true,
+  })
   // Capture phase, so product handlers that stop propagation still arm the window.
   window.addEventListener("pointerdown", onUser, true)
   window.addEventListener("keydown", onUser, true)
@@ -124,7 +164,14 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
           await handlers.command(id)
         }
         await settle()
-        post({ type: "ready", requestId: m.requestId, fingerprint: handlers.fingerprint ? await handlers.fingerprint(m.inputs) : fingerprint(m.inputs), appearance, ...state() })
+        post({
+          type: "ready",
+          requestId: m.requestId,
+          fingerprint: handlers.fingerprint ? await handlers.fingerprint(m.inputs) : fingerprint(m.inputs),
+          diagnostics: handlers.diagnostics ? await handlers.diagnostics(m.inputs) : undefined,
+          appearance,
+          ...state(),
+        })
         mountedOnce = true
         lastHeight = 0
         reportSize()
@@ -137,11 +184,21 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
       } else if (m.type === "product-back") {
         const ok = handlers.back?.() ?? false
         await nextFrame()
-        post({ type: "reply", requestId: m.requestId, ok, reason: ok ? undefined : "No product history in this preview" })
+        post({
+          type: "reply",
+          requestId: m.requestId,
+          ok,
+          reason: ok ? undefined : "No product history in this preview",
+        })
         post({ type: "navigated", ...state() })
       } else if (m.type === "sync") {
         if (options.sync !== false) sync.setChannels(m.channels)
-        post({ type: "reply", requestId: m.requestId, ok: options.sync !== false, reason: options.sync === false ? "This preview is kept out of sync" : undefined })
+        post({
+          type: "reply",
+          requestId: m.requestId,
+          ok: options.sync !== false,
+          reason: options.sync === false ? "This preview is kept out of sync" : undefined,
+        })
       } else if (m.type === "replay") {
         const result = options.sync === false ? { ok: false, reason: "This preview is kept out of sync" } : sync.replay(m.event)
         await nextFrame()
@@ -153,7 +210,13 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
         post({ type: "reply", requestId: m.requestId, ok: true })
       }
     } catch (err) {
-      post({ type: "error", requestId: m.requestId, operation: m.type, recoverable: true, reason: err instanceof Error ? err.message : String(err) })
+      post({
+        type: "error",
+        requestId: m.requestId,
+        operation: m.type,
+        recoverable: true,
+        reason: err instanceof Error ? err.message : String(err),
+      })
     }
   }
   window.addEventListener("message", onMessage)
@@ -175,16 +238,27 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
   sizes.observe(document.documentElement)
   if (document.body) sizes.observe(document.body)
   const sizeChanges = new MutationObserver(reportSize)
-  sizeChanges.observe(document.documentElement, { subtree: true, childList: true, attributes: true })
+  sizeChanges.observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+  })
 
   // Sync: report a person's interactions when the Studio asks, and replay other frames' here.
-  const sync = createFrameSync((event) => post({ type: "interaction", event }), { navigate: handlers.navigate, location: () => state().location, arm: () => (armedAt = performance.now()) })
+  const sync = createFrameSync((event) => post({ type: "interaction", event }), {
+    navigate: handlers.navigate,
+    location: () => state().location,
+    arm: () => (armedAt = performance.now()),
+  })
   const syncCaps: FrameCapability[] = options.sync === false ? [] : ["sync-scroll", "sync-interaction", ...(handlers.navigate ? (["sync-navigation"] as const) : [])]
 
   // Stage navigation that starts over this frame: the part of a scroll the page cannot use, zoom, Space and middle drag.
   const gestures = options.gestures === false ? null : createFrameGestures((gesture) => post({ type: "gesture", gesture }))
 
-  post({ type: "hello", capabilities: ["draft-css", "content-size", ...syncCaps, ...(gestures ? (["stage-gestures"] as const) : [])] })
+  post({
+    type: "hello",
+    capabilities: ["draft-css", "content-size", ...syncCaps, ...(gestures ? (["stage-gestures"] as const) : [])],
+  })
 
   return {
     /** Call after product navigation the Studio did not ask for, so it can update location and anchors. */

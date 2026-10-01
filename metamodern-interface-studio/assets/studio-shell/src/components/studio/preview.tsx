@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { adapter } from "@/adapter"
 import { captureFor, NO_DRAFT, resolveValues, useStudio, type Draft } from "@/store"
+import { frameDesignValues, valuesForTheme } from "@/studio/design"
 import { LivePreview, type LivePreviewHandle, type LiveStatus, type PreviewSync } from "@/studio/live-preview"
 import { CaptureImage, PreviewFrame, type EmptyState } from "./bits"
 
@@ -13,7 +14,20 @@ export function useReportStatus() {
   const s = useStudio()
   const set = s.set
   return React.useCallback(
-    (st: LiveStatus | null) => set({ preview: st ? { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous } : { status: "static", modified: false, canGoBack: false } }),
+    (st: LiveStatus | null) =>
+      set({
+        preview: st
+          ? {
+              status: st.status,
+              modified: st.modified,
+              canGoBack: st.canGoBack,
+              location: st.location,
+              fingerprint: st.fingerprint,
+              reason: st.reason,
+              previous: st.previous,
+            }
+          : { status: "static", modified: false, canGoBack: false },
+      }),
     [set]
   )
 }
@@ -32,7 +46,7 @@ type Props = {
   profile: string
   /** Inspect only: the frame's pixel size when the viewer dragged it off the profile's own. */
   size?: { w: number; h: number } | null
-  values: Record<string, string>
+  values: Record<string, string | number>
   commands?: string[]
   /** The draft this preview shows; none by default. Present never passes one. */
   draft?: Draft
@@ -58,6 +72,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   { scenario, theme, profile, size, values, commands = [], draft = NO_DRAFT, sync, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
   ref
 ) {
+  const studio = useStudio()
   const sc = adapter.scenarios.find((x) => x.id === scenario)
   const pr = profileOf(profile)
   const th = themeOf(theme)
@@ -74,38 +89,57 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   }, [live])
 
   let empty: EmptyState | undefined
-  if (!sc) empty = { title: `Scenario ${scenario} is not in the catalog`, description: "Nothing was substituted. Fix the reference or choose another scenario.", tone: "danger" }
-  else if (sc.status === "later") empty = { title: "Not designed yet", description: "This surface is marked Later. The Studio shows nothing rather than a stand-in." }
-  else if (!live && !capture) empty = { title: "No capture for this combination", description: `${th.label} · ${pr.label} was never recorded. The Studio shows nothing rather than a different state.` }
+  if (!sc)
+    empty = {
+      title: `Scenario ${scenario} is not in the catalog`,
+      description: "Nothing was substituted. Fix the reference or choose another scenario.",
+      tone: "danger",
+    }
+  else if (sc.status === "later")
+    empty = {
+      title: "Not designed yet",
+      description: "This surface is marked Later. The Studio shows nothing rather than a stand-in.",
+    }
+  else if (!live && !capture)
+    empty = {
+      title: "No capture for this combination",
+      description: `${th.label} · ${pr.label} was never recorded. The Studio shows nothing rather than a different state.`,
+    }
   else if (live && status?.status === "error" && !status.previous)
-    empty = { title: "The preview did not start", description: status.reason ?? "The frame reported an error.", tone: "danger", action: { label: "Retry", onClick: () => setRetry((n) => n + 1) } }
+    empty = {
+      title: "The preview did not start",
+      description: status.reason ?? "The frame reported an error.",
+      tone: "danger",
+      action: { label: "Retry", onClick: () => setRetry((n) => n + 1) },
+    }
 
   const w = capture?.w ?? size?.w ?? pr.w
   const h = capture?.h ?? size?.h ?? pr.h
   const rect = anchor ? status?.anchors.find((a) => a.id === anchor) : undefined
   // The frame receives resolved values: the viewer's choice, else what the scenario was designed with, else the default.
   const resolved = sc ? resolveValues(sc, values) : values
-  const mountKey = JSON.stringify([scenario, theme, profile, resolved, commands, resetNonce, retry])
+  // Token-only design adjustments use the draft channel. Controls declared with `apply.input`
+  // are part of the materialized product state and deliberately rebuild the isolated frame.
+  // Present and every “as built” pane pass the shared NO_DRAFT sentinel. Input-backed
+  // design experiments then stay out of those product states just like token drafts.
+  const design = draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)
+  const mountKey = JSON.stringify([scenario, theme, profile, resolved, design, commands, resetNonce, retry])
 
   return (
-    <PreviewFrame
-      w={w}
-      h={h}
-      scale={scale}
-      phone={pr.kind === "phone"}
-      appearance={status?.appearance ?? th.appearance}
-      anchor={rect}
-      empty={empty}
-      loading={live && (!status || status.status === "loading")}
-      label={label}
-      className={className}
-    >
+    <PreviewFrame w={w} h={h} scale={scale} phone={pr.kind === "phone"} appearance={status?.appearance ?? th.appearance} anchor={rect} empty={empty} loading={live && (!status || status.status === "loading")} label={label} className={className}>
       {live ? (
         <LivePreview
           ref={ref}
           src={adapter.frameEntry!}
           origin={adapter.frameOrigin}
-          inputs={{ scenario, theme, profile, values: resolved, commands }}
+          inputs={{
+            scenario,
+            theme,
+            profile,
+            values: resolved,
+            design,
+            commands,
+          }}
           mountKey={mountKey}
           draft={draft}
           sync={sync}

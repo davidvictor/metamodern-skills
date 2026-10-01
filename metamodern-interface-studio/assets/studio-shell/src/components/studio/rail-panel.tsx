@@ -221,7 +221,11 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
         <div className="border-b p-2">
           <p className="px-2 pb-1 text-xs font-medium text-sidebar-foreground/70">Saved comparisons</p>
           {adapter.comparisons.map((c) => (
-            <SidebarMenuButton key={c.id} size="sm" onClick={() => { s.set({ compare: { ...s.compare, axis: c.axis ?? "theme", a: c.a, b: c.b } }); if (c.scenario) s.selectScenario(c.scenario) }}>
+            <SidebarMenuButton key={c.id} size="sm" onClick={() => {
+              const values = c.values?.length ? c.values : [c.a ?? s.compare.a, c.b ?? s.compare.b]
+              s.set({ compare: { ...s.compare, axis: c.axis ?? "theme", a: values[0] ?? s.compare.a, b: values[1] ?? s.compare.b, values, count: Math.min(4, Math.max(2, values.length)) as 2 | 3 | 4, editable: c.editable ?? true } })
+              if (c.scenario) s.selectScenario(c.scenario)
+            }}>
               <BookmarkIcon />
               <span>{c.label}</span>
             </SidebarMenuButton>
@@ -338,13 +342,13 @@ function GalleryPanel() {
 
 function PresentPanel() {
   const s = useStudio()
-  const tours = adapter.walkthroughs
+  const tours = s.walkthroughs
   const tour = tours.find((t) => t.id === s.present.tour) ?? tours[0]
   if (!tour) return <PanelHeader title="Walkthrough" count="none yet" />
   return (
     <>
       <PanelHeader title="Walkthrough" count={`${tour.steps.length} steps`}>
-        <Select value={tour.id} items={Object.fromEntries(tours.map((t) => [t.id, t.name]))} onValueChange={(v) => v && s.set({ present: { ...s.present, tour: v as string, step: 0, elapsed: 0, playing: false } })}>
+        <Select value={tour.id} items={Object.fromEntries(tours.map((t) => [t.id, t.name]))} onValueChange={(v) => v && s.set({ present: { ...s.present, tour: v as string, step: 0, elapsed: 0, playing: false, playlist: false } })}>
           <SelectTrigger className="w-full" aria-label="Walkthrough"><SelectValue /></SelectTrigger>
           <SelectContent>{tours.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
         </Select>
