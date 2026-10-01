@@ -536,7 +536,7 @@ export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrap
   const stateBadge = !status ? null : status.status === "loading" ? <StatusBadge kind="loading">Loading</StatusBadge> : status.status === "error" ? <StatusBadge kind="unresolved">Did not start</StatusBadge> : status.modified ? <StatusBadge kind="modified">Modified</StatusBadge> : null
   const preview =
     problem || unavailable ? (
-      <PreviewFrame w={frame.w} h={frame.h} scale={shown} phone={prof.kind === "phone"} empty={{ title: `No ${live ? "preview" : "capture"} at ${frame.w} × ${frame.h}`, description: problem ?? `This Studio shows recorded captures only, and ${prof.label} in this theme was ${capture ? `recorded at ${capture.w} × ${capture.h}` : "never recorded"}. Nothing is substituted.` }} />
+      <PreviewFrame w={frame.w} h={frame.h} scale={shown} profile={prof} empty={{ title: `No ${live ? "preview" : "capture"} at ${frame.w} × ${frame.h}`, description: problem ?? `This Studio shows recorded captures only, and ${prof.label} in this theme was ${capture ? `recorded at ${capture.w} × ${capture.h}` : "never recorded"}. Nothing is substituted.` }} />
     ) : (
       <ScenarioPreview
         ref={handleRef}

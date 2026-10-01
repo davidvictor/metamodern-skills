@@ -126,7 +126,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   const mountKey = JSON.stringify([scenario, theme, profile, resolved, design, commands, resetNonce, retry])
 
   return (
-    <PreviewFrame w={w} h={h} scale={scale} phone={pr.kind === "phone"} appearance={status?.appearance ?? th.appearance} anchor={rect} empty={empty} loading={live && (!status || status.status === "loading")} label={label} className={className}>
+    <PreviewFrame w={w} h={h} scale={scale} profile={pr} appearance={status?.appearance ?? th.appearance} anchor={rect} empty={empty} loading={live && (!status || status.status === "loading")} label={label} className={className}>
       {live ? (
         <LivePreview
           ref={ref}
