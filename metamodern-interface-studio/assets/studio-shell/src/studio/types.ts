@@ -297,6 +297,8 @@ export type StudioAdapter = {
     fidelity: Fidelity
     /** Plain label for the preview tab, such as "Actual UI · sample data". */
     label: string
+    /** Fidelity stays in Details; a presentation may hide the optional top-bar badge. */
+    showFidelityInToolbar?: boolean
     capabilities: Record<CapabilityDimension, Capability>
   }
   /** URL of the isolated preview document that speaks studio-preview/1. Omit for capture-only Studios. */

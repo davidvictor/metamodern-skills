@@ -166,7 +166,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
         {s.view === "inspect" && <StatusNow />}
       </div>
       {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
-      {s.view === "inspect" && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
+      {s.view === "inspect" && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
         <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden sm:inline-flex">
           {adapter.target.label}
         </FidelityBadge>
