@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.0 — 2026-10-02
+
+- Interface Studio 0.10.0: scenario inputs can be numeric ranges with bounds, steps, named marks and time formatting, and values reach the frame as strings or finite numbers. Design parameters can be `enum` or `range`, scoped to themes with `defaultsByTheme`, and sent to a live frame through `apply.input` (`MountInputs.design`); drafts are kept per theme or visual variant.
+- Walkthrough steps take stable `id`, `values`, `duration` and `hidden`. Presenter edits (narration, goals, timing, hidden steps) are a browser overlay with import and export that never alters generated adapter material. Saved comparisons can hold up to four `values` on one axis. Frames can report `diagnostics()` rows, shown with their budgets in Details as review evidence.
+- Interface Studio 0.10.1: profiles declare `frameRadius`, and phone and tablet boundaries scale continuously with zoom in every view (tablets default to 28 px; phones 44 px and desktops 8 px as before). A presentation can omit the optional fidelity badge in the top bar; fidelity stays in Details.
+
 ## 1.12.0 — 2026-09-30
 
 - Add Plan, Execute, Fix and Review Development as four focused skills. They translate conversational direction into outcome briefs and appropriately sized, normally sequential delivery worktrees while preserving project-required tests, independent review, resource isolation and release authority.
