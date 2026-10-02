@@ -22,6 +22,23 @@ import type { InputValue, ScenarioInput } from "@/studio/types"
 /** Coarse pointers: every row control reaches 44 px and text fields use 16 px text, so phones do not zoom. */
 const TOUCH = "pointer-coarse:min-h-11 pointer-coarse:text-base"
 
+/**
+ * A control that removes itself (Set, Clear, Back to designed, Reset) hands focus on: the element with this ID is
+ * focused after the render that shows it, never left on the page body.
+ */
+function useFocusAfter() {
+  const target = React.useRef<string | null>(null)
+  // Runs after every render of the row; the change that removed the control re-renders it through the store.
+  React.useEffect(() => {
+    if (!target.current) return
+    document.getElementById(target.current)?.focus()
+    target.current = null
+  })
+  return (id: string) => {
+    target.current = id
+  }
+}
+
 /** The one entry Details loads: the state picker (before the scenario inputs) or the Properties section (after them). */
 export default function Properties({ part }: { part: "picker" | "section" }) {
   const s = useStudio()
@@ -36,9 +53,14 @@ function StatePicker() {
   const label = (x: (typeof states)[number]) => (x.savedFrom ? `${x.label} · Saved` : x.label)
   return (
     <Field>
-      <FieldLabel>State</FieldLabel>
-      <Select value={s.scenarioObj.id} items={Object.fromEntries(states.map((x) => [x.id, label(x)]))} onValueChange={(v) => v && s.selectScenario(v as string)}>
-        <SelectTrigger className={`w-full ${TOUCH}`} aria-label="State">
+      <FieldLabel htmlFor="property-state">State</FieldLabel>
+      {/* Like the previous and next arrows, the picker keeps the phone's Details drawer open. */}
+      <Select
+        value={s.scenarioObj.id}
+        items={Object.fromEntries(states.map((x) => [x.id, label(x)]))}
+        onValueChange={(v) => v && s.set((st) => ({ scenario: v as string, preview: { ...st.preview, status: "loading", modified: false, canGoBack: false } }))}
+      >
+        <SelectTrigger id="property-state" className={`w-full ${TOUCH}`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -56,17 +78,28 @@ function StatePicker() {
 /** Curated rows, then the rest under a collapsed All properties, with Reset (n). */
 function PropertiesSection({ inputs }: { inputs: ScenarioInput[] }) {
   const s = useStudio()
+  const focusAfter = useFocusAfter()
   const n = Object.keys(s.edits).length
   const curated = inputs.filter((i) => i.curated)
   const rest = inputs.filter((i) => !i.curated)
+  // After Reset, the first curated row's control; the section heading when there is none.
+  const first = curated.find((i) => !i.readonly)
   return (
     <FieldSet data-properties>
       <div className="flex min-h-7 items-center justify-between gap-2">
-        <FieldLegend variant="label" className="mb-0">
+        <FieldLegend id="properties-heading" tabIndex={-1} variant="label" className="mb-0 outline-none">
           Properties
         </FieldLegend>
         {n > 0 && (
-          <Button size="xs" variant="ghost" className={TOUCH} onClick={s.resetProps}>
+          <Button
+            size="xs"
+            variant="ghost"
+            className={TOUCH}
+            onClick={() => {
+              s.resetProps()
+              focusAfter(first ? `property-${first.id}` : "properties-heading")
+            }}
+          >
             <RotateCcwIcon /> Reset ({n})
           </Button>
         )}
@@ -111,6 +144,7 @@ const firstValue = (i: ScenarioInput, options: { id: string }[]): InputValue => 
 
 function PropertyRow({ input: i }: { input: ScenarioInput }) {
   const s = useStudio()
+  const focusAfter = useFocusAfter()
   const designed = s.scenarioObj.designed?.[i.id] ?? (i.optional ? undefined : i.default)
   const edited = s.edits[i.id]
   const value = edited ?? designed
@@ -118,7 +152,7 @@ function PropertyRow({ input: i }: { input: ScenarioInput }) {
   if (i.readonly)
     return (
       <Field data-property={i.id}>
-        <FieldLabel>{i.label}</FieldLabel>
+        <span className="text-sm leading-snug font-medium">{i.label}</span>
         <p className="text-xs text-muted-foreground">{i.note ?? "Handled by the sample data"}</p>
       </Field>
     )
@@ -131,7 +165,16 @@ function PropertyRow({ input: i }: { input: ScenarioInput }) {
         {edited !== undefined && (
           <>
             <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-(--anchor)" />
-            <Button size="xs" variant="ghost" className={TOUCH} onClick={() => s.setProp(i.id, null)}>
+            <Button
+              size="xs"
+              variant="ghost"
+              className={TOUCH}
+              aria-label={designed === undefined ? `Clear ${i.label}` : `Back to designed: ${i.label}`}
+              onClick={() => {
+                s.setProp(i.id, null)
+                focusAfter(designed === undefined ? `${id}-set` : id)
+              }}
+            >
               {designed === undefined ? "Clear" : "Back to designed"}
             </Button>
           </>
@@ -139,8 +182,18 @@ function PropertyRow({ input: i }: { input: ScenarioInput }) {
       </div>
       {i.optional && value === undefined ? (
         <div className="flex items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{i.default === undefined ? "Product default" : `${labelOf(i, i.default)} (product default)`}</span>
-          <Button size="sm" variant="outline" className={TOUCH} aria-label={`Set ${i.label}`} onClick={() => s.setProp(i.id, i.default ?? firstValue(i, optionsFor(i, s.scenarioObj)))}>
+          <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">{i.default === undefined ? "Product default" : `${labelOf(i, i.default) || "Empty"} (product default)`}</span>
+          <Button
+            id={`${id}-set`}
+            size="sm"
+            variant="outline"
+            className={TOUCH}
+            aria-label={`Set ${i.label}`}
+            onClick={() => {
+              s.setProp(i.id, i.default ?? firstValue(i, optionsFor(i, s.scenarioObj)))
+              focusAfter(id)
+            }}
+          >
             Set
           </Button>
         </div>
@@ -157,7 +210,8 @@ function Control({ input: i, id, value, onChange }: { input: ScenarioInput; id: 
   if (i.control === "switch") return <Switch id={id} checked={value === true} onCheckedChange={(v) => onChange(v)} className="pointer-coarse:after:-inset-y-3" />
   if (i.control === "text") {
     const field = { id, value: typeof value === "string" ? value : "", maxLength: i.maxLength, className: TOUCH, onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value) }
-    return i.multiline ? <Textarea rows={3} {...field} /> : <Input {...field} />
+    // A text area keeps its rows on a phone: it takes only the 16 px text, not the 44 px row height.
+    return i.multiline ? <Textarea rows={3} {...field} className="pointer-coarse:text-base" /> : <Input {...field} />
   }
   if (i.control === "number" || i.control === "range") return <NumberControl input={i} id={id} value={typeof value === "number" ? value : undefined} onChange={onChange} />
   const options = optionsFor(i, s.scenarioObj)
@@ -196,7 +250,8 @@ function NumberControl({ input: i, id, value, onChange }: { input: ScenarioInput
         inputMode="decimal"
         min={i.min}
         max={i.max}
-        step={i.step ?? "any"}
+        // Normalization accepts any value within min and max, so the field does too: a native step would mark 3.25 invalid.
+        step="any"
         value={text}
         aria-invalid={!valid || undefined}
         className={TOUCH}

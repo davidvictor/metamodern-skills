@@ -1877,12 +1877,12 @@ await check("AC-54", async () => {
   const f = await liveFrame(p)
   const before = await frameState(f)
   await details(p).getByRole("switch", { name: "Done" }).click()
-  await details(p).getByLabel("Title").fill("Ship the release notes")
+  await details(p).getByLabel("Title", { exact: true }).fill("Ship the release notes")
   await details(p).getByRole("button", { name: /All properties/ }).click()
   await details(p).getByRole("combobox", { name: "Assignee" }).click()
   await p.getByRole("option", { name: "A very long name" }).click()
   await details(p).getByRole("button", { name: "Set Estimate (hours)" }).click()
-  await details(p).getByLabel("Estimate (hours)").fill("3.5")
+  await details(p).getByLabel("Estimate (hours)", { exact: true }).fill("3.5")
   await wait(1000)
   const iframes = await p.locator(".preview-frame iframe").count()
   const after = await frameState(f)
@@ -1909,10 +1909,10 @@ await check("AC-54", async () => {
   const recovered = replaced && thrown.mounted.values.done === true && /done/.test(thrown.card) && thrown.updated === undefined && /Ready/.test(thrownStatus)
   // A value the product cannot show: update and mount both throw, so the previous preview stays with an error; the next good value mounts.
   const b = await flagged("__studioStrictTitle", `view=inspect&scenario=${CARD}`)
-  await details(b).getByLabel("Title").fill("Reject this title")
+  await details(b).getByLabel("Title", { exact: true }).fill("Reject this title")
   await wait(2500)
   const bad = { status: await badges(b), text: (await frameState(await liveFrame(b))).text }
-  await details(b).getByLabel("Title").fill("A title it can show")
+  await details(b).getByLabel("Title", { exact: true }).fill("A title it can show")
   await wait(2500)
   const good = await frameState(await liveFrame(b))
   const goodStatus = await badges(b)
@@ -1941,15 +1941,20 @@ await check("AC-55", async () => {
   const greyed = await details(p).locator('[data-property="estimate"]').innerText()
   const noteField = await details(p).locator('[data-property="note"] textarea').count()
   const readonly = await details(p).locator('[data-property="onOpen"]').innerText()
+  const emptyNote = await details(p).locator('[data-property="note"]').innerText()
+  // A control that removes itself hands focus on: Set to the field it reveals, Clear back to Set.
+  const focusOn = () => p.evaluate(() => document.activeElement?.id || document.activeElement?.tagName)
   await details(p).getByRole("button", { name: "Set Note" }).click()
   await wait(300)
   const noteShown = await details(p).locator('[data-property="note"] textarea').count()
-  await details(p).locator('[data-property="note"]').getByRole("button", { name: "Clear" }).click()
+  const afterSet = await focusOn()
+  await details(p).locator('[data-property="note"]').getByRole("button", { name: "Clear Note" }).click()
   await wait(300)
   const setAgain = await details(p).getByRole("button", { name: "Set Note" }).count()
+  const afterClear = await focusOn()
   await p.closeAll()
-  const ok = elsewhere === 0 && first.join() === "title,done" && collapsed === "false" && /All properties \(4\)/.test(label) && all.join() === "title,done,assignee,note,estimate,onOpen" && !unsentBefore.includes("note") && !unsentBefore.includes("estimate") && /2 \(product default\)/.test(greyed) && noteField === 0 && /Handled by the sample data/.test(readonly) && noteShown === 1 && setAgain === 1
-  return [ok ? "pass" : "fail", `on Today ${elsewhere} property sections; on the Task card ${first.join(", ")} shown, "${label.trim()}" expanded=${collapsed}, then ${all.join(", ")}; optional Note and Estimate not sent (${unsentBefore.join(", ")}), Estimate reads "${greyed.replace(/\s+/g, " ")}", Note field ${noteField} until Set (${noteShown}), Clear returns Set (${setAgain}); On open: "${readonly.replace(/\s+/g, " ")}"`]
+  const ok = elsewhere === 0 && first.join() === "title,done" && collapsed === "false" && /All properties \(4\)/.test(label) && all.join() === "title,done,assignee,note,estimate,onOpen" && !unsentBefore.includes("note") && !unsentBefore.includes("estimate") && /2 \(product default\)/.test(greyed) && noteField === 0 && /Handled by the sample data/.test(readonly) && noteShown === 1 && setAgain === 1 && /Empty \(product default\)/.test(emptyNote) && afterSet === "property-note" && afterClear === "property-note-set"
+  return [ok ? "pass" : "fail", `on Today ${elsewhere} property sections; on the Task card ${first.join(", ")} shown, "${label.trim()}" expanded=${collapsed}, then ${all.join(", ")}; optional Note and Estimate not sent (${unsentBefore.join(", ")}), Estimate reads "${greyed.replace(/\s+/g, " ")}", Note field ${noteField} until Set (${noteShown}), Clear returns Set (${setAgain}), unset Note reads "${emptyNote.replace(/\s+/g, " ")}", focus after Set on ${afterSet} and after Clear on ${afterClear}; On open: "${readonly.replace(/\s+/g, " ")}"`]
 })
 
 // AC-56 Edited and Modified are independent; Reset properties clears edits; R does not
@@ -1965,6 +1970,8 @@ await check("AC-56", async () => {
   await details(p).getByRole("button", { name: /^Reset \(1\)/ }).click()
   await wait(800)
   const cleared = await badges(p)
+  const focusOn = () => p.evaluate(() => document.activeElement?.id || document.activeElement?.tagName)
+  const afterReset = await focusOn()
   const sent = (await frameState(await liveFrame(p))).updated?.done
   await details(p).getByRole("switch", { name: "Done" }).click()
   await wait(500)
@@ -1973,34 +1980,38 @@ await check("AC-56", async () => {
   await wait(2000)
   const afterR = await badges(p)
   const remounted = (await frameState(await liveFrame(p))).mounted.values.done
+  await details(p).getByRole("button", { name: "Back to designed: Done" }).click()
+  await wait(500)
+  const afterBack = await p.evaluate(() => `${document.activeElement?.closest("[data-property]")?.getAttribute("data-property")}:${document.activeElement?.getAttribute("role")}`)
+  const back = await badges(p)
   await p.closeAll()
-  const ok = /Edited · 1 property/.test(edited) && !/Modified/.test(edited) && /Modified/.test(both) && /Edited · 1 property/.test(both) && /Modified/.test(cleared) && !/Edited/.test(cleared) && sent === false && /Edited · 1 property/.test(afterR) && !/Modified/.test(afterR) && remounted === true
-  return [ok ? "pass" : "fail", `after an edit "${edited}"; after ticking the card in the frame "${both}"; Reset properties gave "${cleared}" and sent done ${sent}; after another edit and R "${afterR}", remounted with done ${remounted}`]
+  const ok = afterReset === "property-title" && afterBack === "done:switch" && !/Edited/.test(back) && /Edited · 1 property/.test(edited) && !/Modified/.test(edited) && /Modified/.test(both) && /Edited · 1 property/.test(both) && /Modified/.test(cleared) && !/Edited/.test(cleared) && sent === false && /Edited · 1 property/.test(afterR) && !/Modified/.test(afterR) && remounted === true
+  return [ok ? "pass" : "fail", `after an edit "${edited}"; after ticking the card in the frame "${both}"; Reset properties gave "${cleared}" and sent done ${sent}; after another edit and R "${afterR}", remounted with done ${remounted}; focus after Reset on ${afterReset}, after Back to designed on ${afterBack} ("${back}")`]
 })
 
 // AC-57 Shareable text travels in the link; other text stays in this browser and leaves edited=local; both survive a reload as specified
 await check("AC-57", async () => {
   const p = await open("normal", { hash: `view=inspect&scenario=${CARD}` })
   await wait(800)
-  await details(p).getByLabel("Title").fill("Shared title")
+  await details(p).getByLabel("Title", { exact: true }).fill("Shared title")
   await details(p).getByRole("switch", { name: "Done" }).click()
   await details(p).getByRole("button", { name: /All properties/ }).click()
   await details(p).getByRole("button", { name: "Set Note" }).click()
-  await details(p).getByLabel("Note").fill("Private note")
+  await details(p).getByLabel("Note", { exact: true }).fill("Private note")
   await wait(600)
   const link = await p.evaluate(() => location.hash)
   await p.reload()
   await p.waitForSelector("[data-properties]")
   await wait(1200)
   await details(p).getByRole("button", { name: /All properties/ }).click()
-  const reloaded = { title: await details(p).getByLabel("Title").inputValue(), note: await details(p).getByLabel("Note").inputValue(), warned: await details(p).getByText(/The sender had local text edits/).count() }
+  const reloaded = { title: await details(p).getByLabel("Title", { exact: true }).inputValue(), note: await details(p).getByLabel("Note", { exact: true }).inputValue(), warned: await details(p).getByText(/The sender had local text edits/).count() }
   // A link that names the scenario shows its own state, but this browser's stored edits stay until the person edits that scenario here.
   const storedNote = () => p.evaluate(() => JSON.parse(localStorage.getItem("studio.example-tasks.property-edits.v1") ?? "{}")["components.task-card"]?.note ?? null)
   await p.goto(servers.normal.url + `#view=inspect&scenario=${CARD}&done=true`)
   await p.reload()
   await p.waitForSelector("[data-properties]")
   await wait(1200)
-  const linked = { title: await details(p).getByLabel("Title").inputValue(), stored: await storedNote() }
+  const linked = { title: await details(p).getByLabel("Title", { exact: true }).inputValue(), stored: await storedNote() }
   await details(p).getByRole("switch", { name: "Done" }).click()
   await wait(600)
   linked.afterEdit = await storedNote()
@@ -2008,7 +2019,7 @@ await check("AC-57", async () => {
   const fresh = await open("normal", { hash: link.slice(1) })
   await wait(1200)
   await details(fresh).getByRole("button", { name: /All properties/ }).click()
-  const received = { title: await details(fresh).getByLabel("Title").inputValue(), done: await details(fresh).getByRole("switch", { name: "Done" }).getAttribute("aria-checked"), noteSet: await details(fresh).getByRole("button", { name: "Set Note" }).count(), warned: await details(fresh).getByText(/The sender had local text edits/).count(), frame: (await frameState(await liveFrame(fresh))).mounted.values }
+  const received = { title: await details(fresh).getByLabel("Title", { exact: true }).inputValue(), done: await details(fresh).getByRole("switch", { name: "Done" }).getAttribute("aria-checked"), noteSet: await details(fresh).getByRole("button", { name: "Set Note" }).count(), warned: await details(fresh).getByText(/The sender had local text edits/).count(), frame: (await frameState(await liveFrame(fresh))).mounted.values }
   await fresh.closeAll()
   const ok = /title=Shared\+title/.test(link) && /done=true/.test(link) && /edited=local/.test(link) && !/Private/.test(link) && reloaded.title === "Shared title" && reloaded.note === "Private note" && reloaded.warned === 0 && linked.title === "Draft the quarterly plan" && linked.stored === "Private note" && linked.afterEdit === null && received.title === "Shared title" && received.done === "true" && received.noteSet === 1 && received.warned === 1 && received.frame.note === undefined
   return [ok ? "pass" : "fail", `link ${link}; after a reload Title "${reloaded.title}" and Note "${reloaded.note}" (note shown ${reloaded.warned}); a link without them showed Title "${linked.title}" and kept the stored note ${JSON.stringify(linked.stored)} until an edit there (then ${JSON.stringify(linked.afterEdit)}); in a fresh browser Title "${received.title}", Done ${received.done}, Note unset ${received.noteSet === 1} with the sender note ${received.warned}, frame note ${JSON.stringify(received.frame.note)}`]
