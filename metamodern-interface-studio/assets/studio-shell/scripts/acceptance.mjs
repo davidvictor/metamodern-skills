@@ -23,7 +23,7 @@ try {
   process.exit(2)
 }
 
-const builds = { normal: undefined, stress: "synthetic", captures: "captures" }
+const builds = { normal: "example", stress: "synthetic", captures: "captures" }
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 for (const [name, variant] of Object.entries(builds)) {
@@ -1042,7 +1042,7 @@ await check("AC-23", async () => {
   const backup = existsSync(file) ? `${file}.acceptance-backup` : null
   if (backup) copyFileSync(file, backup)
   const port = 5391
-  const dev = spawn("npx", ["vite", "--port", String(port), "--strictPort", "--logLevel", "error"], { cwd: root, stdio: "ignore" })
+  const dev = spawn("npx", ["vite", "--port", String(port), "--strictPort", "--logLevel", "error"], { cwd: root, stdio: "ignore", env: { ...process.env, VITE_STUDIO_ADAPTER: "example" } })
   try {
     const url = `http://localhost:${port}/`
     for (let i = 0; i < 60 && !(await fetch(url).then((r) => r.ok).catch(() => false)); i++) await wait(500)
@@ -1383,7 +1383,7 @@ await check("AC-33", async () => {
   const backup = existsSync(file) ? `${file}.acceptance-backup` : null
   if (backup) copyFileSync(file, backup)
   const port = 5392
-  const dev = spawn("npx", ["vite", "--port", String(port), "--strictPort", "--logLevel", "error"], { cwd: root, stdio: "ignore" })
+  const dev = spawn("npx", ["vite", "--port", String(port), "--strictPort", "--logLevel", "error"], { cwd: root, stdio: "ignore", env: { ...process.env, VITE_STUDIO_ADAPTER: "example" } })
   try {
     const url = `http://localhost:${port}/`
     for (let i = 0; i < 60 && !(await fetch(url).then((r) => r.ok).catch(() => false)); i++) await wait(500)

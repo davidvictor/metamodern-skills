@@ -52,6 +52,8 @@ The preview host (`src/studio/live-preview.tsx`) mounts one frame per runtime. A
 
 ## The product side
 
+Profiles may declare `frameRadius`, the outer preview boundary's radius in source CSS pixels. A preview that already draws a device frame declares its outer bezel radius, not the inner display radius. A bare viewport may declare 0. The shell scales this radius with its frame at every zoom; phone and tablet defaults are separate. This field describes clipping and boundary geometry only and never overrides the product's artwork.
+
 The product adds one preview entry: a route, page or recreation document that renders a single scenario in isolation, with fixtures injected at its existing seams. It calls `connectStudioFrame` from `src/studio/frame-client.ts` once. Copy that file into the product or import it; it has no dependencies.
 
 ```ts
@@ -75,6 +77,14 @@ const frame = connectStudioFrame({
 - Modified is detected for you: a trusted pointer or key event arms a short window, and only a DOM change or product navigation inside it marks the runtime modified, once. Studio mounts and commands never arm it. Call `frame.markModified()` for state the DOM does not show, such as a canvas.
 
 Opened outside the Studio, the preview entry should still render a default scenario so developers can load it directly.
+
+### Declared design inputs and diagnostics
+
+A numeric scenario range declares bounds, step and optional presets. `MountInputs.values` accepts strings or finite numbers; the shell validates and normalizes declared inputs. Use `format: "time"` for minutes or `"time-hours"` for decimal hours. Validate the supported range at the product boundary as well. A walkthrough's explicit step values take precedence over viewer lenses.
+
+For markup-driven design choices, declare an enum/range design parameter with `apply.input` naming the product input, optional `themes`, and `defaultsByTheme`. The shell sends resolved overrides in `MountInputs.design`. The product's mount handler applies them through its own renderer. Existing CSS/token adjustments still use their draft channel. Draft settings are stored per theme/variant and must never reach Present implicitly.
+
+An optional `FrameHandlers.diagnostics()` returns neutral measurement rows with an ID, label, value, optional unit/budget/status/note. Rows accompany the ready preview state and display in Details. The product owns the measurement algorithm and applicable budget; the shell owns presentation. State the measurement scope and limits rather than treating a budget pass as product acceptance.
 
 ## Capture-only Studios
 

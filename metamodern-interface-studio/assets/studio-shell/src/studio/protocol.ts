@@ -4,6 +4,9 @@
  * and their answers, a requestId. Receivers validate the origin and the
  * sending window before reading anything else.
  */
+import type { FrameDiagnostic } from "./types"
+export type { FrameDiagnostic } from "./types"
+
 export const PROTOCOL = "studio-preview/1" as const
 
 /** Everything needed to materialize one preview. Stable IDs only, never fixture values. */
@@ -11,7 +14,9 @@ export type MountInputs = {
   scenario: string
   theme: string
   profile: string
-  values: Record<string, string>
+  values: Record<string, string | number>
+  /** Design controls that require the product to rebuild markup or graphics. */
+  design?: Record<string, string | number>
   /** Commands replayed in order before the frame reports ready. */
   commands: string[]
   /** Draft token overrides, applied before ready so a remount keeps them. */
@@ -31,7 +36,14 @@ export type FrameCapability = "draft-css" | "content-size" | "sync-scroll" | "sy
  * wheel: ⌘ or Ctrl held, or a pinch, zooms; otherwise it is the part of a scroll the page could not use.
  */
 export type StageGesture =
-  | { kind: "wheel"; zoom: boolean; dx: number; dy: number; x: number; y: number }
+  | {
+      kind: "wheel"
+      zoom: boolean
+      dx: number
+      dy: number
+      x: number
+      y: number
+    }
   | { kind: "drag"; dx: number; dy: number }
   | { kind: "space"; down: boolean }
 
@@ -39,19 +51,44 @@ export type StageGesture =
  * How a synced target is found in another frame, most stable first: a Studio anchor, a sync ID,
  * an element ID, a test ID, a role with its accessible name (and which match it was), then a DOM path.
  */
-export type SyncTarget = { anchor?: string; sync?: string; id?: string; testid?: string; role?: string; name?: string; nth?: number; path?: string }
+export type SyncTarget = {
+  anchor?: string
+  sync?: string
+  id?: string
+  testid?: string
+  role?: string
+  name?: string
+  nth?: number
+  path?: string
+}
 
 /** One person's interaction in the leading frame, replayed in the others. Private values never appear here. */
 export type SyncEvent =
-  | { kind: "scroll"; region?: string; anchor?: { target: SyncTarget; offset: number }; ratio: number }
+  | {
+      kind: "scroll"
+      region?: string
+      anchor?: { target: SyncTarget; offset: number }
+      ratio: number
+    }
   | { kind: "click"; target: SyncTarget }
   | { kind: "input"; target: SyncTarget; value: string }
   | { kind: "submit"; target: SyncTarget }
   | { kind: "navigate"; location: string }
 
-export type SyncChannelsMessage = { scroll: boolean; interaction: boolean; navigation: boolean }
+export type SyncChannelsMessage = {
+  scroll: boolean
+  interaction: boolean
+  navigation: boolean
+}
 
-export type AnchorRect = { id: string; label: string; x: number; y: number; w: number; h: number }
+export type AnchorRect = {
+  id: string
+  label: string
+  x: number
+  y: number
+  w: number
+  h: number
+}
 
 export type ReadyPayload = {
   fingerprint: string
@@ -59,6 +96,8 @@ export type ReadyPayload = {
   location: string
   canGoBack: boolean
   anchors: AnchorRect[]
+  /** Neutral product measurements for Studio Details; never fixture or person data. */
+  diagnostics?: FrameDiagnostic[]
 }
 
 type Envelope = { protocol: typeof PROTOCOL; instance: string }
@@ -68,7 +107,13 @@ export type ShellBody =
   | { type: "mount"; requestId: string; inputs: MountInputs }
   | { type: "command"; requestId: string; command: string }
   | { type: "product-back"; requestId: string }
-  | { type: "draft-overrides"; requestId: string; tokens: Record<string, string>; css?: string; stylesheets?: string[] }
+  | {
+      type: "draft-overrides"
+      requestId: string
+      tokens: Record<string, string>
+      css?: string
+      stylesheets?: string[]
+    }
   /** Which interactions this frame should report; none until the Studio asks. */
   | { type: "sync"; requestId: string; channels: SyncChannelsMessage }
   /** Repeat another frame's interaction here. The reply says when the target could not be found. */
@@ -78,10 +123,21 @@ export type ShellBody =
 export type FrameBody =
   | { type: "hello"; capabilities?: FrameCapability[] }
   | ({ type: "ready"; requestId: string } & ReadyPayload)
-  | { type: "error"; requestId?: string; operation: string; recoverable: boolean; reason: string }
+  | {
+      type: "error"
+      requestId?: string
+      operation: string
+      recoverable: boolean
+      reason: string
+    }
   /** Sent once per runtime, when a person's interaction first changes product state. */
   | { type: "modified" }
-  | { type: "navigated"; location: string; canGoBack: boolean; anchors: AnchorRect[] }
+  | {
+      type: "navigated"
+      location: string
+      canGoBack: boolean
+      anchors: AnchorRect[]
+    }
   | { type: "reply"; requestId: string; ok: boolean; reason?: string }
   /** The document's content height in CSS pixels, after ready and whenever it settles at a new value. */
   | { type: "content-size"; height: number }

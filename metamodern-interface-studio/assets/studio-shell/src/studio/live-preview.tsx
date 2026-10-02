@@ -7,7 +7,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { StageGestureContext } from "./stage-gestures"
-import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type FrameMessage, type MountInputs, type ShellBody, type SyncChannelsMessage, type SyncEvent } from "./protocol"
+import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type FrameDiagnostic, type FrameMessage, type MountInputs, type ShellBody, type SyncChannelsMessage, type SyncEvent } from "./protocol"
 
 export const READY_TIMEOUT_MS = 20000
 
@@ -27,6 +27,7 @@ export type LiveStatus = {
   /** The document's content height, when the frame client reports it. */
   contentHeight?: number
   anchors: AnchorRect[]
+  diagnostics?: FrameDiagnostic[]
 }
 
 export type LivePreviewHandle = {
@@ -37,12 +38,34 @@ export type LivePreviewHandle = {
 }
 
 /** Sync for a preview that is one of several: which channels it reports, and where its interactions go. */
-export type PreviewSync = { channels: SyncChannelsMessage; onInteraction: (event: SyncEvent) => void }
+export type PreviewSync = {
+  channels: SyncChannelsMessage
+  onInteraction: (event: SyncEvent) => void
+}
 
-type Runtime = { instance: string; key: string; requestId: string; inputs: MountInputs; phase: "loading" | "ready" | "error"; ready?: FrameMessage & { type: "ready" }; modified: boolean; capabilities?: FrameCapability[]; contentHeight?: number }
+type Runtime = {
+  instance: string
+  key: string
+  requestId: string
+  inputs: MountInputs
+  phase: "loading" | "ready" | "error"
+  ready?: FrameMessage & { type: "ready" }
+  modified: boolean
+  capabilities?: FrameCapability[]
+  contentHeight?: number
+}
 /** The draft a preview shows: token values, CSS rules and font stylesheets. */
-export type PreviewDraft = { tokens: Record<string, string>; css: string; stylesheets: string[] }
-const draftKey = (d: { tokens: Record<string, string>; css?: string; stylesheets?: string[] }) => JSON.stringify({ tokens: d.tokens, css: d.css ?? "", stylesheets: d.stylesheets ?? [] })
+export type PreviewDraft = {
+  tokens: Record<string, string>
+  css: string
+  stylesheets: string[]
+}
+const draftKey = (d: { tokens: Record<string, string>; css?: string; stylesheets?: string[] }) =>
+  JSON.stringify({
+    tokens: d.tokens,
+    css: d.css ?? "",
+    stylesheets: d.stylesheets ?? [],
+  })
 
 let seq = 0
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`
@@ -72,9 +95,12 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   const replies = React.useRef(new Map<string, (r: { ok: boolean; reason?: string }) => void>())
   const expectedOrigin = origin ?? (location.origin === "null" ? "null" : new URL(src, location.href).origin)
 
-  const post = React.useCallback((instance: string, message: ShellBody) => {
-    frames.current.get(instance)?.contentWindow?.postMessage({ protocol: PROTOCOL, instance, ...message }, expectedOrigin === "null" ? "*" : expectedOrigin)
-  }, [expectedOrigin])
+  const post = React.useCallback(
+    (instance: string, message: ShellBody) => {
+      frames.current.get(instance)?.contentWindow?.postMessage({ protocol: PROTOCOL, instance, ...message }, expectedOrigin === "null" ? "*" : expectedOrigin)
+    },
+    [expectedOrigin]
+  )
 
   const failure = React.useRef<{ instance: string; reason: string } | null>(null)
   const runtimesRef = React.useRef<Runtime[]>([])
@@ -82,10 +108,21 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
 
   // A new key stages a new runtime next to the current one.
   React.useEffect(() => {
-    const rt: Runtime = { instance: uid("pv"), key: mountKey, requestId: uid("mount"), inputs: { ...latest.current.inputs, ...latest.current.draft }, phase: "loading", modified: false }
+    const rt: Runtime = {
+      instance: uid("pv"),
+      key: mountKey,
+      requestId: uid("mount"),
+      inputs: { ...latest.current.inputs, ...latest.current.draft },
+      phase: "loading",
+      modified: false,
+    }
     setRuntimes((list) => [...list.filter((r) => r.phase === "ready").slice(-1), rt])
     const timer = window.setTimeout(() => {
-      failure.current = { instance: rt.instance, reason: `No ready signal within ${READY_TIMEOUT_MS / 1000} s` }
+      if (runtimesRef.current.find((runtime) => runtime.instance === rt.instance)?.phase !== "loading") return
+      failure.current = {
+        instance: rt.instance,
+        reason: `No ready signal within ${READY_TIMEOUT_MS / 1000} s`,
+      }
       setRuntimes((list) => list.map((r) => (r.instance === rt.instance && r.phase === "loading" ? { ...r, phase: "error" } : r)))
     }, READY_TIMEOUT_MS)
     return () => window.clearTimeout(timer)
@@ -102,9 +139,12 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       if (!rt) return
       if (m.type === "hello") {
         update(rt.instance, () => ({ capabilities: m.capabilities ?? [] }))
-        post(rt.instance, { type: "mount", requestId: rt.requestId, inputs: rt.inputs })
-      }
-      else if (m.type === "ready") {
+        post(rt.instance, {
+          type: "mount",
+          requestId: rt.requestId,
+          inputs: rt.inputs,
+        })
+      } else if (m.type === "ready") {
         if (m.requestId !== rt.requestId) return // a late answer to an older request
         // Product code that focuses a field during mount must not take the keyboard from the Studio.
         if (document.activeElement === el) el.blur()
@@ -132,7 +172,14 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
         else if (g.kind === "wheel") {
           const r = el.getBoundingClientRect()
           const k = el.offsetWidth ? r.width / el.offsetWidth : 1
-          on({ kind: "wheel", zoom: !!g.zoom, dx: num(g.dx), dy: num(g.dy), x: r.left + num(g.x) * k, y: r.top + num(g.y) * k })
+          on({
+            kind: "wheel",
+            zoom: !!g.zoom,
+            dx: num(g.dx),
+            dy: num(g.dy),
+            x: r.left + num(g.x) * k,
+            y: r.top + num(g.y) * k,
+          })
         }
       } else if (m.type === "reply") {
         const done = replies.current.get(m.requestId)
@@ -140,8 +187,19 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
           replies.current.delete(m.requestId)
           done({ ok: m.ok, reason: m.reason })
         }
-      }
-      else if (m.type === "navigated") update(rt.instance, (r) => (r.ready ? { ready: { ...r.ready, location: m.location, canGoBack: m.canGoBack, anchors: m.anchors } } : {}))
+      } else if (m.type === "navigated")
+        update(rt.instance, (r) =>
+          r.ready
+            ? {
+                ready: {
+                  ...r.ready,
+                  location: m.location,
+                  canGoBack: m.canGoBack,
+                  anchors: m.anchors,
+                },
+              }
+            : {}
+        )
     }
     window.addEventListener("message", onMessage)
     return () => window.removeEventListener("message", onMessage)
@@ -160,34 +218,57 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
     const last = sent.current.get(current.instance) ?? draftKey(current.inputs)
     if (last === key) return
     sent.current.set(current.instance, key)
-    post(current.instance, { type: "draft-overrides", requestId: uid("draft"), ...(JSON.parse(key) as PreviewDraft) })
+    post(current.instance, {
+      type: "draft-overrides",
+      requestId: uid("draft"),
+      ...(JSON.parse(key) as PreviewDraft),
+    })
   }, [key, current, post])
 
   // The runtime on screen reports only the channels asked for; a new runtime is told again.
   const channelKey = sync ? JSON.stringify(sync.channels) : ""
   React.useEffect(() => {
     if (!current || !channelKey) return
-    post(current.instance, { type: "sync", requestId: uid("sync"), channels: JSON.parse(channelKey) })
+    post(current.instance, {
+      type: "sync",
+      requestId: uid("sync"),
+      channels: JSON.parse(channelKey),
+    })
   }, [channelKey, current, post])
 
-  React.useImperativeHandle(ref, () => ({
-    back: () => current && post(current.instance, { type: "product-back", requestId: uid("back") }),
-    command: (id) => current && post(current.instance, { type: "command", requestId: uid("cmd"), command: id }),
-    replay: (event) =>
-      new Promise((resolve) => {
-        if (!current) return resolve({ ok: false, reason: "This preview is not ready" })
-        const requestId = uid("replay")
-        const timer = window.setTimeout(() => {
-          replies.current.delete(requestId)
-          resolve({ ok: false, reason: "The preview did not answer" })
-        }, 3000)
-        replies.current.set(requestId, (r) => {
-          window.clearTimeout(timer)
-          resolve(r)
-        })
-        post(current.instance, { type: "replay", requestId, event })
-      }),
-  }), [current, post])
+  React.useImperativeHandle(
+    ref,
+    () => ({
+      back: () =>
+        current &&
+        post(current.instance, {
+          type: "product-back",
+          requestId: uid("back"),
+        }),
+      command: (id) =>
+        current &&
+        post(current.instance, {
+          type: "command",
+          requestId: uid("cmd"),
+          command: id,
+        }),
+      replay: (event) =>
+        new Promise((resolve) => {
+          if (!current) return resolve({ ok: false, reason: "This preview is not ready" })
+          const requestId = uid("replay")
+          const timer = window.setTimeout(() => {
+            replies.current.delete(requestId)
+            resolve({ ok: false, reason: "The preview did not answer" })
+          }, 3000)
+          replies.current.set(requestId, (r) => {
+            window.clearTimeout(timer)
+            resolve(r)
+          })
+          post(current.instance, { type: "replay", requestId, event })
+        }),
+    }),
+    [current, post]
+  )
 
   const status: LiveStatus = React.useMemo(() => {
     const failed = newest?.phase === "error"
@@ -202,6 +283,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       reason,
       previous: failed && !!current,
       anchors: current?.ready?.anchors ?? [],
+      diagnostics: current?.ready?.diagnostics,
       capabilities: current?.capabilities ?? newest?.capabilities ?? [],
       contentHeight: current?.contentHeight,
     }

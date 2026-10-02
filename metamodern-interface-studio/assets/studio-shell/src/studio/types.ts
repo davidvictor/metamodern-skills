@@ -32,19 +32,40 @@ export type Theme = {
   contrastOf?: string
 }
 
-export type Profile = { id: string; label: string; w: number; h: number; kind: "desktop" | "laptop" | "tablet" | "phone" }
+export type Profile = {
+  id: string
+  label: string
+  w: number
+  h: number
+  kind: "desktop" | "laptop" | "tablet" | "phone"
+  /** Outer preview/device radius in unscaled CSS pixels. Use 0 for a flat viewport. */
+  frameRadius?: number
+}
 
 /** Inspect may drag a live frame to any size in this range. Widths in `snapWidths` attract the edge, as do the profiles' own sizes. */
-export type Resizable = { min: { w: number; h: number }; max: { w: number; h: number }; snapWidths?: number[] }
+export type Resizable = {
+  min: { w: number; h: number }
+  max: { w: number; h: number }
+  snapWidths?: number[]
+}
 
 /** A scenario input the adapter declares, such as density, role, clock or condition. A change rebuilds the preview. */
 export type ScenarioInput = {
   id: string
   label: string
-  control: "select" | "presets"
-  options: { id: string; label: string }[]
+  control: "select" | "presets" | "range"
+  /** Select and preset choices. Range inputs may omit these and declare numeric bounds instead. */
+  options?: { id: string; label: string }[]
+  /** Inclusive numeric bounds for a range input. Required when `control` is `range`. */
+  min?: number
+  max?: number
+  step?: number
+  /** Named marks for a range. Values travel as numbers, not labels. */
+  presets?: { value: number; label: string }[]
+  /** A presentation hint understood by the shell: `time` is minutes after midnight; `time-hours` is decimal 24-hour time. */
+  format?: "time" | "time-hours"
   /** The value when the scenario designs none and the viewer chose none. Omit when every scenario that uses the input designs its own. */
-  default?: string
+  default?: string | number
   /** Why an option is missing or limited, shown with the control. */
   note?: string
   /**
@@ -62,7 +83,14 @@ export type ScenarioInput = {
 }
 
 /** An existing capture with its provenance. A capture proves only the visible state it recorded. */
-export type Capture = { src: string; w: number; h: number; digest?: string; recordedAt?: string; source?: string }
+export type Capture = {
+  src: string
+  w: number
+  h: number
+  digest?: string
+  recordedAt?: string
+  source?: string
+}
 
 export type Scenario = {
   /** Stable semantic ID. Labels, routes and files may change; this does not. */
@@ -82,24 +110,37 @@ export type Scenario = {
   /** Keyed `${themeId}:${profileId}`. */
   captures?: Partial<Record<string, Capture>>
   /** The value this scenario was designed with for a scenario input, keyed by input ID, such as `{ role: "viewer" }`. */
-  designed?: Record<string, string>
+  designed?: Record<string, string | number>
   /**
    * The options of a scenario input this scenario can actually render, keyed by input ID, such as
    * `{ density: ["default", "compact"] }`. Only these are offered for it; without an entry every option is.
    */
-  supports?: Record<string, string[]>
+  supports?: Record<string, Array<string | number>>
   /** Independent statuses; the Studio never infers approval. */
-  statuses?: { design?: string; delivery?: string; evidence?: string; fingerprint?: string }
+  statuses?: {
+    design?: string
+    delivery?: string
+    evidence?: string
+    fingerprint?: string
+  }
 }
 
 export type Area = { id: string; label: string }
 
 export type Step = {
+  /** Stable identity for presenter annotations. Omit only for older generated walkthroughs. */
+  id?: string
   scenario: string
   theme?: string
   profile?: string
   /** Product commands replayed through the frame, in order, before the step is ready. */
   commands?: string[]
+  /** Scenario input values for this step. They supplement the scenario's designed values. */
+  values?: Record<string, string | number>
+  /** Optional playback duration in seconds. The presenter can still advance manually. */
+  duration?: number
+  /** Keep this step in the authored sequence without showing it in a public walkthrough. */
+  hidden?: boolean
   /** A semantic anchor the product exposes (data-studio-anchor). Missing anchors stop the step. */
   anchor?: string
   narration: string
@@ -107,10 +148,28 @@ export type Step = {
   expect?: string
 }
 
-export type Walkthrough = { id: string; name: string; goal: string; illustrative?: boolean; steps: Step[] }
+export type Walkthrough = {
+  id: string
+  name: string
+  goal: string
+  illustrative?: boolean
+  steps: Step[]
+}
 
 /** A saved pair on one axis: "theme" (default), "profile", or the ID of a scenario input. a and b are option IDs of that axis. */
-export type Comparison = { id: string; label: string; scenario?: string; axis?: string; a: string; b: string }
+export type Comparison = {
+  id: string
+  label: string
+  scenario?: string
+  axis?: string
+  /** Legacy two-way fallback when `values` is absent. */
+  a?: string
+  b?: string
+  /** The complete ordered n-up tuple. Legacy `a` and `b` remain a two-way fallback. */
+  values?: string[]
+  /** Lets a presenter change the saved pair in the Studio without changing generated material. */
+  editable?: boolean
+}
 
 export type TokenFlag = "unread" | "literal" | "coupled"
 export type Token = {
@@ -147,9 +206,13 @@ export type DesignParameter = {
    * scale: multiplies lengths. ratio: a type scale ratio. font: a typeface. color: a color.
    * temperature: from cool (-1) to warm (1), mixed into neutral tokens.
    */
-  kind: "scale" | "ratio" | "font" | "color" | "temperature"
+  kind: "scale" | "ratio" | "font" | "color" | "temperature" | "enum" | "range"
   /** The value the product is built with: a number for scale and ratio, a font name or color for font and color. */
   default: number | string
+  /** The themes where this parameter is available. It is absent elsewhere rather than silently applied. */
+  themes?: string[]
+  /** Product-as-built values by theme, used in place of `default` where declared. */
+  defaultsByTheme?: Record<string, number | string>
   min?: number
   max?: number
   step?: number
@@ -160,7 +223,11 @@ export type DesignParameter = {
   stops?: { at: number; label: string; values?: Record<string, string> }[]
   /** font: a curated list; any Google Font name is also accepted. */
   options?: string[]
+  /** Labeled values for categorical controls. `options` remains for backwards-compatible font lists. */
+  choices?: { id: string; label: string }[]
   apply: {
+    /** Send this parameter's raw value to a live frame; useful when changing product markup, not just tokens. */
+    input?: string
     /** scale: token names or globs (`--space-*`) whose lengths follow the value. */
     scale?: string[]
     /** ratio: type tokens and their step on the scale (0 for the base size, 1 for one step up, -1 for one down). */
@@ -200,6 +267,17 @@ export type DesignParameter = {
   wontFollow?: string[]
 }
 
+/** A neutral, product-supplied rendering measurement for the Details panel. */
+export type FrameDiagnostic = {
+  id: string
+  label: string
+  value: string | number
+  budget?: number
+  unit?: string
+  status?: "ok" | "warning" | "error" | "info"
+  note?: string
+}
+
 export type StudioAdapter = {
   id: string
   version: string
@@ -221,6 +299,8 @@ export type StudioAdapter = {
     fidelity: Fidelity
     /** Plain label for the preview tab, such as "Actual UI · sample data". */
     label: string
+    /** Fidelity stays in Details; a presentation may hide the optional top-bar badge. */
+    showFidelityInToolbar?: boolean
     capabilities: Record<CapabilityDimension, Capability>
   }
   /** URL of the isolated preview document that speaks studio-preview/1. Omit for capture-only Studios. */
@@ -235,7 +315,11 @@ export type StudioAdapter = {
     resizable?: Resizable
     inputs: ScenarioInput[]
     /** The Responsive view: product layouts shown before the shell's presets, and sizes offered in Add frame. */
-    responsive?: { presets?: Preset[]; replaceShellPresets?: boolean; devices?: PresetFrame[] }
+    responsive?: {
+      presets?: Preset[]
+      replaceShellPresets?: boolean
+      devices?: PresetFrame[]
+    }
     /** Profile a viewer starts on, on every screen size. Without it the first profile opens, and a phone opens on the phone profile. */
     defaultProfile?: string
   }

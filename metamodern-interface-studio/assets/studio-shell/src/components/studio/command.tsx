@@ -50,8 +50,8 @@ export function CommandMenu() {
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading="Walkthroughs">
-            {adapter.walkthroughs.map((w) => (
-              <CommandItem key={w.id} value={`walkthrough ${w.name}`} onSelect={run(() => s.set({ view: "present", present: { ...s.present, tour: w.id, step: 0, playing: false } }))}>
+            {s.walkthroughs.map((w) => (
+              <CommandItem key={w.id} value={`walkthrough ${w.name}`} onSelect={run(() => s.set({ view: "present", present: { ...s.present, tour: w.id, step: 0, playing: false, playlist: false } }))}>
                 <PresentationIcon />{w.name}<span className="text-muted-foreground">{w.steps.length} steps</span>
               </CommandItem>
             ))}

@@ -26,6 +26,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 import { adapter } from "@/adapter"
 import { useStudio } from "@/store"
 import type { Capture, Fidelity, Mode, Profile, Theme } from "@/studio/types"
+import { scaledFrameRadius } from "@/studio/profile-frame"
 
 type Look = Mode | "recreation"
 const FID: Record<Look, { icon: React.ElementType; cls: string }> = {
@@ -103,11 +104,11 @@ export type EmptyState = { title: string; description: string; tone?: "neutral" 
  * The preview boundary: frame line, corner ticks and the anchor layer. The
  * content is a live frame, a capture or an explicit empty state, never a stand-in.
  */
-export function PreviewFrame({ w, h, scale, phone, appearance, anchor, empty, loading, className, label, children }: {
+export function PreviewFrame({ w, h, scale, profile, appearance, anchor, empty, loading, className, label, children }: {
   w: number
   h: number
   scale: number
-  phone?: boolean
+  profile: Pick<Profile, "kind" | "frameRadius">
   appearance?: "light" | "dark"
   anchor?: { x: number; y: number; w: number; h: number; label: string }
   empty?: EmptyState
@@ -116,9 +117,9 @@ export function PreviewFrame({ w, h, scale, phone, appearance, anchor, empty, lo
   label?: string
   children?: React.ReactNode
 }) {
-  const radius = phone ? Math.round(44 * scale) : Math.max(3, Math.round(8 * scale))
+  const radius = scaledFrameRadius(profile, w, h, scale)
   return (
-    <div className={cn("relative shrink-0", className)} style={{ width: Math.round(w * scale), height: Math.round(h * scale) }}>
+    <div className={cn("relative shrink-0", className)} style={{ width: w * scale, height: h * scale }}>
       <div className="preview-ticks" aria-hidden>
         <i /><i /><i /><i />
       </div>
