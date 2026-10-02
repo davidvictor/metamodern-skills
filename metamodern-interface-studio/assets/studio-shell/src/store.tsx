@@ -3,7 +3,7 @@ import * as React from "react"
 import { toast } from "sonner"
 
 import { adapter } from "@/adapter"
-import type { FrameDiagnostic, Scenario, ScenarioInput, Token } from "@/studio/types"
+import type { FrameDiagnostic, InputValue, Scenario, ScenarioInput, Token } from "@/studio/types"
 import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
 import { normalizeScenarioInput } from "@/studio/input"
@@ -30,7 +30,7 @@ export type State = {
   profile: string
   /** A dragged Inspect size on top of the profile. The profile still decides input context; this only sets the frame's pixels. */
   size: { w: number; h: number } | null
-  values: Record<string, string | number>
+  values: Record<string, InputValue>
   zoom: "fit" | number
   /** The scale Inspect is showing the frame at, for the dock's Zoom control to state. */
   scale: number
@@ -188,13 +188,13 @@ export const choosableFor = (sc: Scenario | undefined) =>
       : optionsFor(i, sc).length > 1
   )
 /** Whether a scenario can render an option of an input. */
-export const supports = (sc: Scenario | undefined, input: string, option: string | number) => {
+export const supports = (sc: Scenario | undefined, input: string, option: InputValue) => {
   const descriptor = A.axes.inputs.find((candidate) => candidate.id === input)
   return !!descriptor && normalizeScenarioInput(descriptor, sc, option) !== undefined
 }
 /** The viewer's choice when this scenario supports it, else the scenario's designed value, else the input's default. Inputs the scenario does not use are left out. */
-export function resolveValues(sc: Scenario | undefined, values: Record<string, string | number>) {
-  const out: Record<string, string | number> = {}
+export function resolveValues(sc: Scenario | undefined, values: Record<string, InputValue>) {
+  const out: Record<string, InputValue> = {}
   for (const i of inputsFor(sc)) {
     const chosen = values[i.id] === undefined ? undefined : normalizeScenarioInput(i, sc, values[i.id])
     const candidate = chosen ?? sc?.designed?.[i.id] ?? i.default
@@ -204,7 +204,7 @@ export function resolveValues(sc: Scenario | undefined, values: Record<string, s
   return out
 }
 /** The same values with the viewer's dock choices removed, for playing a walkthrough exactly as designed. */
-export const withoutLenses = (values: Record<string, string | number>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
+export const withoutLenses = (values: Record<string, InputValue>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
 /** The axes Compare can change for a scenario: theme, profile and every scenario input it uses. */
 export const compareAxes = (sc?: Scenario, draft = false) => [
   { id: "theme", label: A.axes.themeLabel },
@@ -224,7 +224,7 @@ export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: s
 }
 
 // Only inputs with a default start with a value; a designed input is left unset until the viewer chooses.
-export const defaultValues = (): Record<string, string | number> => Object.fromEntries(A.axes.inputs.flatMap((i) => (i.default !== undefined && i.placement !== "dock" ? [[i.id, i.default]] : [])))
+export const defaultValues = (): Record<string, InputValue> => Object.fromEntries(A.axes.inputs.flatMap((i) => (i.default !== undefined && i.placement !== "dock" ? [[i.id, i.default]] : [])))
 
 const initialDesign: State["design"] = { tab: hasAdjust ? "adjust" : "tokens", values: {}, valuesByTheme: {}, show: "draft" }
 const firstComparison = A.comparisons?.[0]
@@ -269,7 +269,7 @@ type Ctx = State & {
   /** A dragged or typed Inspect size; null returns to the profile's own size. Nothing is remounted. */
   setSize: (size: { w: number; h: number } | null) => void
   /** null returns the input to the scenario's designed value (or its default). */
-  setValue: (id: string, value: string | number | null) => void
+  setValue: (id: string, value: InputValue | null) => void
   walkthroughs: PresenterWalkthrough[]
   updatePresenter: (tourId: string, patch: Partial<PresenterOverlay["tours"][string]>) => void
   setView: (v: View) => void

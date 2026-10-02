@@ -49,7 +49,7 @@ import { download, encodeDesign, variantFile } from "@/studio/design"
 import { formatClock } from "@/studio/format"
 import { adapter } from "@/adapter"
 import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
-import type { CapabilityDimension } from "@/studio/types"
+import type { CapabilityDimension, InputValue } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
 import { navigationHint, stepZoom, zoomTarget, type ZoomApi } from "./stage-nav"
@@ -509,7 +509,7 @@ function useInputChoice(id: string) {
   const chosen = s.values[id] !== undefined && supports(s.scenarioObj, id, s.values[id]) ? s.values[id] : undefined
   const current = chosen ?? designed
   const overridden = chosen !== undefined && chosen !== designed
-  const labelOf = (v?: string | number) => {
+  const labelOf = (v?: InputValue) => {
     const numeric = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : Number.NaN
     return inp.options?.find((o) => o.id === v)?.label ?? (inp.format && Number.isFinite(numeric) ? formatClock(numeric, inp.format) : v === undefined ? undefined : String(v))
   }

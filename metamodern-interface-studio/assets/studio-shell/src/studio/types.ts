@@ -49,23 +49,34 @@ export type Resizable = {
   snapWidths?: number[]
 }
 
-/** A scenario input the adapter declares, such as density, role, clock or condition. A change rebuilds the preview. */
+/** A value a scenario input takes: an option ID, a number, text, or a switch's state. Never an object, node or function. */
+export type InputValue = string | number | boolean
+
+/**
+ * A scenario input the adapter declares, such as density, role, clock or condition. A change rebuilds the preview.
+ * An input in the "properties" section is a component property instead: it edits the selected state without a remount.
+ */
 export type ScenarioInput = {
+  /** Values travel in links under this ID. A property may not use a key the Studio's own links use (`RESERVED_LINK_KEYS` in input.ts). */
   id: string
   label: string
-  control: "select" | "presets" | "range"
-  /** Select and preset choices. Range inputs may omit these and declare numeric bounds instead. */
+  /**
+   * select, presets and range as before. switch is a boolean; text a string (`multiline`, `maxLength`); number a plain
+   * field with optional `min`, `max` and `step`; choice names options that stand for values the frame owns, and sends only the option ID.
+   */
+  control: "select" | "presets" | "range" | "switch" | "text" | "number" | "choice"
+  /** Select, preset and choice options. Range inputs may omit these and declare numeric bounds instead. */
   options?: { id: string; label: string }[]
-  /** Inclusive numeric bounds for a range input. Required when `control` is `range`. */
+  /** Inclusive numeric bounds for a range input (required) or a number input (optional). */
   min?: number
   max?: number
   step?: number
-  /** Named marks for a range. Values travel as numbers, not labels. */
+  /** Named marks for a range or number. Values travel as numbers, not labels. A number with presets can be a Compare axis. */
   presets?: { value: number; label: string }[]
   /** A presentation hint understood by the shell: `time` is minutes after midnight; `time-hours` is decimal 24-hour time. */
   format?: "time" | "time-hours"
-  /** The value when the scenario designs none and the viewer chose none. Omit when every scenario that uses the input designs its own. */
-  default?: string | number
+  /** The value when the scenario designs none and the viewer chose none. Omit when every scenario that uses the input designs its own. For an optional property, the product default shown greyed. */
+  default?: InputValue
   /** Why an option is missing or limited, shown with the control. */
   note?: string
   /**
@@ -80,6 +91,22 @@ export type ScenarioInput = {
   scoped?: boolean
   /** Icon for the dock control. */
   icon?: "person" | "density" | "sliders"
+  /** "properties": a component property, shown in Details > Scenario > Properties and never in the dock. */
+  section?: "properties"
+  /** The surfaces (`Scenario.surface`) the input applies to. Elsewhere it has no control and sends no value. */
+  surfaces?: string[]
+  /** Shown in the top group of Properties; every other property sits under a collapsed All properties. */
+  curated?: boolean
+  /** Unset by default: the row shows the product default greyed with Set, and no value is sent until it is set. */
+  optional?: boolean
+  /** Text only: the value may travel in links. Other text stays in the viewer's browser. */
+  shareable?: boolean
+  /** A property the Studio cannot edit, such as a function. It is listed with its note and sends no value. */
+  readonly?: boolean
+  /** Text only: a multi-line field. */
+  multiline?: boolean
+  /** Text only: the most characters accepted. */
+  maxLength?: number
 }
 
 /** An existing capture with its provenance. A capture proves only the visible state it recorded. */
@@ -110,12 +137,14 @@ export type Scenario = {
   /** Keyed `${themeId}:${profileId}`. */
   captures?: Partial<Record<string, Capture>>
   /** The value this scenario was designed with for a scenario input, keyed by input ID, such as `{ role: "viewer" }`. */
-  designed?: Record<string, string | number>
+  designed?: Record<string, InputValue>
   /**
    * The options of a scenario input this scenario can actually render, keyed by input ID, such as
    * `{ density: ["default", "compact"] }`. Only these are offered for it; without an entry every option is.
    */
   supports?: Record<string, Array<string | number>>
+  /** A saved state (scenarios.json): the generated scenario it was saved from. The frame renders that one with `designed`. */
+  savedFrom?: string
   /** Independent statuses; the Studio never infers approval. */
   statuses?: {
     design?: string

@@ -7,6 +7,7 @@ import { adapter } from "@/adapter"
 import { captureFor, NO_DRAFT, resolveValues, useStudio, type Draft } from "@/store"
 import { frameDesignValues, valuesForTheme } from "@/studio/design"
 import { LivePreview, type LivePreviewHandle, type LiveStatus, type PreviewSync } from "@/studio/live-preview"
+import type { InputValue } from "@/studio/types"
 import { CaptureImage, PreviewFrame, type EmptyState } from "./bits"
 
 /** A view's preview status as Details and the top bar read it. A capture or empty state has no live status. */
@@ -46,7 +47,7 @@ type Props = {
   profile: string
   /** Inspect only: the frame's pixel size when the viewer dragged it off the profile's own. */
   size?: { w: number; h: number } | null
-  values: Record<string, string | number>
+  values: Record<string, InputValue>
   commands?: string[]
   /** The draft this preview shows; none by default. Present never passes one. */
   draft?: Draft

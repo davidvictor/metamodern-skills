@@ -4,7 +4,7 @@
  * and their answers, a requestId. Receivers validate the origin and the
  * sending window before reading anything else.
  */
-import type { FrameDiagnostic } from "./types"
+import type { FrameDiagnostic, InputValue } from "./types"
 export type { FrameDiagnostic } from "./types"
 
 export const PROTOCOL = "studio-preview/1" as const
@@ -14,7 +14,7 @@ export type MountInputs = {
   scenario: string
   theme: string
   profile: string
-  values: Record<string, string | number>
+  values: Record<string, InputValue>
   /** Design controls that require the product to rebuild markup or graphics. */
   design?: Record<string, string | number>
   /** Commands replayed in order before the frame reports ready. */
