@@ -70,7 +70,8 @@ Nothing to do by hand. `vite.config.ts` passes lint again.
 
 Nothing to do by hand, except for a preview entry that copied `frame-client.ts` instead of importing it (see below). Fixes from review of 0.10.1:
 
-- A design value counts as a change against the active theme's `defaultsByTheme` value. Links, the Draft badge and Reset all no longer treat a theme's as-built value as a draft, and a value that differs from it travels in the link. Existing links still open.
+- Design values follow `defaultsByTheme`. A shared parameter's value travels in a link when it differs from the as-built default of any theme, so a link made in one theme shows the same value in another; a theme-scoped value travels when it differs from that theme's default. The specimen and the draft shown in each theme compare with that theme's own default. Existing links still open.
+- Saved design values equal to a parameter's plain `default` are now restored on reload (0.10.1 dropped them). A draft may therefore reappear in a theme whose `defaultsByTheme` value differs; Reset all clears it.
 - A range input whose maximum is not a whole number of steps sends the last step inside the range (max 10, step 4 sends 8, not 12).
 - A frame whose `diagnostics()` throws or rejects now reports no diagnostics and still becomes ready. A preview entry that copied `frame-client.ts` instead of importing it should copy it again.
-- Compare keeps sides A and B first in a saved set, swaps two sides when one is set to the other's value, and keeps at most four saved values. `src/studio/compare.ts` is a new shell file.
+- Compare keeps sides A and B first in a saved set, swaps two sides when one is set to the other's value, and keeps at most four saved values. It shows no more sides than the axis has values, and an axis with fewer than two values is explained instead of loading. `src/studio/compare.ts` is a new shell file.
