@@ -164,8 +164,9 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       } else if (m.type === "code") answers.current.get(m.requestId)?.(m)
       else if (m.type === "error" && m.requestId && (answers.current.has(m.requestId) || valueRequests.current.has(m.requestId))) {
         answers.current.get(m.requestId)?.(null)
-        // Values the frame could not apply in place are mounted instead.
-        if (valueRequests.current.delete(m.requestId)) setRemount((n) => n + 1)
+        // Values the runtime on screen could not apply in place are mounted instead; an older runtime's answer changes nothing.
+        const onScreen = [...runtimesRef.current].reverse().find((r) => r.phase === "ready")
+        if (valueRequests.current.delete(m.requestId) && rt === onScreen) setRemount((n) => n + 1)
       } else if (m.type === "error" && (!m.requestId || m.requestId === rt.requestId) && rt.phase === "loading") {
         failure.current = { instance: rt.instance, reason: m.reason }
         update(rt.instance, () => ({ phase: "error" }))
@@ -245,6 +246,11 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   const valuesKey = JSON.stringify(inputs.values)
   const sentValues = React.useRef(new Map<string, string>())
   React.useEffect(() => {
+    // A runtime staged with values that failed: stage another when the values change, never again for the same values.
+    if (newest?.phase === "error" && newest.key === runtimeKey) {
+      if (JSON.stringify(newest.inputs.values) !== valuesKey) setRemount((n) => n + 1)
+      return
+    }
     if (!current || current !== newest || current.key !== runtimeKey) return
     if ((sentValues.current.get(current.instance) ?? JSON.stringify(current.inputs.values)) === valuesKey) return
     sentValues.current.set(current.instance, valuesKey)
@@ -302,7 +308,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
           const done = (m: FrameMessage | null) => {
             window.clearTimeout(timer)
             answers.current.delete(requestId)
-            resolve(m?.type === "code" ? { language: m.language, text: m.text } : null)
+            resolve(m?.type === "code" ? { language: String(m.language), text: String(m.text) } : null)
           }
           const timer = window.setTimeout(() => done(null), 3000)
           answers.current.set(requestId, done)

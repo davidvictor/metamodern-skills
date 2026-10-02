@@ -121,5 +121,8 @@ test('property values and code cross the frame boundary only as announced capabi
   assert.match(host, /type: "code-request"/);
   // Pending value requests are forgotten on the reply as well as on an error, so the set never grows with each edit.
   assert.match(host, /m\.type === "reply"\) \{[\s\S]{0,200}?valueRequests\.current\.delete\(m\.requestId\)/, 'a reply clears its value request');
-  assert.match(host, /if \(valueRequests\.current\.delete\(m\.requestId\)\) setRemount/, 'an error clears its value request and remounts');
+  assert.match(host, /if \(valueRequests\.current\.delete\(m\.requestId\) && rt === onScreen\) setRemount/, 'an error clears its value request and remounts only the runtime on screen');
+  // A failed staged runtime does not freeze later edits: new values stage another runtime, the same values never loop.
+  assert.match(host, /if \(newest\?\.phase === "error" && newest\.key === runtimeKey\) \{\s*if \(JSON\.stringify\(newest\.inputs\.values\) !== valuesKey\) setRemount\(\(n\) => n \+ 1\)\s*return\s*\}/, 'a failed runtime lets the next edit remount');
+  assert.match(host, /language: String\(m\.language\), text: String\(m\.text\)/, 'code answers are coerced to strings');
 });
