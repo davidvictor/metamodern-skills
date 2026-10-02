@@ -47,6 +47,7 @@ import { AdjustPanel } from "./design"
 import { ResponsivePanel } from "./responsive"
 import type { Scenario } from "@/studio/types"
 import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
+import { savedComparison } from "@/studio/compare"
 import { ProductMark } from "./bits"
 import { staticProblem } from "./views"
 
@@ -222,8 +223,7 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
           <p className="px-2 pb-1 text-xs font-medium text-sidebar-foreground/70">Saved comparisons</p>
           {adapter.comparisons.map((c) => (
             <SidebarMenuButton key={c.id} size="sm" onClick={() => {
-              const values = c.values?.length ? c.values : [c.a ?? s.compare.a, c.b ?? s.compare.b]
-              s.set({ compare: { ...s.compare, axis: c.axis ?? "theme", a: values[0] ?? s.compare.a, b: values[1] ?? s.compare.b, values, count: Math.min(4, Math.max(2, values.length)) as 2 | 3 | 4, editable: c.editable ?? true } })
+              s.set({ compare: { ...s.compare, axis: c.axis ?? "theme", ...savedComparison(c, s.compare.a, s.compare.b), editable: c.editable ?? true } })
               if (c.scenario) s.selectScenario(c.scenario)
             }}>
               <BookmarkIcon />

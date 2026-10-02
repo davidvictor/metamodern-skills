@@ -187,7 +187,7 @@ function EnumControl({ p }: { p: DesignParameter }) {
 function ShareDraft() {
   const s = useStudio()
   const [label, setLabel] = React.useState("Draft")
-  const design = encodeDesign(adapter, currentDesignValues(s))
+  const design = encodeDesign(adapter, currentDesignValues(s), s.theme)
   return (
     <SidebarGroup className="gap-3 border-t px-3 py-3">
       <Field orientation="horizontal">
@@ -316,9 +316,9 @@ export function AdjustPanel() {
  * The type specimen beside the screen: each typeface the draft sets, and each size on the type scale,
  * drawn in this Studio from the same draft values. Fonts load from Google Fonts only.
  */
-/** Whether the draft changes type: a typeface, the type scale, or a size the specimen shows. */
-function typeChanged(values: Record<string, number | string>) {
-  return params().some((p) => !isDefault(p, values[p.id]) && (p.kind === "font" || p.kind === "ratio" || (p.kind === "scale" && (p.apply.scale ?? []).some((n) => params().some((q) => q.kind === "ratio" && n in (q.apply.steps ?? {}))))))
+/** Whether the draft changes type in a theme: a typeface, the type scale, or a size the specimen shows. */
+function typeChanged(values: Record<string, number | string>, theme: string) {
+  return params(theme).some((p) => !isDefault(p, values[p.id], parameterDefault(adapter, p, theme)) && (p.kind === "font" || p.kind === "ratio" || (p.kind === "scale" && (p.apply.scale ?? []).some((n) => params(theme).some((q) => q.kind === "ratio" && n in (q.apply.steps ?? {}))))))
 }
 
 function Specimen() {
@@ -337,7 +337,7 @@ function Specimen() {
     .filter((p) => p.kind === "scale" && (p.apply.scale ?? []).some((n) => sized.includes(n)))
     .flatMap((p) => (p.apply.scale ?? []).filter((n) => !sized.includes(n) && !n.includes("*")))
   const sizes = [...new Set([...sized, ...base])]
-  const family = fonts.map((p) => String(values[p.id] ?? p.default))[0]
+  const family = fonts.map((p) => String(values[p.id] ?? parameterDefault(adapter, p, s.theme)))[0]
   React.useEffect(() => {
     const links = d.stylesheets.filter(allowedStylesheet).map((href) => {
       const link = Object.assign(document.createElement("link"), {
@@ -350,13 +350,13 @@ function Specimen() {
     })
     return () => links.forEach((l) => l.remove())
   }, [d.stylesheets])
-  if ((!fonts.length && !sizes.length) || !typeChanged(values)) return null
+  if ((!fonts.length && !sizes.length) || !typeChanged(values, s.theme)) return null
   const value = (name: string) => d.tokens[name] ?? baseValue(adapter, name, s.theme)
   return (
     <aside className="w-60 shrink-0 rounded-xl border bg-background p-4 text-foreground shadow-sm" aria-label="Type specimen">
       <h3 className="mb-3 text-xs font-medium text-muted-foreground">Type specimen</h3>
       {fonts.map((p) => {
-        const name = String(values[p.id] ?? p.default)
+        const name = String(values[p.id] ?? parameterDefault(adapter, p, s.theme))
         return (
           <div key={p.id} className="mb-3 grid gap-1">
             <span className="text-[11px] text-muted-foreground">
@@ -409,7 +409,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
   const pr = sizedProfile(s.profile, null)
   const box = React.useRef<HTMLDivElement>(null)
   const sides = show === "split" ? 2 : 1
-  const specimen = !narrow && typeChanged(values)
+  const specimen = !narrow && typeChanged(values, s.theme)
   const scale = useFit(box, pr.w * sides, pr.h, s.zoom, 64 + (sides - 1) * 32 + (specimen ? 272 : 0))
   const nav = useStageNav(box, scale)
   const peekOn = {

@@ -55,6 +55,10 @@ export function importedOverlay(current: PresenterOverlay, candidate: unknown): 
 export const firstVisibleIndex = (tour: Pick<Walkthrough, "steps">) => tour.steps.findIndex((step) => !step.hidden)
 export const nextVisibleIndex = (tour: Pick<Walkthrough, "steps">, after: number) => tour.steps.findIndex((step, index) => index > after && !step.hidden)
 
+/** Seconds a step plays for at normal speed: the authored duration, else a reading time for its narration. A missing step reads as empty. */
+export const stepSeconds = (step: Pick<PresenterStep, "duration" | "narration"> | undefined) =>
+  step?.duration != null ? Math.max(0.5, step.duration) : Math.min(14, Math.max(5, (step?.narration.split(/\s+/).length ?? 0) * 0.4 + 2.5))
+
 export const stepId = (tour: Pick<Walkthrough, "id">, step: PresenterStep, index: number) => step.id ?? `${tour.id}:${index + 1}`
 
 export function applyPresenterOverlay(tours: Walkthrough[], overlay: PresenterOverlay | null | undefined): PresenterWalkthrough[] {

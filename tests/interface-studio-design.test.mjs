@@ -114,3 +114,62 @@ test('scenario input validation normalizes declared ranges and rejects unsupport
   assert.equal(normalizeScenarioInput(select, { supports: { mode: ['a'] } }, 'a'), 'a');
   assert.equal(normalizeScenarioInput(select, { supports: { mode: ['a'] } }, 'b'), undefined);
 });
+
+test('a link keeps shared values that differ from any theme default and scoped values against the active theme', async () => {
+  const { encodeDesign } = await designModel();
+  assert.equal(encodeDesign(baseAdapter, { density: 1.2 }, 'dark'), 'density:1.2', 'a shared value as built in dark still changes light, so it travels');
+  assert.equal(encodeDesign(baseAdapter, { density: 1 }, 'dark'), 'density:1', 'a shared value as built in light still changes dark');
+  assert.equal(encodeDesign(baseAdapter, { density: 1.2 }, 'light'), 'density:1.2');
+  assert.equal(encodeDesign(baseAdapter, { density: 0.9 }), 'density:0.9');
+  assert.equal(encodeDesign(baseAdapter, {}, 'dark'), '', 'no value, no change');
+  assert.equal(encodeDesign(baseAdapter, { graphic: 'bars' }, 'light'), '', 'a scoped value at its theme default stays out');
+  assert.equal(encodeDesign(baseAdapter, { graphic: 'rings' }, 'light'), 'graphic:rings');
+  const flat = { ...baseAdapter, design: { parameters: [{ ...baseAdapter.design.parameters[0], defaultsByTheme: undefined }] } };
+  assert.equal(encodeDesign(flat, { density: 1 }, 'dark'), '', 'a shared value equal to every theme default stays out');
+  const store = read('src/store.tsx');
+  assert.match(store, /encodeDesign\(A, valuesForTheme\([^)]*state\.theme\), state\.theme\)/, 'the link encodes the viewed theme');
+  assert.match(store, /theme\.id\), theme\.id\)\)/, 'hasDraft and Reset all follow the same rule in every theme');
+  assert.match(store, /!d\.changes\.length\) return NO_DRAFT/, 'the view draft counts only changes in the theme it renders');
+  assert.doesNotMatch(store, /decodeDesign\(A, encodeDesign\(/, 'saved values are not filtered against a theme-less default on reload');
+});
+
+test('a link made in dark round-trips a shared value into light', async () => {
+  const { encodeDesign, decodeDesign, designDraft, valuesForTheme } = await designModel();
+  const link = encodeDesign(baseAdapter, valuesForTheme(baseAdapter, { density: 1.2 }, {}, 'dark'), 'dark');
+  const decoded = decodeDesign(baseAdapter, link);
+  assert.deepEqual(decoded, { density: 1.2 });
+  assert.equal(designDraft(baseAdapter, decoded, 'dark').changes.length, 0, 'dark shows its as-built value');
+  assert.equal(designDraft(baseAdapter, decoded, 'light').tokens['--space'], '12px', 'light applies 1.2 instead of falling back to 1');
+  const back = encodeDesign(baseAdapter, valuesForTheme(baseAdapter, { density: 1 }, {}, 'dark'), 'dark');
+  assert.equal(designDraft(baseAdapter, decodeDesign(baseAdapter, back), 'dark').tokens['--space'], '10px', 'a dark value at the plain default survives too');
+});
+
+test('a partial values change keeps the shared and themed values it does not name', async () => {
+  const { mergeDesignValues } = await designModel();
+  const merged = mergeDesignValues(baseAdapter, { density: 1.1, clock: 600 }, { light: { graphic: 'rings' } }, 'light', { density: 0.9 });
+  assert.deepEqual(merged.values, { density: 0.9, clock: 600 });
+  assert.deepEqual(merged.valuesByTheme, { light: { graphic: 'rings' } });
+  const themed = mergeDesignValues(baseAdapter, { density: 1.1 }, { light: { graphic: 'rings' }, dark: {} }, 'light', { graphic: 'bars' });
+  assert.deepEqual(themed.values, { density: 1.1 });
+  assert.deepEqual(themed.valuesByTheme, { light: { graphic: 'bars' }, dark: {} });
+  assert.match(read('src/store.tsx'), /mergeDesignValues\(A, s\.design\.values, s\.design\.valuesByTheme, s\.theme, patch\.values\)/);
+});
+
+test('the type specimen reads the active theme default for typefaces and change detection', () => {
+  const design = read('src/components/studio/design.tsx');
+  assert.doesNotMatch(design, /\?\? p\.default\)/, 'no font fallback ignores defaultsByTheme');
+  assert.match(design, /String\(values\[p\.id\] \?\? parameterDefault\(adapter, p, s\.theme\)\)/);
+  assert.match(design, /!isDefault\(p, values\[p\.id\], parameterDefault\(adapter, p, theme\)\)/, 'typeChanged compares with the theme default');
+  assert.match(design, /!typeChanged\(values, s\.theme\)/);
+});
+
+test('a snapped range value never passes the declared maximum', async () => {
+  const { normalizeScenarioInput } = await loadPureTypeScript('src/studio/input.ts');
+  const uneven = { id: 'n', label: 'N', control: 'range', min: 0, max: 10, step: 4 };
+  assert.equal(normalizeScenarioInput(uneven, undefined, 10), 8, 'rounding up to 12 takes the last step inside the range');
+  assert.equal(normalizeScenarioInput(uneven, undefined, 9), 8);
+  assert.equal(normalizeScenarioInput(uneven, undefined, 5), 4);
+  assert.equal(normalizeScenarioInput({ ...uneven, step: 3 }, undefined, 10), 9);
+  assert.equal(normalizeScenarioInput({ id: 'h', label: 'H', control: 'range', min: 0, max: 24, step: 1 / 12 }, undefined, 24), 24, 'an exact maximum on a decimal grid stays');
+  assert.equal(normalizeScenarioInput({ id: 'o', label: 'O', control: 'range', min: 1, max: 10, step: 4 }, undefined, 10), 9);
+});

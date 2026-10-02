@@ -1051,7 +1051,7 @@ function TokenEditor() {
     s.set({ tokens: { ...s.tokens, drafts: next } })
   }
   const exportDrafts = () => {
-    const f = variantFile(adapter, "Draft", s.draftFor, encodeDesign(adapter, s.design.values))
+    const f = variantFile(adapter, "Draft", s.draftFor, encodeDesign(adapter, s.design.values, s.theme))
     download(f.name, f.text)
     toast.success(`Saved ${f.name}`, {
       description: "The one draft layer, Adjust and Tokens together. Commit it to the Studio's variants folder to make it a Token variant.",

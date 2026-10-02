@@ -5,8 +5,9 @@ import { toast } from "sonner"
 import { adapter } from "@/adapter"
 import type { FrameDiagnostic, Scenario, ScenarioInput, Token } from "@/studio/types"
 import type { FrameCapability } from "@/studio/protocol"
-import { decodeDesign, designDraft, encodeDesign, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
+import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
 import { normalizeScenarioInput } from "@/studio/input"
+import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import { applyPresenterOverlay, isPresenterOverlay, type PresenterOverlay, type PresenterWalkthrough, updateOverlay } from "@/studio/presenter-overlay"
 
@@ -228,7 +229,7 @@ export const defaultValues = (): Record<string, string | number> => Object.fromE
 const initialDesign: State["design"] = { tab: hasAdjust ? "adjust" : "tokens", values: {}, valuesByTheme: {}, show: "draft" }
 const firstComparison = A.comparisons?.[0]
 /** `values` is the canonical n-up tuple; a/b remain only for older adapters. */
-const initialComparisonValues = firstComparison?.values?.length ? firstComparison.values : [firstComparison?.a ?? A.axes.themes[0].id, firstComparison?.b ?? A.axes.themes[A.axes.themes.length - 1].id]
+const initialComparison = savedComparison(firstComparison ?? {}, A.axes.themes[0].id, A.axes.themes[A.axes.themes.length - 1].id)
 
 const initial: State = {
   view: "inspect",
@@ -243,7 +244,7 @@ const initial: State = {
   scale: 1,
   resetNonce: 0,
   preview: { status: "loading", modified: false, canGoBack: false },
-  compare: { axis: firstComparison?.axis ?? "theme", a: initialComparisonValues[0] ?? A.axes.themes[0].id, b: initialComparisonValues[1] ?? A.axes.themes[A.axes.themes.length - 1].id, values: initialComparisonValues, count: Math.min(4, Math.max(2, initialComparisonValues.length)) as 2 | 3 | 4, editable: firstComparison?.editable ?? true, mode: "side", split: 50, showB: false },
+  compare: { axis: firstComparison?.axis ?? "theme", ...initialComparison, editable: firstComparison?.editable ?? true, mode: "side", split: 50, showB: false },
   present: { tour: A.walkthroughs[0]?.id ?? "", step: 0, playing: false, speed: 1, elapsed: 0, focus: false, playlist: false },
   presenter: { version: 1, tours: {} },
   tokens: { selected: A.tokens?.tokens[0]?.name ?? "", drafts: {}, query: "", flag: "all", family: null },
@@ -323,7 +324,9 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const fromLink = readHash()
     const kept = readJSON<Partial<State["responsive"]>>(RESPONSIVE_KEY)
     const responsive = fromLink.responsive ?? (kept?.frames?.length ? { ...initialResponsive(), ...kept, resetNonce: 0 } : initialResponsive())
-    const cleanDesign = (raw: unknown) => raw && typeof raw === "object" && !Array.isArray(raw) ? decodeDesign(A, encodeDesign(A, raw as DesignValues)) : {}
+    // Saved values pass the same validation as a link, but every value is kept: shared values serve
+    // every theme, so one that equals a parameter's plain default can still differ from a theme's.
+    const cleanDesign = (raw: unknown) => raw && typeof raw === "object" && !Array.isArray(raw) ? decodeDesign(A, Object.entries(raw).map(([id, v]) => `${id}:${v}`).join(";")) : {}
     const valuesByTheme = savedDesign?.version === 1 && savedDesign.valuesByTheme && typeof savedDesign.valuesByTheme === "object" && !Array.isArray(savedDesign.valuesByTheme)
       ? Object.fromEntries(Object.entries(savedDesign.valuesByTheme).map(([id, values]) => [id, cleanDesign(values)])) : {}
     const design = { ...initial.design, ...(fromLink.design ?? {}),
@@ -370,7 +373,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       const sync = (Object.keys(r.sync) as (keyof SyncChannels)[]).filter((k) => r.sync[k])
       if (sync.length !== 3) q.set("sync", sync.join("-") || "off")
     }
-    const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme))
+    const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme), state.theme)
     if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
   }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive])
@@ -435,27 +438,18 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       const d = designDraft(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme), theme)
       return { tokens: { ...d.tokens, ...handDrafts(state.tokens.drafts, theme) }, css: d.css, stylesheets: d.stylesheets, scoped: d.scoped }
     },
-    hasDraft: Object.keys(state.tokens.drafts).length > 0 || A.axes.themes.some((theme) => !!encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme.id))),
+    hasDraft: Object.keys(state.tokens.drafts).length > 0 || A.axes.themes.some((theme) => !!encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme.id), theme.id)),
     viewDraft: (theme) => {
-      const values = valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme)
-      if (!state.options.draftEverywhere || (!Object.keys(state.tokens.drafts).length && !encodeDesign(A, values))) return NO_DRAFT
-      const d = designDraft(A, values, theme)
+      if (!state.options.draftEverywhere) return NO_DRAFT
+      // A shared value can be a change in another theme yet as built in this one; only this theme's changes count here.
+      const d = designDraft(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme), theme)
+      if (!Object.keys(state.tokens.drafts).length && !d.changes.length) return NO_DRAFT
       return { tokens: { ...d.tokens, ...handDrafts(state.tokens.drafts, theme) }, css: d.css, stylesheets: d.stylesheets }
     },
     setDesign: (patch) =>
       set((s) => {
         if (!patch.values) return { design: { ...s.design, ...patch } }
-        const scoped = new Set((A.design?.parameters ?? []).filter((p) => p.themes?.length).map((p) => p.id))
-        const shared = Object.fromEntries(Object.entries(patch.values).filter(([id]) => !scoped.has(id)))
-        const themed = Object.fromEntries(Object.entries(patch.values).filter(([id]) => scoped.has(id)))
-        return {
-          design: {
-            ...s.design,
-            ...patch,
-            values: shared,
-            valuesByTheme: { ...s.design.valuesByTheme, [s.theme]: { ...(s.design.valuesByTheme[s.theme] ?? {}), ...themed } },
-          },
-        }
+        return { design: { ...s.design, ...patch, ...mergeDesignValues(A, s.design.values, s.design.valuesByTheme, s.theme, patch.values) } }
       }),
     resetDesign: (scope) =>
       set((s) => {

@@ -9,9 +9,11 @@ export function normalizeScenarioInput(input: ScenarioInput, scenario: Scenario 
     const raw = typeof value === "number" ? value : Number(value)
     if (!Number.isFinite(raw) || input.min === undefined || input.max === undefined || raw < input.min || raw > input.max) return undefined
     const step = input.step && input.step > 0 ? input.step : 1
-    const normalized = input.min + Math.round((raw - input.min) / step) * step
     // Decimal steps need a stable transport value without turning an out-of-bounds input into one.
-    return Number(normalized.toFixed(10))
+    const stable = (n: number) => Number(n.toFixed(10))
+    const snapped = stable(input.min + Math.round((raw - input.min) / step) * step)
+    // When the range is not a whole number of steps, rounding up can pass max; take the last step inside it, as a range input does.
+    return snapped > input.max ? stable(snapped - step) : snapped
   }
   if (typeof value !== "string" || !input.options?.some((option) => option.id === value)) return undefined
   const supported = scenario?.supports?.[input.id]

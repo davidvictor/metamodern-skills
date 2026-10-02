@@ -97,6 +97,15 @@ function defaultApplyTokens(tokens: Record<string, string>) {
   applied = Object.keys(tokens)
 }
 
+/** Diagnostics are optional measurements: a handler that throws or rejects reports none and never blocks ready. */
+export async function readDiagnostics(handlers: Pick<FrameHandlers, "diagnostics">, inputs: MountInputs) {
+  try {
+    return handlers.diagnostics ? await handlers.diagnostics(inputs) : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export function connectStudioFrame(handlers: FrameHandlers, options: FrameOptions = {}) {
   const allowed = options.allowedOrigins ?? [location.origin]
   const instance = window.name
@@ -168,7 +177,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
           type: "ready",
           requestId: m.requestId,
           fingerprint: handlers.fingerprint ? await handlers.fingerprint(m.inputs) : fingerprint(m.inputs),
-          diagnostics: handlers.diagnostics ? await handlers.diagnostics(m.inputs) : undefined,
+          diagnostics: await readDiagnostics(handlers, m.inputs),
           appearance,
           ...state(),
         })

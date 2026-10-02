@@ -65,3 +65,13 @@ Nothing to do by hand. `vite.config.ts` passes lint again.
 - Profiles can declare `frameRadius` in unscaled CSS pixels. Match the outermost shape the preview actually draws: a renderer with a device bezel uses its bezel radius, a bare screen uses its screen radius, and a flat viewport uses 0.
 - Phone and tablet boundaries now scale continuously with zoom, without rounding or a minimum radius that changes the shape. Tablets have a separate 28 px default; phone and desktop defaults remain 44 px and 8 px. Declare `frameRadius` whenever a product draws a different shape.
 - The same geometry applies in Inspect, Compare, Gallery, Present, Design and Responsive, including empty/capture previews. No product artwork or internal radius is changed by a shell update.
+
+## 0.10.2
+
+Nothing to do by hand, except for a preview entry that copied `frame-client.ts` instead of importing it (see below). Fixes from review of 0.10.1:
+
+- Design values follow `defaultsByTheme`. A shared parameter's value travels in a link when it differs from the as-built default of any theme, so a link made in one theme shows the same value in another; a theme-scoped value travels when it differs from that theme's default. The specimen and the draft shown in each theme compare with that theme's own default. Existing links still open.
+- Saved design values equal to a parameter's plain `default` are now restored on reload (0.10.1 dropped them). A draft may therefore reappear in a theme whose `defaultsByTheme` value differs; Reset all clears it.
+- A range input whose maximum is not a whole number of steps sends the last step inside the range (max 10, step 4 sends 8, not 12).
+- A frame whose `diagnostics()` throws or rejects now reports no diagnostics and still becomes ready. A preview entry that copied `frame-client.ts` instead of importing it should copy it again.
+- Compare keeps sides A and B first in a saved set, swaps two sides when one is set to the other's value, and keeps at most four saved values. It shows no more sides than the axis has values, and an axis with fewer than two values is explained instead of loading. `src/studio/compare.ts` is a new shell file.

@@ -97,6 +97,19 @@ export function valuesForTheme(adapter: StudioAdapter, shared: DesignValues, val
   return { ...Object.fromEntries(Object.entries(shared).filter(([id]) => !scoped.has(id))), ...(valuesByTheme[theme] ?? {}) }
 }
 
+/**
+ * Merges a change into the stored values: shared parameters into the shared map, theme-scoped
+ * ones into the theme's own map. A partial change keeps every value it does not name.
+ */
+export function mergeDesignValues(adapter: StudioAdapter, shared: DesignValues, valuesByTheme: DesignValuesByTheme, theme: string, patch: DesignValues) {
+  const scoped = new Set((adapter.design?.parameters ?? []).filter((p) => p.themes?.length).map((p) => p.id))
+  const entries = Object.entries(patch)
+  return {
+    values: { ...shared, ...Object.fromEntries(entries.filter(([id]) => !scoped.has(id))) },
+    valuesByTheme: { ...valuesByTheme, [theme]: { ...(valuesByTheme[theme] ?? {}), ...Object.fromEntries(entries.filter(([id]) => scoped.has(id))) } },
+  }
+}
+
 /** A Google Fonts stylesheet for a family, or nothing for a font the browser already has. */
 export function fontStylesheet(name: string) {
   if (LOCAL_FONTS.some((f) => f.toLowerCase() === name.toLowerCase())) return null
@@ -298,10 +311,20 @@ export function frameDesignValues(adapter: StudioAdapter, values: DesignValues, 
   return out
 }
 
-/** Design values in a link: `density:0.9;body-font:Inter`. Only non-default values travel. */
-export function encodeDesign(adapter: StudioAdapter, values: DesignValues) {
+/**
+ * Design values in a link: `density:0.9;body-font:Inter`. Only changes travel, and the rule
+ * round-trips: a shared parameter serves every theme, so its value travels when it differs from
+ * the as-built default of any theme the adapter declares (or the plain default); a theme-scoped
+ * value belongs to one theme and travels when it differs from that theme's default (the plain
+ * default without a theme). An omitted value therefore decodes to what every theme already shows.
+ */
+export function encodeDesign(adapter: StudioAdapter, values: DesignValues, theme?: string) {
+  const changed = (p: DesignParameter) =>
+    p.themes?.length
+      ? !isDefault(p, values[p.id], parameterDefault(adapter, p, theme))
+      : !isDefault(p, values[p.id]) || adapter.axes.themes.some((t) => !isDefault(p, values[p.id], parameterDefault(adapter, p, t.id)))
   return (adapter.design?.parameters ?? [])
-    .filter((p) => !isDefault(p, values[p.id]))
+    .filter(changed)
     .map((p) => `${p.id}:${values[p.id]}`)
     .join(";")
 }

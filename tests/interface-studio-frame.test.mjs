@@ -21,3 +21,23 @@ test('tablets get their own defaults and a flat renderer can explicitly opt out'
   assert.equal(model.scaledFrameRadius({ kind: 'tablet', frameRadius: 0 }, 834, 1112, 1), 0);
   assert.equal(model.scaledFrameRadius({ kind: 'phone', frameRadius: 900 }, 100, 80, 1), 40);
 });
+
+test('a failing diagnostics handler reports none and never blocks the ready reply', async () => {
+  const { mkdtempSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+  // frame-client imports its siblings; strip each and point the imports at the stripped copies.
+  const dir = mkdtempSync(join(tmpdir(), 'studio-frame-'));
+  for (const name of ['frame-client', 'protocol', 'frame-sync', 'frame-gestures']) {
+    const code = stripTypeScriptTypes(readFileSync(new URL(`src/studio/${name}.ts`, root), 'utf8'), { mode: 'strip' }).replace(/from "\.\/([\w-]+)"/g, 'from "./$1.mjs"');
+    writeFileSync(join(dir, `${name}.mjs`), code);
+  }
+  const { readDiagnostics } = await import(pathToFileURL(join(dir, 'frame-client.mjs')).href);
+  const inputs = { scenario: 's' };
+  assert.equal(await readDiagnostics({}, inputs), undefined);
+  assert.equal(await readDiagnostics({ diagnostics: () => { throw new Error('measure failed'); } }, inputs), undefined);
+  assert.equal(await readDiagnostics({ diagnostics: async () => { throw new Error('measure failed'); } }, inputs), undefined);
+  assert.deepEqual(await readDiagnostics({ diagnostics: async (i) => [{ id: i.scenario }] }, inputs), [{ id: 's' }]);
+  assert.match(readFileSync(new URL('src/studio/frame-client.ts', root), 'utf8'), /diagnostics: await readDiagnostics\(handlers, m\.inputs\)/, 'the ready reply reads diagnostics through the fail-soft path');
+});

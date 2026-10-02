@@ -22,7 +22,7 @@ Keep a narrow-screen catalog collapsible and controls reachable by keyboard/touc
 
 ## Comparisons
 
-Keep visual variant, theme, structural revision, profile, and target as separate axes. Each comparison declares one changing axis, both values, equivalent scenario/fixture/clock/seed/conditions, and fixed remaining axes. Verify equality from resolved inputs rather than labels alone. Revision comparisons can have explicit behavior differences; profile or target comparisons can have unavoidable layout, input, or navigation differences. Describe these limits instead of asserting pixel equivalence.
+Keep visual variant, theme, structural revision, profile, and target as separate axes. Each comparison declares one changing axis, all compared values, equivalent scenario/fixture/clock/seed/conditions, and fixed remaining axes. Verify equality from resolved inputs rather than labels alone. Revision comparisons can have explicit behavior differences; profile or target comparisons can have unavoidable layout, input, or navigation differences. Describe these limits instead of asserting pixel equivalence.
 
 Each side starts from a fresh isolated runtime or matching evidence. Interacting with one side marks that side modified and invalidates baseline equivalence until reset or a declared equivalent command replay. Cross-target semantic equivalence needs evidence; matching scenario IDs alone does not prove it. Unsupported combinations remain unavailable. A stale capture alongside a current preview is a disclosed historical comparison, not a current token-only comparison.
 
