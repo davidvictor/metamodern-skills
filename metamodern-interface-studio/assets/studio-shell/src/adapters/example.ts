@@ -4,7 +4,7 @@
  * illustrative. Replace this file (and example/) with the product's adapter;
  * do not extend it with product facts.
  */
-import type { Scenario, StudioAdapter, Token } from "@/studio/types"
+import type { Scenario, ScenarioInput, StudioAdapter, Token } from "@/studio/types"
 
 const fixture = { id: "example-tasks", version: "1", provenance: "Synthetic, written for the starter" }
 const src = "example/main.ts"
@@ -33,6 +33,16 @@ const tokens: Token[] = [
   t("--ex-font", "Type", 'ui-rounded, "SF Pro Rounded", system-ui, sans-serif', 'ui-rounded, "SF Pro Rounded", system-ui, sans-serif', { reads: 1 }),
 ]
 const families = [...new Set(tokens.map((x) => x.family))].map((name) => ({ name, count: tokens.filter((x) => x.family === name).length }))
+
+// The Task card's properties: one of each kind, for the starter and its acceptance suite. They apply to the Task card surface only.
+const cardProperties: ScenarioInput[] = [
+  { id: "title", label: "Title", control: "text", curated: true, shareable: true, maxLength: 120, default: "Draft the quarterly plan" },
+  { id: "done", label: "Done", control: "switch", curated: true, default: false },
+  { id: "assignee", label: "Assignee", control: "choice", options: [{ id: "nobody", label: "Nobody" }, { id: "sam", label: "Sam Example" }, { id: "long", label: "A very long name" }], default: "sam", note: "The frame maps each option to a sample person." },
+  { id: "note", label: "Note", control: "text", multiline: true, maxLength: 500, optional: true, default: "" },
+  { id: "estimate", label: "Estimate (hours)", control: "number", min: 0, max: 40, step: 0.5, presets: [{ value: 1, label: "1 h" }, { value: 4, label: "4 h" }], optional: true, default: 2 },
+  { id: "onOpen", label: "On open", control: "text", readonly: true, note: "Handled by the sample data" },
+].map((i) => ({ ...i, section: "properties", surfaces: ["Task card"] }) as ScenarioInput)
 
 export const exampleAdapter: StudioAdapter = {
   id: "example-tasks",
@@ -75,6 +85,7 @@ export const exampleAdapter: StudioAdapter = {
     inputs: [
       { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable", placement: "dock", group: "design", icon: "density", note: "The densities the product ships. Sign in has only Comfortable." },
       { id: "role", label: "Role", control: "select", options: [{ id: "owner", label: "Owner" }, { id: "viewer", label: "Viewer" }], placement: "dock", scoped: true, icon: "person", note: "Viewers see tasks without New task." },
+      ...cardProperties,
     ],
   },
   areas: [
@@ -83,6 +94,7 @@ export const exampleAdapter: StudioAdapter = {
     { id: "account", label: "Account" },
     { id: "reports", label: "Reports" },
     { id: "help", label: "Help" },
+    { id: "components", label: "Components" },
   ],
   // Task screens are designed for an owner; the role lens applies to them only.
   scenarios: ([
@@ -96,6 +108,8 @@ export const exampleAdapter: StudioAdapter = {
     { id: "account.sign-in", label: "Sign in", area: "account", surface: "Sign in", description: "The sign-in page. It ships at one density.", fixture, source: src, clock, supports: { density: ["comfortable"] } },
     { id: "help.guide", label: "Getting started", area: "help", surface: "Guide", description: "A long page that scrolls as a document: sections with anchors, a scrolling notes box and a short form. Used by the Responsive view.", fixture, source: src, clock },
     { id: "help.welcome", label: "Welcome", area: "help", surface: "Welcome", description: "A first-run page whose hero fills the window (100vh), so it has no full-page height of its own.", fixture, source: src, clock },
+    { id: "components.task-card", label: "Task card", area: "components", surface: "Task card", description: "One task as a card. Its properties are editable in Details.", fixture, source: src, clock },
+    { id: "components.task-card.done", label: "Done", parent: "components.task-card", area: "components", surface: "Task card", state: "Done", description: "A finished task.", fixture, source: src, clock, designed: { done: true } },
     { id: "reports.overview", label: "Overview", area: "reports", surface: "Reports", description: "Not designed yet.", fixture, source: src, clock, status: "later" },
   ] as Scenario[]).map((x) => (x.area === "tasks" || x.area === "task" ? { ...x, designed: { role: "owner" } } : x)),
   walkthroughs: [

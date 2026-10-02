@@ -104,3 +104,10 @@ button { cursor: pointer; }
 .welcome .hero { height: 100vh; display: grid; place-content: center; text-align: center; gap: 8px; background: var(--ex-accent); }
 .welcome .hero h1 { margin: 0; font-size: calc(var(--ex-title) * 1.4); }
 
+.task-card { display: flex; gap: 12px; align-items: flex-start; width: min(420px, 100%); padding: var(--ex-space); border: 1px solid var(--ex-line); border-radius: var(--ex-radius); background: var(--ex-surface); }
+.task-card .check { flex: none; width: 20px; height: 20px; margin-top: 2px; padding: 0; border: 2px solid var(--ex-line); border-radius: 6px; background: none; }
+.task-card.done .check { background: var(--ex-done); border-color: var(--ex-done); }
+.task-card.done .title { color: var(--ex-ink-muted); text-decoration: line-through; }
+.task-card .title { margin: 0; font-size: 17px; overflow-wrap: anywhere; }
+.task-card .note { margin: 6px 0 0; white-space: pre-wrap; }
+.task-card .meta { margin: 8px 0 0; color: var(--ex-ink-muted); font-size: 13px; overflow-wrap: anywhere; }

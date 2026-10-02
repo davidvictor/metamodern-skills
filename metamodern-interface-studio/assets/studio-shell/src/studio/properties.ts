@@ -70,6 +70,20 @@ export function keptEdits(inputs: ScenarioInput[], sc: Scenario | undefined, edi
   return out
 }
 
+/** A linked scenario whose edits came from the link, and what this browser had stored for it before. */
+export type LinkHold = { scenario: string; stored?: Edits }
+/**
+ * The edits to keep in this browser. A link shows its own state for the scenario it names, but does not erase what
+ * this browser stored for that scenario: until the person edits it here, its stored edits are written back unchanged.
+ */
+export function storedEdits(props: Record<string, Edits>, hold: LinkHold | null) {
+  if (!hold) return props
+  const out = { ...props }
+  if (hold.stored && Object.keys(hold.stored).length) out[hold.scenario] = hold.stored
+  else delete out[hold.scenario]
+  return out
+}
+
 /** Whether Compare can use an input as its axis: named values only. Text never; a range or number only with presets. */
 export const comparable = (i: ScenarioInput) => !i.readonly && i.control !== "text" && ((i.control !== "range" && i.control !== "number") || !!i.presets?.length)
 /** An input's Compare values: a switch's are Off and On; a range or number offers its presets; an option input offers its options. */

@@ -157,3 +157,13 @@ test('properties stay out of scenario inputs, the dock and Compare; they edit wi
   assert.match(preview, /values: resolved,/, 'a mount still carries the edits');
   assert.match(read('src/adapters/synthetic.ts'), /inputs: exampleAdapter\.axes\.inputs\.filter\(\(i\) => i\.section !== "properties"\)/);
 });
+
+test('Properties load lazily, edit only the scenario of the update, and keep stored edits a link does not carry', () => {
+  const store = read('src/store.tsx');
+  assert.match(store, /setProp: \(id, v\) =>\s*set\(\(s\) => \{[\s\S]{0,200}?A\.scenarios\.find\(\(x\) => x\.id === s\.scenario\)[\s\S]{0,120}?propertiesFor\(A\.axes\.inputs, sc\)\.find\(\(i\) => i\.id === id && !i\.readonly\)\s*if \(!input\) return \{\}/, 'setProp reads the scenario inside the update and ignores IDs that are not its properties');
+  assert.match(store, /writeJSON\(PROPS_KEY, storedEdits\(state\.props, state\.propsHold\)\)/, 'a link does not overwrite stored edits until the person edits that scenario');
+  const chrome = read('src/components/studio/chrome.tsx');
+  assert.match(chrome, /React\.lazy\(\(\) => import\("\.\/properties"\)\)/);
+  assert.doesNotMatch(chrome, /from "\.\/properties"/, 'the Properties chunk is never imported eagerly');
+  assert.doesNotMatch(chrome, /<StatusNow \/>\} \{/, 'no text node beside the status when nothing is edited');
+});

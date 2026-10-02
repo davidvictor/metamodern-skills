@@ -48,8 +48,8 @@ import { useTheme } from "@/components/theme-provider"
 import { download, encodeDesign, variantFile } from "@/studio/design"
 import { formatClock } from "@/studio/format"
 import { adapter } from "@/adapter"
-import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
-import { isProperty } from "@/studio/properties"
+import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, hasProperties, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
+import { isProperty, propertiesFor } from "@/studio/properties"
 import type { CapabilityDimension, InputValue } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
@@ -99,11 +99,29 @@ export function StatusNow() {
   return <StatusBadge kind="ready">Ready</StatusBadge>
 }
 
-/** Property edits are their own status, separate from Modified: R keeps them, Reset properties clears them. */
-export function EditedNow() {
+/**
+ * Property edits are their own status, separate from Modified: R keeps them, Reset properties clears them.
+ * `spaced` puts a space before it in running text; with no edits it renders nothing at all.
+ */
+export function EditedNow({ spaced }: { spaced?: boolean }) {
   const n = Object.keys(useStudio().edits).length
-  return n ? <StatusBadge kind="draft">Edited · {n} {n === 1 ? "property" : "properties"}</StatusBadge> : null
+  return n ? (
+    <>
+      {spaced && " "}
+      <StatusBadge kind="draft">
+        Edited · {n} {n === 1 ? "property" : "properties"}
+      </StatusBadge>
+    </>
+  ) : null
 }
+
+// The state picker and the Properties section load only when a scenario has properties.
+const Lazy = React.lazy(() => import("./properties"))
+const Part = (p: { part: "picker" | "section" }) => (
+  <React.Suspense fallback={null}>
+    <Lazy {...p} />
+  </React.Suspense>
+)
 
 /**
  * On a phone the header actions fold behind one trigger and slide out to its left, so the title keeps
@@ -170,7 +188,8 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-1 hidden sm:block" aria-live="polite">
-        {s.view === "inspect" && <StatusNow />} {s.view === "inspect" && <EditedNow />}
+        {s.view === "inspect" && <StatusNow />}
+        {s.view === "inspect" && <EditedNow spaced />}
       </div>
       {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
       {s.view === "inspect" && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
@@ -863,6 +882,7 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
   const list = adapter.scenarios
   const i = list.findIndex((x) => x.id === sc.id)
   const st = sc.statuses ?? {}
+  const props = hasProperties ? propertiesFor(adapter.axes.inputs, sc) : []
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="grid gap-2 border-b p-4">
@@ -940,6 +960,7 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
                 </>
               )}
             </dl>
+            {props.length > 0 && <Part part="picker" />}
             {choosableFor(sc).some((i) => i.placement !== "dock" && !isProperty(i)) && (
               <FieldSet>
                 <FieldLegend variant="label">Scenario inputs</FieldLegend>
@@ -990,6 +1011,7 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
                 </FieldGroup>
               </FieldSet>
             )}
+            {props.length > 0 && <Part part="section" />}
           </TabsContent>
           <TabsContent value="fidelity" className="grid gap-4 p-4">
             <ItemGroup className="gap-1">

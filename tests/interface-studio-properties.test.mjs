@@ -156,6 +156,20 @@ test('keptEdits keeps only a scenario\'s own properties at values that normalize
   assert.deepEqual(properties.keptEdits(inputs, card, ['done']), {});
 });
 
+test('a link shows its own state but keeps this browser\'s stored edits for that scenario until the person edits there', () => {
+  const { storedEdits } = properties;
+  const props = { card: { done: true }, list: { done: false } };
+  // No link: everything is written as it is.
+  assert.deepEqual(storedEdits(props, null), props);
+  // The link set the card's edits; the stored note is written back unchanged, not the link's state.
+  assert.deepEqual(storedEdits(props, { scenario: 'card', stored: { note: 'Private note', done: false } }), { card: { note: 'Private note', done: false }, list: { done: false } });
+  // Nothing was stored for the linked scenario: the link's edits are not written either.
+  assert.deepEqual(storedEdits(props, { scenario: 'card' }), { list: { done: false } });
+  assert.deepEqual(storedEdits(props, { scenario: 'card', stored: {} }), { list: { done: false } });
+  // The input is not changed.
+  assert.deepEqual(props, { card: { done: true }, list: { done: false } });
+});
+
 test('Compare offers switches, selects, choices and numbers with presets; never text', () => {
   const eligible = inputs.filter(properties.comparable).map((i) => i.id);
   assert.deepEqual(eligible, ['density', 'done', 'who', 'hours']);

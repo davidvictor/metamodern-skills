@@ -7,7 +7,7 @@ import type { FrameDiagnostic, InputValue, Scenario, ScenarioInput, Token } from
 import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
 import { normalizeScenarioInput } from "@/studio/input"
-import { appliesTo, editsFromLink, isProperty, keptEdits, linkEdits, type Edits } from "@/studio/properties"
+import { appliesTo, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, type Edits, type LinkHold } from "@/studio/properties"
 import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import { applyPresenterOverlay, isPresenterOverlay, type PresenterOverlay, type PresenterWalkthrough, updateOverlay } from "@/studio/presenter-overlay"
@@ -36,6 +36,8 @@ export type State = {
   props: Record<string, Edits>
   /** The scenario whose link said the sender had local text edits this browser does not hold. */
   propsNote: string | null
+  /** The scenario a link set edits for, with what this browser had stored for it: kept in storage until the person edits it here. */
+  propsHold: LinkHold | null
   zoom: "fit" | number
   /** The scale Inspect is showing the frame at, for the dock's Zoom control to state. */
   scale: number
@@ -144,6 +146,7 @@ function readHash(stored: Record<string, Edits>): Partial<State> {
   if (hasProperties && out.scenario) {
     const { edits, missing } = editsFromLink(A.axes.inputs, A.scenarios.find((x) => x.id === out.scenario), (id) => q.get(id), stored[out.scenario], q.get("edited") === "local")
     out.props = { ...stored, [out.scenario]: edits }
+    out.propsHold = { scenario: out.scenario, stored: stored[out.scenario] }
     if (missing) out.propsNote = out.scenario
   }
   const th = q.get("theme")
@@ -266,6 +269,7 @@ const initial: State = {
   values: defaultValues(),
   props: {},
   propsNote: null,
+  propsHold: null,
   zoom: "fit",
   scale: 1,
   resetNonce: 0,
@@ -395,8 +399,8 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   }, [state.options])
   React.useEffect(() => writeJSON(DRAFTS_KEY, state.tokens.drafts), [state.tokens.drafts])
   React.useEffect(() => {
-    if (hasProperties) writeJSON(PROPS_KEY, state.props)
-  }, [state.props])
+    if (hasProperties) writeJSON(PROPS_KEY, storedEdits(state.props, state.propsHold))
+  }, [state.props, state.propsHold])
   React.useEffect(() => writeJSON(PRESENTER_KEY, state.presenter), [state.presenter])
   React.useEffect(() => writeJSON(PRESENT_PREFS_KEY, { speed: state.present.speed, focus: state.present.focus }), [state.present.speed, state.present.focus])
   React.useEffect(() => writeJSON(DESIGN_KEY, { version: 1, values: state.design.values, valuesByTheme: state.design.valuesByTheme }), [state.design.values, state.design.valuesByTheme])
@@ -470,14 +474,17 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     edits: state.props[state.scenario] ?? {},
     setProp: (id, v) =>
       set((s) => {
-        const input = A.axes.inputs.find((i) => i.id === id)
-        const designed = scenarioObj.designed?.[id] ?? (input?.optional ? undefined : input?.default)
+        // The scenario as of this update, and only its own editable properties: any other ID changes nothing.
+        const sc = A.scenarios.find((x) => x.id === s.scenario)
+        const input = propertiesFor(A.axes.inputs, sc).find((i) => i.id === id && !i.readonly)
+        if (!input) return {}
+        const designed = sc?.designed?.[id] ?? (input.optional ? undefined : input.default)
         const edits = { ...s.props[s.scenario] }
         if (v === null || v === designed) delete edits[id]
         else edits[id] = v
-        return { props: { ...s.props, [s.scenario]: edits }, propsNote: null }
+        return { props: { ...s.props, [s.scenario]: edits }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold }
       }),
-    resetProps: () => set((s) => ({ props: { ...s.props, [s.scenario]: {} }, propsNote: null })),
+    resetProps: () => set((s) => ({ props: { ...s.props, [s.scenario]: {} }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold })),
     setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v ? !s.panelOpen : true })),
     reset: () => {
       set((s) => ({ resetNonce: s.resetNonce + 1, preview: { ...s.preview, status: "loading", modified: false, canGoBack: false } }))

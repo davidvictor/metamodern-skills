@@ -1849,6 +1849,171 @@ await check("AC-52", async () => {
   return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `row at 10% and canvas at "${zoom}": every grip 6 px off its frame, bottom grips centered, grip lengths ${[...row, ...canvas].map((m) => Math.round(m.eLen)).join(", ")} px`]
 })
 
+// ---------- Properties (AC-53 to AC-60) ----------
+const CARD = "components.task-card"
+/** The Inspect frame's document on screen, and Details. */
+const liveFrame = async (p) => (await p.locator(".preview-frame iframe.opacity-100").first().elementHandle()).contentFrame()
+const details = (p) => p.locator('[aria-label="Details"]')
+const frameState = (f) => f.evaluate(() => ({ mounts: window.__studioMounts, mounted: window.__studioMounted, updated: window.__studioUpdated, card: document.querySelector(".task-card")?.className ?? "", text: document.querySelector(".task-card")?.textContent?.replace(/\s+/g, " ").trim() ?? "" }))
+const badges = async (p) => (await p.locator("h2.font-heading + p + div").innerText()).replace(/\s+/g, " ")
+/** A page whose preview frames carry a test flag from their first script. */
+const flagged = async (flag, hash) => {
+  const q = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const page = await q.newPage()
+  await frameFlag(page, flag, 0, 5000)
+  await page.goto(servers.normal.url + `#${hash}`)
+  await page.waitForSelector("header")
+  await wait(1500)
+  page.closeAll = () => q.close()
+  return page
+}
+
+// AC-54 Switch, text, number and choice change the live frame without a remount; booleans arrive as booleans; a choice sends only its ID;
+// a frame without live-values, or whose update throws, is remounted with the new values instead; a value the product cannot mount
+// keeps the previous preview with an error, and the next good value mounts and shows Ready
+await check("AC-54", async () => {
+  const p = await open("normal", { hash: `view=inspect&scenario=${CARD}` })
+  await wait(800)
+  const f = await liveFrame(p)
+  const before = await frameState(f)
+  await details(p).getByRole("switch", { name: "Done" }).click()
+  await details(p).getByLabel("Title").fill("Ship the release notes")
+  await details(p).getByRole("button", { name: /All properties/ }).click()
+  await details(p).getByRole("combobox", { name: "Assignee" }).click()
+  await p.getByRole("option", { name: "A very long name" }).click()
+  await details(p).getByRole("button", { name: "Set Estimate (hours)" }).click()
+  await details(p).getByLabel("Estimate (hours)").fill("3.5")
+  await wait(1000)
+  const iframes = await p.locator(".preview-frame iframe").count()
+  const after = await frameState(f)
+  await p.closeAll()
+  const u = after.updated ?? {}
+  const live = before.mounts === 1 && after.mounts === 1 && iframes === 1 && u.done === true && u.title === "Ship the release notes" && u.assignee === "long" && u.estimate === 3.5 && /done/.test(after.card) && /Maximiliana/.test(after.text) && /3\.5 h/.test(after.text)
+  // An older frame client, without live-values: the change mounts a new runtime that carries it.
+  const page = await flagged("__studioNoLive", `view=inspect&scenario=${CARD}`)
+  await details(page).getByRole("switch", { name: "Done" }).click()
+  await wait(2000)
+  const legacy = await frameState(await liveFrame(page))
+  const legacyStatus = await badges(page)
+  await page.closeAll()
+  const fallback = legacy.mounted.values.done === true && /done/.test(legacy.card) && /Ready/.test(legacyStatus)
+  // A client whose update throws: the error reply mounts a new runtime with the values.
+  const t = await flagged("__studioUpdateThrows", `view=inspect&scenario=${CARD}`)
+  const firstDoc = await liveFrame(t)
+  await details(t).getByRole("switch", { name: "Done" }).click()
+  await wait(2000)
+  const thrown = await frameState(await liveFrame(t))
+  const thrownStatus = await badges(t)
+  const replaced = (await liveFrame(t)) !== firstDoc
+  await t.closeAll()
+  const recovered = replaced && thrown.mounted.values.done === true && /done/.test(thrown.card) && thrown.updated === undefined && /Ready/.test(thrownStatus)
+  // A value the product cannot show: update and mount both throw, so the previous preview stays with an error; the next good value mounts.
+  const b = await flagged("__studioStrictTitle", `view=inspect&scenario=${CARD}`)
+  await details(b).getByLabel("Title").fill("Reject this title")
+  await wait(2500)
+  const bad = { status: await badges(b), text: (await frameState(await liveFrame(b))).text }
+  await details(b).getByLabel("Title").fill("A title it can show")
+  await wait(2500)
+  const good = await frameState(await liveFrame(b))
+  const goodStatus = await badges(b)
+  await b.closeAll()
+  const retried = /Showing previous/.test(bad.status) && /Draft the quarterly plan/.test(bad.text) && /Ready/.test(goodStatus) && good.mounted.values.title === "A title it can show" && /A title it can show/.test(good.text)
+  return [live && fallback && recovered && retried ? "pass" : "fail", `one document mounted ${after.mounts} time(s) across four edits, ${iframes} frame; the frame received done ${JSON.stringify(u.done)} (${typeof u.done}), title "${u.title}", assignee ${JSON.stringify(u.assignee)}, estimate ${JSON.stringify(u.estimate)}; it shows "${after.text}"; without live-values the change remounted with done ${legacy.mounted.values.done} ("${legacyStatus}"); when update threw, a new document (${replaced}) mounted with done ${thrown.mounted.values.done} ("${thrownStatus}"); a title the product rejects gave "${bad.status}" over "${bad.text}", then a good one mounted "${good.mounted.values.title}" ("${goodStatus}")`]
+})
+
+// AC-55 Properties show only on their surfaces; curated rows first; All properties starts collapsed; optional rows show Set until used
+await check("AC-55", async () => {
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  const elsewhere = await p.locator("[data-properties]").count()
+  await p.goto(servers.normal.url + `#view=inspect&scenario=${CARD}`)
+  await p.reload()
+  await p.waitForSelector("[data-properties]")
+  await wait(800)
+  const rows = () => details(p).locator("[data-property]").evaluateAll((els) => els.map((e) => e.getAttribute("data-property")))
+  const first = await rows()
+  const trigger = details(p).getByRole("button", { name: /All properties/ })
+  const collapsed = await trigger.getAttribute("aria-expanded")
+  const label = await trigger.innerText()
+  await trigger.click()
+  await wait(300)
+  const all = await rows()
+  const unsentBefore = Object.keys((await frameState(await liveFrame(p))).mounted.values)
+  const greyed = await details(p).locator('[data-property="estimate"]').innerText()
+  const noteField = await details(p).locator('[data-property="note"] textarea').count()
+  const readonly = await details(p).locator('[data-property="onOpen"]').innerText()
+  await details(p).getByRole("button", { name: "Set Note" }).click()
+  await wait(300)
+  const noteShown = await details(p).locator('[data-property="note"] textarea').count()
+  await details(p).locator('[data-property="note"]').getByRole("button", { name: "Clear" }).click()
+  await wait(300)
+  const setAgain = await details(p).getByRole("button", { name: "Set Note" }).count()
+  await p.closeAll()
+  const ok = elsewhere === 0 && first.join() === "title,done" && collapsed === "false" && /All properties \(4\)/.test(label) && all.join() === "title,done,assignee,note,estimate,onOpen" && !unsentBefore.includes("note") && !unsentBefore.includes("estimate") && /2 \(product default\)/.test(greyed) && noteField === 0 && /Handled by the sample data/.test(readonly) && noteShown === 1 && setAgain === 1
+  return [ok ? "pass" : "fail", `on Today ${elsewhere} property sections; on the Task card ${first.join(", ")} shown, "${label.trim()}" expanded=${collapsed}, then ${all.join(", ")}; optional Note and Estimate not sent (${unsentBefore.join(", ")}), Estimate reads "${greyed.replace(/\s+/g, " ")}", Note field ${noteField} until Set (${noteShown}), Clear returns Set (${setAgain}); On open: "${readonly.replace(/\s+/g, " ")}"`]
+})
+
+// AC-56 Edited and Modified are independent; Reset properties clears edits; R does not
+await check("AC-56", async () => {
+  const p = await open("normal", { hash: `view=inspect&scenario=${CARD}` })
+  await wait(800)
+  await details(p).getByRole("switch", { name: "Done" }).click()
+  await wait(500)
+  const edited = await badges(p)
+  await (await liveFrame(p)).click(".task-card .check")
+  await wait(800)
+  const both = await badges(p)
+  await details(p).getByRole("button", { name: /^Reset \(1\)/ }).click()
+  await wait(800)
+  const cleared = await badges(p)
+  const sent = (await frameState(await liveFrame(p))).updated?.done
+  await details(p).getByRole("switch", { name: "Done" }).click()
+  await wait(500)
+  await p.locator("header").click({ position: { x: 600, y: 20 } })
+  await p.keyboard.press("r")
+  await wait(2000)
+  const afterR = await badges(p)
+  const remounted = (await frameState(await liveFrame(p))).mounted.values.done
+  await p.closeAll()
+  const ok = /Edited · 1 property/.test(edited) && !/Modified/.test(edited) && /Modified/.test(both) && /Edited · 1 property/.test(both) && /Modified/.test(cleared) && !/Edited/.test(cleared) && sent === false && /Edited · 1 property/.test(afterR) && !/Modified/.test(afterR) && remounted === true
+  return [ok ? "pass" : "fail", `after an edit "${edited}"; after ticking the card in the frame "${both}"; Reset properties gave "${cleared}" and sent done ${sent}; after another edit and R "${afterR}", remounted with done ${remounted}`]
+})
+
+// AC-57 Shareable text travels in the link; other text stays in this browser and leaves edited=local; both survive a reload as specified
+await check("AC-57", async () => {
+  const p = await open("normal", { hash: `view=inspect&scenario=${CARD}` })
+  await wait(800)
+  await details(p).getByLabel("Title").fill("Shared title")
+  await details(p).getByRole("switch", { name: "Done" }).click()
+  await details(p).getByRole("button", { name: /All properties/ }).click()
+  await details(p).getByRole("button", { name: "Set Note" }).click()
+  await details(p).getByLabel("Note").fill("Private note")
+  await wait(600)
+  const link = await p.evaluate(() => location.hash)
+  await p.reload()
+  await p.waitForSelector("[data-properties]")
+  await wait(1200)
+  await details(p).getByRole("button", { name: /All properties/ }).click()
+  const reloaded = { title: await details(p).getByLabel("Title").inputValue(), note: await details(p).getByLabel("Note").inputValue(), warned: await details(p).getByText(/The sender had local text edits/).count() }
+  // A link that names the scenario shows its own state, but this browser's stored edits stay until the person edits that scenario here.
+  const storedNote = () => p.evaluate(() => JSON.parse(localStorage.getItem("studio.example-tasks.property-edits.v1") ?? "{}")["components.task-card"]?.note ?? null)
+  await p.goto(servers.normal.url + `#view=inspect&scenario=${CARD}&done=true`)
+  await p.reload()
+  await p.waitForSelector("[data-properties]")
+  await wait(1200)
+  const linked = { title: await details(p).getByLabel("Title").inputValue(), stored: await storedNote() }
+  await details(p).getByRole("switch", { name: "Done" }).click()
+  await wait(600)
+  linked.afterEdit = await storedNote()
+  await p.closeAll()
+  const fresh = await open("normal", { hash: link.slice(1) })
+  await wait(1200)
+  await details(fresh).getByRole("button", { name: /All properties/ }).click()
+  const received = { title: await details(fresh).getByLabel("Title").inputValue(), done: await details(fresh).getByRole("switch", { name: "Done" }).getAttribute("aria-checked"), noteSet: await details(fresh).getByRole("button", { name: "Set Note" }).count(), warned: await details(fresh).getByText(/The sender had local text edits/).count(), frame: (await frameState(await liveFrame(fresh))).mounted.values }
+  await fresh.closeAll()
+  const ok = /title=Shared\+title/.test(link) && /done=true/.test(link) && /edited=local/.test(link) && !/Private/.test(link) && reloaded.title === "Shared title" && reloaded.note === "Private note" && reloaded.warned === 0 && linked.title === "Draft the quarterly plan" && linked.stored === "Private note" && linked.afterEdit === null && received.title === "Shared title" && received.done === "true" && received.noteSet === 1 && received.warned === 1 && received.frame.note === undefined
+  return [ok ? "pass" : "fail", `link ${link}; after a reload Title "${reloaded.title}" and Note "${reloaded.note}" (note shown ${reloaded.warned}); a link without them showed Title "${linked.title}" and kept the stored note ${JSON.stringify(linked.stored)} until an edit there (then ${JSON.stringify(linked.afterEdit)}); in a fresh browser Title "${received.title}", Done ${received.done}, Note unset ${received.noteSet === 1} with the sender note ${received.warned}, frame note ${JSON.stringify(received.frame.note)}`]
+})
+
 await browser.close()
 for (const s of Object.values(servers)) s.server.close()
 writeFileSync(join(root, "acceptance-report.json"), JSON.stringify({ at: new Date().toISOString(), results }, null, 2) + "\n")

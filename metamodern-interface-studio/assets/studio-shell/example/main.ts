@@ -14,8 +14,20 @@ type Task = {
   done?: boolean
   isNew?: boolean
 }
+/** The Task card component's props, as the frame owns them. A choice arrives as an option ID and is mapped here. */
+type Card = { title: string; note?: string; done: boolean; assignee: string; estimate?: number }
+const PEOPLE: Record<string, string | null> = { nobody: null, sam: "Sam Example", long: "Maximiliana Featherstonehaugh-Underwood" }
+const CARD: Card = { title: "Draft the quarterly plan", done: false, assignee: "sam" }
+const cardFrom = (v: MountInputs["values"]): Card => ({
+  title: typeof v.title === "string" ? v.title : CARD.title,
+  note: typeof v.note === "string" ? v.note : undefined,
+  done: v.done === true,
+  assignee: typeof v.assignee === "string" && v.assignee in PEOPLE ? v.assignee : CARD.assignee,
+  estimate: typeof v.estimate === "number" ? v.estimate : undefined,
+})
 type State = {
   scenario: string
+  card: Card
   /** The name last sent from the guide's form. */
   sent?: string
   role: string
@@ -37,6 +49,7 @@ const FIXTURE: Task[] = [
 const app = document.getElementById("app")!
 let s: State = {
   scenario: "",
+  card: CARD,
   role: "owner",
   location: ["/tasks"],
   tasks: [],
@@ -111,6 +124,16 @@ function guideView() {
   </article>`
 }
 
+function cardView() {
+  const c = s.card
+  const who = PEOPLE[c.assignee]
+  return `<div class="center"><article class="task-card${c.done ? " done" : ""}" data-studio-anchor="task-card" data-studio-anchor-label="Task card">
+    <button class="check" data-act="tick" aria-label="${c.done ? "Mark as open" : "Mark as done"}"></button>
+    <div class="body"><h2 class="title">${esc(c.title)}</h2>${c.note ? `<p class="muted note">${esc(c.note)}</p>` : ""}
+    <p class="meta"><span class="who">${who ? esc(who) : "Unassigned"}</span>${c.estimate !== undefined ? ` · <span class="estimate">${c.estimate} h</span>` : ""}</p></div>
+  </article></div>`
+}
+
 function welcomeView() {
   return `<div class="welcome"><section class="hero" data-studio-anchor="welcome-hero" data-studio-anchor-label="Hero"><h1>Welcome to Example Tasks</h1><p>Today's work, in one list.</p></section><section class="doc"><h2>What's next</h2><p>Add your first task.</p></section></div>`
 }
@@ -119,6 +142,7 @@ function page() {
   const path = here()
   if (s.scenario === "help.guide") return guideView()
   if (s.scenario === "help.welcome") return welcomeView()
+  if (s.scenario.startsWith("components.task-card")) return cardView()
   if (s.scenario === "account.sign-in")
     return `<div class="center"><div class="card" style="width:min(380px,100%)"><div class="brand"><i></i>Example Tasks</div><label class="field"><span>Email</span><input placeholder="you@example.com" /></label><button class="btn" data-studio-anchor="sign-in">Continue</button></div></div>`
   const { side, tabs } = nav()
@@ -174,6 +198,11 @@ const actions: Record<string, () => void> = {
     s.tasks = FIXTURE.map((t) => ({ ...t }))
     render()
   },
+  // A person ticking the card changes product state, so the runtime counts as Modified.
+  tick: () => {
+    s.card = { ...s.card, done: !s.card.done }
+    render()
+  },
 }
 
 app.addEventListener("click", (e) => {
@@ -190,6 +219,7 @@ app.addEventListener("click", (e) => {
     frame.notifyNavigated()
   } else if (act === "save") actions["save-task"]()
   else if (act === "retry") actions.retry()
+  else if (act === "tick") actions.tick()
   else if (act === "back") frameBack()
   else if (act === "send-feedback") {
     s.sent = (document.getElementById("guide-name") as HTMLInputElement | null)?.value.trim() || "friend"
@@ -223,13 +253,15 @@ function mount(inputs: MountInputs) {
   const root = document.documentElement
   root.dataset.theme = inputs.theme
   root.dataset.density = String(inputs.values.density ?? "comfortable")
-  const known = ["tasks.list", "tasks.list.empty", "tasks.list.loading", "tasks.list.failed", "tasks.new", "task.detail", "account.settings", "account.sign-in", "help.guide", "help.welcome"]
+  const known = ["tasks.list", "tasks.list.empty", "tasks.list.loading", "tasks.list.failed", "tasks.new", "task.detail", "account.settings", "account.sign-in", "help.guide", "help.welcome", "components.task-card", "components.task-card.done"]
   root.dataset.page = inputs.scenario.startsWith("help.") ? "document" : "app"
   if (!known.includes(inputs.scenario) && !inputs.scenario.startsWith("syn.")) throw new Error(`Scenario ${inputs.scenario} has no preview in this product`)
   // A real product constraint for the example: it has no layout narrower than 300 px.
   if (innerWidth < 300) throw new Error(`Example Tasks has no layout narrower than 300 px; this frame is ${innerWidth} px`)
+  rejectTitle(inputs.values)
   s = {
     scenario: inputs.scenario,
+    card: cardFrom(inputs.values),
     role: String(inputs.values.role ?? "owner"),
     location: [inputs.scenario === "account.settings" ? "/settings" : inputs.scenario === "task.detail" ? "/tasks/t1" : "/tasks"],
     tasks: inputs.scenario === "tasks.list.empty" ? [] : FIXTURE.map((t) => ({ ...t })),
@@ -240,6 +272,7 @@ function mount(inputs: MountInputs) {
   render()
   // For the starter's acceptance script only: the inputs this runtime was mounted with.
   ;(window as unknown as { __studioMounted: MountInputs }).__studioMounted = inputs
+  testing.__studioMounts = (testing.__studioMounts ?? 0) + 1
   return {
     appearance: inputs.theme.startsWith("dark") ? ("dark" as const) : ("light" as const),
     location: here(),
@@ -250,6 +283,18 @@ function mount(inputs: MountInputs) {
 const testing = window as unknown as {
   __studioLegacy?: boolean
   __studioNoNavigate?: boolean
+  /** Stand in for a frame client without live-values. */
+  __studioNoLive?: boolean
+  /** An update that always throws, so the Studio mounts the values instead. */
+  __studioUpdateThrows?: boolean
+  /** A card that cannot show the title "Reject this title", in place or when mounted. */
+  __studioStrictTitle?: boolean
+  /** How many times this document mounted a scenario, and the values a live update last applied. */
+  __studioMounts?: number
+  __studioUpdated?: MountInputs["values"]
+}
+function rejectTitle(values: MountInputs["values"]) {
+  if (testing.__studioStrictTitle && values.title === "Reject this title") throw new Error("The Task card cannot show this title")
 }
 const frame = connectStudioFrame(
   {
@@ -266,6 +311,16 @@ const frame = connectStudioFrame(
       : (location) => {
           const path = location.replace(/ \(New task\)$/, "")
           if (here() !== path) go(path)
+        },
+    // Properties change in place: product state and navigation stay. Only the card reads them.
+    update: testing.__studioNoLive
+      ? undefined
+      : (inputs) => {
+          if (testing.__studioUpdateThrows) throw new Error("This card cannot change in place")
+          rejectTitle(inputs.values)
+          s.card = cardFrom(inputs.values)
+          testing.__studioUpdated = inputs.values
+          if (s.scenario.startsWith("components.task-card")) render()
         },
     canGoBack: () => s.location.length > 1 || !!s.dialog,
     location: () => here() + (s.dialog ? " (New task)" : ""),
