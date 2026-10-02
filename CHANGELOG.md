@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.1 — 2026-10-02
+
+- Interface Studio 0.10.2 fixes review findings in 0.10.1. Design values are compared with the active theme's own default, so a theme's as-built value is no longer a draft in links, the Draft badge, Reset all or the type specimen, and a value that differs from it is kept in the link and after a reload.
+- Present no longer fails on a walkthrough with no steps. The presenter editor shows current names and narration each time it opens, the overlay import accepts the same file twice, and playlist playback follows walkthrough edits.
+- Compare keeps sides A and B consistent with their selectors, swaps two sides instead of showing one value twice, and keeps at most four saved values. A range input never sends a value above its maximum, and a frame whose diagnostics fail still becomes ready.
+
 ## 1.13.0 — 2026-10-02
 
 - Interface Studio 0.10.0: scenario inputs can be numeric ranges with bounds, steps, named marks and time formatting, and values reach the frame as strings or finite numbers. Design parameters can be `enum` or `range`, scoped to themes with `defaultsByTheme`, and sent to a live frame through `apply.input` (`MountInputs.design`); drafts are kept per theme or visual variant.

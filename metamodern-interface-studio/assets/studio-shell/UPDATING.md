@@ -65,3 +65,12 @@ Nothing to do by hand. `vite.config.ts` passes lint again.
 - Profiles can declare `frameRadius` in unscaled CSS pixels. Match the outermost shape the preview actually draws: a renderer with a device bezel uses its bezel radius, a bare screen uses its screen radius, and a flat viewport uses 0.
 - Phone and tablet boundaries now scale continuously with zoom, without rounding or a minimum radius that changes the shape. Tablets have a separate 28 px default; phone and desktop defaults remain 44 px and 8 px. Declare `frameRadius` whenever a product draws a different shape.
 - The same geometry applies in Inspect, Compare, Gallery, Present, Design and Responsive, including empty/capture previews. No product artwork or internal radius is changed by a shell update.
+
+## 0.10.2
+
+Nothing to do by hand, except for a preview entry that copied `frame-client.ts` instead of importing it (see below). Fixes from review of 0.10.1:
+
+- A design value counts as a change against the active theme's `defaultsByTheme` value. Links, the Draft badge and Reset all no longer treat a theme's as-built value as a draft, and a value that differs from it travels in the link. Existing links still open.
+- A range input whose maximum is not a whole number of steps sends the last step inside the range (max 10, step 4 sends 8, not 12).
+- A frame whose `diagnostics()` throws or rejects now reports no diagnostics and still becomes ready. A preview entry that copied `frame-client.ts` instead of importing it should copy it again.
+- Compare keeps sides A and B first in a saved set, swaps two sides when one is set to the other's value, and keeps at most four saved values. `src/studio/compare.ts` is a new shell file.
