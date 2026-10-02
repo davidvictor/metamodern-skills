@@ -109,3 +109,17 @@ test('the frame can be resized in place and the Size menu lists every profile', 
   assert.match(read('src/components/studio/chrome.tsx'), /function SizeMenu/);
   assert.match(read('src/adapters/example.ts'), /resizable:/);
 });
+
+test('property values and code cross the frame boundary only as announced capabilities', () => {
+  const client = read('src/studio/frame-client.ts');
+  assert.match(client, /handlers\.update \? \(\["live-values"\] as const\)/);
+  assert.match(client, /handlers\.code \? \(\["code"\] as const\)/);
+  // A Studio change never marks the runtime modified: the values branch disarms before it updates.
+  assert.match(client, /m\.type === "values"\) \{[\s\S]{0,400}?armedAt = 0[\s\S]{0,200}?await handlers\.update\(current\)/, 'a Studio change never marks the runtime modified');
+  const host = read('src/studio/live-preview.tsx');
+  assert.match(host, /includes\("live-values"\)/);
+  assert.match(host, /type: "code-request"/);
+  // Pending value requests are forgotten on the reply as well as on an error, so the set never grows with each edit.
+  assert.match(host, /m\.type === "reply"\) \{[\s\S]{0,200}?valueRequests\.current\.delete\(m\.requestId\)/, 'a reply clears its value request');
+  assert.match(host, /if \(valueRequests\.current\.delete\(m\.requestId\)\) setRemount/, 'an error clears its value request and remounts');
+});

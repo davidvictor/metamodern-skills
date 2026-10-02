@@ -35,6 +35,8 @@ export type LivePreviewHandle = {
   command: (id: string) => void
   /** Replay another frame's interaction here; resolves with the frame's answer, or a timeout. */
   replay: (event: SyncEvent) => Promise<{ ok: boolean; reason?: string }>
+  /** The code for the current state from a frame with the code capability; null without it, on an error, or after 3 s. */
+  code: () => Promise<{ language: string; text: string } | null>
 }
 
 /** Sync for a preview that is one of several: which channels it reports, and where its interactions go. */
@@ -74,7 +76,7 @@ type Props = {
   src: string
   origin?: string
   inputs: Omit<MountInputs, "tokens" | "css" | "stylesheets">
-  /** Changing the key mounts a fresh runtime (Reset bumps it). Drafts never remount. */
+  /** Changing the key mounts a fresh runtime (Reset bumps it). Drafts never remount, nor do property values in a frame with live-values. */
   mountKey: string
   draft: PreviewDraft
   w: number
@@ -103,6 +105,12 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   )
 
   const failure = React.useRef<{ instance: string; reason: string } | null>(null)
+  // Bumped when the runtime on screen cannot take new property values in place: a new one is mounted with them.
+  const [remount, setRemount] = React.useState(0)
+  const runtimeKey = `${mountKey}|${remount}`
+  const answers = React.useRef(new Map<string, (m: FrameMessage | null) => void>())
+  // Value requests awaiting the frame's answer; a reply or an error removes each one.
+  const valueRequests = React.useRef(new Set<string>())
   const runtimesRef = React.useRef<Runtime[]>([])
   runtimesRef.current = runtimes
 
@@ -110,7 +118,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   React.useEffect(() => {
     const rt: Runtime = {
       instance: uid("pv"),
-      key: mountKey,
+      key: runtimeKey,
       requestId: uid("mount"),
       inputs: { ...latest.current.inputs, ...latest.current.draft },
       phase: "loading",
@@ -126,7 +134,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       setRuntimes((list) => list.map((r) => (r.instance === rt.instance && r.phase === "loading" ? { ...r, phase: "error" } : r)))
     }, READY_TIMEOUT_MS)
     return () => window.clearTimeout(timer)
-  }, [mountKey])
+  }, [runtimeKey])
 
   React.useEffect(() => {
     const update = (instance: string, patch: (r: Runtime) => Partial<Runtime>) => setRuntimes((list) => list.map((r) => (r.instance === instance ? { ...r, ...patch(r) } : r)))
@@ -153,6 +161,11 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
           const at = list.findIndex((r) => r.instance === rt.instance)
           return list.slice(at).map((r) => (r.instance === rt.instance ? { ...r, phase: "ready", ready: m } : r))
         })
+      } else if (m.type === "code") answers.current.get(m.requestId)?.(m)
+      else if (m.type === "error" && m.requestId && (answers.current.has(m.requestId) || valueRequests.current.has(m.requestId))) {
+        answers.current.get(m.requestId)?.(null)
+        // Values the frame could not apply in place are mounted instead.
+        if (valueRequests.current.delete(m.requestId)) setRemount((n) => n + 1)
       } else if (m.type === "error" && (!m.requestId || m.requestId === rt.requestId) && rt.phase === "loading") {
         failure.current = { instance: rt.instance, reason: m.reason }
         update(rt.instance, () => ({ phase: "error" }))
@@ -182,6 +195,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
           })
         }
       } else if (m.type === "reply") {
+        valueRequests.current.delete(m.requestId)
         const done = replies.current.get(m.requestId)
         if (done) {
           replies.current.delete(m.requestId)
@@ -225,6 +239,21 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
     })
   }, [key, current, post])
 
+  // Property values go to the runtime on screen without a remount when its client announced live-values;
+  // otherwise a runtime is mounted with them. Nothing is sent while a newer runtime is staged: it mounts with them.
+  // A frame's fingerprint and diagnostics keep describing the state it mounted; a values update does not recompute them.
+  const valuesKey = JSON.stringify(inputs.values)
+  const sentValues = React.useRef(new Map<string, string>())
+  React.useEffect(() => {
+    if (!current || current !== newest || current.key !== runtimeKey) return
+    if ((sentValues.current.get(current.instance) ?? JSON.stringify(current.inputs.values)) === valuesKey) return
+    sentValues.current.set(current.instance, valuesKey)
+    if (!current.capabilities?.includes("live-values")) return setRemount((n) => n + 1)
+    const requestId = uid("values")
+    valueRequests.current.add(requestId)
+    post(current.instance, { type: "values", requestId, values: JSON.parse(valuesKey) })
+  }, [valuesKey, current, newest, runtimeKey, post])
+
   // The runtime on screen reports only the channels asked for; a new runtime is told again.
   const channelKey = sync ? JSON.stringify(sync.channels) : ""
   React.useEffect(() => {
@@ -265,6 +294,19 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
             resolve(r)
           })
           post(current.instance, { type: "replay", requestId, event })
+        }),
+      code: () =>
+        new Promise((resolve) => {
+          if (!current?.capabilities?.includes("code")) return resolve(null)
+          const requestId = uid("code")
+          const done = (m: FrameMessage | null) => {
+            window.clearTimeout(timer)
+            answers.current.delete(requestId)
+            resolve(m?.type === "code" ? { language: m.language, text: m.text } : null)
+          }
+          const timer = window.setTimeout(() => done(null), 3000)
+          answers.current.set(requestId, done)
+          post(current.instance, { type: "code-request", requestId })
         }),
     }),
     [current, post]
