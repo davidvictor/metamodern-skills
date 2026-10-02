@@ -34,7 +34,26 @@ test('the resolved sides always start with the A and B the selectors show', () =
   assert.deepEqual(fallback.compared, ['light', 'dim', 'dark'], 'a fallback axis seeds its fixed pair and fills from its own options');
   assert.deepEqual(model.resolveComparison(options, ['light', 'dark', 'contrast'], 2).compared, ['light', 'dark']);
   const views = read('src/components/studio/views.tsx');
-  assert.match(views, /const \{ a, b, compared \} = resolveComparison\(/);
+});
+
+test('the count is capped at the values an axis has and an axis without two is unavailable', () => {
+  const three = model.resolveComparison(['light', 'dark', 'dim'], ['light', 'dark', 'dim', 'contrast'], 4);
+  assert.equal(three.count, 3, '4-up on a three-value axis shows and waits for three sides');
+  assert.deepEqual(three.compared, ['light', 'dark', 'dim']);
+  assert.equal(three.available, true);
+  const two = model.resolveComparison(['a', 'b'], ['a', 'b'], 4);
+  assert.equal(two.count, 2);
+  assert.equal(two.compared.length, 2);
+  const one = model.resolveComparison(['only'], ['only', 'other'], 4);
+  assert.equal(one.count, 2, 'never below two');
+  assert.equal(one.available, false, 'one value cannot be compared');
+  assert.equal(model.resolveComparison([], [], 2).available, false);
+  assert.equal(model.resolveComparison(['light'], [], 2, ['light', 'light']).available, false, 'a fallback pair of one theme is unavailable');
+  assert.equal(model.resolveComparison(['light', 'dark'], [], 3, ['light', 'dark']).count, 2);
+  const views = read('src/components/studio/views.tsx');
+  assert.match(views, /const \{ a, b, compared, count, available \} = resolveComparison\(/, 'CompareStage waits only for the sides it mounts');
+  assert.match(views, /if \(!available\) \{\s*set\(\{ preview: \{ status: "error"/, 'an unavailable axis is explained, not left loading');
+  assert.match(views, /Nothing to compare on this axis/);
 });
 
 test('choosing a value another side shows swaps the two sides', () => {

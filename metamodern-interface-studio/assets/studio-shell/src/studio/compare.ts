@@ -19,12 +19,15 @@ export function savedComparison(saved: { values?: string[]; a?: string; b?: stri
 /**
  * The resolved sides. A and B fall back to valid options (or the fixed pair a fallback axis
  * uses); every other side follows them, so `compared[0]` and `compared[1]` are always A and B.
+ * `count` is the requested count capped at the options the axis has (never below two), so a
+ * 4-up choice on a three-value axis shows three sides and waits for three. With fewer than two
+ * distinct valid values the comparison is not `available`.
  */
 export function resolveComparison(options: string[], saved: string[], count: number, pair?: [string, string]) {
   const valid = (id: string) => options.includes(id)
   const a = pair ? pair[0] : valid(saved[0]) ? saved[0] : (options[0] ?? "")
   const b = pair ? pair[1] : valid(saved[1]) && saved[1] !== a ? saved[1] : (options.find((o) => o !== a) ?? "")
-  const n = comparisonCount(count)
+  const n = comparisonCount(Math.min(comparisonCount(count), options.length))
   const compared = [a, b]
   for (const id of pair ? [] : saved.slice(2)) if (compared.length < n && valid(id) && !compared.includes(id)) compared.push(id)
   while (compared.length < n) {
@@ -32,7 +35,7 @@ export function resolveComparison(options: string[], saved: string[], count: num
     if (next === undefined) break
     compared.push(next)
   }
-  return { a, b, compared }
+  return { a, b, compared, count: n, available: a !== b && valid(a) && valid(b) }
 }
 
 /** Put a value on one side. A value another side already shows trades places with it, so no two sides repeat. */

@@ -440,9 +440,10 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     },
     hasDraft: Object.keys(state.tokens.drafts).length > 0 || A.axes.themes.some((theme) => !!encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme.id), theme.id)),
     viewDraft: (theme) => {
-      const values = valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme)
-      if (!state.options.draftEverywhere || (!Object.keys(state.tokens.drafts).length && !encodeDesign(A, values, theme))) return NO_DRAFT
-      const d = designDraft(A, values, theme)
+      if (!state.options.draftEverywhere) return NO_DRAFT
+      // A shared value can be a change in another theme yet as built in this one; only this theme's changes count here.
+      const d = designDraft(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme), theme)
+      if (!Object.keys(state.tokens.drafts).length && !d.changes.length) return NO_DRAFT
       return { tokens: { ...d.tokens, ...handDrafts(state.tokens.drafts, theme) }, css: d.css, stylesheets: d.stylesheets }
     },
     setDesign: (patch) =>

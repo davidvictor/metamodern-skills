@@ -140,13 +140,14 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   // A saved pair that names an option this scenario cannot render falls back to the first two it can.
   // A saved n-up comparison carries one tuple; A and B lead it, so the selectors and previews agree.
   const saved = s.compare.values.length ? s.compare.values : [s.compare.a, s.compare.b]
-  const count = comparisonCount(s.compare.count)
-  const { a, b, compared } = resolveComparison(
+  // The count is capped at the values this axis has, so no side is awaited that never mounts.
+  const { a, b, compared, count, available } = resolveComparison(
     options.map((o) => o.id),
     saved,
-    count,
+    s.compare.count,
     fallback ? [adapter.axes.themes[0].id, adapter.axes.themes[adapter.axes.themes.length - 1].id] : undefined
   )
+  const axisLabel = axes.find((x) => x.id === axis)?.label ?? "This axis"
   const optionLabel = (id: string) => options.find((o) => o.id === id)?.label ?? id
   // Each side is one full set of resolved inputs: everything the viewer chose, except the one axis that changes.
   const pick = (k: "a" | "b") => (k === "a" ? a : b)
@@ -178,7 +179,8 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
     const opts = axisOptions(next, sc)
     const current = next === "design" ? "built" : next === "theme" ? s.theme : next === "profile" ? s.profile : (s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
     const at = Math.max(0, opts.findIndex((o) => o.id === current))
-    const values = Array.from({ length: count }, (_, index) => opts[(at + index) % opts.length]?.id ?? "")
+    // The requested count stays; the new axis shows as many of those sides as it has values.
+    const values = Array.from({ length: Math.max(2, Math.min(comparisonCount(s.compare.count), opts.length)) }, (_, index) => opts[(at + index) % opts.length]?.id ?? "")
     setC({ axis: next, a: values[0], b: values[1], values })
   }
   const A = useSideStatus()
@@ -188,11 +190,15 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   // Details and the top bar read one status: the pair's, so Compare never shows a stale Inspect state.
   const set = s.set
   React.useEffect(() => {
+    if (!available) {
+      set({ preview: { status: "error", modified: false, canGoBack: false, reason: "This axis has fewer than two values to compare in this scenario" } })
+      return
+    }
     const sts = [A.st, B.st, ...(count > 2 ? [C.st] : []), ...(count > 3 ? [D.st] : [])]
     const failed = sts.find((x) => x?.status === "error")
     const status = failed ? "error" : sts.some((x) => !x || x.status === "loading") ? "loading" : "ready"
     set({ preview: { status, modified: sts.some((x) => x?.modified), canGoBack: false, reason: failed?.reason } })
-  }, [A.st, B.st, C.st, D.st, count, set])
+  }, [A.st, B.st, C.st, D.st, count, available, set])
   const diverged = !!A.st?.modified || !!B.st?.modified || (count > 2 && !!C.st?.modified) || (count > 3 && !!D.st?.modified)
   const drag = React.useRef<HTMLDivElement>(null)
   const onDrag = (e: React.PointerEvent) => {
@@ -307,7 +313,15 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
       <div ref={box} onPointerDown={nav.onPointerDown} className="flex min-h-0 flex-1 flex-col overflow-auto p-6">
        <div className="mx-auto my-auto flex w-max flex-col items-center gap-3">
        <div className="flex items-center justify-center gap-10">
-        {effectiveMode === "side" &&
+        {!available && (
+          <Empty className="max-w-sm bg-background">
+            <EmptyHeader>
+              <EmptyTitle>Nothing to compare on this axis</EmptyTitle>
+              <EmptyDescription>{axisLabel} has fewer than two values for this scenario. Choose another changing axis.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
+        {available && effectiveMode === "side" &&
           (["a", "b"] as const).map((k) => (
             <figure key={k} className="m-0 flex flex-col items-center gap-2">
               <figcaption className="flex items-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs shadow-sm backdrop-blur">
@@ -319,7 +333,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
               {side(k)}
             </figure>
           ))}
-        {effectiveMode === "side" && compared.slice(2).map((value, index) => {
+        {available && effectiveMode === "side" && compared.slice(2).map((value, index) => {
           const sideIndex = (index + 2) as 2 | 3
           const state = sideIndex === 2 ? C : D
           return (
@@ -334,7 +348,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
             </figure>
           )
         })}
-        {effectiveMode === "split" && (
+        {available && effectiveMode === "split" && (
           <div className="flex flex-col items-center gap-2">
             <div className="flex w-full justify-between text-xs"><Badge className="bg-background/92 text-foreground">A · {label(a)}</Badge><Badge className="bg-background/92 text-foreground">B · {label(b)}</Badge></div>
             <div ref={drag} className="relative touch-none" onPointerMove={(e) => e.buttons === 1 && onDrag(e)} onPointerDown={onDrag}>
@@ -360,7 +374,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
             </div>
           </div>
         )}
-        {effectiveMode === "toggle" && (
+        {available && effectiveMode === "toggle" && (
           <div className="flex flex-col items-center gap-2">
             <ToggleGroup value={[showB ? "b" : "a"]} onValueChange={(v) => v[0] && setC({ showB: v[0] === "b" })} variant="outline" size="sm" spacing={0} className="bg-background/92">
               <ToggleGroupItem value="a">A · {label(a)}</ToggleGroupItem>
