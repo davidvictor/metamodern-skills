@@ -167,3 +167,17 @@ test('Properties load lazily, edit only the scenario of the update, and keep sto
   assert.doesNotMatch(chrome, /from "\.\/properties"/, 'the Properties chunk is never imported eagerly');
   assert.doesNotMatch(chrome, /<StatusNow \/>\} \{/, 'no text node beside the status when nothing is edited');
 });
+
+test('saved states share the layouts guards and stay pure', () => {
+  assert.doesNotMatch(read('src/studio/scenarios.ts'), /from "(react|@\/)/, 'the saved-state model is shared with the dev server and stays pure');
+  const vite = read('vite.config.ts');
+  assert.match(vite, /Only this Studio can save its layouts/);
+  assert.match(vite, /Only this Studio can save its scenarios/);
+  assert.match(vite, /route: "\/__studio\/scenarios"/);
+  const store = read('src/store.tsx');
+  assert.match(store, /const usable = usableSaved\(generated, list, A\.axes\.inputs\)\s*A\.scenarios = withSaved\(generated, usable\)/, 'saved states join the catalog only through usableSaved');
+  assert.equal((store.match(/withSaved\(/g) ?? []).length, 1, 'joinSaved is the only way into the catalog');
+  assert.match(store, /joinSaved\(bundledScenarios\?\.scenarios\)/, 'the bundled file is checked');
+  assert.match(store, /savedStates: joinSaved\(data\.scenarios\)/, 'the dev-server file is checked');
+  assert.match(store, /setSavedStates: \(list\) => set\(\{ savedStates: joinSaved\(list\) \}\)/, 'every change is checked');
+});

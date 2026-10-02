@@ -2025,6 +2025,72 @@ await check("AC-57", async () => {
   return [ok ? "pass" : "fail", `link ${link}; after a reload Title "${reloaded.title}" and Note "${reloaded.note}" (note shown ${reloaded.warned}); a link without them showed Title "${linked.title}" and kept the stored note ${JSON.stringify(linked.stored)} until an edit there (then ${JSON.stringify(linked.afterEdit)}); in a fresh browser Title "${received.title}", Done ${received.done}, Note unset ${received.noteSet === 1} with the sender note ${received.warned}, frame note ${JSON.stringify(received.frame.note)}`]
 })
 
+// AC-58 Save as scenario: the dev server writes a valid scenarios.json through the guarded endpoint; the saved state appears, survives a reload,
+// renames, duplicates and deletes; a built Studio disables saving with the reason and offers Copy as JSON
+await check("AC-58", async () => {
+  const file = join(root, "scenarios.json")
+  const backup = existsSync(file) ? `${file}.acceptance-backup` : null
+  if (backup) copyFileSync(file, backup)
+  rmSync(file, { force: true })
+  const port = 5393
+  const dev = spawn("npx", ["vite", "--port", String(port), "--strictPort", "--logLevel", "error"], { cwd: root, stdio: "ignore", env: { ...process.env, VITE_STUDIO_ADAPTER: "example" } })
+  try {
+    const url = `http://localhost:${port}/`
+    for (let i = 0; i < 60 && !(await fetch(url).then((r) => r.ok).catch(() => false)); i++) await wait(500)
+    const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+    const p = await context.newPage()
+    p.on("dialog", (d) => d.accept(d.type() === "prompt" ? "Finished card, renamed" : undefined))
+    await p.goto(`${url}#view=inspect&scenario=${CARD}`)
+    await p.waitForSelector("[data-properties]")
+    await wait(2000)
+    await details(p).getByRole("switch", { name: "Done" }).click()
+    await details(p).getByRole("button", { name: /Save as scenario/ }).click()
+    await p.getByLabel("Name the new state").fill("Finished card")
+    await p.getByRole("button", { name: "Save", exact: true }).last().click()
+    await wait(1000)
+    const written = JSON.parse(readFileSync(file, "utf8"))
+    const selected = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("scenario"))
+    await p.reload()
+    await p.waitForSelector("header")
+    await wait(2500)
+    const row = await p.locator('[role="treeitem"][title="Finished card"]').innerText().catch(() => "")
+    const title = await details(p).locator("h2").innerText()
+    const mounted = (await frameState(await liveFrame(p))).mounted
+    await details(p).getByRole("button", { name: "More saved state actions" }).click()
+    await p.getByRole("menuitem", { name: "Rename" }).click()
+    await wait(600)
+    await details(p).getByRole("button", { name: "More saved state actions" }).click()
+    await p.getByRole("menuitem", { name: "Duplicate" }).click()
+    await wait(600)
+    const two = JSON.parse(readFileSync(file, "utf8")).scenarios.map((x) => x.label)
+    await details(p).getByRole("button", { name: "More saved state actions" }).click()
+    await p.getByRole("menuitem", { name: "Delete" }).click()
+    await wait(600)
+    const one = JSON.parse(readFileSync(file, "utf8")).scenarios.map((x) => x.label)
+    await context.close()
+    const post = (body, headers = {}) => fetch(`${url}__studio/scenarios`, { method: "POST", headers: { "content-type": "application/json", origin: `http://localhost:${port}`, ...headers }, body })
+    const cross = (await post(JSON.stringify(written), { origin: "https://evil.example" })).status
+    const invalid = (await post(JSON.stringify({ schema: "studio-scenarios/1", scenarios: [{ id: "Bad ID", label: "", base: CARD, values: [] }] }))).status
+    const generated = (await post(JSON.stringify({ schema: "studio-scenarios/1", scenarios: [{ id: CARD, label: "Over", base: CARD, values: {} }] }))).status
+    const huge = (await post(JSON.stringify({ schema: "studio-scenarios/1", pad: "x".repeat(300 * 1024), scenarios: [] }))).status
+    // A built Studio: Save as scenario is disabled with the reason; Copy as JSON is offered.
+    const b = await open("normal", { hash: `view=inspect&scenario=${CARD}` })
+    await wait(800)
+    await details(b).getByRole("switch", { name: "Done" }).click()
+    const builtSave = await details(b).getByRole("button", { name: /Save as scenario/ }).isDisabled()
+    const reason = await details(b).getByText(/Saving needs the local Studio/).count()
+    const copy = await details(b).getByRole("button", { name: "Copy as JSON" }).count()
+    await b.closeAll()
+    const s0 = written.scenarios[0] ?? {}
+    const ok = written.schema === "studio-scenarios/1" && s0.id === "saved.finished-card" && s0.base === CARD && s0.label === "Finished card" && s0.values?.done === true && selected === s0.id && /Finished card/.test(row) && /Saved/.test(row) && /Finished card/.test(title) && mounted.scenario === CARD && mounted.values.done === true && two.join("|") === "Finished card, renamed|Finished card, renamed copy" && one.join("|") === "Finished card, renamed" && cross === 403 && invalid === 422 && generated === 422 && huge === 413 && builtSave && reason > 0 && copy === 1
+    return [ok ? "pass" : "fail", `Save as wrote ${written.scenarios.length} state ${s0.id} from ${s0.base} with ${JSON.stringify(s0.values)} and selected it (${selected}); after a reload the catalog row reads "${row.replace(/\s+/g, " ")}", Details "${title}", the frame mounted ${mounted.scenario} with done ${mounted.values.done}; rename and duplicate gave ${two.join(" and ")}, delete left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${generated} to a generated ID, ${huge} to an oversized one; a built Studio disables Save as scenario (${builtSave}), says why (${reason}) and offers Copy as JSON (${copy})`]
+  } finally {
+    dev.kill()
+    if (backup) copyFileSync(backup, file), rmSync(backup)
+    else rmSync(file, { force: true })
+  }
+})
+
 await browser.close()
 for (const s of Object.values(servers)) s.server.close()
 writeFileSync(join(root, "acceptance-report.json"), JSON.stringify({ at: new Date().toISOString(), results }, null, 2) + "\n")

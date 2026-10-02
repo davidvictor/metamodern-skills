@@ -7,7 +7,8 @@ import type { FrameDiagnostic, InputValue, Scenario, ScenarioInput, Token } from
 import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
 import { normalizeScenarioInput } from "@/studio/input"
-import { appliesTo, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, type Edits, type LinkHold } from "@/studio/properties"
+import { appliesTo, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, usableSaved, withSaved, type Edits, type LinkHold } from "@/studio/properties"
+import type { SavedScenario, ScenariosFile } from "@/studio/scenarios"
 import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import { applyPresenterOverlay, isPresenterOverlay, type PresenterOverlay, type PresenterWalkthrough, updateOverlay } from "@/studio/presenter-overlay"
@@ -38,6 +39,8 @@ export type State = {
   propsNote: string | null
   /** The scenario a link set edits for, with what this browser had stored for it: kept in storage until the person edits it here. */
   propsHold: LinkHold | null
+  /** Saved states from scenarios.json (studio-scenarios/1). */
+  savedStates: SavedScenario[]
   zoom: "fit" | number
   /** The scale Inspect is showing the frame at, for the dock's Zoom control to state. */
   scale: number
@@ -77,6 +80,18 @@ const VIEWS: View[] = ["inspect", "compare", "responsive", "gallery", "present",
 /** Properties need a live frame. A Studio that declares none behaves exactly as before they existed. */
 export const hasProperties = !!A.frameEntry && A.axes.inputs.some(isProperty)
 export const propertyIds = new Set(A.axes.inputs.filter(isProperty).map((i) => i.id))
+/** The adapter's own scenarios; saved states from scenarios.json join them in the catalog. */
+const generated = A.scenarios
+/** Puts a scenarios.json list in the catalog, keeping only usable entries, and returns them. */
+const joinSaved = (list: unknown) => {
+  const usable = usableSaved(generated, list, A.axes.inputs)
+  A.scenarios = withSaved(generated, usable)
+  return usable
+}
+/** Saved states bundled into a built Studio; the dev server serves the live file instead. Joined before the link is read, so a link to one resolves. */
+const bundledScenarios = Object.values(import.meta.glob("/scenarios.json", { eager: true, import: "default" }))[0] as ScenariosFile | undefined
+const bundledSaved = hasProperties ? joinSaved(bundledScenarios?.scenarios) : []
+export const canSaveScenarios = import.meta.env.DEV
 /** Design shows the Adjust tab when the adapter declares parameters and the Tokens tab when it has a token source. */
 export const hasAdjust = !!A.design?.parameters.length
 export const hasDesign = hasAdjust || !!A.tokens
@@ -270,6 +285,7 @@ const initial: State = {
   props: {},
   propsNote: null,
   propsHold: null,
+  savedStates: bundledSaved,
   zoom: "fit",
   scale: 1,
   resetNonce: 0,
@@ -306,6 +322,8 @@ type Ctx = State & {
   setProp: (id: string, value: InputValue | null) => void
   /** Clears every property edit on this scenario. R does not; this does. */
   resetProps: () => void
+  /** Replaces the saved states, and the catalog entries made from them. */
+  setSavedStates: (list: SavedScenario[]) => void
   walkthroughs: PresenterWalkthrough[]
   updatePresenter: (tourId: string, patch: Partial<PresenterOverlay["tours"][string]>) => void
   setView: (v: View) => void
@@ -435,6 +453,16 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     void _
     writeJSON(RESPONSIVE_KEY, keep)
   }, [state.responsive])
+  // In the dev server the live scenarios.json is read too, so a saved state shows after a reload.
+  React.useEffect(() => {
+    if (!canSaveScenarios || !hasProperties) return
+    fetch("__studio/scenarios")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: ScenariosFile | null) => {
+        if (data) set({ savedStates: joinSaved(data.scenarios) })
+      })
+      .catch(() => undefined)
+  }, [set])
   // In the dev server the live layouts.json is read, so a save shows after a reload too.
   React.useEffect(() => {
     if (!canSaveLayouts) return
@@ -485,6 +513,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
         return { props: { ...s.props, [s.scenario]: edits }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold }
       }),
     resetProps: () => set((s) => ({ props: { ...s.props, [s.scenario]: {} }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold })),
+    setSavedStates: (list) => set({ savedStates: joinSaved(list) }),
     setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v ? !s.panelOpen : true })),
     reset: () => {
       set((s) => ({ resetNonce: s.resetNonce + 1, preview: { ...s.preview, status: "loading", modified: false, canGoBack: false } }))

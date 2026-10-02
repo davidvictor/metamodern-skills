@@ -1,41 +1,54 @@
 /*
  * Component properties in Details, loaded only when a scenario has them. Named states stay the unit of
  * review: a property edits the selected state, shows as a difference from it, and changes the live
- * frame without a remount. Built from the shell's own components; nothing here is product UI.
+ * frame without a remount. Save as scenario keeps it as a new named state in scenarios.json (dev
+ * server only; a built Studio offers Copy as JSON). Built from the shell's own components.
  */
 import * as React from "react"
-import { ChevronDownIcon, RotateCcwIcon } from "lucide-react"
+import { ChevronDownIcon, CopyIcon, EllipsisIcon, RotateCcwIcon, SaveIcon } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { adapter } from "@/adapter"
-import { optionsFor, useStudio } from "@/store"
+import { canSaveScenarios, optionsFor, useStudio } from "@/store"
 import { normalizeScenarioInput } from "@/studio/input"
 import { propertiesFor } from "@/studio/properties"
+import { SCENARIOS_MAX_BYTES, savedId, validateScenarios, type SavedScenario } from "@/studio/scenarios"
 import type { InputValue, ScenarioInput } from "@/studio/types"
 
 /** Coarse pointers: every row control reaches 44 px and text fields use 16 px text, so phones do not zoom. */
 const TOUCH = "pointer-coarse:min-h-11 pointer-coarse:text-base"
+const WHY = "Saving needs the local Studio (npm run dev). A published Studio offers Copy as JSON instead."
 
 /**
- * A control that removes itself (Set, Clear, Back to designed, Reset) hands focus on: the element with this ID is
- * focused after the render that shows it, never left on the page body.
+ * A control that removes or disables itself (Set, Clear, Back to designed, Reset, the save actions) hands focus on:
+ * after the render that follows, the first of these IDs that exists is focused, else the Properties heading, never
+ * the page body.
  */
 function useFocusAfter() {
-  const target = React.useRef<string | null>(null)
-  // Runs after every render of the row; the change that removed the control re-renders it through the store.
+  const target = React.useRef<string[] | null>(null)
+  // Runs after every render; the change that removed the control re-renders it through the store.
   React.useEffect(() => {
     if (!target.current) return
-    document.getElementById(target.current)?.focus()
+    for (const id of [...target.current, "properties-heading"]) {
+      const el = document.getElementById(id)
+      if (el) {
+        el.focus()
+        break
+      }
+    }
     target.current = null
   })
-  return (id: string) => {
-    target.current = id
+  return (...ids: string[]) => {
+    target.current = ids
   }
 }
 
@@ -82,12 +95,13 @@ function PropertiesSection({ inputs }: { inputs: ScenarioInput[] }) {
   const n = Object.keys(s.edits).length
   const curated = inputs.filter((i) => i.curated)
   const rest = inputs.filter((i) => !i.curated)
-  // After Reset, the first curated row's control; the section heading when there is none.
+  // After Reset, the first curated row's control, or its Set button when it is unset; the section heading when there is neither.
   const first = curated.find((i) => !i.readonly)
   return (
     <FieldSet data-properties>
       <div className="flex min-h-7 items-center justify-between gap-2">
-        <FieldLegend id="properties-heading" tabIndex={-1} variant="label" className="mb-0 outline-none">
+        {/* Focused only by script (after Reset or a save), so its ring shows on :focus, not only :focus-visible. */}
+        <FieldLegend id="properties-heading" tabIndex={-1} variant="label" className="mb-0 rounded-sm focus:ring-2 focus:ring-ring focus:outline-none">
           Properties
         </FieldLegend>
         {n > 0 && (
@@ -97,7 +111,8 @@ function PropertiesSection({ inputs }: { inputs: ScenarioInput[] }) {
             className={TOUCH}
             onClick={() => {
               s.resetProps()
-              focusAfter(first ? `property-${first.id}` : "properties-heading")
+              if (first) focusAfter(`property-${first.id}`, `property-${first.id}-set`)
+              else focusAfter()
             }}
           >
             <RotateCcwIcon /> Reset ({n})
@@ -132,6 +147,7 @@ function PropertiesSection({ inputs }: { inputs: ScenarioInput[] }) {
           </CollapsibleContent>
         </Collapsible>
       )}
+      <SaveActions />
     </FieldSet>
   )
 }
@@ -271,5 +287,145 @@ function NumberControl({ input: i, id, value, onChange }: { input: ScenarioInput
         </div>
       )}
     </div>
+  )
+}
+
+/** Save as scenario (dev server), Save and the saved state's own actions, or Copy as JSON in a built Studio. */
+function SaveActions() {
+  const s = useStudio()
+  const focusAfter = useFocusAfter()
+  const sc = s.scenarioObj
+  const own = s.savedStates.find((x) => x.id === sc.id)
+  const n = Object.keys(s.edits).length
+  const ids = adapter.scenarios.map((x) => x.id)
+  // A saved state keeps its saved values and takes the edits on top; it always names the generated scenario it came from.
+  const entry = (id: string, label: string): SavedScenario => ({ id, label, base: sc.savedFrom ?? sc.id, values: { ...own?.values, ...s.edits } })
+  const persist = async (list: SavedScenario[]) => {
+    const file = { schema: "studio-scenarios/1" as const, scenarios: list }
+    const problems = validateScenarios(file, adapter.scenarios.filter((x) => !x.savedFrom).map((x) => x.id))
+    if (problems.length) throw new Error(problems[0])
+    const body = JSON.stringify(file)
+    if (new Blob([body]).size > SCENARIOS_MAX_BYTES) throw new Error("Saved scenarios are limited to 256 KB")
+    const res = await fetch("__studio/scenarios", { method: "POST", headers: { "content-type": "application/json" }, body })
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `The Studio refused the save (${res.status})`)
+    s.setSavedStates(list)
+  }
+  const fail = (what: string) => (e: unknown) => {
+    toast.error(what, { description: e instanceof Error ? e.message : String(e) })
+  }
+  const saveAs = async (label: string) => {
+    const next = entry(savedId(label, ids), label)
+    await persist([...s.savedStates, next])
+    s.resetProps()
+    s.selectScenario(next.id)
+    toast.success(`Saved ${label}`, { description: "In this Studio's scenarios.json. Commit it to share." })
+  }
+  const save = () =>
+    persist(s.savedStates.map((x) => (x.id === sc.id ? entry(x.id, x.label) : x)))
+      .then(() => {
+        s.resetProps()
+        // Save is disabled once nothing is edited; focus moves to the heading rather than the page body.
+        focusAfter()
+        toast.success(`Saved ${sc.label}`)
+      })
+      .catch(fail("Not saved"))
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(entry(own?.id ?? savedId(`${sc.label} edited`, ids), own?.label ?? `${sc.label}, edited`), null, 2))
+      toast("Copied as JSON", { description: "Add it to scenarios.json in the local Studio to make it a named state." })
+    } catch {
+      toast.error("Couldn't copy", { description: "The browser refused the clipboard." })
+    }
+  }
+  return (
+    <div className="grid gap-2 border-t pt-3">
+      <div className="flex flex-wrap gap-1.5">
+        {own && (
+          <Button size="sm" variant="outline" className={TOUCH} disabled={!canSaveScenarios || n === 0} title={canSaveScenarios ? undefined : WHY} onClick={save}>
+            <SaveIcon /> Save
+          </Button>
+        )}
+        <SaveAs disabled={!canSaveScenarios || n === 0} initial={`${sc.label}, edited`} onSave={(label) => saveAs(label).then(() => true, (e) => (fail("Not saved")(e), false))} />
+        {!canSaveScenarios && (
+          <Button size="sm" variant="ghost" className={TOUCH} onClick={copy}>
+            <CopyIcon /> Copy as JSON
+          </Button>
+        )}
+        {own && canSaveScenarios && (
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button size="icon-sm" variant="ghost" className={TOUCH} aria-label="More saved state actions" />}>
+              <EllipsisIcon />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem
+                onClick={() => {
+                  const label = window.prompt("Rename the saved state", own.label)?.trim()
+                  if (label) persist(s.savedStates.map((x) => (x.id === own.id ? { ...x, label } : x))).catch(fail("Not renamed"))
+                }}
+              >
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => saveAs(`${own.label} copy`).catch(fail("Not duplicated"))}>Duplicate</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => {
+                  if (!window.confirm(`Delete the saved state ${own.label}? This changes scenarios.json.`)) return
+                  persist(s.savedStates.filter((x) => x.id !== own.id))
+                    .then(() => {
+                      s.selectScenario(own.base)
+                      // The menu's trigger leaves with the saved state.
+                      focusAfter()
+                    })
+                    .catch(fail("Not deleted"))
+                }}
+              >
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+      {!canSaveScenarios && <p className="text-[11px] text-muted-foreground">{WHY}</p>}
+    </div>
+  )
+}
+
+function SaveAs({ disabled, initial, onSave }: { disabled: boolean; initial: string; onSave: (label: string) => Promise<boolean> }) {
+  const [open, setOpen] = React.useState(false)
+  const [label, setLabel] = React.useState(initial)
+  // After a save the trigger is disabled (nothing is edited on the new state), so focus goes to the Properties heading.
+  const saved = React.useRef(false)
+  const submit = async () => {
+    if (!label.trim()) return
+    // A failed save keeps the popover open with the name, so it can be tried again.
+    if (!(await onSave(label.trim()))) return
+    saved.current = true
+    setOpen(false)
+  }
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o)
+        if (o) {
+          setLabel(initial)
+          saved.current = false
+        }
+      }}
+    >
+      <PopoverTrigger render={<Button size="sm" variant="outline" className={TOUCH} disabled={disabled} title={disabled && !canSaveScenarios ? WHY : undefined} />}>
+        <SaveIcon /> Save as scenario
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-64" finalFocus={() => (saved.current ? document.getElementById("properties-heading") : true)}>
+        <Field>
+          <FieldLabel htmlFor="scenario-name">Name the new state</FieldLabel>
+          <Input id="scenario-name" value={label} maxLength={80} className={TOUCH} onChange={(e) => setLabel(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} autoFocus />
+        </Field>
+        <Button size="sm" className={`mt-3 w-full ${TOUCH}`} disabled={!label.trim()} onClick={submit}>
+          Save
+        </Button>
+      </PopoverContent>
+    </Popover>
   )
 }

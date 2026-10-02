@@ -7,7 +7,7 @@
  * as scenarios derived from the generated one they were saved from. Pure, no DOM.
  */
 import { normalizeScenarioInput, RESERVED_LINK_KEYS } from "./input"
-import type { SavedScenario } from "./scenarios"
+import { SAVED_PREFIX, type SavedScenario } from "./scenarios"
 import type { InputValue, Scenario, ScenarioInput } from "./types"
 
 /** A viewer's property edits on one scenario, by input ID. */
@@ -93,12 +93,26 @@ export function axisValues(i: ScenarioInput) {
   return (i.options ?? []).map((o) => ({ id: o.id, label: o.label }))
 }
 
-/** The catalog with saved states, each after the last scenario of its base's surface and nested under the base's top scenario. A saved state whose base is gone, or whose ID is taken, is left out. */
+/**
+ * The saved states a file may add: an ID with the saved. prefix, not repeated; a label; a generated base; and only
+ * that base's own property values, normalized. A hand-edited file cannot add a nameless row or set any other input.
+ */
+export function usableSaved(generated: Scenario[], saved: unknown, inputs: ScenarioInput[]) {
+  const out: SavedScenario[] = []
+  for (const x of Array.isArray(saved) ? (saved as Partial<SavedScenario>[]) : []) {
+    const base = generated.find((g) => g.id === x?.base)
+    if (!base || typeof x.id !== "string" || !x.id.startsWith(SAVED_PREFIX) || out.some((o) => o.id === x.id) || typeof x.label !== "string" || !x.label.trim() || !x.values || typeof x.values !== "object" || Array.isArray(x.values)) continue
+    out.push({ id: x.id, label: x.label, base: base.id, values: keptEdits(inputs, base, x.values), ...(typeof x.description === "string" && { description: x.description }) })
+  }
+  return out
+}
+
+/** The catalog with saved states (checked by usableSaved), each after the last scenario of its base's surface and nested under the base's top scenario. A saved state whose base is gone, or whose ID is taken, is left out. */
 export function withSaved(generated: Scenario[], saved: SavedScenario[] = []) {
   const out = [...generated]
   for (const x of saved) {
-    const base = generated.find((g) => g.id === x?.base)
-    if (!base || typeof x.id !== "string" || out.some((g) => g.id === x.id) || !x.values || typeof x.values !== "object") continue
+    const base = generated.find((g) => g.id === x.base)
+    if (!base || out.some((g) => g.id === x.id)) continue
     out.splice(out.findLastIndex((g) => g.surface === base.surface) + 1, 0, {
       ...base,
       id: x.id,

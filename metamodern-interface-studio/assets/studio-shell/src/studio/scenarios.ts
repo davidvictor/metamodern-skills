@@ -25,7 +25,8 @@ const ID = /^saved\.[a-z0-9][a-z0-9-]{0,63}$/
 
 /** A new saved-state ID from its label, unique among the IDs given. */
 export function savedId(label: string, taken: string[]) {
-  const stem = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "state"
+  // Cut first, then trim, so the stem never ends in a hyphen.
+  const stem = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 48).replace(/^-+|-+$/g, "") || "state"
   let id = `${SAVED_PREFIX}${stem}`
   for (let n = 2; taken.includes(id); n++) id = `${SAVED_PREFIX}${stem}-${n}`
   return id

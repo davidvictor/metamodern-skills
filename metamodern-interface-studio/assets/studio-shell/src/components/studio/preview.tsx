@@ -138,7 +138,8 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
           src={adapter.frameEntry!}
           origin={adapter.frameOrigin}
           inputs={{
-            scenario,
+            // A saved state renders the generated scenario it was saved from, with its saved values.
+            scenario: sc?.savedFrom ?? scenario,
             theme,
             profile,
             values: resolved,

@@ -292,6 +292,7 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
             return (
               <>
                 <span className="truncate">{r.sc.label}</span>
+                {r.sc.savedFrom && <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">Saved</span>}
                 <RowMark status={r.sc.status} noCapture={!live && !captureFor(r.sc, s.theme, s.profile)} />
               </>
             )

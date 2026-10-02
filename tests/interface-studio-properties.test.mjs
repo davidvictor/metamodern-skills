@@ -194,6 +194,38 @@ test('saved states join the catalog after their surface, nested under the base, 
   assert.equal(saved.captures, undefined, 'a capture proves only the state it recorded');
 });
 
+test('a hand-edited scenarios.json adds only usable saved states, with only their base\'s own property values', () => {
+  const child = { ...card, id: 'card.done', parent: 'card', state: 'Done', designed: { done: true } };
+  const scoped = { id: 'mode', label: 'Mode', control: 'switch', surfaces: ['Task card'] };
+  const all = [...inputs, scoped];
+  const usable = properties.usableSaved([card, child, list], [
+    { id: 'saved.ok', label: 'Ok', base: 'card', values: { done: true, mode: true, hours: 'x', note: 'Hi' } },
+    { id: 'card.other', label: 'No prefix', base: 'card', values: {} },
+    { id: 'saved.nolabel', base: 'card', values: {} },
+    { id: 'saved.blank', label: '  ', base: 'card', values: {} },
+    { id: 'saved.numlabel', label: 4, base: 'card', values: {} },
+    { id: 'saved.ok', label: 'Repeat', base: 'card', values: {} },
+    { id: 'saved.gone', label: 'Gone', base: 'missing', values: {} },
+    { id: 'saved.chain', label: 'Chain', base: 'saved.ok', values: {} },
+    { id: 'saved.bad', label: 'Bad values', base: 'card', values: [] },
+    null,
+  ], all);
+  assert.deepEqual(usable.map((x) => x.id), ['saved.ok']);
+  assert.deepEqual(usable[0].values, { done: true, note: 'Hi' }, 'a non-property input stays off and a stale value is dropped');
+  const catalog = properties.withSaved([card, child, list], usable);
+  assert.equal(catalog.find((x) => x.id === 'saved.ok').designed.mode, undefined);
+  assert.deepEqual(properties.usableSaved([card], undefined, all), []);
+  assert.deepEqual(properties.usableSaved([card], { not: 'a list' }, all), []);
+});
+
+test('a saved-state ID never ends in a hyphen', () => {
+  const id = scenarios.savedId(`${'a'.repeat(47)} b`, []);
+  assert.equal(id, `saved.${'a'.repeat(47)}`);
+  assert.doesNotMatch(scenarios.savedId(`${'x'.repeat(47)}!!!!yz`, []), /-$/);
+  assert.equal(scenarios.savedId('!!!', []), 'saved.state');
+  assert.deepEqual(scenarios.validateScenarios({ schema: 'studio-scenarios/1', scenarios: [{ id: scenarios.savedId(`${'a'.repeat(47)} b`, []), label: 'A', base: 'card', values: {} }] }), []);
+});
+
 test('studio-scenarios/1 accepts saved states and refuses what it should', () => {
   const ok = { schema: 'studio-scenarios/1', scenarios: [{ id: 'saved.big', label: 'Big', base: 'card', values: { done: true, hours: 4, title: 'Hi' } }] };
   assert.deepEqual(scenarios.validateScenarios(ok), []);
