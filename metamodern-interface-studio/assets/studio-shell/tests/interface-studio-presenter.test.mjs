@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
-import { applyPresenterOverlay, firstVisibleIndex, importedOverlay, isPresenterOverlay, nextVisibleIndex, stepId } from "../src/studio/presenter-overlay.ts"
+import { readFileSync } from "node:fs"
+import { applyPresenterOverlay, firstVisibleIndex, importedOverlay, isPresenterOverlay, nextVisibleIndex, stepId, stepSeconds } from "../src/studio/presenter-overlay.ts"
 
 const base = [{
   id: "tour.weekly",
@@ -48,4 +49,16 @@ assert.equal(firstVisibleIndex(playback), 1, "Play All starts at the first visib
 assert.equal(nextVisibleIndex(playback, 0), 1, "a hidden current step normalizes to the next visible step")
 assert.equal(nextVisibleIndex(playback, 1), -1, "no hidden step receives a timer after the final visible step")
 assert.equal(firstVisibleIndex({ steps: playback.steps.map((step) => ({ ...step, hidden: true })) }), -1, "all-hidden tours are skipped")
+assert.equal(stepSeconds(undefined), 5, "a walkthrough with no steps does not throw or produce NaN")
+assert.equal(stepSeconds({ narration: "" }), 5)
+assert.ok(Math.abs(stepSeconds({ narration: "one two three four five six seven eight nine ten eleven twelve" }) - 7.3) < 1e-9, "narration sets a reading time")
+assert.equal(stepSeconds({ narration: "Long", duration: 0.2 }), 0.5, "authored durations keep their floor")
+assert.equal(stepSeconds({ narration: "Long", duration: 9 }), 9)
+
+const views = readFileSync(new URL("../src/components/studio/views.tsx", import.meta.url), "utf8")
+assert.match(views, /const authoredSeconds = stepSeconds\(step\)/, "PresentStage times steps through the guarded helper")
+assert.match(views, /event\.target\.value = ""\s*\n\s*void importOverlay\(file\)/, "the overlay file input is cleared so the same file can be imported again")
+assert.match(views, /<Popover open=\{open\} onOpenChange=\{onOpenChange\}>/, "the presenter editor reseeds when it opens")
+assert.match(views, /if \(next\) \{\s*setName\(tour\.name\)\s*setGoal\(tour\.goal\)\s*setNarration\(step\.narration\)\s*setSeconds\(String\(step\.duration \?\? ""\)\)/, "opening reads the current tour and step")
+assert.match(views, /\[s\.present\.playing, i, secs, problem, ready, tour, s\.walkthroughs, set\]/, "playlist advance reads current walkthroughs")
 console.log("presenter overlay tests passed")

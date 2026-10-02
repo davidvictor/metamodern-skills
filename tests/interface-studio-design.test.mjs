@@ -114,3 +114,46 @@ test('scenario input validation normalizes declared ranges and rejects unsupport
   assert.equal(normalizeScenarioInput(select, { supports: { mode: ['a'] } }, 'a'), 'a');
   assert.equal(normalizeScenarioInput(select, { supports: { mode: ['a'] } }, 'b'), undefined);
 });
+
+test('a link and the draft state compare values with the active theme default', async () => {
+  const { encodeDesign } = await designModel();
+  assert.equal(encodeDesign(baseAdapter, { density: 1.2 }, 'dark'), '', 'the as-built dark value is not a change in dark');
+  assert.equal(encodeDesign(baseAdapter, { density: 1 }, 'dark'), 'density:1', 'a dark value equal to the plain default is a real change');
+  assert.equal(encodeDesign(baseAdapter, { density: 1.2 }, 'light'), 'density:1.2');
+  assert.equal(encodeDesign(baseAdapter, { density: 1 }), '', 'without a theme the plain default is the baseline');
+  const store = read('src/store.tsx');
+  assert.match(store, /encodeDesign\(A, valuesForTheme\([^)]*state\.theme\), state\.theme\)/, 'the link encodes against the viewed theme');
+  assert.match(store, /theme\.id\), theme\.id\)\)/, 'hasDraft checks each theme against its own defaults');
+  assert.match(store, /!encodeDesign\(A, values, theme\)/, 'the view draft checks the theme it renders');
+  assert.doesNotMatch(store, /decodeDesign\(A, encodeDesign\(/, 'saved values are not filtered against a theme-less default on reload');
+});
+
+test('a partial values change keeps the shared and themed values it does not name', async () => {
+  const { mergeDesignValues } = await designModel();
+  const merged = mergeDesignValues(baseAdapter, { density: 1.1, clock: 600 }, { light: { graphic: 'rings' } }, 'light', { density: 0.9 });
+  assert.deepEqual(merged.values, { density: 0.9, clock: 600 });
+  assert.deepEqual(merged.valuesByTheme, { light: { graphic: 'rings' } });
+  const themed = mergeDesignValues(baseAdapter, { density: 1.1 }, { light: { graphic: 'rings' }, dark: {} }, 'light', { graphic: 'bars' });
+  assert.deepEqual(themed.values, { density: 1.1 });
+  assert.deepEqual(themed.valuesByTheme, { light: { graphic: 'bars' }, dark: {} });
+  assert.match(read('src/store.tsx'), /mergeDesignValues\(A, s\.design\.values, s\.design\.valuesByTheme, s\.theme, patch\.values\)/);
+});
+
+test('the type specimen reads the active theme default for typefaces and change detection', () => {
+  const design = read('src/components/studio/design.tsx');
+  assert.doesNotMatch(design, /\?\? p\.default\)/, 'no font fallback ignores defaultsByTheme');
+  assert.match(design, /String\(values\[p\.id\] \?\? parameterDefault\(adapter, p, s\.theme\)\)/);
+  assert.match(design, /!isDefault\(p, values\[p\.id\], parameterDefault\(adapter, p, theme\)\)/, 'typeChanged compares with the theme default');
+  assert.match(design, /!typeChanged\(values, s\.theme\)/);
+});
+
+test('a snapped range value never passes the declared maximum', async () => {
+  const { normalizeScenarioInput } = await loadPureTypeScript('src/studio/input.ts');
+  const uneven = { id: 'n', label: 'N', control: 'range', min: 0, max: 10, step: 4 };
+  assert.equal(normalizeScenarioInput(uneven, undefined, 10), 8, 'rounding up to 12 takes the last step inside the range');
+  assert.equal(normalizeScenarioInput(uneven, undefined, 9), 8);
+  assert.equal(normalizeScenarioInput(uneven, undefined, 5), 4);
+  assert.equal(normalizeScenarioInput({ ...uneven, step: 3 }, undefined, 10), 9);
+  assert.equal(normalizeScenarioInput({ id: 'h', label: 'H', control: 'range', min: 0, max: 24, step: 1 / 12 }, undefined, 24), 24, 'an exact maximum on a decimal grid stays');
+  assert.equal(normalizeScenarioInput({ id: 'o', label: 'O', control: 'range', min: 1, max: 10, step: 4 }, undefined, 10), 9);
+});

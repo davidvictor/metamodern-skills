@@ -43,7 +43,8 @@ import { StageControls } from "./chrome"
 import { ScenarioPreview, inspectHandle, profileOf, themeOf, useReportStatus } from "./preview"
 import { ResizeHandles } from "./resize-handles"
 import { StageNav, useStageNav } from "./stage-nav"
-import { firstVisibleIndex, importedOverlay, isPresenterOverlay, nextVisibleIndex, stepId } from "@/studio/presenter-overlay"
+import { firstVisibleIndex, importedOverlay, isPresenterOverlay, nextVisibleIndex, stepId, stepSeconds } from "@/studio/presenter-overlay"
+import { chooseCompared, comparisonCount, resolveComparison } from "@/studio/compare"
 
 /** The grey stage with its controls in the chosen placement. */
 function Stage({ children, controls = true, footer, narrow }: { children: React.ReactNode; controls?: boolean; footer?: React.ReactNode; narrow?: boolean }) {
@@ -137,19 +138,15 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const axis = fallback ? "theme" : s.compare.axis
   const options = axisOptions(axis, sc)
   // A saved pair that names an option this scenario cannot render falls back to the first two it can.
-  const valid = (id: string) => options.some((o) => o.id === id)
+  // A saved n-up comparison carries one tuple; A and B lead it, so the selectors and previews agree.
   const saved = s.compare.values.length ? s.compare.values : [s.compare.a, s.compare.b]
-  const a = fallback ? adapter.axes.themes[0].id : valid(saved[0]) ? saved[0] : (options[0]?.id ?? "")
-  const b = fallback ? adapter.axes.themes[adapter.axes.themes.length - 1].id : valid(saved[1]) && saved[1] !== a ? saved[1] : (options.find((o) => o.id !== a)?.id ?? "")
-  // A saved n-up comparison carries one tuple. Values remain independently mounted previews;
-  // we never collapse them to a substitute when one becomes unavailable for this scenario.
-  const count = Math.max(2, Math.min(4, s.compare.count)) as 2 | 3 | 4
-  const compared = (saved.length ? saved : [a, b]).filter((id, index, all) => valid(id) && all.indexOf(id) === index).slice(0, count)
-  while (compared.length < count) {
-    const next = options.find((o) => !compared.includes(o.id))?.id
-    if (!next) break
-    compared.push(next)
-  }
+  const count = comparisonCount(s.compare.count)
+  const { a, b, compared } = resolveComparison(
+    options.map((o) => o.id),
+    saved,
+    count,
+    fallback ? [adapter.axes.themes[0].id, adapter.axes.themes[adapter.axes.themes.length - 1].id] : undefined
+  )
   const optionLabel = (id: string) => options.find((o) => o.id === id)?.label ?? id
   // Each side is one full set of resolved inputs: everything the viewer chose, except the one axis that changes.
   const pick = (k: "a" | "b") => (k === "a" ? a : b)
@@ -254,9 +251,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           <Separator orientation="vertical" className="h-5! self-center!" />
           {(["a", "b"] as const).map((k) => (
             <Select key={k} value={pick(k)} items={Object.fromEntries(options.map((o) => [o.id, o.label]))} onValueChange={(v) => {
-              const values = [...compared]
-              const index = k === "a" ? 0 : 1
-              values[index] = v as string
+              const values = chooseCompared(compared, k === "a" ? 0 : 1, v as string)
               setC({ axis, a: values[0], b: values[1], values })
             }} disabled={!s.compare.editable}>
               <SelectTrigger size="sm" className="gap-1 border-0 shadow-none" aria-label={k === "a" ? "Side A" : "Side B"}>
@@ -268,11 +263,9 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           ))}
           {compared.slice(2).map((value, index) => {
             const slot = index + 2
-            const all = [...compared]
             return (
               <Select key={slot} value={value} items={Object.fromEntries(options.map((o) => [o.id, o.label]))} onValueChange={(v) => {
-                const values = [...all]
-                values[slot] = v as string
+                const values = chooseCompared(compared, slot, v as string)
                 setC({ a: values[0], b: values[1], values })
               }} disabled={!s.compare.editable}>
                 <SelectTrigger size="sm" className="gap-1 border-0 shadow-none" aria-label={`Side ${String.fromCharCode(65 + slot)}`}>
@@ -568,7 +561,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
   const ready = !problem && (adapter.frameEntry ? currentStatus?.status === "ready" : true)
   const explored = !!currentStatus?.modified
   const go = (d: number) => tour && s.set({ present: { ...s.present, step: Math.max(0, Math.min(tour.steps.length - 1, i + d)), elapsed: 0 } })
-  const authoredSeconds = step?.duration != null ? Math.max(0.5, step.duration) : Math.min(14, Math.max(5, step?.narration.split(/\s+/).length * 0.4 + 2.5))
+  const authoredSeconds = stepSeconds(step)
   const secs = authoredSeconds / s.present.speed
   const set = s.set
   React.useEffect(() => {
@@ -600,7 +593,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
       return { present: nextTour ? { ...x.present, tour: nextTour.id, step: firstVisibleIndex(nextTour), elapsed: 0 } : { ...x.present, playing: false, playlist: false } }
     }), 100)
     return () => window.clearInterval(t)
-  }, [s.present.playing, i, secs, problem, ready, tour, set])
+  }, [s.present.playing, i, secs, problem, ready, tour, s.walkthroughs, set])
   if (!tour || !step)
     return (
       <div className="stage-surface flex flex-1 items-center justify-center p-6">
@@ -740,7 +733,12 @@ function PresenterTransfer() {
       <PopoverContent side="top" align="end" className="grid w-64 gap-2 text-xs">
         <p className="text-muted-foreground">Presenter changes are stored locally and can be exchanged as raw JSON without changing generated adapter data.</p>
         <Button size="sm" variant="outline" onClick={exportOverlay}>Export raw JSON</Button>
-        <input ref={input} type="file" accept="application/json,.json" className="sr-only" onChange={(event) => void importOverlay(event.target.files?.[0])} />
+        <input ref={input} type="file" accept="application/json,.json" className="sr-only" onChange={(event) => {
+          const file = event.target.files?.[0]
+          // Clear the choice so picking the same file again (after fixing it) imports again.
+          event.target.value = ""
+          void importOverlay(file)
+        }} />
         <Button size="sm" variant="outline" onClick={() => input.current?.click()}>Import raw JSON</Button>
       </PopoverContent>
     </Popover>
@@ -755,6 +753,16 @@ function PresenterEditor({ tour, step, index }: { tour: { id: string; name: stri
   const [goal, setGoal] = React.useState(tour.goal)
   const [narration, setNarration] = React.useState(step.narration)
   const [seconds, setSeconds] = React.useState(String(step.duration ?? ""))
+  // Opening reads the current tour and step, so a rename or an imported overlay since the last edit is never overwritten on Save.
+  const onOpenChange = (next: boolean) => {
+    if (next) {
+      setName(tour.name)
+      setGoal(tour.goal)
+      setNarration(step.narration)
+      setSeconds(String(step.duration ?? ""))
+    }
+    setOpen(next)
+  }
   const save = () => {
     const duration = Number(seconds)
     const id = stepId(tour, step, index)
@@ -768,7 +776,7 @@ function PresenterEditor({ tour, step, index }: { tour: { id: string; name: stri
     s.updatePresenter(tour.id, { steps })
   }
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger render={<Button variant="ghost" size="icon" aria-label="Edit walkthrough" />}><PencilIcon /></PopoverTrigger>
       <PopoverContent side="top" align="end" className="grid w-80 gap-3">
         <label className="grid gap-1 text-xs">Walkthrough name<input className="h-8 rounded-md border bg-background px-2 text-sm" value={name} onChange={(e) => setName(e.target.value)} /></label>

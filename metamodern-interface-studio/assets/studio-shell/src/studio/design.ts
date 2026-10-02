@@ -97,6 +97,19 @@ export function valuesForTheme(adapter: StudioAdapter, shared: DesignValues, val
   return { ...Object.fromEntries(Object.entries(shared).filter(([id]) => !scoped.has(id))), ...(valuesByTheme[theme] ?? {}) }
 }
 
+/**
+ * Merges a change into the stored values: shared parameters into the shared map, theme-scoped
+ * ones into the theme's own map. A partial change keeps every value it does not name.
+ */
+export function mergeDesignValues(adapter: StudioAdapter, shared: DesignValues, valuesByTheme: DesignValuesByTheme, theme: string, patch: DesignValues) {
+  const scoped = new Set((adapter.design?.parameters ?? []).filter((p) => p.themes?.length).map((p) => p.id))
+  const entries = Object.entries(patch)
+  return {
+    values: { ...shared, ...Object.fromEntries(entries.filter(([id]) => !scoped.has(id))) },
+    valuesByTheme: { ...valuesByTheme, [theme]: { ...(valuesByTheme[theme] ?? {}), ...Object.fromEntries(entries.filter(([id]) => scoped.has(id))) } },
+  }
+}
+
 /** A Google Fonts stylesheet for a family, or nothing for a font the browser already has. */
 export function fontStylesheet(name: string) {
   if (LOCAL_FONTS.some((f) => f.toLowerCase() === name.toLowerCase())) return null
@@ -298,10 +311,13 @@ export function frameDesignValues(adapter: StudioAdapter, values: DesignValues, 
   return out
 }
 
-/** Design values in a link: `density:0.9;body-font:Inter`. Only non-default values travel. */
-export function encodeDesign(adapter: StudioAdapter, values: DesignValues) {
+/**
+ * Design values in a link: `density:0.9;body-font:Inter`. Only values that differ from the
+ * theme's as-built default travel; without a theme, the parameter's own default is the baseline.
+ */
+export function encodeDesign(adapter: StudioAdapter, values: DesignValues, theme?: string) {
   return (adapter.design?.parameters ?? [])
-    .filter((p) => !isDefault(p, values[p.id]))
+    .filter((p) => !isDefault(p, values[p.id], parameterDefault(adapter, p, theme)))
     .map((p) => `${p.id}:${values[p.id]}`)
     .join(";")
 }
