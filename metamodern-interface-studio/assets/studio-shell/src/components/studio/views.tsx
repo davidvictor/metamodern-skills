@@ -89,7 +89,7 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
   const nav = useStageNav(box, scale)
   const onStatus = React.useCallback(
     (st: LiveStatus | null) => {
-      if (st) set({ preview: { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous, diagnostics: st.diagnostics } })
+      if (st) set({ preview: { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous, diagnostics: st.diagnostics, capabilities: st.capabilities } })
       else set({ preview: { status: captureFor(sc, s.theme, s.profile) ? "static" : "empty", modified: false, canGoBack: false } })
     },
     [set, sc, s.theme, s.profile]
@@ -102,6 +102,7 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
       profile={s.profile}
       size={resizable ? s.size : null}
       values={s.values}
+      props={s.edits}
       draft={s.viewDraft(s.theme)}
       resetNonce={s.resetNonce}
       scale={scale}

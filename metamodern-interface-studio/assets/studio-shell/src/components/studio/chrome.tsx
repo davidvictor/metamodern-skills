@@ -49,6 +49,7 @@ import { download, encodeDesign, variantFile } from "@/studio/design"
 import { formatClock } from "@/studio/format"
 import { adapter } from "@/adapter"
 import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
+import { isProperty } from "@/studio/properties"
 import type { CapabilityDimension, InputValue } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
@@ -96,6 +97,12 @@ export function StatusNow() {
   if (p.modified) return <StatusBadge kind="modified">Modified</StatusBadge>
   if (p.status === "static") return <StatusBadge kind="ready">Capture</StatusBadge>
   return <StatusBadge kind="ready">Ready</StatusBadge>
+}
+
+/** Property edits are their own status, separate from Modified: R keeps them, Reset properties clears them. */
+export function EditedNow() {
+  const n = Object.keys(useStudio().edits).length
+  return n ? <StatusBadge kind="draft">Edited · {n} {n === 1 ? "property" : "properties"}</StatusBadge> : null
 }
 
 /**
@@ -163,7 +170,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-1 hidden sm:block" aria-live="polite">
-        {s.view === "inspect" && <StatusNow />}
+        {s.view === "inspect" && <StatusNow />} {s.view === "inspect" && <EditedNow />}
       </div>
       {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
       {s.view === "inspect" && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
@@ -773,7 +780,7 @@ export function StageControls({ variant, compact, lookOnly, noZoom, canvasZoom }
   // A live renderer can show any declared combination; a capture-only Studio can show only what was recorded.
   const available = (theme: string, profile: string) => live || !!captureFor(s.scenarioObj, theme, profile)
   const paired = contrastPairs()
-  const lenses = choosableFor(s.scenarioObj).filter((i) => i.placement === "dock")
+  const lenses = choosableFor(s.scenarioObj).filter((i) => i.placement === "dock" && !isProperty(i))
   const designInputs = lenses.filter((i) => i.group === "design").map((i) => i.id)
   const base = baseTheme(s.theme)
   // With pairs, the buttons are the standard themes; choosing one keeps high contrast when that theme has it.
@@ -890,6 +897,7 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
         <div className="flex flex-wrap gap-1.5">
           <FidelityBadge mode={lookOf(adapter.target.fidelity)}>{adapter.target.label}</FidelityBadge>
           <StatusNow />
+          <EditedNow />
           {sc.status === "stale" && <StatusBadge kind="stale">Stale evidence</StatusBadge>}
         </div>
       </div>
@@ -932,13 +940,13 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
                 </>
               )}
             </dl>
-            {choosableFor(sc).some((i) => i.placement !== "dock") && (
+            {choosableFor(sc).some((i) => i.placement !== "dock" && !isProperty(i)) && (
               <FieldSet>
                 <FieldLegend variant="label">Scenario inputs</FieldLegend>
                 <FieldDescription className="text-xs">Declared by the {adapter.product.name} adapter. A change rebuilds the preview from the scenario.</FieldDescription>
                 <FieldGroup className="gap-4">
                   {choosableFor(sc)
-                    .filter((i) => i.placement !== "dock")
+                    .filter((i) => i.placement !== "dock" && !isProperty(i))
                     .map((inp) =>
                       inp.control === "range" ? (
                         <Field key={inp.id}>

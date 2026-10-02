@@ -124,6 +124,38 @@ test('a property with a reserved link key never travels in links, in either dire
   assert.equal(back.missing, true);
 });
 
+test('stored local text passes the same normalization as a link: stale, corrupt or readonly values are dropped', () => {
+  const stored = { note: 'two\nlines ok', onOpen: 'stored', title: 'Kept?' };
+  const out = properties.editsFromLink(inputs, card, () => null, stored, true);
+  assert.deepEqual(out.edits, { note: 'two\nlines ok' }, 'readonly onOpen is not restored; shareable title only comes from the link');
+  assert.equal(out.missing, false);
+  const corrupt = properties.editsFromLink(inputs, card, () => null, { note: { not: 'text' } }, true);
+  assert.deepEqual(corrupt, { edits: {}, missing: true }, 'corrupt storage is dropped, so the note says the sender had edits this browser does not hold');
+  const tooLong = properties.editsFromLink([props({ id: 'memo', label: 'Memo', control: 'text', maxLength: 3 })], card, () => null, { memo: 'longer' }, true);
+  assert.deepEqual(tooLong, { edits: {}, missing: true });
+});
+
+test('linkEdits round-trips through a URL to editsFromLink, keeping false and decimals', () => {
+  const edits = { done: false, hours: 2.5, points: -0.25, who: 'kim', title: 'Hi there' };
+  const { params, local } = properties.linkEdits(inputs, card, edits);
+  assert.equal(local, false);
+  const link = new URLSearchParams(new URLSearchParams(params).toString());
+  const back = properties.editsFromLink(inputs, card, (id) => link.get(id), {}, false);
+  assert.deepEqual(back, { edits, missing: false });
+  assert.strictEqual(back.edits.done, false, 'false reads back as a boolean, not the string "false"');
+});
+
+test('linkEdits writes only values that still normalize, so a stale stored edit never reaches a link', () => {
+  assert.deepEqual(properties.linkEdits(inputs, card, { done: 'maybe', hours: 99, who: 'ana', onOpen: 'x', title: 'ok' }), { params: [['title', 'ok']], local: false });
+});
+
+test('keptEdits keeps only a scenario\'s own properties at values that normalize', () => {
+  assert.deepEqual(properties.keptEdits(inputs, card, { done: 'true', hours: 3, density: 'b', onOpen: 'x', who: { id: 'kim' }, gone: 1 }), { done: true, hours: 3 });
+  assert.deepEqual(properties.keptEdits(inputs, list, { done: true }), {}, 'a surface the property does not apply to');
+  assert.deepEqual(properties.keptEdits(inputs, card, null), {});
+  assert.deepEqual(properties.keptEdits(inputs, card, ['done']), {});
+});
+
 test('Compare offers switches, selects, choices and numbers with presets; never text', () => {
   const eligible = inputs.filter(properties.comparable).map((i) => i.id);
   assert.deepEqual(eligible, ['density', 'done', 'who', 'hours']);

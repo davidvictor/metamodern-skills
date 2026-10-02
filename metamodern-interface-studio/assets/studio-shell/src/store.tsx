@@ -7,6 +7,7 @@ import type { FrameDiagnostic, InputValue, Scenario, ScenarioInput, Token } from
 import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
 import { normalizeScenarioInput } from "@/studio/input"
+import { appliesTo, editsFromLink, isProperty, keptEdits, linkEdits, type Edits } from "@/studio/properties"
 import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import { applyPresenterOverlay, isPresenterOverlay, type PresenterOverlay, type PresenterWalkthrough, updateOverlay } from "@/studio/presenter-overlay"
@@ -19,7 +20,7 @@ export type View = "inspect" | "compare" | "responsive" | "gallery" | "present" 
 export type CompareMode = "side" | "split" | "toggle"
 /** draftEverywhere: show the design draft in Inspect, Gallery and Compare too. Off by default; Present never shows it. */
 export type Options = { controls: "dock" | "toolbar"; details: "docked" | "floating"; railLabels: boolean; draftEverywhere: boolean; map: boolean }
-export type PreviewStatus = { status: "loading" | "ready" | "error" | "static" | "empty"; modified: boolean; canGoBack: boolean; location?: string; fingerprint?: string; reason?: string; previous?: boolean; diagnostics?: FrameDiagnostic[] }
+export type PreviewStatus = { status: "loading" | "ready" | "error" | "static" | "empty"; modified: boolean; canGoBack: boolean; location?: string; fingerprint?: string; reason?: string; previous?: boolean; diagnostics?: FrameDiagnostic[]; capabilities?: FrameCapability[] }
 
 export type State = {
   view: View
@@ -31,6 +32,10 @@ export type State = {
   /** A dragged Inspect size on top of the profile. The profile still decides input context; this only sets the frame's pixels. */
   size: { w: number; h: number } | null
   values: Record<string, InputValue>
+  /** The viewer's property edits, by scenario ID. Kept in this browser; those that travel are also in the link. */
+  props: Record<string, Edits>
+  /** The scenario whose link said the sender had local text edits this browser does not hold. */
+  propsNote: string | null
   zoom: "fit" | number
   /** The scale Inspect is showing the frame at, for the dock's Zoom control to state. */
   scale: number
@@ -65,7 +70,11 @@ const PRESENTER_KEY = `studio.${A.id}.presenter-overlay.v1`
 const PRESENT_PREFS_KEY = `studio.${A.id}.presenter-preferences.v1`
 /** Written only after the viewer flips the switch, so a changed default reaches everyone who never chose. */
 const RAIL_KEY = `studio.${A.id}.rail-labels`
+const PROPS_KEY = `studio.${A.id}.property-edits.v1`
 const VIEWS: View[] = ["inspect", "compare", "responsive", "gallery", "present", "design"]
+/** Properties need a live frame. A Studio that declares none behaves exactly as before they existed. */
+export const hasProperties = !!A.frameEntry && A.axes.inputs.some(isProperty)
+export const propertyIds = new Set(A.axes.inputs.filter(isProperty).map((i) => i.id))
 /** Design shows the Adjust tab when the adapter declares parameters and the Tokens tab when it has a token source. */
 export const hasAdjust = !!A.design?.parameters.length
 export const hasDesign = hasAdjust || !!A.tokens
@@ -110,8 +119,8 @@ function parseViewport(text: string | null) {
 /** A link that names a scenario this Studio does not have. It is said out loud, never replaced silently. */
 let unresolvedLink: string | null = null
 
-/** Selection lives in the URL as stable IDs only, never fixture values. */
-function readHash(): Partial<State> {
+/** Selection lives in the URL as stable IDs only, never fixture values. Property values travel under their input's ID. */
+function readHash(stored: Record<string, Edits>): Partial<State> {
   const q = new URLSearchParams(location.hash.slice(1))
   const out: Partial<State> = {}
   const view = q.get("view")
@@ -131,12 +140,18 @@ function readHash(): Partial<State> {
   const sc = q.get("scenario")
   if (sc && A.scenarios.some((x) => x.id === sc)) out.scenario = sc
   else if (sc) unresolvedLink = sc
+  // A link that names a scenario sets its property edits: see editsFromLink.
+  if (hasProperties && out.scenario) {
+    const { edits, missing } = editsFromLink(A.axes.inputs, A.scenarios.find((x) => x.id === out.scenario), (id) => q.get(id), stored[out.scenario], q.get("edited") === "local")
+    out.props = { ...stored, [out.scenario]: edits }
+    if (missing) out.propsNote = out.scenario
+  }
   const th = q.get("theme")
   if (th && A.axes.themes.some((x) => x.id === th)) out.theme = th
   const pr = q.get("profile")
   if (pr && A.axes.profiles.some((x) => x.id === pr)) out.profile = pr
   // Dock choices travel in the link under the input's own ID.
-  const lenses = Object.fromEntries(A.axes.inputs.filter((i) => i.placement === "dock").flatMap((i) => {
+  const lenses = Object.fromEntries(A.axes.inputs.filter((i) => i.placement === "dock" && !isProperty(i)).flatMap((i) => {
     const v = q.get(i.id)
     const normalized = v === null ? undefined : normalizeScenarioInput(i, A.scenarios.find((x) => x.id === out.scenario), v)
     return normalized === undefined ? [] : [[i.id, normalized]]
@@ -171,33 +186,42 @@ function readHash(): Partial<State> {
   return out
 }
 
-/** The scenario inputs a scenario uses: every unscoped input, and a scoped one only when the scenario designs a value for it. */
-export const inputsFor = (sc: Scenario | undefined) => A.axes.inputs.filter((i) => !i.scoped || sc?.designed?.[i.id] !== undefined)
+/** The scenario inputs a scenario uses: every unscoped input on its surfaces, and a scoped one only when the scenario designs a value for it. */
+export const inputsFor = (sc: Scenario | undefined) => A.axes.inputs.filter((i) => (!i.scoped || sc?.designed?.[i.id] !== undefined) && appliesTo(i, sc))
 /** The options of an input a scenario supports (`Scenario.supports`); every option when it declares none. */
 export const optionsFor = (input: ScenarioInput, sc: Scenario | undefined) => {
-  if (input.control === "range") return []
+  if (input.control === "range" || input.control === "switch") return []
   const only = sc?.supports?.[input.id]
   const options = input.options ?? []
   return only ? options.filter((o) => only.includes(o.id)) : options
 }
-/** Inputs a viewer can change on this scenario: those with at least two options it supports. The rest are still sent, at their designed value. */
+/**
+ * Scenario inputs a viewer can change on this scenario: those with at least two options it supports. The rest are still
+ * sent, at their designed value. Properties are never among them: they have their own section and Compare axis.
+ */
 export const choosableFor = (sc: Scenario | undefined) =>
   inputsFor(sc).filter((i) =>
-    i.control === "range"
-      ? Number.isFinite(i.min) && Number.isFinite(i.max) && (i.max ?? 0) > (i.min ?? 0)
-      : optionsFor(i, sc).length > 1
+    i.readonly || isProperty(i)
+      ? false
+      : i.control === "range"
+        ? Number.isFinite(i.min) && Number.isFinite(i.max) && (i.max ?? 0) > (i.min ?? 0)
+        : optionsFor(i, sc).length > 1
   )
 /** Whether a scenario can render an option of an input. */
 export const supports = (sc: Scenario | undefined, input: string, option: InputValue) => {
   const descriptor = A.axes.inputs.find((candidate) => candidate.id === input)
   return !!descriptor && normalizeScenarioInput(descriptor, sc, option) !== undefined
 }
-/** The viewer's choice when this scenario supports it, else the scenario's designed value, else the input's default. Inputs the scenario does not use are left out. */
-export function resolveValues(sc: Scenario | undefined, values: Record<string, InputValue>) {
+/**
+ * The viewer's property edit or choice when this scenario supports it, else the scenario's designed value, else the
+ * input's default (an optional property sends nothing until set). Inputs the scenario does not use are left out.
+ */
+export function resolveValues(sc: Scenario | undefined, values: Record<string, InputValue>, props?: Edits) {
   const out: Record<string, InputValue> = {}
   for (const i of inputsFor(sc)) {
-    const chosen = values[i.id] === undefined ? undefined : normalizeScenarioInput(i, sc, values[i.id])
-    const candidate = chosen ?? sc?.designed?.[i.id] ?? i.default
+    const pick = props?.[i.id] ?? values[i.id]
+    const chosen = pick === undefined ? undefined : normalizeScenarioInput(i, sc, pick)
+    const candidate = chosen ?? sc?.designed?.[i.id] ?? (i.optional ? undefined : i.default)
     const v = candidate === undefined ? undefined : normalizeScenarioInput(i, sc, candidate)
     if (v !== undefined) out[i.id] = v
   }
@@ -224,7 +248,7 @@ export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: s
 }
 
 // Only inputs with a default start with a value; a designed input is left unset until the viewer chooses.
-export const defaultValues = (): Record<string, InputValue> => Object.fromEntries(A.axes.inputs.flatMap((i) => (i.default !== undefined && i.placement !== "dock" ? [[i.id, i.default]] : [])))
+export const defaultValues = (): Record<string, InputValue> => Object.fromEntries(A.axes.inputs.flatMap((i) => (i.default !== undefined && i.placement !== "dock" && !isProperty(i) ? [[i.id, i.default]] : [])))
 
 const initialDesign: State["design"] = { tab: hasAdjust ? "adjust" : "tokens", values: {}, valuesByTheme: {}, show: "draft" }
 const firstComparison = A.comparisons?.[0]
@@ -240,6 +264,8 @@ const initial: State = {
   profile: A.axes.profiles.find((p) => p.id === A.axes.defaultProfile)?.id ?? A.axes.profiles[0].id,
   size: null,
   values: defaultValues(),
+  props: {},
+  propsNote: null,
   zoom: "fit",
   scale: 1,
   resetNonce: 0,
@@ -270,6 +296,12 @@ type Ctx = State & {
   setSize: (size: { w: number; h: number } | null) => void
   /** null returns the input to the scenario's designed value (or its default). */
   setValue: (id: string, value: InputValue | null) => void
+  /** The viewer's property edits on this scenario. */
+  edits: Edits
+  /** Edits a property of this scenario without a remount; null (or the designed value) returns it to designed, or unsets an optional one. */
+  setProp: (id: string, value: InputValue | null) => void
+  /** Clears every property edit on this scenario. R does not; this does. */
+  resetProps: () => void
   walkthroughs: PresenterWalkthrough[]
   updatePresenter: (tourId: string, patch: Partial<PresenterOverlay["tours"][string]>) => void
   setView: (v: View) => void
@@ -321,7 +353,14 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const presentationPrefs = readJSON<{ speed?: number; focus?: boolean }>(PRESENT_PREFS_KEY)
     const savedDesign = readJSON<{ version: number; values: DesignValues; valuesByTheme: DesignValuesByTheme }>(DESIGN_KEY)
     const railLabels = readJSON<boolean>(RAIL_KEY)
-    const fromLink = readHash()
+    const storedRaw = hasProperties ? readJSON<Record<string, unknown>>(PROPS_KEY) : null
+    // Stored edits pass the same normalization as a link: a scenario or property that is gone, or a stale value, is dropped.
+    const storedProps: Record<string, Edits> = {}
+    for (const sc of storedRaw && typeof storedRaw === "object" ? A.scenarios : []) {
+      const edits = keptEdits(A.axes.inputs, sc, storedRaw?.[sc.id])
+      if (Object.keys(edits).length) storedProps[sc.id] = edits
+    }
+    const fromLink = readHash(storedProps)
     const kept = readJSON<Partial<State["responsive"]>>(RESPONSIVE_KEY)
     const responsive = fromLink.responsive ?? (kept?.frames?.length ? { ...initialResponsive(), ...kept, resetNonce: 0 } : initialResponsive())
     // Saved values pass the same validation as a link, but every value is kept: shared values serve
@@ -337,7 +376,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       speed: presentationPrefs?.speed && [0.75, 1, 1.4].includes(presentationPrefs.speed) ? presentationPrefs.speed : initial.present.speed,
       focus: presentationPrefs?.focus === true,
     }
-    return { ...initial, ...fromLink, present, design, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} }, presenter: isPresenterOverlay(presenter) ? presenter : initial.presenter }
+    return { ...initial, ...fromLink, props: fromLink.props ?? storedProps, present, design, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} }, presenter: isPresenterOverlay(presenter) ? presenter : initial.presenter }
   })
   const set = React.useCallback((patch: Partial<State> | ((s: State) => Partial<State>)) => {
     setState((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) }))
@@ -355,13 +394,22 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     if (railChosen.current) writeJSON(RAIL_KEY, railLabels)
   }, [state.options])
   React.useEffect(() => writeJSON(DRAFTS_KEY, state.tokens.drafts), [state.tokens.drafts])
+  React.useEffect(() => {
+    if (hasProperties) writeJSON(PROPS_KEY, state.props)
+  }, [state.props])
   React.useEffect(() => writeJSON(PRESENTER_KEY, state.presenter), [state.presenter])
   React.useEffect(() => writeJSON(PRESENT_PREFS_KEY, { speed: state.present.speed, focus: state.present.focus }), [state.present.speed, state.present.focus])
   React.useEffect(() => writeJSON(DESIGN_KEY, { version: 1, values: state.design.values, valuesByTheme: state.design.valuesByTheme }), [state.design.values, state.design.valuesByTheme])
   React.useEffect(() => {
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })
     if (state.size) q.set("size", `${state.size.w}x${state.size.h}`)
-    for (const i of A.axes.inputs) if (i.placement === "dock" && state.values[i.id] !== undefined) q.set(i.id, String(state.values[i.id]))
+    for (const i of A.axes.inputs) if (i.placement === "dock" && !isProperty(i) && state.values[i.id] !== undefined) q.set(i.id, String(state.values[i.id]))
+    // Property edits are written only through linkEdits, which leaves out readonly and reserved-key properties.
+    if (hasProperties) {
+      const { params, local } = linkEdits(A.axes.inputs, A.scenarios.find((x) => x.id === state.scenario), state.props[state.scenario])
+      for (const [k, v] of params) q.set(k, v)
+      if (local) q.set("edited", "local")
+    }
     if (state.view === "design" && hasAdjust && A.tokens) q.set("tab", state.design.tab)
     if (state.view === "responsive") {
       const r = state.responsive
@@ -376,7 +424,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme), state.theme)
     if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive])
   // Unsaved Responsive edits stay in this browser until saved or reverted.
   React.useEffect(() => {
     const { resetNonce: _, ...keep } = state.responsive
@@ -419,6 +467,17 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
         else values[id] = v
         return { values, preview: { ...s.preview, status: "loading", modified: false } }
       }),
+    edits: state.props[state.scenario] ?? {},
+    setProp: (id, v) =>
+      set((s) => {
+        const input = A.axes.inputs.find((i) => i.id === id)
+        const designed = scenarioObj.designed?.[id] ?? (input?.optional ? undefined : input?.default)
+        const edits = { ...s.props[s.scenario] }
+        if (v === null || v === designed) delete edits[id]
+        else edits[id] = v
+        return { props: { ...s.props, [s.scenario]: edits }, propsNote: null }
+      }),
+    resetProps: () => set((s) => ({ props: { ...s.props, [s.scenario]: {} }, propsNote: null })),
     setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v ? !s.panelOpen : true })),
     reset: () => {
       set((s) => ({ resetNonce: s.resetNonce + 1, preview: { ...s.preview, status: "loading", modified: false, canGoBack: false } }))

@@ -126,3 +126,34 @@ test('property values and code cross the frame boundary only as announced capabi
   assert.match(host, /if \(newest\?\.phase === "error" && newest\.key === runtimeKey\) \{\s*if \(JSON\.stringify\(newest\.inputs\.values\) !== valuesKey\) setRemount\(\(n\) => n \+ 1\)\s*return\s*\}/, 'a failed runtime lets the next edit remount');
   assert.match(host, /language: String\(m\.language\), text: String\(m\.text\)/, 'code answers are coerced to strings');
 });
+
+test('every key the Studio writes to or reads from its links is reserved against property IDs', () => {
+  const store = read('src/store.tsx');
+  const keys = new Set([...store.matchAll(/\bq\.(?:get|set)\("([^"]+)"/g)].map((m) => m[1]));
+  // The link's first keys are set by the URLSearchParams constructor.
+  const ctor = /new URLSearchParams\(\{([^}]*)\}\)/.exec(store);
+  assert.ok(ctor, 'the link writer starts from a URLSearchParams object');
+  for (const m of ctor[1].matchAll(/(\w+):/g)) keys.add(m[1]);
+  assert.ok(keys.has('edited') && keys.has('view') && keys.has('size'), `found ${[...keys].join(', ')}`);
+  const input = read('src/studio/input.ts');
+  const reserved = JSON.parse(/RESERVED_LINK_KEYS: readonly string\[\] = (\[[^\]]*\])/.exec(input)[1]);
+  for (const key of keys) assert.ok(reserved.includes(key), `link key "${key}" is not in RESERVED_LINK_KEYS`);
+  // Property values reach the link only through linkEdits, which leaves out readonly and reserved-key properties.
+  assert.match(store, /linkEdits\(A\.axes\.inputs/);
+  assert.match(store, /i\.placement === "dock" && !isProperty\(i\) && state\.values\[i\.id\] !== undefined\) q\.set/, 'the dock writer never writes a property');
+});
+
+test('properties stay out of scenario inputs, the dock and Compare; they edit without a remount', () => {
+  const store = read('src/store.tsx');
+  assert.match(store, /export const choosableFor = [\s\S]{0,120}?i\.readonly \|\| isProperty\(i\)\s*\? false/, 'choosableFor, and so compareAxes, never offers a property');
+  assert.match(store, /export const compareAxes = [\s\S]{0,200}?\.\.\.choosableFor\(sc\)/);
+  assert.match(store, /i\.placement !== "dock" && !isProperty\(i\) \? \[\[i\.id, i\.default\]\]/, 'a property has no viewer value by default');
+  const chrome = read('src/components/studio/chrome.tsx');
+  assert.match(chrome, /choosableFor\(sc\)\.some\(\(i\) => i\.placement !== "dock" && !isProperty\(i\)\)/);
+  assert.match(chrome, /\.filter\(\(i\) => i\.placement !== "dock" && !isProperty\(i\)\)/);
+  assert.match(chrome, /choosableFor\(s\.scenarioObj\)\.filter\(\(i\) => i\.placement === "dock" && !isProperty\(i\)\)/);
+  const preview = read('src/components/studio/preview.tsx');
+  assert.match(preview, /const mountKey = JSON\.stringify\(\[scenario, theme, profile, fixed,/, 'property values stay out of the mount key');
+  assert.match(preview, /values: resolved,/, 'a mount still carries the edits');
+  assert.match(read('src/adapters/synthetic.ts'), /inputs: exampleAdapter\.axes\.inputs\.filter\(\(i\) => i\.section !== "properties"\)/);
+});

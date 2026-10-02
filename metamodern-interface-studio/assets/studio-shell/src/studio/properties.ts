@@ -31,8 +31,9 @@ export function linkEdits(inputs: ScenarioInput[], sc: Scenario | undefined, edi
   const params: [string, string][] = []
   let local = false
   for (const i of linkable(inputs, sc)) {
-    if (edits[i.id] === undefined) continue
-    if (travels(i)) params.push([i.id, String(edits[i.id])])
+    const v = edits[i.id] === undefined ? undefined : normalizeScenarioInput(i, sc, edits[i.id])
+    if (v === undefined) continue
+    if (travels(i)) params.push([i.id, String(v)])
     else local = true
   }
   return { params, local }
@@ -47,13 +48,26 @@ export function editsFromLink(inputs: ScenarioInput[], sc: Scenario | undefined,
   const edits: Edits = {}
   let kept = false
   for (const i of linkable(inputs, sc)) {
-    const raw = travels(i) ? get(i.id) : null
-    const v = travels(i) ? (raw === null ? undefined : normalizeScenarioInput(i, sc, raw)) : local ? stored[i.id] : undefined
+    // Stored local text passes the same normalization as a link value, so stale or corrupt storage is dropped.
+    const raw = travels(i) ? get(i.id) : local ? stored[i.id] : null
+    const v = raw === null || raw === undefined ? undefined : normalizeScenarioInput(i, sc, raw)
     if (v === undefined) continue
     edits[i.id] = v
     if (!travels(i)) kept = true
   }
   return { edits, missing: local && !kept }
+}
+
+/** Stored edits a scenario can still use: its own properties, each value normalized; anything else is dropped. */
+export function keptEdits(inputs: ScenarioInput[], sc: Scenario | undefined, edits: unknown): Edits {
+  const out: Edits = {}
+  if (!edits || typeof edits !== "object" || Array.isArray(edits)) return out
+  for (const i of propertiesFor(inputs, sc)) {
+    const raw = (edits as Record<string, unknown>)[i.id]
+    const v = typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean" ? normalizeScenarioInput(i, sc, raw) : undefined
+    if (v !== undefined) out[i.id] = v
+  }
+  return out
 }
 
 /** Whether Compare can use an input as its axis: named values only. Text never; a range or number only with presets. */

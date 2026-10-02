@@ -546,6 +546,7 @@ export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrap
         profile={frame.profile}
         size={{ w: frame.w, h }}
         values={s.values}
+        props={s.edits}
         draft={s.viewDraft(s.theme)}
         resetNonce={r.resetNonce * 1000 + nonce}
         scale={shown}

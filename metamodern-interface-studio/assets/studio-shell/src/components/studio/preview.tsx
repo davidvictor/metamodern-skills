@@ -4,7 +4,7 @@ import { TriangleAlertIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { adapter } from "@/adapter"
-import { captureFor, NO_DRAFT, resolveValues, useStudio, type Draft } from "@/store"
+import { captureFor, NO_DRAFT, propertyIds, resolveValues, useStudio, type Draft } from "@/store"
 import { frameDesignValues, valuesForTheme } from "@/studio/design"
 import { LivePreview, type LivePreviewHandle, type LiveStatus, type PreviewSync } from "@/studio/live-preview"
 import type { InputValue } from "@/studio/types"
@@ -48,6 +48,8 @@ type Props = {
   /** Inspect only: the frame's pixel size when the viewer dragged it off the profile's own. */
   size?: { w: number; h: number } | null
   values: Record<string, InputValue>
+  /** The viewer's property edits for this preview. They reach a live frame without a remount. */
+  props?: Record<string, InputValue>
   commands?: string[]
   /** The draft this preview shows; none by default. Present never passes one. */
   draft?: Draft
@@ -70,7 +72,7 @@ type Props = {
  * similar scenario, theme or profile.
  */
 export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(function ScenarioPreview(
-  { scenario, theme, profile, size, values, commands = [], draft = NO_DRAFT, sync, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
+  { scenario, theme, profile, size, values, props, commands = [], draft = NO_DRAFT, sync, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
   ref
 ) {
   const studio = useStudio()
@@ -118,13 +120,15 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   const h = capture?.h ?? size?.h ?? pr.h
   const rect = anchor ? status?.anchors.find((a) => a.id === anchor) : undefined
   // The frame receives resolved values: the viewer's choice, else what the scenario was designed with, else the default.
-  const resolved = sc ? resolveValues(sc, values) : values
+  const resolved = sc ? resolveValues(sc, values, props) : values
+  // Properties change the runtime on screen; every other input mounts a new one.
+  const fixed = Object.fromEntries(Object.entries(resolved).filter(([id]) => !propertyIds.has(id)))
   // Token-only design adjustments use the draft channel. Controls declared with `apply.input`
   // are part of the materialized product state and deliberately rebuild the isolated frame.
   // Present and every “as built” pane pass the shared NO_DRAFT sentinel. Input-backed
   // design experiments then stay out of those product states just like token drafts.
   const design = draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)
-  const mountKey = JSON.stringify([scenario, theme, profile, resolved, design, commands, resetNonce, retry])
+  const mountKey = JSON.stringify([scenario, theme, profile, fixed, design, commands, resetNonce, retry])
 
   return (
     <PreviewFrame w={w} h={h} scale={scale} profile={pr} appearance={status?.appearance ?? th.appearance} anchor={rect} empty={empty} loading={live && (!status || status.status === "loading")} label={label} className={className}>
