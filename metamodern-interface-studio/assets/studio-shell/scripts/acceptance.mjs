@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 /*
  * Measures the shell against the acceptance criteria in the skill's shell.md.
- * It builds the Studio three ways (the example product, a 1,000-scenario stress
- * adapter, and a capture-only adapter), serves them locally, and drives them
- * in headless Chromium. It needs Playwright: `npm i -D playwright` and
+ * It builds the Studio four ways (the example product, a 1,000-scenario stress
+ * adapter, a capture-only adapter, and the example with its synthetic workspace),
+ * serves them locally (the workspace build also without its operations host),
+ * and drives them in headless Chromium. It needs Playwright: `npm i -D playwright` and
  * `npx playwright install chromium`, or set PLAYWRIGHT_MODULE to an existing
  * install. Results print as a table and are written to acceptance-report.json.
  * A result is pass, fail, or not-measured; nothing is inferred. Set ONLY=AC-03,AC-10 to run a subset.
  */
-import { execFileSync, spawn } from "node:child_process"
-import { copyFileSync, createReadStream, existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { execFileSync, spawn, spawnSync } from "node:child_process"
+import { copyFileSync, createReadStream, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { createServer } from "node:http"
+import { tmpdir } from "node:os"
 import { extname, join, normalize } from "node:path"
+import { pathToFileURL } from "node:url"
 import { gzipSync } from "node:zlib"
 
 const root = new URL("..", import.meta.url).pathname
@@ -22,25 +25,35 @@ try {
   console.error("Playwright is not installed. Run `npm i -D playwright && npx playwright install chromium`, or set PLAYWRIGHT_MODULE.")
   process.exit(2)
 }
+const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
-const builds = { normal: "example", stress: "synthetic", captures: "captures" }
+const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace" }
 // WS-01: the initial Studio chunk of the 0.11.0 shell, gzipped, built with the example product. A Studio that
 // declares no workspace may grow by at most 3 KB over it. Change it only with a release that accepts the growth.
 const STUDIO_CHUNK_BASELINE_GZ = 296543
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
-for (const [name, variant] of Object.entries(builds)) {
-  const out = join(root, ".acceptance", name)
-  execFileSync("npx", ["vite", "build", "--outDir", out, "--emptyOutDir", "--logLevel", "error"], { cwd: root, env: { ...process.env, ...(variant ? { VITE_STUDIO_ADAPTER: variant } : {}) }, stdio: "inherit" })
-  const server = createServer((req, res) => {
-    const path = normalize(join(out, decodeURIComponent(new URL(req.url, "http://x").pathname)))
+const serve = (out, host) =>
+  createServer((req, res) => {
+    const pathname = decodeURIComponent(new URL(req.url, "http://x").pathname)
+    // The example workspace's mock operations host, as the dev server serves it; "nohost" serves the same build without one.
+    if (host && pathname.startsWith("/__studio/ops/")) return host()(req, res, pathname.slice("/__studio/ops/".length))
+    const path = normalize(join(out, pathname))
     const file = path.startsWith(out) && existsSync(path) && statSync(path).isFile() ? path : join(out, "index.html")
     res.setHeader("content-type", mime[extname(file)] ?? "application/octet-stream")
     createReadStream(file).pipe(res)
   })
+const listen = async (name, server) => {
   await new Promise((r) => server.listen(0, "127.0.0.1", r))
-  servers[name] = { server, url: `http://127.0.0.1:${server.address().port}/` }
+  servers[name] = { ...servers[name], server, url: `http://127.0.0.1:${server.address().port}/` }
 }
+for (const [name, variant] of Object.entries(builds)) {
+  const out = join(root, ".acceptance", name)
+  execFileSync("npx", ["vite", "build", "--outDir", out, "--emptyOutDir", "--logLevel", "error"], { cwd: root, env: { ...process.env, ...(variant ? { VITE_STUDIO_ADAPTER: variant } : {}) }, stdio: "inherit" })
+  if (name === "workspace") servers.workspace = { host: createMockHost() }
+  await listen(name, serve(out, name === "workspace" ? () => servers.workspace.host : null))
+}
+await listen("nohost", serve(join(root, ".acceptance", "workspace"), null))
 
 const browser = await chromium.launch()
 const results = []
@@ -2241,6 +2254,256 @@ await check("AC-60", async () => {
   return [ok ? "pass" : "fail", `with the capability the Code tab showed ${JSON.stringify(shown)} (only changed props) and Copy put the same text on the clipboard (${copied === shown}); a frame without it shows tabs ${without.join(", ")}`]
 })
 
+// ---------- Workspace modules (WS-01 to WS-09, references/workspace.md) ----------
+
+const railModule = (p, name) => p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button', { hasText: name })
+const railView = (p, name) => p.locator('[aria-label="Studio"] nav[aria-label="Views"] button', { hasText: name })
+const resources = (p) => p.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name))
+const siteName = (p) => p.getByLabel("Site name", { exact: true })
+const ops = async (name, body, actor) => {
+  const base = servers.workspace.url
+  const res = await fetch(`${base}__studio/ops/${name}`, { method: "POST", headers: { "content-type": "application/json", origin: base.replace(/\/$/, ""), "x-studio-operation-kind": name.endsWith(".write") ? "write" : "read", ...(actor ? { "x-example-actor": actor } : {}) }, body: JSON.stringify(body) })
+  return res.json()
+}
+/** Kit controls smaller than 44 px (a switch counts its hit area), and kit inputs under 16 px text. */
+const kitTargets = (p) =>
+  p.evaluate(() => {
+    const kit = [...document.querySelectorAll('[data-kit] button, [data-kit] input, [data-kit] [role="combobox"], [data-kit] [role="switch"]')].filter((e) => {
+      const r = e.getBoundingClientRect()
+      return r.width > 2 && r.height > 2
+    })
+    const measured = kit.map((e) => {
+      const r = e.getBoundingClientRect()
+      let w = r.width
+      let h = r.height
+      if (e.getAttribute("role") === "switch") {
+        const a = getComputedStyle(e, "::after")
+        h -= (parseFloat(a.top) || 0) + (parseFloat(a.bottom) || 0)
+        w -= (parseFloat(a.left) || 0) + (parseFloat(a.right) || 0)
+      }
+      return { n: e.getAttribute("aria-label") || e.id || e.textContent.trim().slice(0, 16), w: Math.round(w), h: Math.round(h), input: e.tagName === "INPUT", text: parseFloat(getComputedStyle(e).fontSize) }
+    })
+    return { small: measured.filter((m) => m.w < 44 || m.h < 44), smallText: measured.filter((m) => m.input && m.text < 16), count: measured.length }
+  })
+
+// WS-01 Without a workspace nothing changes: the AC suite, at most 3 KB more initial chunk, no workspace chunk; with one, module code loads only when a module opens
+await check("WS-01", async () => {
+  const dir = join(root, ".acceptance", "normal", "assets")
+  const files = readdirSync(dir)
+  const main = files.find((f) => /^studio-.*\.js$/.test(f))
+  const gz = gzipSync(readFileSync(join(dir, main))).length
+  const growth = gz - STUDIO_CHUNK_BASELINE_GZ
+  // A Studio without a declaration is built without the workspace layer: no workspace chunk exists to request.
+  const built = files.filter((f) => /^workspace-/.test(f))
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  for (const name of ["Compare", "Responsive", "Gallery", "Present", "Design", "Inspect"]) {
+    await railView(p, name).click()
+    await wait(500)
+  }
+  await p.keyboard.press("ControlOrMeta+k")
+  await wait(400)
+  await p.keyboard.press("Escape")
+  const plain = (await resources(p)).filter((u) => /workspace-/.test(u))
+  const railItems = await p.locator('nav[aria-label="Workspace"]').count()
+  await p.closeAll()
+  servers.workspace.host = createMockHost()
+  const w = await open("workspace", { hash: "view=inspect&scenario=tasks.list" })
+  const start = await resources(w)
+  const navEarly = start.some((u) => /workspace-nav-/.test(u))
+  const pageEarly = start.some((u) => /workspace-page-/.test(u))
+  // Reported, not gated: the scripts a Studio with a workspace loads before any interaction, so a core split stays visible.
+  const wsDir = join(root, ".acceptance", "workspace", "assets")
+  const initial = [...new Set(start.map((u) => new URL(u).pathname).filter((u) => /^\/assets\/[^/]+\.js$/.test(u)).map((u) => u.slice("/assets/".length)))].filter((f) => existsSync(join(wsDir, f))).sort()
+  const initialGz = initial.reduce((sum, f) => sum + gzipSync(readFileSync(join(wsDir, f))).length, 0)
+  await railModule(w, "Site").click()
+  await wait(1200)
+  const pageAfter = (await resources(w)).some((u) => /workspace-page-/.test(u))
+  await w.closeAll()
+  const acRun = results.filter((r) => r.id.startsWith("AC-"))
+  const acFailed = acRun.filter((r) => r.status === "fail").map((r) => r.id)
+  const met = growth <= 3072 && built.length === 0 && plain.length === 0 && railItems === 0 && navEarly && !pageEarly && pageAfter
+  const status = !met || acFailed.length ? "fail" : acRun.length ? "pass" : "not-measured"
+  const acNote = acRun.length ? `${acRun.length} AC criteria ran in this pass, failing: ${acFailed.join(", ") || "none"}` : "the AC suite did not run in this pass (ONLY), so that part is not measured"
+  return [status, `initial Studio chunk ${(gz / 1024).toFixed(1)} KB gzipped, ${growth >= 0 ? "+" : ""}${growth} bytes against the 0.11.0 baseline of ${STUDIO_CHUNK_BASELINE_GZ} (budget 3,072); without a workspace the build has ${built.length} workspace chunks, ${plain.length} were requested across every view and Go to, and the rail has ${railItems} workspace items; with one, the navigation chunk loaded at start ${navEarly}, module code before a module opened ${pageEarly} and after ${pageAfter}, and the scripts loaded before any interaction were ${initial.map((f) => f.replace(/-[\w-]{8}\.js$/, "")).join(", ")} at ${(initialGz / 1024).toFixed(1)} KB gzipped in all (reported, not gated); ${acNote}`]
+})
+
+
+// WS-02 Modules follow the views with the views' marker, focus and labels; keyboard, Go to, links and Back reach every module and section
+await check("WS-02", async () => {
+  servers.workspace.host = createMockHost()
+  const p = await open("workspace", { hash: "view=inspect&scenario=tasks.list" })
+  const order = await p.evaluate(() => {
+    const views = document.querySelector('[aria-label="Studio"] nav[aria-label="Views"]')
+    const ws = document.querySelector('[aria-label="Studio"] nav[aria-label="Workspace"]')
+    return { after: !!views && !!ws && !!(views.compareDocumentPosition(ws) & Node.DOCUMENT_POSITION_FOLLOWING), divider: ws?.previousElementSibling?.getAttribute("role") === "separator", labels: [...(ws?.querySelectorAll("button") ?? [])].map((b) => b.textContent.trim()) }
+  })
+  const marker = (locator) => locator.first().evaluate((el) => {
+    const b = getComputedStyle(el, "::before")
+    return `${b.width} ${b.backgroundColor}`
+  })
+  const viewMarker = await marker(p.locator('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]'))
+  await railView(p, "Design").focus()
+  await p.keyboard.press("Tab")
+  const focused = await p.evaluate(() => ({ text: document.activeElement?.textContent?.trim(), ring: getComputedStyle(document.activeElement).boxShadow }))
+  await p.keyboard.press("Enter")
+  await wait(1500)
+  const moduleMarker = await marker(p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button[aria-pressed="true"]'))
+  const viewsPressed = await p.locator('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]').count()
+  const opened = await p.evaluate(() => ({ hash: location.hash, h1: document.querySelector("h1")?.textContent, crumbs: document.querySelector("header")?.innerText ?? "" }))
+  await p.locator('nav[aria-label="Sections"] button', { hasText: "Secrets" }).click()
+  await wait(600)
+  const sectionHash = await p.evaluate(() => location.hash)
+  await p.keyboard.press("ControlOrMeta+k")
+  await wait(400)
+  await p.keyboard.type("workspace site general")
+  await wait(300)
+  await p.keyboard.press("Enter")
+  await wait(700)
+  const viaGoTo = await p.evaluate(() => location.hash)
+  const back = []
+  for (let i = 0; i < 3; i++) {
+    await p.evaluate(() => history.back())
+    await wait(700)
+    back.push(await p.evaluate(() => ({ hash: location.hash, open: !!document.querySelector('[aria-label="Studio"] nav[aria-label="Workspace"] button[aria-pressed="true"]') })))
+  }
+  await railModule(p, "Audit").click()
+  await wait(900)
+  const audit = await p.getByText(/No component for the "audit" module/).first().isVisible().catch(() => false)
+  await p.closeAll()
+  const l = await open("workspace", { hash: "module=site&section=secrets" })
+  await wait(1200)
+  const linked = await l.evaluate(() => ({ h1: document.querySelector("h1")?.textContent, secret: !!document.querySelector('input[type="password"]'), pressed: document.querySelector('[aria-label="Studio"] nav[aria-label="Workspace"] button[aria-pressed="true"]')?.textContent?.trim() }))
+  await l.closeAll()
+  const ok = order.after && order.divider && order.labels.join() === "Site,Audit" && /^2px /.test(viewMarker) && viewMarker === moduleMarker && focused.text === "Site" && /inset/.test(focused.ring) && /module=site&section=general/.test(opened.hash) && opened.h1 === "Site" && /Site/.test(opened.crumbs) && /General/.test(opened.crumbs) && viewsPressed === 0 && /section=secrets/.test(sectionHash) && /section=general/.test(viaGoTo) && /section=secrets/.test(back[0].hash) && /section=general/.test(back[1].hash) && !/module=/.test(back[2].hash) && !back[2].open && audit && linked.h1 === "Site" && linked.secret && linked.pressed === "Site"
+  return [ok ? "pass" : "fail", `rail order ${order.after ? "views then modules" : "wrong"}${order.divider ? " after a divider" : ", no divider"}, labels ${order.labels.join(", ")}; marker ${viewMarker} on a view and ${moduleMarker} on a module; Tab from the last view reached "${focused.text}" with ${/inset/.test(focused.ring) ? "the inset ring" : "no ring"}; Enter opened ${opened.hash} titled "${opened.h1}" (views pressed ${viewsPressed}); the panel opened ${sectionHash}; Go to opened ${viaGoTo}; Back went to ${back.map((b) => b.hash || "(none)").join(", then ")}; the Audit module ${audit ? "says it has no component" : "gave no reason"}; a fresh link opened "${linked.h1}" on Secrets ${linked.secret} with ${linked.pressed} pressed`]
+})
+
+// WS-03 A deep import from shell internals in src/workspace/ fails lint; an undeclared module fails the build by name
+await check("WS-03", async () => {
+  const probe = join(root, "src/workspace/acceptance-probe.tsx")
+  const lint = (code) => {
+    writeFileSync(probe, code)
+    const r = spawnSync("npx", ["eslint", "--no-warn-ignored", probe], { cwd: root, encoding: "utf8" })
+    return { code: r.status, out: `${r.stdout}${r.stderr}` }
+  }
+  let deep
+  let own
+  try {
+    deep = lint('import { Button } from "@/components/ui/button"\nimport { cn } from "../lib/utils"\nexport const probe = [Button, cn]\n')
+    own = lint('import { ModulePage } from "@studio/kit"\nimport { useModule } from "@studio/workspace"\nimport workspace from "./index"\nexport const probe = [ModulePage, useModule, workspace]\n')
+  } finally {
+    rmSync(probe, { force: true })
+  }
+  const b = spawnSync("npx", ["vite", "build", "--outDir", join(root, ".acceptance", "orphan"), "--emptyOutDir", "--logLevel", "error"], { cwd: root, encoding: "utf8", env: { ...process.env, VITE_STUDIO_ADAPTER: "workspace", VITE_STUDIO_WORKSPACE: "orphan" } })
+  const built = `${b.stdout}${b.stderr}`
+  const named = /@\/components\/ui\/button is outside the workspace boundary/.test(deep.out) && /\.\.\/lib\/utils is outside the workspace boundary/.test(deep.out)
+  const ok = deep.code !== 0 && named && own.code === 0 && b.status !== 0 && /"orphan", which the adapter does not declare/.test(built)
+  return [ok ? "pass" : "fail", `a deep import and a relative escape from src/workspace/ ${deep.code !== 0 ? "fail" : "pass"} lint${named ? ", each named" : ""}; imports of the kit, the workspace API and the module's own files ${own.code === 0 ? "pass" : `fail: ${own.out.split("\n").slice(0, 3).join(" ")}`}; a module map that defines an undeclared module ${b.status !== 0 ? "fails the build" : "builds"}${/"orphan"/.test(built) ? ' naming "orphan"' : ""}`]
+})
+
+// WS-04 Undeclared operations, kind mismatches and cross-origin endpoints are refused without a request
+await check("WS-04", async () => {
+  const { stripTypeScriptTypes } = await import("node:module")
+  const tmp = mkdtempSync(join(tmpdir(), "studio-ops-"))
+  const file = join(tmp, "operations.mjs")
+  writeFileSync(file, stripTypeScriptTypes(readFileSync(join(root, "src/studio/workspace/operations.ts"), "utf8"), { mode: "strip" }))
+  const { createOperationClient } = await import(pathToFileURL(file).href)
+  let sent = 0
+  const transport = async () => {
+    sent++
+    return { status: 200, text: async () => JSON.stringify({ ok: true, data: null }) }
+  }
+  const uses = [{ name: "site.read", kind: "read" }, { name: "site.write", kind: "write" }]
+  const client = (base) => createOperationClient({ base, uses, location: "http://127.0.0.1:4000/", fetch: transport })
+  const refused = [
+    await client("./__studio/ops")("audit.list", "read"),
+    await client("./__studio/ops")("site.write", "read"),
+    await client("./__studio/ops")("site.read", "write"),
+    await client("https://elsewhere.example/ops")("site.read", "read"),
+    await client("//elsewhere.example/ops")("site.read", "read"),
+  ]
+  const codes = refused.map((r) => (r.ok ? "sent" : r.error.code))
+  const before = sent
+  await client("./__studio/ops")("site.read", "read")
+  const control = sent - before
+  rmSync(tmp, { recursive: true, force: true })
+  servers.workspace.host = createMockHost()
+  const p = await open("workspace", { hash: "module=site&section=general" })
+  const names = []
+  p.on("request", (r) => {
+    const m = /\/__studio\/ops\/([^?]+)/.exec(r.url())
+    if (m) names.push(decodeURIComponent(m[1]))
+  })
+  await p.reload()
+  await p.waitForSelector("header")
+  await wait(1500)
+  await siteName(p).fill("Acceptance")
+  await p.getByRole("button", { name: "Save", exact: true }).click()
+  await wait(900)
+  await p.closeAll()
+  const declared = names.every((n) => n === "site.read" || n === "site.write")
+  const ok = codes.join() === "undeclared,kind-mismatch,kind-mismatch,cross-origin,cross-origin" && before === 0 && control === 1 && declared && names.includes("site.read") && names.includes("site.write")
+  return [ok ? "pass" : "fail", `the operation client answered ${codes.join(", ")} for an undeclared name, a write declared as a read, a read declared as a write, another origin and a protocol-relative origin, with ${before} requests sent; a declared read sent ${control}; in the browser the example module requested only ${[...new Set(names)].join(" and ") || "nothing"}`]
+})
+
+// WS-05 A conflicting write keeps the edit, shows the current value and offers retry; nothing is overwritten
+await check("WS-05", async () => {
+  servers.workspace.host = createMockHost()
+  const p = await open("workspace", { hash: "module=site&section=general" })
+  await wait(1000)
+  await siteName(p).fill("Mine")
+  const opened = await ops("site.read", { input: null })
+  const theirs = await ops("site.write", { input: { siteName: "Theirs" }, expectedRevision: opened.revision }, "someone else")
+  await p.getByRole("button", { name: "Save", exact: true }).click()
+  await wait(900)
+  const bar = await p.getByRole("region", { name: "Changes", exact: true }).innerText()
+  const kept = await siteName(p).inputValue()
+  const host1 = (await ops("site.read", { input: null })).data.settings.siteName
+  await p.getByRole("button", { name: "Save mine again" }).click()
+  await wait(900)
+  const host2 = (await ops("site.read", { input: null })).data.settings.siteName
+  const after = await p.getByRole("region", { name: "Changes", exact: true }).innerText().catch(() => "")
+  await p.closeAll()
+  const ok = theirs.ok && /Changed elsewhere/.test(bar) && /Theirs/.test(bar) && kept === "Mine" && host1 === "Theirs" && host2 === "Mine" && /Saved/.test(after)
+  return [ok ? "pass" : "fail", `another writer set the site name to "${host1}"; Save then showed ${/Changed elsewhere/.test(bar) ? "the conflict" : "no conflict"} with the current value ${/Theirs/.test(bar) ? '"Theirs"' : "missing"}, kept the edit "${kept}" and left the host at "${host1}"; Save mine again wrote "${host2}"${/Saved/.test(after) ? " and said Saved" : ""}`]
+})
+
+// WS-06 The dirty guard stops leaving unsaved changes (rail, view keys and Back) and Esc keeps them
+await check("WS-06", async () => {
+  servers.workspace.host = createMockHost()
+  const p = await open("workspace", { hash: "view=inspect&scenario=tasks.list" })
+  await railModule(p, "Site").click()
+  await wait(1500)
+  await siteName(p).fill("Unsaved edit")
+  const dialog = () => p.getByRole("dialog", { name: "Leave without saving?" })
+  await railView(p, "Compare").click()
+  await wait(500)
+  const asked = await dialog().isVisible().catch(() => false)
+  await p.keyboard.press("Escape")
+  await wait(500)
+  const stayed = { open: await dialog().count(), hash: await p.evaluate(() => location.hash), value: await siteName(p).inputValue() }
+  await p.locator("h1").click()
+  await p.keyboard.press("2")
+  await wait(500)
+  const keyAsked = await dialog().isVisible().catch(() => false)
+  await p.getByRole("button", { name: "Stay", exact: true }).click()
+  await wait(400)
+  await p.evaluate(() => history.back())
+  await wait(900)
+  const backAsked = await dialog().isVisible().catch(() => false)
+  await p.getByRole("button", { name: "Stay", exact: true }).click()
+  await wait(400)
+  const afterBack = { hash: await p.evaluate(() => location.hash), value: await siteName(p).inputValue() }
+  await railView(p, "Compare").click()
+  await wait(500)
+  await p.getByRole("button", { name: "Leave without saving", exact: true }).click()
+  await wait(900)
+  const left = await p.evaluate(() => ({ hash: location.hash, pressed: document.querySelector('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]')?.textContent?.trim() }))
+  await p.closeAll()
+  const ok = asked && stayed.open === 0 && /module=site/.test(stayed.hash) && stayed.value === "Unsaved edit" && keyAsked && backAsked && /module=site/.test(afterBack.hash) && afterBack.value === "Unsaved edit" && /view=compare/.test(left.hash) && left.pressed === "Compare"
+  return [ok ? "pass" : "fail", `with an unsaved edit the rail ${asked ? "asked" : "did not ask"}, Esc kept ${stayed.hash} with "${stayed.value}"; the 2 key ${keyAsked ? "asked" : "did not ask"}; Back ${backAsked ? "asked" : "did not ask"} and Stay kept ${afterBack.hash} with "${afterBack.value}"; Leave without saving opened ${left.hash} with ${left.pressed} pressed`]
+})
+
 // WS-06b Back and Forward out of a module with unsaved changes ask on any step; Stay keeps the module's link and page and later
 // history steps still work; leaving through history leaves no duplicate entry behind (the example workspace in the dev server)
 await check("WS-06b", async () => {
@@ -2302,6 +2565,242 @@ await check("WS-06b", async () => {
     await context.close()
     dev.kill()
   }
+})
+
+// WS-07 Without an operations host every module says why it is unavailable; nothing is simulated
+await check("WS-07", async () => {
+  const p = await open("nohost", { hash: "module=site&section=general" })
+  await wait(1800)
+  const site = { reason: await p.getByText(/No operations host answered at \.\/__studio\/ops/).first().isVisible().catch(() => false), form: await siteName(p).count() }
+  await railModule(p, "Audit").click()
+  await wait(900)
+  const audit = await p.getByText(/No component for the "audit" module/).first().isVisible().catch(() => false)
+  await railModule(p, "Site").click()
+  await wait(900)
+  const still = await p.getByText(/No operations host answered/).first().isVisible().catch(() => false)
+  await p.closeAll()
+  const ok = site.reason && site.form === 0 && audit && still
+  return [ok ? "pass" : "fail", `a built Studio served without its host: Site ${site.reason ? "says no operations host answered" : "gave no reason"} and shows ${site.form} form fields; Audit ${audit ? "says it has no component" : "gave no reason"}; reopening Site ${still ? "still says why" : "lost the reason"}. A Studio that declares no operations is covered by the model test WM-01`]
+})
+
+// WS-08 At 360 to 430 px modules open from the bottom bar's Workspace drawer: no sideways scroll, 44 px targets, 16 px input text
+await check("WS-08", async () => {
+  const bad = []
+  const wideRegions = (p) =>
+    p.evaluate(() => {
+      const wide = [...document.querySelectorAll("body *")].filter((e) => e.scrollWidth > innerWidth + 1 && !["auto", "scroll"].includes(getComputedStyle(e).overflowX) && !e.closest(".preview-frame"))
+      return { doc: document.documentElement.scrollWidth, iw: innerWidth, wide: wide.length, h1: document.querySelector("h1")?.textContent, dialogs: document.querySelectorAll('[role="dialog"]').length, secret: !!document.querySelector('[data-kit] input[type="password"]') }
+    })
+  for (const width of [360, 390, 430]) {
+    servers.workspace.host = createMockHost()
+    const p = await open("workspace", { width, height: 844, touch: true, hash: "view=inspect&scenario=tasks.list" })
+    const bottomDetails = await p.locator('nav[aria-label="Views"] button', { hasText: "Details" }).count()
+    const headerDetails = await p.locator('header button[aria-label="Details"]').count()
+    await p.locator('nav[aria-label="Views"] button', { hasText: "Workspace" }).click()
+    await wait(800)
+    const drawer = p.getByRole("dialog")
+    const listed = await drawer.getByRole("button", { name: "Site", exact: true }).count()
+    const small = await p.evaluate(() => [...document.querySelectorAll('[role="dialog"] button, nav[aria-label="Views"] button, header button')].filter((e) => e.offsetParent).map((e) => {
+      const r = e.getBoundingClientRect()
+      return { n: e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16), w: Math.round(r.width), h: Math.round(r.height) }
+    }).filter((r) => r.w < 44 || r.h < 44))
+    await drawer.getByRole("button", { name: "Site", exact: true }).click()
+    await wait(1800)
+    const page = await wideRegions(p)
+    const kit = await kitTargets(p)
+    await p.closeAll()
+    // The Secrets section: a secret field with Reveal inside an input group.
+    servers.workspace.host = createMockHost()
+    const s = await open("workspace", { width, height: 844, touch: true, hash: "module=site&section=secrets" })
+    await wait(1200)
+    const secrets = await wideRegions(s)
+    const secretKit = await kitTargets(s)
+    await s.closeAll()
+    const fits = (m) => m.doc <= m.iw && m.wide === 0 && m.h1 === "Site" && m.dialogs === 0
+    const fine = bottomDetails === 0 && headerDetails === 1 && listed === 1 && !small.length && fits(page) && kit.count > 0 && !kit.small.length && !kit.smallText.length && fits(secrets) && secrets.secret && secretKit.count > 0 && !secretKit.small.length && !secretKit.smallText.length
+    if (!fine) bad.push(`${width}: ${JSON.stringify({ bottomDetails, headerDetails, listed, small, page, kit, secrets, secretKit })}`)
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : "at 360, 390 and 430 px the bottom bar's Workspace entry (Details in the top bar) opened a drawer listing Site; every bar, header and drawer target and every kit control on the module's General and Secrets sections (the secret field and Reveal included) is at least 44 px, kit inputs use 16 px text, the drawer closed on choosing, and nothing scrolls sideways. Real devices and swipe are not covered."]
+})
+
+// WS-09 Kit components meet the contrast, focus, target, reduced-motion and forced-color floors in both appearances
+await check("WS-09", async () => {
+  const contrast = (p) =>
+    p.evaluate(() => {
+      const canvas = document.createElement("canvas")
+      canvas.width = canvas.height = 1
+      const g = canvas.getContext("2d", { willReadFrequently: true })
+      const rgb = (layers) => {
+        g.clearRect(0, 0, 1, 1)
+        for (const c of layers) {
+          g.fillStyle = c
+          g.fillRect(0, 0, 1, 1)
+        }
+        return Array.from(g.getImageData(0, 0, 1, 1).data.slice(0, 3))
+      }
+      const lum = (c) => {
+        const f = (v) => {
+          v /= 255
+          return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+        }
+        return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
+      }
+      const ratio = (a, b) => {
+        const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
+        return (x + 0.05) / (y + 0.05)
+      }
+      const low = []
+      for (const el of document.querySelectorAll("[data-kit] *")) {
+        if (!el.getClientRects().length) continue
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue
+        if (el.closest(":disabled, [aria-disabled='true'], [data-disabled]")) continue
+        const chain = []
+        for (let a = el; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+        const bg = rgb(["#ffffff", ...chain])
+        const st = getComputedStyle(el)
+        const fg = rgb([`rgb(${bg.join(",")})`, st.color])
+        const size = parseFloat(st.fontSize)
+        const need = size >= 24 || (size >= 18.66 && Number(st.fontWeight) >= 700) ? 3 : 4.5
+        const r = ratio(fg, bg)
+        if (r < need) low.push(`"${el.textContent.trim().slice(0, 24)}" ${r.toFixed(2)}`)
+      }
+      return low
+    })
+  // Tailwind gives every ring utility a computed box-shadow even unfocused, so "has a box-shadow" proves nothing: record each kit
+  // element's outline and shadow layers unfocused, then count a focus indicator only where focus adds a visible layer.
+  // Controls transition their ring in: read styles once the running transitions end (infinite animations such as spinners are skipped).
+  const settle = (p) => p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => null))))
+  const unfocused = async (p) => {
+    await p.mouse.move(0, 0)
+    await p.evaluate(() => document.activeElement?.blur?.())
+    await settle(p)
+    await p.evaluate(() => {
+      const before = new WeakMap()
+      for (const e of document.querySelectorAll("[data-kit] *")) {
+        const s = getComputedStyle(e)
+        before.set(e, { outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} ${s.outlineOffset}`, shadow: s.boxShadow })
+      }
+      window.__kitUnfocused = before
+    })
+  }
+  const tabWalk = async (p, forced) => {
+    await p.evaluate(() => {
+      const h = document.querySelector("[data-kit] h1")
+      h.tabIndex = -1
+      h.focus()
+    })
+    const lost = []
+    const faint = []
+    const ratios = []
+    let reached = 0
+    for (let i = 0; i < 14; i++) {
+      await p.keyboard.press("Tab")
+      await settle(p)
+      const f = await p.evaluate(() => {
+        const e = document.activeElement
+        if (!e?.closest("[data-kit]")) return null
+        const canvas = document.createElement("canvas")
+        canvas.width = canvas.height = 1
+        const g = canvas.getContext("2d", { willReadFrequently: true })
+        const paint = (layers) => {
+          g.clearRect(0, 0, 1, 1)
+          for (const c of layers) {
+            g.fillStyle = c
+            g.fillRect(0, 0, 1, 1)
+          }
+          return Array.from(g.getImageData(0, 0, 1, 1).data)
+        }
+        const lum = (c) => {
+          const f = (v) => {
+            v /= 255
+            return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+          }
+          return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
+        }
+        const ratio = (a, b) => {
+          const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
+          return (x + 0.05) / (y + 0.05)
+        }
+        // The backdrop the indicator is drawn on: the parent's for an outer ring, the element's own for an inset one.
+        const backdrop = (inside) => {
+          const chain = []
+          for (let a = inside ? e : e.parentElement; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+          return paint(["#ffffff", ...chain]).slice(0, 3)
+        }
+        const split = (v) => (v === "none" ? [] : v.split(/,(?![^(]*\))/).map((x) => x.trim()))
+        const s = getComputedStyle(e)
+        const before = window.__kitUnfocused?.get(e) ?? { outline: "none", shadow: "none" }
+        const marks = []
+        const outline = `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} ${s.outlineOffset}`
+        if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0 && outline !== before.outline && paint([s.outlineColor])[3] > 0) marks.push({ kind: "outline", color: s.outlineColor, inside: parseFloat(s.outlineOffset) < 0 })
+        const was = split(before.shadow)
+        for (const layer of split(s.boxShadow)) {
+          if (was.includes(layer)) continue
+          const color = /^(rgba?|oklch|oklab|lab|lch|color|hsla?)\([^)]*\)/.exec(layer)?.[0] ?? /^#\w+/.exec(layer)?.[0]
+          const lengths = layer.replace(color ?? "", "").match(/-?[\d.]+px/g)?.map(parseFloat) ?? []
+          const [, , blur = 0, spread = 0] = lengths
+          if (color && paint([color])[3] > 0 && (spread > 0 || blur > 0)) marks.push({ kind: "ring", color, inside: /\binset\b/.test(layer) })
+        }
+        const best = marks.map((m) => {
+          const bg = backdrop(m.inside)
+          return ratio(paint([`rgb(${bg.join(",")})`, m.color]).slice(0, 3), bg)
+        }).sort((a, b) => b - a)[0]
+        return { n: e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16) || e.id, outline: marks.some((m) => m.kind === "outline"), visible: marks.length > 0, ratio: best ?? 0 }
+      })
+      if (!f) continue
+      reached++
+      if (forced ? !f.outline : !f.visible) lost.push(f.n)
+      else if (!forced) {
+        ratios.push(f.ratio)
+        if (f.ratio < 3) faint.push(`${f.n} ${f.ratio.toFixed(2)}`)
+      }
+    }
+    return { reached, lost, faint, min: ratios.length ? Math.min(...ratios) : 0 }
+  }
+  const notes = []
+  let ok = true
+  for (const appearance of ["light", "dark"]) {
+    for (const section of ["general", "secrets"]) {
+      servers.workspace.host = createMockHost()
+      const p = await open("workspace", { appearance, hash: `module=site&section=${section}` })
+      await wait(1000)
+      let lowDialog = []
+      if (section === "general") {
+        await siteName(p).fill("Floors")
+        await wait(300)
+      }
+      const low = await contrast(p)
+      if (section === "general") {
+        // The leave dialog, with the edit still unsaved.
+        await railView(p, "Compare").click()
+        await wait(600)
+        lowDialog = await contrast(p)
+        await p.keyboard.press("Escape")
+        await wait(400)
+      }
+      await unfocused(p)
+      const focus = await tabWalk(p, false)
+      await p.emulateMedia({ reducedMotion: "reduce" })
+      const moving = await p.evaluate(() => [...document.querySelectorAll("[data-kit], [data-kit] *")].filter((e) => {
+        const s = getComputedStyle(e)
+        return (s.animationName !== "none" && parseFloat(s.animationDuration) > 0) || s.transitionDuration.split(",").some((d) => parseFloat(d) > 0)
+      }).length)
+      await p.emulateMedia({ reducedMotion: "reduce", forcedColors: "active" })
+      await unfocused(p)
+      const forced = await tabWalk(p, true)
+      const borderless = await p.evaluate(() => [...document.querySelectorAll('[data-kit] button, [data-kit] input, [data-kit] [role="switch"], [data-kit] [role="combobox"]')].filter((e) => e.getBoundingClientRect().width > 2 && getComputedStyle(e).borderTopStyle === "none").map((e) => e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16)))
+      await p.closeAll()
+      const t = await open("workspace", { appearance, width: 390, height: 844, touch: true, hash: `module=site&section=${section}` })
+      await wait(1200)
+      const targets = await kitTargets(t)
+      await t.closeAll()
+      const stops = section === "general" ? 5 : 2
+      const fine = !low.length && !lowDialog.length && focus.reached >= stops && !focus.lost.length && !focus.faint.length && moving === 0 && forced.reached >= stops && !forced.lost.length && !borderless.length && targets.count > 0 && !targets.small.length && !targets.smallText.length
+      ok &&= fine
+      notes.push(`${appearance} ${section}: text below AA ${low.length + lowDialog.length ? [...low, ...lowDialog].slice(0, 4).join(", ") : "none"}${section === "general" ? " (page and leave dialog)" : ""}; focus adds a visible indicator on ${focus.reached - focus.lost.length} of ${focus.reached} kit stops${focus.lost.length ? `, none on ${focus.lost.join(", ")}` : ""}, lowest indicator contrast ${focus.min.toFixed(2)}:1${focus.faint.length ? ` (under 3:1 on ${focus.faint.join(", ")})` : ""}; ${moving} kit elements still moving under reduced motion; in forced colors focus outlined on ${forced.reached - forced.lost.length} of ${forced.reached}${borderless.length ? `, controls without a boundary ${borderless.join(", ")}` : ", every control keeps a boundary"}; on a touch screen ${targets.small.length ? `${targets.small.length} kit targets under 44 px (${targets.small.map((m) => `${m.n} ${m.w}x${m.h}`).join(", ")})` : `all ${targets.count} kit targets at least 44 px`}${targets.smallText.length ? ` and ${targets.smallText.length} inputs under 16 px` : ""}`)
+    }
+  }
+  return [ok ? "pass" : "fail", `${notes.join("; ")}. Forced colors is Chromium's emulation; assistive technologies are not covered.`]
 })
 
 await browser.close()

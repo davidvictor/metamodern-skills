@@ -219,3 +219,11 @@ test('final fix wave: ordered value updates, file-preserving saves, a lazy-chunk
   assert.match(chrome, /<PartBoundary part=\{p\.part\}>\s*<React\.Suspense/);
   assert.match(read('src/components/studio/views.tsx'), /<ScenarioPreview\s*\n\s*\/\/[^\n]*\n\s*key=\{`\$\{i\}:\$\{stepKey\}`\}/);
 });
+
+test('acceptance script covers the workspace criteria', () => {
+  const script = read('scripts/acceptance.mjs');
+  for (let i = 1; i <= 9; i++) assert.match(script, new RegExp(`"WS-0${i}"`), `WS-0${i} is not checked`);
+  assert.match(script, /"WS-06b"/, 'WS-06b is not checked');
+  assert.match(script, /STUDIO_CHUNK_BASELINE_GZ = \d+/);
+  assert.match(script, /workspace: "workspace"/);
+});
