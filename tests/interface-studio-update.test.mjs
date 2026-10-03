@@ -315,6 +315,17 @@ test('UP-12 a major kit change is reported as breaking and applied only when acc
   assert.equal(refused.code, 1);
   assert.equal(refused.data.applied, false);
   assert.equal(lockOf(dir).shell, '1.0.0');
+  const refusedHuman = run([dir, '--shell', next, '--shell-version', '2.0.0', '--skip-checks', '--apply'], { json: false });
+  assert.equal(refusedHuman.code, 1);
+  assert.match(refusedHuman.out, /\(nothing written\)/);
+  assert.doesNotMatch(refusedHuman.out, /add --apply/, 'a refused --apply does not ask for --apply');
+  const wrong = update(dir, next, '2.0.0', '--apply', '--accept-kit', 'studio-kit/3');
+  assert.equal(wrong.code, 1, 'a different kit version is not an acceptance');
+  assert.equal(wrong.data.applied, false);
+  assert.equal(lockOf(dir).shell, '1.0.0');
+  const acceptedPlan = run([dir, '--shell', next, '--shell-version', '2.0.0', '--skip-checks', '--accept-kit', 'studio-kit/2'], { json: false });
+  assert.match(acceptedPlan.out, /Breaking: the Studio UI kit changes from studio-kit\/1 to studio-kit\/2/);
+  assert.doesNotMatch(acceptedPlan.out, /Nothing is applied without/);
   const accepted = update(dir, next, '2.0.0', '--apply', '--accept-kit', 'studio-kit/2');
   assert.equal(accepted.code, 0, accepted.err || accepted.out);
   assert.equal(lockOf(dir).shell, '2.0.0');

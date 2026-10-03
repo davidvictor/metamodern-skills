@@ -29,7 +29,7 @@ const LOCK_SCHEMA = 'studio-shell-lock/1';
 
 /** Created once and then owned by the product. */
 const SEEDS = new Set(['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts']);
-/** Folders that belong to the product: never compared, added to or removed from (a seed inside may be created once). */
+/** Folders that belong to the product: never compared, added to or removed from (a seed inside is created when missing). */
 const PRODUCT_DIRS = ['src/workspace/'];
 /** Replaced from the shell every time, then refreshed by npm install. */
 const REGENERATED = new Set(['package-lock.json']);
@@ -440,11 +440,11 @@ function create(opts) {
 
 const LABEL = { add: 'Add', restore: 'Restore', replace: 'Replace', delete: 'Delete', seed: 'Create (product owned from now on)', regenerate: 'Replace, then refresh with npm install', package: 'Merge', kept: 'Keep your version' };
 
-function report(p, { applied, checks, dirty, acceptKit }) {
+function report(p, { applied, checks, dirty, acceptKit, kitRefused }) {
   const out = [];
   const title = applied ? 'Updated' : 'Update plan for';
   out.push(`${title} ${p.dir}`);
-  out.push(`Shell ${p.from ?? 'unknown'} -> ${p.shellVersion}${p.adopting ? ' (adopting: no lock file yet)' : ''}${applied ? '' : ' (nothing written; add --apply)'}`);
+  out.push(`Shell ${p.from ?? 'unknown'} -> ${p.shellVersion}${p.adopting ? ' (adopting: no lock file yet)' : ''}${applied ? '' : kitRefused ? ' (nothing written)' : ' (nothing written; add --apply)'}`);
   for (const n of p.notes) out.push(`Note: ${n}`);
   if (p.kit) out.push('', `Breaking: the Studio UI kit changes from ${p.kit.from} to ${p.kit.to}. Workspace modules in src/workspace/ may need changes; read the update notes first.${acceptKit === p.kit.to ? '' : ` Nothing is applied without --accept-kit ${p.kit.to}.`}`);
   if (p.blocked.length) {
@@ -525,7 +525,7 @@ function main() {
     const failed = checks?.some((c) => c.ok === false);
     if (opts.json) {
       console.log(JSON.stringify({ from: p.from, to: p.shellVersion, adopting: p.adopting, kit: p.kit, applied: canApply, actions: p.actions.map(({ content, ...a }) => a), blocked: p.blocked, dirty, notes: p.notes, updateNotes: p.updateNotes, checks }, null, 2));
-    } else console.log(report(p, { applied: canApply, checks, dirty, acceptKit: opts.acceptKit }));
+    } else console.log(report(p, { applied: canApply, checks, dirty, acceptKit: opts.acceptKit, kitRefused: opts.apply && kitBlocked }));
     if (p.blocked.length || (dirty && dirty.length) || failed || (opts.apply && kitBlocked)) return 1;
     return 0;
   } catch (e) {
