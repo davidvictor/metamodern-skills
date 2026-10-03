@@ -351,3 +351,11 @@ test('0.12.1 a focused slider outlines its thumb and AC-66 walks the Design slid
   assert.match(script, /hash: "view=design&scenario=tasks\.list" \}\)\n\s*await d\.addStyleTag/);
   assert.match(script, /no Design slider was reached/);
 });
+
+test('0.12.1 kit: the SaveBar message wraps above its actions and a DataTable keeps its announcement inside the page', () => {
+  assert.match(read('src/kit/save.tsx'), /role="status" aria-live="polite" className="grid min-w-0 flex-1 basis-64 gap-1 text-sm"/);
+  assert.match(read('src/kit/data.tsx'), /<div className="relative grid gap-2">/);
+  const script = read('scripts/acceptance.mjs');
+  assert.match(script, /check\("WS-10"/);
+  assert.match(script, /width: 390, height: 520, touch: true, hash: "module=site&section=general"/);
+});

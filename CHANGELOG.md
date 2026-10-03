@@ -3,6 +3,7 @@
 ## 1.15.1 — 2026-10-03
 
 - Interface Studio 0.12.1 fixes core-shell shortfalls against its own touch and focus floors. On coarse pointers, stacked switches and checkboxes (Gallery areas, Present Autoplay, Responsive Sync) and the Responsive frame list's Remove buttons each keep their own 44 by 44 px target instead of sharing or losing hit area to a neighbour or the panel's edge handle, and a Design range's marks clear its thumb. Keyboard focus in the top bar's breadcrumb and on tab panels is drawn inside, so it is no longer cut to its corners, and a focused slider now outlines its thumb.
+- Studio kit fixes, with no API change: on a phone the SaveBar's conflict message takes its own line instead of running under its actions, and a DataTable's hidden sort announcement stays inside the module page's scroller, so a long table no longer scrolls the whole Studio and its top bar away. Acceptance adds WS-10 for both.
 - Acceptance adds AC-65, which probes each target's reachable area with `elementFromPoint`, and AC-66, which compares each focus stop's rendered pixels against its perimeter, at 390, 768 and 1440 px in both appearances. WS-01 measures against 0.12.0. The panel's edge handle and the resize grips are documented as equivalent-control allowances.
 
 ## 1.15.0 — 2026-10-03

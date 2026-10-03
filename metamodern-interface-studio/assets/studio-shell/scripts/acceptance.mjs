@@ -2980,7 +2980,7 @@ await check("AC-66", async () => {
   return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `${notes.join("; ")}. Screenshots of each stop focused and unfocused, tooltips hidden; a stop passes when the pixels changed by 3:1 or more cover at least its perimeter.`]
 })
 
-// ---------- Workspace modules (WS-01 to WS-09, references/workspace.md) ----------
+// ---------- Workspace modules (WS-01 to WS-10, references/workspace.md) ----------
 
 const railModule = (p, name) => p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button', { hasText: name })
 const railView = (p, name) => p.locator('[aria-label="Studio"] nav[aria-label="Views"] button', { hasText: name })
@@ -3724,6 +3724,91 @@ await check("WS-09", async () => {
     notes.push(`page errors ${errors.slice(0, 2).join(" | ")}`)
   }
   return [ok ? "pass" : "fail", `${notes.join("; ")}. Forced colors is Chromium's emulation; assistive technologies are not covered.`]
+})
+
+// WS-10 On a phone (390 px, touch), in both appearances: the SaveBar in its conflict state keeps its message clear of its actions,
+// with no text cut off and 44 px actions; and a module page with a long DataTable scrolls inside the page, never the document,
+// so the top bar stays at the top, and every positioned element on the page (the table's sort announcement) is placed inside it
+await check("WS-10", async () => {
+  const bad = []
+  const notes = []
+  const errors = []
+  for (const appearance of ["light", "dark"]) {
+    // 1. The conflict: the message, its reason and the current value against the bar's buttons.
+    servers.workspace.host = createMockHost()
+    const p = await open("workspace", { appearance, width: 390, height: 844, touch: true, hash: "module=site&section=general" })
+    await poll(() => siteName(p).isVisible().catch(() => false), Boolean)
+    await siteName(p).fill("Mine")
+    await poll(() => p.getByRole("button", { name: "Save", exact: true }).isVisible().catch(() => false), Boolean)
+    const current = await ops("site.read", { input: null })
+    await ops("site.write", { input: { siteName: "Theirs" }, expectedRevision: current.revision }, "someone else")
+    await p.getByRole("button", { name: "Save", exact: true }).click()
+    const reached = await poll(() => p.getByRole("button", { name: "Save mine again" }).isVisible().catch(() => false), Boolean)
+    await wait(400)
+    const m = await p.evaluate(() => {
+      const bar = document.querySelector('[data-kit] [role="region"][aria-label="Changes"]')
+      if (!bar) return null
+      const message = bar.querySelector('[role="status"]')
+      const buttons = [...bar.querySelectorAll("button")].map((b) => ({ n: b.textContent.trim(), r: b.getBoundingClientRect() }))
+      // Every line of text in the message, as laid out.
+      const lines = []
+      const walker = document.createTreeWalker(message, NodeFilter.SHOW_TEXT)
+      for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+        if (!t.textContent.trim()) continue
+        const range = document.createRange()
+        range.selectNodeContents(t)
+        for (const r of range.getClientRects()) if (r.width > 0.5 && r.height > 0.5) lines.push({ t: t.textContent.trim().slice(0, 24), r })
+      }
+      const hit = (a, b) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5
+      const mr = message.getBoundingClientRect()
+      const overlaps = []
+      for (const b of buttons) {
+        if (hit(mr, b.r)) overlaps.push(`message box/${b.n}`)
+        for (const l of lines) if (hit(l.r, b.r)) overlaps.push(`"${l.t}"/${b.n}`)
+      }
+      const box = bar.getBoundingClientRect()
+      const outside = lines.filter((l) => l.r.left < box.left - 0.5 || l.r.right > box.right + 0.5 || l.r.top < box.top - 0.5 || l.r.bottom > box.bottom + 0.5).map((l) => l.t)
+      const cut = [...message.querySelectorAll("*")].filter((e) => e.getClientRects().length && e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX !== "visible").map((e) => e.textContent.trim().slice(0, 24))
+      const small = buttons.filter((b) => b.r.width < 44 || b.r.height < 44).map((b) => `${b.n} ${Math.round(b.r.width)}×${Math.round(b.r.height)}`)
+      return { overlaps: [...new Set(overlaps)], outside, cut, small, buttons: buttons.map((b) => b.n), width: Math.round(mr.width), lines: lines.length }
+    })
+    errors.push(...p.errors)
+    await p.closeAll()
+    if (!reached || !m || m.overlaps.length || m.outside.length || m.cut.length || m.small.length || m.buttons.length < 2) bad.push(`${appearance} conflict: ${JSON.stringify(m ?? { reached })}`)
+    else notes.push(`${appearance}: conflict message ${m.width} px wide, ${m.lines} lines clear of ${m.buttons.join(" and ")}`)
+    // 2. A long page: 40 recorded changes in the Recent changes table.
+    servers.workspace.host = createMockHost()
+    let rev = (await ops("site.read", { input: null })).revision
+    for (let i = 0; i < 40; i++) rev = (await ops("site.write", { input: { siteName: `Name ${i}` }, expectedRevision: rev })).revision
+    // A short phone (390 by 520) puts the table's announcement below the fold, where a region positioned outside the page's
+    // scroller stretches the document (0.12.0 scrolled it 39 px and the top bar with it).
+    const q = await open("workspace", { appearance, width: 390, height: 520, touch: true, hash: "module=site&section=general" })
+    await poll(() => q.locator('[data-kit] [role="grid"] [role="row"]').count(), (n) => n > 20)
+    await wait(400)
+    const before = await q.evaluate(() => {
+      // Every positioned element on the page must be placed inside the page's own scroller.
+      const scroller = [...document.querySelectorAll("[data-kit] *")].find((e) => getComputedStyle(e).overflowY === "auto" && e.scrollHeight > e.clientHeight)
+      const loose = [...document.querySelectorAll("[data-kit] *")].filter((e) => getComputedStyle(e).position === "absolute" && scroller?.contains(e) && !(e.offsetParent && (e.offsetParent === scroller || scroller.contains(e.offsetParent)))).map((e) => `${e.tagName.toLowerCase()}${e.getAttribute("role") ? `[${e.getAttribute("role")}]` : ""}.${String(e.className).slice(0, 20)}`)
+      return { doc: document.documentElement.scrollHeight, body: document.body.scrollHeight, ih: innerHeight, loose }
+    })
+    // Scroll the module page to its end, then try to scroll the document as a finger or wheel would.
+    await q.evaluate(() => {
+      const s = [...document.querySelectorAll("[data-kit] *")].find((e) => getComputedStyle(e).overflowY === "auto" && e.scrollHeight > e.clientHeight)
+      if (s) s.scrollTop = s.scrollHeight
+    })
+    await q.mouse.move(195, 400)
+    await q.mouse.wheel(0, 4000)
+    await wait(400)
+    await q.evaluate(() => window.scrollTo(0, 100000))
+    await wait(200)
+    const after = await q.evaluate(() => ({ y: scrollY, header: Math.round(document.querySelector("header").getBoundingClientRect().top), scroller: [...document.querySelectorAll("[data-kit] *")].some((e) => getComputedStyle(e).overflowY === "auto" && e.scrollTop > 0) }))
+    errors.push(...q.errors)
+    await q.closeAll()
+    if (before.loose.length || before.doc > before.ih || before.body > before.ih || after.y !== 0 || after.header !== 0 || !after.scroller) bad.push(`${appearance} long table: ${JSON.stringify({ before, after })}`)
+    else notes.push(`${appearance}: with 41 changes the document stayed ${before.doc} px for a 390 by ${before.ih} px viewport, the page scrolled inside and the top bar stayed at 0`)
+  }
+  if (errors.length) bad.push(`page errors ${errors.slice(0, 2).join(" | ")}`)
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `390 px with touch: ${notes.join("; ")}.`]
 })
 
 await browser.close()

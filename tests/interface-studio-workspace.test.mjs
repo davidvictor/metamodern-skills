@@ -469,8 +469,8 @@ test('WM-15 the workspace reference documents the contract and SKILL.md routes t
   assert.match(readFileSync(new URL('references/updating.md', skill), 'utf8'), /--accept-kit/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /## Product output in workspace modules/);
   const shellDoc = readFileSync(new URL('references/shell.md', skill), 'utf8');
-  assert.match(shellDoc, /WS-01 to WS-09/);
-  for (const id of ['WS-01', 'WS-02', 'WS-03', 'WS-04', 'WS-05', 'WS-05b', 'WS-06', 'WS-06b', 'WS-07', 'WS-08', 'WS-09', 'AC-61', 'AC-62', 'AC-63', 'AC-64']) assert.match(shellDoc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
+  assert.match(shellDoc, /WS-01 to WS-10/);
+  for (const id of ['WS-01', 'WS-02', 'WS-03', 'WS-04', 'WS-05', 'WS-05b', 'WS-06', 'WS-06b', 'WS-07', 'WS-08', 'WS-09', 'WS-10', 'AC-61', 'AC-62', 'AC-63', 'AC-64']) assert.match(shellDoc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
   assert.match(shellDoc, /x-studio-expected-revision/);
   assert.match(read('README.md'), /src\/workspace\//);
 });

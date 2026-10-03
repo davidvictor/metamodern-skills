@@ -66,7 +66,7 @@ src/
   index.css, studio.css      shadcn tokens plus the Studio extensions
 example/                     synthetic example product preview entry (replace)
 example/workspace/           synthetic example workspace and mock operations host for the acceptance suite (remove with example/)
-scripts/acceptance.mjs       measures AC-01 to AC-66 and WS-01 to WS-09 in headless Chromium
+scripts/acceptance.mjs       measures AC-01 to AC-66 and WS-01 to WS-10 in headless Chromium
 scripts/saved-file.ts        the dev server's layouts and scenarios endpoints, with revisions
 scripts/workspace-boundary.mjs   the lint rule that keeps module code to @studio/kit and @studio/workspace
 ```

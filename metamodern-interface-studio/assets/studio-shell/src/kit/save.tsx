@@ -21,7 +21,8 @@ export function SaveBar({ state, onSave, onDiscard, onRetry, saveLabel = "Save" 
   return (
     <div role="region" aria-label="Changes" className={cn("border-t bg-background px-4 py-3 md:px-8", trouble && "border-t-2 border-t-warning")}>
       <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-3">
-        <div role="status" aria-live="polite" className="grid min-w-0 flex-1 gap-1 text-sm">
+        {/* The message wants 16rem: narrower than that beside the actions, it takes its own line above them. */}
+        <div role="status" aria-live="polite" className="grid min-w-0 flex-1 basis-64 gap-1 text-sm">
           {state.kind === "dirty" && <span className="font-medium">Unsaved changes</span>}
           {state.kind === "saving" && (
             <span className="flex items-center gap-2 font-medium">
