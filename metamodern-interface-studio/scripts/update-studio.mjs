@@ -12,6 +12,7 @@
  *   --keep <path> --reason "<why>"   keep a local edit to a shell file; listed on every later update
  *   --replace <path>                 discard a local edit, or restore a missing file, from the new shell
  *   --removed <path>                 record an optional file or folder (such as example/) as deliberately removed
+ *   --accept-kit studio-kit/<n>      apply an update that changes the Studio UI kit's major version
  *
  * Other options: --skip-checks, --allow-dirty, --json, and for tests --shell <dir>, --shell-version <v>, --releases <file>.
  */
@@ -27,7 +28,9 @@ const LOCK = 'studio-shell.lock.json';
 const LOCK_SCHEMA = 'studio-shell-lock/1';
 
 /** Created once and then owned by the product. */
-const SEEDS = new Set(['src/adapter.ts', 'studio.config.ts']);
+const SEEDS = new Set(['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts']);
+/** Folders that belong to the product: never compared, added to or removed from (a seed inside may be created once). */
+const PRODUCT_DIRS = ['src/workspace/'];
 /** Replaced from the shell every time, then refreshed by npm install. */
 const REGENERATED = new Set(['package-lock.json']);
 /** Shell files a Studio may delete on purpose; recorded under `removed`. */
@@ -38,7 +41,7 @@ const IGNORED_FILES = new Set(['.DS_Store', 'acceptance-report.json', LOCK]);
 // ---------- arguments ----------
 
 function parseArgs(argv) {
-  const out = { dir: null, apply: false, adopt: false, create: false, skipChecks: false, allowDirty: false, json: false, keep: [], replace: [], removed: [], shell: null, shellVersion: null, releases: null };
+  const out = { dir: null, apply: false, adopt: false, create: false, skipChecks: false, allowDirty: false, json: false, keep: [], replace: [], removed: [], acceptKit: null, shell: null, shellVersion: null, releases: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => {
@@ -59,6 +62,7 @@ function parseArgs(argv) {
       last.reason = next();
     } else if (a === '--replace') out.replace.push(norm(next()));
     else if (a === '--removed') out.removed.push(norm(next()));
+    else if (a === '--accept-kit') out.acceptKit = next();
     else if (a === '--shell') out.shell = resolve(next());
     else if (a === '--shell-version') out.shellVersion = next();
     else if (a === '--releases') out.releases = resolve(next());
@@ -94,10 +98,17 @@ function hashTree(root) {
   return Object.fromEntries(walk(root).sort().map((p) => [p, sha(readFileSync(join(root, p)))]));
 }
 
+/** The Studio UI kit's major version in a tree (KIT_VERSION in src/kit/index.ts); null before the kit existed. */
+function kitVersion(root) {
+  const file = join(root, 'src/kit/index.ts');
+  if (!existsSync(file)) return null;
+  return /export const KIT_VERSION = "(studio-kit\/\d+)"/.exec(readFileSync(file, 'utf8'))?.[1] ?? null;
+}
+
 const underAny = (path, list) => list.some((r) => (r.endsWith('/') ? path.startsWith(r) : path === r));
 const isOptional = (path) => underAny(path, OPTIONAL);
 /** Files the updater compares one by one: everything in the shell except seeds, the lockfile it regenerates and package.json, which it merges. */
-const isCompared = (path) => !SEEDS.has(path) && !REGENERATED.has(path) && path !== 'package.json';
+const isCompared = (path) => !SEEDS.has(path) && !REGENERATED.has(path) && path !== 'package.json' && !underAny(path, PRODUCT_DIRS);
 
 const readJSON = (file) => JSON.parse(readFileSync(file, 'utf8'));
 const packageBase = (pkg) => ({ dependencies: pkg.dependencies ?? {}, devDependencies: pkg.devDependencies ?? {}, scripts: pkg.scripts ?? {} });
@@ -297,6 +308,10 @@ function plan(opts) {
   const lockLocal = hashFile(join(dir, 'package-lock.json'));
   if (upstream['package-lock.json'] && lockLocal !== upstream['package-lock.json'] && (upstream['package-lock.json'] !== lock.packageLock || lockLocal === undefined)) actions.push({ kind: 'regenerate', path: 'package-lock.json' });
 
+  const kitFrom = kitVersion(dir);
+  const kitTo = kitVersion(shellDir);
+  const kit = kitFrom && kitTo && kitFrom !== kitTo ? { from: kitFrom, to: kitTo } : null;
+
   const nextLock = {
     schema: LOCK_SCHEMA,
     shell: shellVersion,
@@ -317,6 +332,7 @@ function plan(opts) {
     actions,
     blocked,
     notes,
+    kit,
     updateNotes: notesBetween(shellDir, from, shellVersion),
     removed: nextLockRemoved(removed),
     nextLock,
@@ -369,8 +385,8 @@ function runChecks(dir, log) {
     if (pkg.scripts?.[script]) run(script, ['run', script]);
     else results.push({ name: script, skipped: 'no such script in package.json' });
   }
-  const acceptanceReady = pkg.scripts?.acceptance && ['scripts/acceptance.mjs', 'example/index.html', 'src/adapters/synthetic.ts'].every((p) => existsSync(join(dir, p)));
-  if (!acceptanceReady) results.push({ name: 'acceptance', skipped: 'needs the acceptance script, the example product and the acceptance adapters' });
+  const acceptanceReady = pkg.scripts?.acceptance && ['scripts/acceptance.mjs', 'example/index.html', 'example/workspace/mock-host.mjs', 'example/workspace/adapter.ts', 'src/adapters/synthetic.ts'].every((p) => existsSync(join(dir, p)));
+  if (!acceptanceReady) results.push({ name: 'acceptance', skipped: 'needs the acceptance script, the example product (with example/workspace/), and the acceptance adapters' });
   else if (!hasPlaywright(dir)) results.push({ name: 'acceptance', skipped: 'Playwright is not installed (npm i -D playwright, or set PLAYWRIGHT_MODULE)' });
   else run('acceptance', ['run', 'acceptance']);
   return results;
@@ -424,12 +440,13 @@ function create(opts) {
 
 const LABEL = { add: 'Add', restore: 'Restore', replace: 'Replace', delete: 'Delete', seed: 'Create (product owned from now on)', regenerate: 'Replace, then refresh with npm install', package: 'Merge', kept: 'Keep your version' };
 
-function report(p, { applied, checks, dirty }) {
+function report(p, { applied, checks, dirty, acceptKit }) {
   const out = [];
   const title = applied ? 'Updated' : 'Update plan for';
   out.push(`${title} ${p.dir}`);
   out.push(`Shell ${p.from ?? 'unknown'} -> ${p.shellVersion}${p.adopting ? ' (adopting: no lock file yet)' : ''}${applied ? '' : ' (nothing written; add --apply)'}`);
   for (const n of p.notes) out.push(`Note: ${n}`);
+  if (p.kit) out.push('', `Breaking: the Studio UI kit changes from ${p.kit.from} to ${p.kit.to}. Workspace modules in src/workspace/ may need changes; read the update notes first.${acceptKit === p.kit.to ? '' : ` Nothing is applied without --accept-kit ${p.kit.to}.`}`);
   if (p.blocked.length) {
     out.push('', `Blocked (${p.blocked.length}). Nothing is written until each file is resolved:`);
     for (const b of p.blocked) {
@@ -495,7 +512,8 @@ function main() {
     }
     const compared = Object.keys(p.nextLock.files);
     const dirty = opts.apply && !opts.allowDirty ? dirtyShellFiles(p.dir, [...compared, 'package.json']) : null;
-    const canApply = opts.apply && !p.blocked.length && !(dirty && dirty.length);
+    const kitBlocked = !!p.kit && opts.acceptKit !== p.kit.to;
+    const canApply = opts.apply && !p.blocked.length && !(dirty && dirty.length) && !kitBlocked;
     let checks = null;
     if (canApply) {
       apply(p);
@@ -506,9 +524,9 @@ function main() {
     }
     const failed = checks?.some((c) => c.ok === false);
     if (opts.json) {
-      console.log(JSON.stringify({ from: p.from, to: p.shellVersion, adopting: p.adopting, applied: canApply, actions: p.actions.map(({ content, ...a }) => a), blocked: p.blocked, dirty, notes: p.notes, updateNotes: p.updateNotes, checks }, null, 2));
-    } else console.log(report(p, { applied: canApply, checks, dirty }));
-    if (p.blocked.length || (dirty && dirty.length) || failed) return 1;
+      console.log(JSON.stringify({ from: p.from, to: p.shellVersion, adopting: p.adopting, kit: p.kit, applied: canApply, actions: p.actions.map(({ content, ...a }) => a), blocked: p.blocked, dirty, notes: p.notes, updateNotes: p.updateNotes, checks }, null, 2));
+    } else console.log(report(p, { applied: canApply, checks, dirty, acceptKit: opts.acceptKit }));
+    if (p.blocked.length || (dirty && dirty.length) || failed || (opts.apply && kitBlocked)) return 1;
     return 0;
   } catch (e) {
     console.error(e instanceof UsageError ? e.message : e.stack);

@@ -2298,31 +2298,38 @@ const kitTargets = (p) =>
 /**
  * Walks the Site page of the example through the kit's states and measures each: the page, an unsaved edit (SaveBar with Discard
  * and Save), an open Select, a conflict (Use current value, Save mine again) and the leave dialog. The page is left in the conflict.
+ * Returns the measurements by state and `missed`, every state (or closing step) the walk did not reach in time; a measurement taken
+ * after a missed step is not of the state it is named for, so callers fail on any miss.
  */
 const kitStates = async (p, measure, between = async () => {}) => {
-  const out = { page: await measure() }
+  const measured = { page: await measure() }
+  const missed = []
+  const reach = async (state, read, test, ms) => {
+    if (!test(await poll(read, test, ms))) missed.push(state)
+  }
   await siteName(p).fill("Floors")
-  await poll(() => p.getByRole("button", { name: "Save", exact: true }).isVisible().catch(() => false), Boolean)
-  out.dirty = await measure()
+  await reach("dirty", () => p.getByRole("button", { name: "Save", exact: true }).isVisible().catch(() => false), Boolean)
+  measured.dirty = await measure()
   await between("dirty")
   await p.locator('[data-kit] [role="combobox"]').first().click()
-  await poll(() => p.locator('[data-kit] [role="listbox"] [role="option"]').first().isVisible().catch(() => false), Boolean)
+  await reach("select", () => p.locator('[data-kit] [role="listbox"] [role="option"]').first().isVisible().catch(() => false), Boolean)
   await wait(300)
-  out.select = await measure()
+  measured.select = await measure()
   await p.keyboard.press("Escape")
-  await poll(() => p.locator('[data-kit] [role="listbox"]').count(), (n) => n === 0, 2000)
+  // The select keeps its closed list mounted and hidden, so closing is judged by visibility.
+  await reach("select closed", () => p.locator('[data-kit] [role="listbox"]:visible').count(), (n) => n === 0, 2000)
   const current = await ops("site.read", { input: null })
   await ops("site.write", { input: { siteName: "Theirs" }, expectedRevision: current.revision }, "someone else")
   await p.getByRole("button", { name: "Save", exact: true }).click()
-  await poll(() => p.getByRole("button", { name: "Save mine again" }).isVisible().catch(() => false), Boolean)
-  out.conflict = await measure()
+  await reach("conflict", () => p.getByRole("button", { name: "Save mine again" }).isVisible().catch(() => false), Boolean)
+  measured.conflict = await measure()
   await p.locator('nav[aria-label="Views"] button:visible', { hasText: "Compare" }).first().click()
-  await poll(() => p.getByRole("dialog", { name: "Leave without saving?" }).isVisible().catch(() => false), Boolean)
+  await reach("leave", () => p.getByRole("dialog", { name: "Leave without saving?" }).isVisible().catch(() => false), Boolean)
   await wait(300)
-  out.leave = await measure()
+  measured.leave = await measure()
   await p.keyboard.press("Escape")
-  await poll(() => p.getByRole("dialog", { name: "Leave without saving?" }).count(), (n) => n === 0, 2000)
-  return out
+  await reach("leave closed", () => p.getByRole("dialog", { name: "Leave without saving?" }).count(), (n) => n === 0, 2000)
+  return { measured, missed }
 }
 
 // WS-01 Without a workspace nothing changes: the AC suite, at most 3 KB more initial chunk, no workspace chunk; with one, module code loads only when a module opens
@@ -2712,7 +2719,7 @@ await check("WS-08", async () => {
     await poll(() => siteName(p).isVisible().catch(() => false), Boolean)
     await wait(600)
     const page = await wideRegions(p)
-    const states = await kitStates(p, () => kitTargets(p))
+    const { measured: states, missed: unreached } = await kitStates(p, () => kitTargets(p))
     errors.push(...p.errors)
     await p.closeAll()
     // The Secrets section: a secret field with Reveal inside an input group.
@@ -2725,8 +2732,8 @@ await check("WS-08", async () => {
     await s.closeAll()
     const fits = (m) => m.doc <= m.iw && m.wide === 0 && m.h1 === "Site" && m.dialogs === 0
     const missed = misses({ ...states, secrets: secretKit })
-    const fine = bottomDetails === 0 && headerDetails === 1 && listed === 1 && !small.length && fits(page) && fits(secrets) && secrets.secret && !missed.length
-    if (!fine) bad.push(`${width}: ${JSON.stringify({ bottomDetails, headerDetails, listed, small, page, secrets, missed })}`)
+    const fine = bottomDetails === 0 && headerDetails === 1 && listed === 1 && !small.length && fits(page) && fits(secrets) && secrets.secret && !missed.length && !unreached.length
+    if (!fine) bad.push(`${width}: ${JSON.stringify({ bottomDetails, headerDetails, listed, small, page, secrets, missed, unreached })}`)
   }
   if (errors.length) bad.push(`page errors ${errors.slice(0, 2).join(" | ")}`)
   return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : "at 360, 390 and 430 px the bottom bar's Workspace entry (Details in the top bar) opened a drawer listing Site; every bar, header and drawer target is at least 44 px, and every kit control is at least 44 px with 16 px input text on the General section as loaded, with an unsaved edit (Discard, Save), with the Region list open, in a conflict (Use current value, Save mine again) and in the leave dialog, and on the Secrets section (the secret field and Reveal); the drawer closed on choosing, nothing scrolls sideways, and no page errors. Real devices and swipe are not covered."]
@@ -2903,13 +2910,15 @@ await check("WS-09", async () => {
       await wait(600)
       let focus
       let low
+      const unreached = []
       if (section === "general") {
         // The page as loaded, with an unsaved edit (where the focus walk runs, through Discard and Save), with the Region list open, in a
         // conflict and in the leave dialog.
-        const states = await kitStates(p, () => contrast(p), async () => {
+        const { measured: states, missed } = await kitStates(p, () => contrast(p), async () => {
           await unfocused(p)
           focus = await tabWalk(p, false)
         })
+        unreached.push(...missed.map((state) => `desktop ${state}`))
         low = Object.entries(states).flatMap(([state, l]) => l.map((x) => `${state}: ${x}`))
       } else {
         low = await contrast(p)
@@ -2931,14 +2940,16 @@ await check("WS-09", async () => {
       const t = await open("workspace", { appearance, width: 390, height: 844, touch: true, hash: `module=site&section=${section}` })
       await poll(() => t.locator("[data-kit] h1").count(), (n) => n > 0)
       await wait(600)
-      const measured = section === "general" ? await kitStates(t, () => kitTargets(t)) : { page: await kitTargets(t) }
+      const touch = section === "general" ? await kitStates(t, () => kitTargets(t)) : { measured: { page: await kitTargets(t) }, missed: [] }
+      const measured = touch.measured
+      unreached.push(...touch.missed.map((state) => `touch ${state}`))
       errors.push(...t.errors)
       await t.closeAll()
       const small = Object.entries(measured).flatMap(([state, m]) => [...m.small.map((x) => `${state}: ${x.n} ${x.w}x${x.h}`), ...m.smallText.map((x) => `${state}: ${x.n} text ${x.text}px`), ...(m.count ? [] : [`${state}: no kit controls`])])
       const stops = section === "general" ? 5 : 2
-      const fine = !low.length && focus.reached >= stops && !focus.lost.length && !focus.faint.length && moving === 0 && forced.reached >= stops && !forced.lost.length && !borderless.length && !small.length
+      const fine = !low.length && focus.reached >= stops && !focus.lost.length && !focus.faint.length && moving === 0 && forced.reached >= stops && !forced.lost.length && !borderless.length && !small.length && !unreached.length
       ok &&= fine
-      notes.push(`${appearance} ${section}: text below AA (text, values and placeholders${section === "general" ? "; as loaded, unsaved, Region list open, conflict and leave dialog" : ""}) ${low.length ? low.slice(0, 4).join(", ") : "none"}; focus adds a visible indicator on ${focus.reached - focus.lost.length} of ${focus.reached} kit stops${focus.lost.length ? `, none on ${focus.lost.join(", ")}` : ""}, lowest indicator contrast ${focus.min.toFixed(2)}:1${focus.faint.length ? ` (under 3:1 on ${focus.faint.join(", ")})` : ""}; ${moving} kit elements still moving under reduced motion; in forced colors focus outlined on ${forced.reached - forced.lost.length} of ${forced.reached}${borderless.length ? `, controls without a drawn boundary ${borderless.join(", ")}` : ", every control keeps a drawn boundary"}; on a touch screen ${small.length ? `misses ${small.slice(0, 6).join(", ")}` : `every kit target at least 44 px with 16 px input text in ${Object.keys(measured).join(", ")}`}`)
+      notes.push(`${appearance} ${section}: text below AA (text, values and placeholders${section === "general" ? "; as loaded, unsaved, Region list open, conflict and leave dialog" : ""}) ${low.length ? low.slice(0, 4).join(", ") : "none"}; focus adds a visible indicator on ${focus.reached - focus.lost.length} of ${focus.reached} kit stops${focus.lost.length ? `, none on ${focus.lost.join(", ")}` : ""}, lowest indicator contrast ${focus.min.toFixed(2)}:1${focus.faint.length ? ` (under 3:1 on ${focus.faint.join(", ")})` : ""}; ${moving} kit elements still moving under reduced motion; in forced colors focus outlined on ${forced.reached - forced.lost.length} of ${forced.reached}${borderless.length ? `, controls without a drawn boundary ${borderless.join(", ")}` : ", every control keeps a drawn boundary"}; on a touch screen ${small.length ? `misses ${small.slice(0, 6).join(", ")}` : `every kit target at least 44 px with 16 px input text in ${Object.keys(measured).join(", ")}`}${unreached.length ? `; states not reached ${unreached.join(", ")}` : ""}`)
     }
   }
   if (errors.length) {
