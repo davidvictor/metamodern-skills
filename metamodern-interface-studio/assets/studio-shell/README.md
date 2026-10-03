@@ -15,14 +15,15 @@ Open the printed local URL. `npm run build` type checks and builds both the Stud
 
 ## What a product changes
 
-A new Studio changes four things (and gains a fifth, `layouts.json`, as the team saves layouts) and leaves the shell alone. Create it with the skill's `scripts/update-studio.mjs <dir> --create`, which also writes `studio-shell.lock.json` so later shell releases can reach it (see `UPDATING.md`).
+A new Studio changes four things (and gains `layouts.json` and `scenarios.json` as the team saves layouts and states) and leaves the shell alone. Create it with the skill's `scripts/update-studio.mjs <dir> --create`, which also writes `studio-shell.lock.json` so later shell releases can reach it (see `UPDATING.md`).
 
 | File | Change |
 | --- | --- |
 | `src/adapter.ts` | Point `adapter` at the product's adapter declaration. This is the only import of product data in the shell, and a product file: updates never change it. |
 | `studio.config.ts` | The page title, the output folder and any extra pages to build. A product file: updates never change it. |
 | `layouts.json` | Responsive layouts the team saved from the Studio while it ran with `npm run dev`. A product file, written only by the dev server; commit it to share layouts. |
-| `src/adapters/` | Add the product adapter, generated from the manifest and runtime catalog: product name and mark, target fidelity and capabilities, themes, profiles, scenario inputs, areas, scenarios, walkthroughs, comparisons and tokens. The starter's `example.ts` and `synthetic.ts` serve the acceptance suite; keep them with `example/` and `scripts/acceptance.mjs`, or delete all four together and record them as removed with the updater. |
+| `scenarios.json` | Named states the team saved from property edits with Save as scenario while the Studio ran with `npm run dev` (`studio-scenarios/1`). A product file, written only by the dev server; commit it to share them. |
+| `src/adapters/` | Add the product adapter, generated from the manifest and runtime catalog: product name and mark, target fidelity and capabilities, themes, profiles, scenario inputs and component properties, areas, scenarios, walkthroughs, comparisons and tokens. The starter's `example.ts` and `synthetic.ts` serve the acceptance suite; keep them with `example/` and `scripts/acceptance.mjs`, or delete all four together and record them as removed with the updater. |
 | The product's preview entry | A route or document in the product that renders one scenario in isolation and calls `connectStudioFrame` from `src/studio/frame-client.ts`. Set the adapter's `frameEntry` to its URL. Import `connectStudioFrame` from the Studio rather than copying it, so shell updates reach it. Remove the example from `inputs` in `studio.config.ts` when `example/` goes. |
 
 A Studio with no live preview, such as native work with recorded captures only, omits `frameEntry` and supplies `captures` on each scenario. The shell then shows captures, disables what a capture cannot do, and says why.
@@ -46,15 +47,18 @@ src/
     config.ts                the studio.config.ts type
     design.ts                the Design view's draft: parameters to tokens, CSS and fonts; variant and token diff files
     layouts.ts               Responsive layouts, presets and the studio-layouts/1 file
+    properties.ts            component properties: where they apply, links, Compare axes, saved states in the catalog
+    scenarios.ts             saved states and the studio-scenarios/1 file
+    saved.ts                 saved-state ID and value rules that properties.ts and scenarios.ts share
     frame-sync.ts            Responsive sync inside a preview frame (framework free)
   store.tsx                  Studio state, URL selection, per-viewer settings
   App.tsx                    desktop and phone shells, global keys
-  components/studio/         rail, panels, top bar, stage controls, views, Responsive view and canvas, Design view, details, resize handles
+  components/studio/         rail, panels, top bar, stage controls, views, Responsive view and canvas, Design view, details, Properties (loaded on demand), resize handles
   components/ui/             shadcn components (base: Base UI, style: Rhea)
   components/theme-provider.tsx   Studio appearance and brand color
   index.css, studio.css      shadcn tokens plus the Studio extensions
 example/                     synthetic example product preview entry (replace)
-scripts/acceptance.mjs       measures AC-01 to AC-52 in headless Chromium
+scripts/acceptance.mjs       measures AC-01 to AC-60 in headless Chromium
 ```
 
 ## Keep these rules
@@ -64,6 +68,7 @@ scripts/acceptance.mjs       measures AC-01 to AC-52 in headless Chromium
 - Fidelity is always stated (Details, and the top bar for static captures and recreations) and scale is always disclosed (the Zoom control, or a chip under the frame).
 - A broken reference shows as unresolved. Nothing is substituted.
 - Modified means a person changed product state. Clicks that change nothing do not count, and the badge is a state, not a count.
+- Edited means the viewer changed properties of the selected state. It is separate from Modified, and R keeps it; Reset properties clears it.
 
 ## Local edits to generated components
 

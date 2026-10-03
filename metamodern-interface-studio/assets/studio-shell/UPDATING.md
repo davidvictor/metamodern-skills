@@ -8,7 +8,7 @@ node ~/.agents/skills/metamodern-interface-studio/scripts/update-studio.mjs <thi
 
 That reports what would change and writes nothing. Add `--apply` to update; it then installs and runs typecheck, lint, build and, when it can, acceptance. The skill's `references/updating.md` explains blocked files and the lock.
 
-The updater never changes product files: `src/adapter.ts`, `studio.config.ts`, the product's adapter, `layouts.json`, and anything that did not come from the starter. It replaces shell files whole, so change the shell in the skill, not here.
+The updater never changes product files: `src/adapter.ts`, `studio.config.ts`, the product's adapter, `layouts.json`, `scenarios.json`, and anything that did not come from the starter. It replaces shell files whole, so change the shell in the skill, not here.
 
 Each section below lists what a product does by hand when it updates to that version. The updater prints every section between the Studio's version and the new one.
 
@@ -75,3 +75,12 @@ Nothing to do by hand, except for a preview entry that copied `frame-client.ts` 
 - A range input whose maximum is not a whole number of steps sends the last step inside the range (max 10, step 4 sends 8, not 12).
 - A frame whose `diagnostics()` throws or rejects now reports no diagnostics and still becomes ready. A preview entry that copied `frame-client.ts` instead of importing it should copy it again.
 - Compare keeps sides A and B first in a saved set, swaps two sides when one is set to the other's value, and keeps at most four saved values. It shows no more sides than the axis has values, and an axis with fewer than two values is explained instead of loading. `src/studio/compare.ts` is a new shell file.
+
+## 0.11.0
+
+- Scenario inputs can be component properties: `section: "properties"` with `surfaces`, `curated`, `optional`, `readonly` and `note`, and the controls `switch`, `text` (`multiline`, `maxLength`, `shareable`), `number` and `choice`. They appear in Details > Scenario > Properties. A Studio that declares none is unchanged.
+- A property ID must not be one of the Studio's link keys (`view`, `scenario`, `theme`, `profile`, `size`, `tab`, `design`, `layout`, `frames`, `height`, `arrange`, `vp`, `sync`, `edited`); such a property is rejected with a console error. Rename it.
+- `MountInputs.values` may now hold `true` and `false`. A preview entry that only expects strings and numbers should accept booleans for switch properties.
+- To change properties without a remount, pass `update(inputs)` to `connectStudioFrame`; the client then announces `live-values`. Without it each property change mounts a new runtime. After an update the fingerprint and diagnostics still describe the mount. To offer the Code tab, pass `code(inputs)` returning `{ language, text }`, listing only props that differ from their defaults.
+- Saved states land in `scenarios.json` at the Studio root (`studio-scenarios/1`), a product file written only by the dev server; commit it. Generated scenario IDs must not start with `saved.`. A host other than Vite that serves the Studio implements `/__studio/scenarios` as `shell.md` describes.
+- The example gains a Components area with the Task card and its Done state. Checks that counted the example's areas or scenarios should expect them.

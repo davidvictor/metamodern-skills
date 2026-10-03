@@ -17,7 +17,7 @@ test('shell starter ships source only', () => {
   for (const excluded of ['node_modules/', 'dist/', '.git/']) {
     assert.ok(!rel.some((file) => file.startsWith(excluded)), `${excluded} must not be packaged`);
   }
-  for (const required of ['README.md', 'package.json', 'package-lock.json', 'index.html', 'vite.config.ts', 'src/adapter.ts', 'src/studio/types.ts', 'src/studio/protocol.ts', 'src/studio/frame-client.ts', 'src/studio/live-preview.tsx', 'example/index.html', 'example/main.ts', 'src/studio/virtual-list.tsx', 'src/adapters/synthetic.ts', 'scripts/acceptance.mjs', 'studio.config.ts', 'src/studio/config.ts', 'UPDATING.md', 'src/studio/layouts.ts', 'src/studio/frame-sync.ts', 'src/studio/design.ts']) {
+  for (const required of ['README.md', 'package.json', 'package-lock.json', 'index.html', 'vite.config.ts', 'src/adapter.ts', 'src/studio/types.ts', 'src/studio/protocol.ts', 'src/studio/frame-client.ts', 'src/studio/live-preview.tsx', 'example/index.html', 'example/main.ts', 'src/studio/virtual-list.tsx', 'src/adapters/synthetic.ts', 'scripts/acceptance.mjs', 'studio.config.ts', 'src/studio/config.ts', 'UPDATING.md', 'src/studio/layouts.ts', 'src/studio/frame-sync.ts', 'src/studio/design.ts', 'src/studio/properties.ts', 'src/studio/scenarios.ts', 'src/components/studio/properties.tsx']) {
     assert.ok(rel.includes(required), `${required} is missing`);
   }
 });
@@ -82,7 +82,7 @@ test('modified is a state set by real changes, not a click count', () => {
 
 test('acceptance script covers every shell criterion', () => {
   const script = read('scripts/acceptance.mjs');
-  for (let i = 1; i <= 17; i++) assert.match(script, new RegExp(`"AC-${String(i).padStart(2, '0')}"`), `AC-${i} is not checked`);
+  for (let i = 1; i <= 60; i++) assert.match(script, new RegExp(`"AC-${String(i).padStart(2, '0')}"`), `AC-${i} is not checked`);
   assert.match(read('package.json'), /"acceptance": "node scripts\/acceptance\.mjs"/);
   assert.doesNotMatch(read('package.json'), /"playwright"/, 'Playwright stays optional');
 });

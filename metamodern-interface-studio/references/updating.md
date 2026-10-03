@@ -8,7 +8,7 @@ Every file in a Studio has one owner.
 
 | Owner | Files | The updater |
 | --- | --- | --- |
-| Product | `src/adapter.ts`, `studio.config.ts`, the product adapter under `src/adapters/`, `layouts.json`, captures, and every file that did not come from the starter | Never writes them. `src/adapter.ts` and `studio.config.ts` are created once, when missing. |
+| Product | `src/adapter.ts`, `studio.config.ts`, the product adapter under `src/adapters/`, `layouts.json`, `scenarios.json`, captures, and every file that did not come from the starter | Never writes them. `src/adapter.ts` and `studio.config.ts` are created once, when missing. |
 | Shell | Every other starter file: `src/studio/`, `src/components/`, `src/store.tsx`, `src/App.tsx`, the CSS, `index.html`, `vite.config.ts`, the TypeScript and lint configs, `UPDATING.md` | Replaces them whole. A local edit blocks the update. |
 | Shell, optional | `README.md`, `example/`, `src/adapters/example.ts`, `src/adapters/synthetic.ts`, `scripts/acceptance.mjs` | As shell files, but a Studio may delete them on purpose and record that. |
 | Merged | `package.json` | The shell's packages take the shell's versions; packages and scripts the Studio added stay; a script the Studio removed stays removed; a package the previous shell declared and the new one dropped is removed. `name`, `version` and `private` stay the Studio's. |

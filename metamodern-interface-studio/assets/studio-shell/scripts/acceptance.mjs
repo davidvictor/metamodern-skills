@@ -1868,6 +1868,34 @@ const flagged = async (flag, hash) => {
   return page
 }
 
+// AC-53 A Studio with no property inputs renders exactly as 0.10.2, and the initial chunk grows by at most 3 KB gzipped
+await check("AC-53", async () => {
+  // The 0.10.2 studio chunk of the normal build, gzipped as AC-28 measures it (287.0 KB).
+  const BASELINE = 293900
+  const BUDGET = 3072
+  const dir = join(root, ".acceptance", "normal", "assets")
+  const scripts = readdirSync(dir).filter((f) => f.endsWith(".js"))
+  // A split would make the studio chunk look smaller while the initial load grows: expect exactly these chunks.
+  const layout = scripts.map((f) => f.split("-")[0]).sort().join(",")
+  const main = scripts.find((f) => /^studio-.*\.js$/.test(f))
+  const grew = gzipSync(readFileSync(join(dir, main))).length - BASELINE
+  // The stress Studio declares no properties.
+  const p = await open("stress", { hash: "view=inspect&scenario=syn.tasks.2" })
+  await wait(800)
+  const tabs = await details(p).getByRole("tab").allInnerTexts()
+  const section = await p.locator("[data-properties]").count()
+  const picker = await details(p).getByRole("combobox", { name: "State" }).count()
+  const edited = await p.getByText(/Edited ·/).count()
+  const keys = await p.evaluate(() => [...new URLSearchParams(location.hash.slice(1)).keys()].join(","))
+  const values = Object.keys((await frameState(await liveFrame(p))).mounted.values).join(",")
+  const loaded = await p.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name).filter((n) => /properties-|__studio\/scenarios/.test(n)))
+  const stored = await p.evaluate(() => Object.keys(localStorage).filter((k) => k.includes("property-edits")))
+  await p.closeAll()
+  const same = tabs.join() === "Scenario,Fidelity,Evidence" && section === 0 && picker === 0 && edited === 0 && keys === "view,scenario,theme,profile" && values === "density" && loaded.length === 0 && stored.length === 0
+  const ok = same && layout === "canvas,example,properties,protocol,studio" && grew <= BUDGET
+  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against 0.10.2 (budget ${BUDGET})`]
+})
+
 // AC-54 Switch, text, number and choice change the live frame without a remount; booleans arrive as booleans; a choice sends only its ID;
 // a frame without live-values, or whose update throws, is remounted with the new values instead; a value the product cannot mount
 // keeps the previous preview with an error, and the next good value mounts and shows Ready
