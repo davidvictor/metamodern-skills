@@ -25,6 +25,17 @@ const cardFrom = (v: MountInputs["values"]): Card => ({
   assignee: typeof v.assignee === "string" && v.assignee in PEOPLE ? v.assignee : CARD.assignee,
   estimate: typeof v.estimate === "number" ? v.estimate : undefined,
 })
+/** The JSX for the current card, listing only props that differ from the component's defaults. */
+function cardCode(c: Card) {
+  const props = [
+    c.title !== CARD.title && `title=${JSON.stringify(c.title)}`,
+    c.note !== undefined && `note=${JSON.stringify(c.note)}`,
+    c.done && "done",
+    c.assignee !== CARD.assignee && `assignee={people.${c.assignee}}`,
+    c.estimate !== undefined && `estimate={${c.estimate}}`,
+  ].filter(Boolean)
+  return props.length ? `<TaskCard\n  ${props.join("\n  ")}\n/>` : "<TaskCard />"
+}
 type State = {
   scenario: string
   card: Card
@@ -285,6 +296,8 @@ const testing = window as unknown as {
   __studioNoNavigate?: boolean
   /** Stand in for a frame client without live-values. */
   __studioNoLive?: boolean
+  /** Stand in for a frame client without the code capability. */
+  __studioNoCode?: boolean
   /** An update that always throws, so the Studio mounts the values instead. */
   __studioUpdateThrows?: boolean
   /** A card that cannot show the title "Reject this title", in place or when mounted. */
@@ -322,6 +335,7 @@ const frame = connectStudioFrame(
           testing.__studioUpdated = inputs.values
           if (s.scenario.startsWith("components.task-card")) render()
         },
+    code: testing.__studioNoCode ? undefined : (inputs) => ({ language: "tsx", text: cardCode(cardFrom(inputs.values)) }),
     canGoBack: () => s.location.length > 1 || !!s.dialog,
     location: () => here() + (s.dialog ? " (New task)" : ""),
   },

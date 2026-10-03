@@ -2119,6 +2119,55 @@ await check("AC-58", async () => {
   }
 })
 
+// AC-59 A boolean or choice property is a Compare axis; text is not offered
+await check("AC-59", async () => {
+  const p = await open("normal", { hash: `view=compare&scenario=${CARD}` })
+  await p.getByRole("combobox", { name: "Changing axis" }).click()
+  await wait(400)
+  const axes = await p.getByRole("option").allInnerTexts()
+  await p.getByRole("option", { name: "Done", exact: true }).click()
+  await wait(2500)
+  const sides = await p.locator("figcaption").allInnerTexts()
+  const done = await Promise.all((await p.locator(".preview-frame iframe.opacity-100").all()).map(async (e) => (await (await e.elementHandle()).contentFrame()).evaluate(() => document.querySelector(".task-card")?.classList.contains("done"))))
+  await p.getByRole("combobox", { name: "Changing axis" }).click()
+  await p.getByRole("option", { name: "Assignee", exact: true }).click()
+  await wait(2500)
+  const who = await Promise.all((await p.locator(".preview-frame iframe.opacity-100").all()).map(async (e) => (await (await e.elementHandle()).contentFrame()).evaluate(() => document.querySelector(".task-card .who")?.textContent)))
+  await p.closeAll()
+  const ok = axes.includes("Done") && axes.includes("Assignee") && axes.includes("Estimate (hours)") && !axes.includes("Title") && !axes.includes("Note") && !axes.includes("On open") && done.join() === "false,true" && new Set(who).size === 2
+  return [ok ? "pass" : "fail", `axes offered ${axes.join(", ")}; Done sides ${sides.map((x) => x.replace(/\s+/g, " ").trim()).join(" | ")} rendered done ${done.join(" and ")}; Assignee sides showed ${who.join(" and ")}`]
+})
+
+// AC-60 The Code tab appears only with the code capability and copies the snippet
+await check("AC-60", async () => {
+  const p = await open("normal", { hash: `view=inspect&scenario=${CARD}` })
+  await wait(800)
+  await p.evaluate(() => {
+    window.__copied = []
+    navigator.clipboard.writeText = async (t) => void window.__copied.push(t)
+  })
+  await details(p).getByRole("switch", { name: "Done" }).click()
+  await details(p).getByLabel("Title", { exact: true }).fill("Ship it")
+  await wait(600)
+  await details(p).getByRole("tab", { name: "Code" }).click()
+  await wait(800)
+  const shown = await details(p).locator("[data-code]").innerText()
+  await details(p).getByRole("button", { name: "Copy", exact: true }).click()
+  await wait(300)
+  const copied = await p.evaluate(() => window.__copied[0] ?? "")
+  await p.closeAll()
+  const q = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const page = await q.newPage()
+  await frameFlag(page, "__studioNoCode", 0, 5000)
+  await page.goto(servers.normal.url + `#view=inspect&scenario=${CARD}`)
+  await page.waitForSelector("[data-properties]")
+  await wait(1500)
+  const without = await details(page).getByRole("tab").allInnerTexts()
+  await q.close()
+  const ok = /<TaskCard/.test(shown) && /title="Ship it"/.test(shown) && /\bdone\b/.test(shown) && !/assignee/.test(shown) && copied === shown && !without.includes("Code")
+  return [ok ? "pass" : "fail", `with the capability the Code tab showed ${JSON.stringify(shown)} (only changed props) and Copy put the same text on the clipboard (${copied === shown}); a frame without it shows tabs ${without.join(", ")}`]
+})
+
 await browser.close()
 for (const s of Object.values(servers)) s.server.close()
 writeFileSync(join(root, "acceptance-report.json"), JSON.stringify({ at: new Date().toISOString(), results }, null, 2) + "\n")

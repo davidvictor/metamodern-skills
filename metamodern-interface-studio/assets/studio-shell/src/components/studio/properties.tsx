@@ -2,7 +2,8 @@
  * Component properties in Details, loaded only when a scenario has them. Named states stay the unit of
  * review: a property edits the selected state, shows as a difference from it, and changes the live
  * frame without a remount. Save as scenario keeps it as a new named state in scenarios.json (dev
- * server only; a built Studio offers Copy as JSON). Built from the shell's own components.
+ * server only; a built Studio offers Copy as JSON). The Code tab shows the frame's code for the current
+ * values when the frame offers it. Built from the shell's own components.
  */
 import * as React from "react"
 import { ChevronDownIcon, CopyIcon, EllipsisIcon, RotateCcwIcon, SaveIcon } from "lucide-react"
@@ -23,6 +24,7 @@ import { normalizeScenarioInput } from "@/studio/input"
 import { propertiesFor } from "@/studio/properties"
 import { SCENARIOS_MAX_BYTES, savedId, validateScenarios, type SavedScenario } from "@/studio/scenarios"
 import type { InputValue, ScenarioInput } from "@/studio/types"
+import { inspectHandle } from "./preview"
 
 /** Coarse pointers: every row control reaches 44 px and text fields use 16 px text, so phones do not zoom. */
 const TOUCH = "pointer-coarse:min-h-11 pointer-coarse:text-base"
@@ -55,9 +57,9 @@ function useFocusAfter() {
 }
 
 /** The one entry Details loads: the state picker (before the scenario inputs) or the Properties section (after them). */
-export default function Properties({ part }: { part: "picker" | "section" }) {
+export default function Properties({ part }: { part: "picker" | "section" | "code" }) {
   const s = useStudio()
-  return part === "picker" ? <StatePicker /> : <PropertiesSection inputs={propertiesFor(adapter.axes.inputs, s.scenarioObj)} />
+  return part === "picker" ? <StatePicker /> : part === "code" ? <CodePanel /> : <PropertiesSection inputs={propertiesFor(adapter.axes.inputs, s.scenarioObj)} />
 }
 
 /** The named states of this scenario's surface, to move between them without the catalog. */
@@ -440,5 +442,44 @@ function SaveAs({ disabled, initial, onSave }: { disabled: boolean; initial: str
         </Button>
       </PopoverContent>
     </Popover>
+  )
+}
+
+/**
+ * The frame's code for the current values, asked again whenever they change, with a copy button. The request waits a
+ * moment so the values reach the frame first, and typing asks once. Docs and usage stay in the summary.
+ */
+function CodePanel() {
+  const s = useStudio()
+  const [code, setCode] = React.useState<{ language: string; text: string } | null>(null)
+  const key = JSON.stringify([s.scenario, s.edits, s.values, s.preview.fingerprint])
+  const ready = s.preview.status === "ready"
+  React.useEffect(() => {
+    if (!ready) return
+    let live = true
+    const timer = window.setTimeout(() => inspectHandle.current?.code().then((c) => live && setCode(c)), 150)
+    return () => {
+      live = false
+      window.clearTimeout(timer)
+    }
+  }, [key, ready])
+  if (!code) return <p className="text-xs text-muted-foreground">{ready ? "The preview did not return code." : "Waiting for the preview."}</p>
+  const copy = () =>
+    navigator.clipboard.writeText(code.text).then(
+      () => toast("Code copied"),
+      () => toast.error("Couldn't copy", { description: "The browser refused the clipboard." })
+    )
+  return (
+    <>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs text-muted-foreground">{code.language}</span>
+        <Button size="sm" variant="outline" className={TOUCH} onClick={copy}>
+          <CopyIcon /> Copy
+        </Button>
+      </div>
+      <pre data-code className="max-h-96 overflow-auto rounded-lg border bg-muted/40 p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap">
+        {code.text}
+      </pre>
+    </>
   )
 }

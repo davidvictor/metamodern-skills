@@ -115,9 +115,9 @@ export function EditedNow({ spaced }: { spaced?: boolean }) {
   ) : null
 }
 
-// The state picker and the Properties section load only when a scenario has properties.
+// The state picker, the Properties section and the Code tab load only when a scenario has properties.
 const Lazy = React.lazy(() => import("./properties"))
-const Part = (p: { part: "picker" | "section" }) => (
+const Part = (p: { part: "picker" | "section" | "code" }) => (
   <React.Suspense fallback={null}>
     <Lazy {...p} />
   </React.Suspense>
@@ -883,6 +883,8 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
   const i = list.findIndex((x) => x.id === sc.id)
   const st = sc.statuses ?? {}
   const props = hasProperties ? propertiesFor(adapter.axes.inputs, sc) : []
+  // Code lists the props that differ from their defaults: only where a scenario has properties and the Inspect frame offers code.
+  const showCode = props.length > 0 && s.view === "inspect" && !!s.preview.capabilities?.includes("code")
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="grid gap-2 border-b p-4">
@@ -932,6 +934,11 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
           <TabsTrigger value="evidence" className="flex-none">
             Evidence
           </TabsTrigger>
+          {showCode && (
+            <TabsTrigger value="code" className="flex-none">
+              Code
+            </TabsTrigger>
+          )}
         </TabsList>
         <ScrollArea className="min-h-0 flex-1">
           <TabsContent value="scenario" className="grid gap-5 p-4">
@@ -1062,6 +1069,11 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
               <RefreshCwIcon /> Re-check this scenario
             </Button>
           </TabsContent>
+          {showCode && (
+            <TabsContent value="code" className="grid gap-3 p-4">
+              <Part part="code" />
+            </TabsContent>
+          )}
         </ScrollArea>
       </Tabs>
     </div>

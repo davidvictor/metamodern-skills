@@ -89,7 +89,8 @@ test('range inputs and diagnostics are carried by the stable shell contracts', (
   assert.match(types, /format\?: "time"/);
   assert.match(types, /export type FrameDiagnostic/);
   assert.match(read('src/store.tsx'), /i\.control === "range"/, 'a declared range must remain choosable when it has no categorical options');
-  assert.match(read('src/store.tsx'), /input\.presets \?\? \[\]\)\.map\(\(p\) => \(\{ id: String\(p\.value\), label: p\.label \}\)\)/, 'range comparisons use declared preset values rather than an empty categorical list');
+  assert.match(read('src/store.tsx'), /input\?\.control === "range" \|\| input\?\.control === "number"\) return axisValues\(input\)/, 'range comparisons use declared preset values rather than an empty categorical list');
+  assert.match(read('src/studio/properties.ts'), /i\.control === "range" \|\| i\.control === "number"\) return \(i\.presets \?\? \[\]\)\.map\(\(p\) => \(\{ id: String\(p\.value\), label: p\.label \}\)\)/, 'axisValues offers a range its presets');
 
   const protocol = read('src/studio/protocol.ts');
   assert.match(protocol, /design\?: Record<string, string \| number>/);

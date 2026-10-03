@@ -143,10 +143,13 @@ test('every key the Studio writes to or reads from its links is reserved against
   assert.match(store, /i\.placement === "dock" && !isProperty\(i\) && state\.values\[i\.id\] !== undefined\) q\.set/, 'the dock writer never writes a property');
 });
 
-test('properties stay out of scenario inputs, the dock and Compare; they edit without a remount', () => {
+test('properties stay out of scenario inputs and the dock, reach Compare only with named values, and edit without a remount', () => {
   const store = read('src/store.tsx');
-  assert.match(store, /export const choosableFor = [\s\S]{0,120}?i\.readonly \|\| isProperty\(i\)\s*\? false/, 'choosableFor, and so compareAxes, never offers a property');
-  assert.match(store, /export const compareAxes = [\s\S]{0,200}?\.\.\.choosableFor\(sc\)/);
+  assert.match(store, /export const choosableFor = [\s\S]{0,120}?i\.readonly \|\| isProperty\(i\)\s*\? false/, 'choosableFor never offers a property');
+  assert.match(store, /export const compareAxes = [\s\S]{0,200}?\.\.\.\[\.\.\.choosableFor\(sc\), \.\.\.propertiesFor\(A\.axes\.inputs, sc\)\]\.filter\(comparable\)/, 'Compare offers a property only through comparable: never text or readonly');
+  const views = read('src/components/studio/views.tsx');
+  assert.match(views, /propertyIds\.has\(axis\) \? \{ values: s\.values, props: \{ \.\.\.s\.edits, \[axis\]: axisValue\(value\) \} \}/, 'a property axis reaches each side as its own property value, not as an input value');
+  assert.doesNotMatch(views.slice(views.indexOf('export function CompareStage'), views.indexOf('export function CompareStage') + 12000), /setProp\(/, 'Compare never writes a side into the Inspect edits');
   assert.match(store, /i\.placement !== "dock" && !isProperty\(i\) \? \[\[i\.id, i\.default\]\]/, 'a property has no viewer value by default');
   const chrome = read('src/components/studio/chrome.tsx');
   assert.match(chrome, /choosableFor\(sc\)\.some\(\(i\) => i\.placement !== "dock" && !isProperty\(i\)\)/);

@@ -7,7 +7,7 @@ import type { FrameDiagnostic, InputValue, Scenario, ScenarioInput, Token } from
 import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
 import { normalizeScenarioInput } from "@/studio/input"
-import { appliesTo, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, usableSaved, withSaved, type Edits, type LinkHold } from "@/studio/properties"
+import { appliesTo, axisValues, comparable, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, usableSaved, withSaved, type Edits, type LinkHold } from "@/studio/properties"
 import type { SavedScenario, ScenariosFile } from "@/studio/scenarios"
 import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
@@ -250,13 +250,14 @@ export function resolveValues(sc: Scenario | undefined, values: Record<string, I
 }
 /** The same values with the viewer's dock choices removed, for playing a walkthrough exactly as designed. */
 export const withoutLenses = (values: Record<string, InputValue>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
-/** The axes Compare can change for a scenario: theme, profile and every scenario input it uses. */
+/**
+ * The axes Compare can change for a scenario: theme, profile, every input it uses with named values, then its
+ * properties with named values (a switch, options, or a number with presets; text never).
+ */
 export const compareAxes = (sc?: Scenario, draft = false) => [
   { id: "theme", label: A.axes.themeLabel },
   { id: "profile", label: "Profile" },
-  ...choosableFor(sc)
-    .filter((i) => i.control !== "range" || !!i.presets?.length)
-    .map((i) => ({ id: i.id, label: i.label })),
+  ...[...choosableFor(sc), ...propertiesFor(A.axes.inputs, sc)].filter(comparable).map((i) => ({ id: i.id, label: i.label })),
   ...(draft ? [{ id: "design", label: "Design" }] : []),
 ]
 export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: string }[] => {
@@ -264,7 +265,7 @@ export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: s
   if (axis === "profile") return A.axes.profiles.map((p) => ({ id: p.id, label: p.label }))
   if (axis === "design") return [{ id: "built", label: "As built" }, { id: "draft", label: "Draft" }]
   const input = A.axes.inputs.find((i) => i.id === axis)
-  if (input?.control === "range") return (input.presets ?? []).map((p) => ({ id: String(p.value), label: p.label }))
+  if (input?.control === "switch" || input?.control === "range" || input?.control === "number") return axisValues(input)
   return input ? optionsFor(input, sc) : []
 }
 
