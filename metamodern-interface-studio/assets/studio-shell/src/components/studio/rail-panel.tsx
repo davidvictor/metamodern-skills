@@ -16,6 +16,7 @@ import {
   LockIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useCoarse } from "@/hooks/use-mobile"
 
 import {
   Sidebar,
@@ -50,6 +51,7 @@ import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
 import { savedComparison } from "@/studio/compare"
 import { ProductMark } from "./bits"
 import { staticProblem } from "./views"
+import { Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
 
 /** Joined filter segments sized to fit a 272 px panel: small type, tight padding, never wider than their column. */
 const SEG = "h-7 min-w-0 gap-1 px-1.5 text-xs"
@@ -64,8 +66,8 @@ export const VIEWS: { id: View; label: string; icon: React.ElementType; key: str
   { id: "design" as View, label: "Design", icon: SwatchBookIcon, key: "5" },
 ].filter((v) => v.id !== "design" || hasDesign)
 
-/** A rail item: square, full rail width, straight marker on the edge, inset focus ring. */
-function RailButton({ label, keyHint, labels, active, onClick, children }: { label: string; keyHint?: string; labels?: boolean; active?: boolean; onClick: () => void; children: React.ReactNode }) {
+/** A rail item: square, full rail width, straight marker on the edge, inset focus ring. A hint (why a workspace module cannot open) shows in its tooltip. */
+export function RailButton({ label, keyHint, labels, active, hint, onClick, children }: { label: string; keyHint?: string; labels?: boolean; active?: boolean; hint?: string; onClick: () => void; children: React.ReactNode }) {
   const button = (
     <button
       type="button"
@@ -75,20 +77,29 @@ function RailButton({ label, keyHint, labels, active, onClick, children }: { lab
       className={cn(
         "relative flex w-full shrink-0 items-center justify-center text-sidebar-foreground/65 outline-none transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:text-sidebar-foreground focus-visible:shadow-[inset_0_0_0_2px_var(--sidebar-ring)] [&_svg]:size-[18px] [&_svg]:shrink-0",
         labels ? "h-14 flex-col gap-1 text-[10.5px] font-medium" : "h-10",
-        active && "bg-sidebar-accent text-sidebar-primary before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-sidebar-primary hover:text-sidebar-primary"
+        active && "bg-sidebar-accent text-(--rail-active) before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-sidebar-primary hover:text-(--rail-active)"
       )}
     >
       {children}
       {labels && <span>{label}</span>}
     </button>
   )
-  if (labels) return button
+  if (labels && !hint) return button
   return (
     <Tooltip>
       <TooltipTrigger render={button} />
-      <TooltipContent side="right">
-        {label}
-        {keyHint && <Kbd>{keyHint}</Kbd>}
+      <TooltipContent side="right" className={cn(hint && "max-w-64 flex-col items-start")}>
+        {hint ? (
+          <>
+            <span className="font-medium">{label}</span>
+            <span>{hint}</span>
+          </>
+        ) : (
+          <>
+            {label}
+            {keyHint && <Kbd>{keyHint}</Kbd>}
+          </>
+        )}
       </TooltipContent>
     </Tooltip>
   )
@@ -109,11 +120,14 @@ export function Rail({ labels }: { labels: boolean }) {
       <SidebarContent>
         <nav aria-label="Views" className="flex flex-col py-1">
           {VIEWS.map((v) => (
-            <RailButton key={v.id} label={v.label} keyHint={v.key} labels={labels} active={s.view === v.id} onClick={() => s.setView(v.id)}>
+            <RailButton key={v.id} label={v.label} keyHint={v.key} labels={labels} active={!s.module && s.view === v.id} onClick={() => s.setView(v.id)}>
               <v.icon />
             </RailButton>
           ))}
         </nav>
+        <Slot>
+          <WorkspaceNav part="rail" labels={labels} />
+        </Slot>
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0 pb-2">
         <RailButton label="Go to scenario" keyHint="⌘K" onClick={() => s.set({ commandOpen: true })}>
@@ -205,7 +219,9 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
   const found = rows.findIndex((r) => r.key === (activeKey ?? s.scenarioObj.id))
   const active = found >= 0 ? found : 0
   const handle = React.useRef<VirtualListHandle>(null)
-  const heightOf = React.useCallback((i: number) => (rows[i].kind === "area" ? AREA_ROW : SCENARIO_ROW), [rows])
+  // On a touch screen every row is a 44 px target.
+  const coarse = useCoarse()
+  const heightOf = React.useCallback((i: number) => (coarse ? 44 : rows[i].kind === "area" ? AREA_ROW : SCENARIO_ROW), [rows, coarse])
   const toggle = (areaId: string) => setOpenAreas((m) => ({ ...m, [areaId]: !m[areaId] }))
   const reveal = rows.findIndex((r) => r.key === s.scenarioObj.id)
   return (
@@ -495,13 +511,21 @@ export function ContextPanel() {
   const s = useStudio()
   return (
     <Sidebar collapsible="none" className="hidden flex-1 md:flex">
-      <div key={s.view} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-left-1 duration-200">
-        {s.view === "inspect" && <CatalogPanel />}
-        {s.view === "compare" && <CatalogPanel compare />}
-        {s.view === "gallery" && <GalleryPanel />}
-        {s.view === "present" && <PresentPanel />}
-        {s.view === "design" && <DesignPanel />}
-        {s.view === "responsive" && <ResponsiveSide />}
+      <div key={s.module ? "module" : s.view} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-left-1 duration-200">
+        {s.module ? (
+          <Slot>
+            <WorkspacePage part="panel" />
+          </Slot>
+        ) : (
+          <>
+            {s.view === "inspect" && <CatalogPanel />}
+            {s.view === "compare" && <CatalogPanel compare />}
+            {s.view === "gallery" && <GalleryPanel />}
+            {s.view === "present" && <PresentPanel />}
+            {s.view === "design" && <DesignPanel />}
+            {s.view === "responsive" && <ResponsiveSide />}
+          </>
+        )}
       </div>
     </Sidebar>
   )
@@ -511,12 +535,20 @@ export function MobilePanel() {
   const s = useStudio()
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-sidebar text-sidebar-foreground">
-      {s.view === "inspect" && <CatalogPanel />}
-      {s.view === "compare" && <CatalogPanel compare />}
-      {s.view === "gallery" && <GalleryPanel />}
-      {s.view === "present" && <PresentPanel />}
-      {s.view === "design" && <DesignPanel />}
-      {s.view === "responsive" && <ResponsiveSide />}
+      {s.module ? (
+        <Slot>
+          <WorkspacePage part="panel" />
+        </Slot>
+      ) : (
+        <>
+          {s.view === "inspect" && <CatalogPanel />}
+          {s.view === "compare" && <CatalogPanel compare />}
+          {s.view === "gallery" && <GalleryPanel />}
+          {s.view === "present" && <PresentPanel />}
+          {s.view === "design" && <DesignPanel />}
+          {s.view === "responsive" && <ResponsiveSide />}
+        </>
+      )}
     </div>
   )
 }

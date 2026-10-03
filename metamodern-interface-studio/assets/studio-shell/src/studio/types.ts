@@ -307,6 +307,50 @@ export type FrameDiagnostic = {
   note?: string
 }
 
+/** The fixed icon set workspace modules choose from; the kit draws them (src/kit/icons.tsx). */
+export type StudioIcon =
+  | "activity"
+  | "boxes"
+  | "database"
+  | "file-text"
+  | "flag"
+  | "globe"
+  | "key"
+  | "languages"
+  | "layers"
+  | "mail"
+  | "plug"
+  | "server"
+  | "settings"
+  | "shield"
+  | "table"
+  | "terminal"
+  | "users"
+  | "wrench"
+
+/** An operation a workspace module may call, and whether it reads or writes. Anything a module did not declare is refused before a request. */
+export type WorkspaceOperationUse = { name: string; kind: "read" | "write" }
+
+export type WorkspaceModuleDeclaration = {
+  /** Stable ID: lowercase letters, digits and hyphens. Links carry it as `module=`. */
+  id: string
+  label: string
+  icon: StudioIcon
+  /** Listed in the context panel and Go to; links carry the ID as `section=`. */
+  sections?: { id: string; label: string }[]
+  /** Operation names this module may call; anything else is refused. */
+  uses: WorkspaceOperationUse[]
+  /** A reason, shown instead of the module. */
+  unavailable?: string
+}
+
+/** Product workspace tools beside the views (the skill's references/workspace.md). Data only: module code lives in src/workspace/index.ts. */
+export type WorkspaceDeclaration = {
+  /** Same-origin base URL of the host's operation endpoints. Without it every module is unavailable with the reason. */
+  operations?: string
+  modules: WorkspaceModuleDeclaration[]
+}
+
 export type StudioAdapter = {
   id: string
   version: string
@@ -369,4 +413,6 @@ export type StudioAdapter = {
   design?: { parameters: DesignParameter[] }
   /** Anything the Studio changes about product rendering, disclosed on every preview. */
   presentationOverrides?: { id: string; label: string }[]
+  /** Product workspace tools beside the views, declared as data (references/workspace.md). Without it the Studio has no workspace. */
+  workspace?: WorkspaceDeclaration
 }

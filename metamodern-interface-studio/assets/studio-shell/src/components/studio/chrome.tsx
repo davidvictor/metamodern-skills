@@ -24,6 +24,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { useCoarse } from "@/hooks/use-mobile"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -54,6 +55,7 @@ import type { CapabilityDimension, InputValue } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
 import { navigationHint, stepZoom, zoomTarget, type ZoomApi } from "./stage-nav"
+import { Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
 
 async function copyLink() {
   try {
@@ -155,6 +157,20 @@ function MobileFold({ mobile, open, onOpenChange, children }: { mobile?: boolean
 export function TopBar({ mobile }: { mobile?: boolean }) {
   const s = useStudio()
   const [more, setMore] = React.useState(false)
+  // A narrow top bar on a touch screen (a tablet with the panel open) folds its actions as a phone does, so 44 px targets fit.
+  const bar = React.useRef<HTMLElement>(null)
+  const [narrowBar, setNarrowBar] = React.useState(false)
+  React.useLayoutEffect(() => {
+    const el = bar.current
+    if (!el || mobile) return
+    // Measure before the first paint, so a narrow bar never shows its actions unfolded.
+    setNarrowBar(el.clientWidth < 576)
+    const ro = new ResizeObserver(() => setNarrowBar(el.clientWidth < 576))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [mobile])
+  const coarse = useCoarse()
+  const fold = mobile || (narrowBar && coarse)
   const { theme, setTheme } = useTheme()
   const viewLabel = {
     inspect: "Inspect",
@@ -165,7 +181,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
     design: "Design",
   }[s.view]
   return (
-    <header className="flex h-12 shrink-0 items-center gap-1.5 border-b bg-background px-2 md:gap-2 md:px-3">
+    <header ref={bar} className="@container/header flex h-12 shrink-0 items-center gap-1.5 border-b bg-background px-2 md:gap-2 md:px-3">
       {!mobile && (
         <Tip label={s.panelOpen ? "Hide panel" : "Show panel"} keys={["⌘", "B"]}>
           <Button variant="ghost" size="icon-sm" aria-expanded={s.panelOpen} onClick={() => s.set({ panelOpen: !s.panelOpen })} aria-label={s.panelOpen ? "Hide panel" : "Show panel"} className="text-muted-foreground hover:text-foreground">
@@ -178,37 +194,57 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
           <ProductMark width={17} />
         </span>
       )}
-      <Breadcrumb className="min-w-0">
+      <Breadcrumb className="min-w-0 overflow-hidden">
         <BreadcrumbList className="flex-nowrap">
-          <BreadcrumbItem className="hidden lg:inline-flex">{adapter.product.name}</BreadcrumbItem>
+          <BreadcrumbItem className="hidden whitespace-nowrap lg:inline-flex">{adapter.product.name}</BreadcrumbItem>
           <BreadcrumbSeparator className="hidden lg:inline-flex" />
-          <BreadcrumbItem className="hidden sm:inline-flex">{viewLabel}</BreadcrumbItem>
-          {(s.view === "inspect" || s.view === "compare") && (
+          {s.module ? (
+            <Slot>
+              <WorkspaceNav part="crumbs" />
+            </Slot>
+          ) : (
             <>
-              <BreadcrumbSeparator className="hidden sm:inline-flex" />
-              <BreadcrumbItem className="min-w-0">
-                <button className="flex min-w-0 items-center gap-1 rounded-md px-1 py-0.5 text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.set({ commandOpen: true })}>
-                  <BreadcrumbPage className="truncate">
-                    {areaLabel(s.scenarioObj.area)}: {s.scenarioObj.label}
-                  </BreadcrumbPage>
-                  <ChevronDownIcon className="size-3.5 opacity-60" />
-                </button>
+              <BreadcrumbItem className="hidden min-w-0 sm:inline-flex">
+                <span className="truncate">{viewLabel}</span>
               </BreadcrumbItem>
+              {(s.view === "inspect" || s.view === "compare") && (
+                <>
+                  <BreadcrumbSeparator className="hidden sm:inline-flex" />
+                  <BreadcrumbItem className="min-w-0">
+                    <button className="flex min-w-0 items-center gap-1 rounded-md px-1 py-0.5 text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.set({ commandOpen: true })}>
+                      <BreadcrumbPage className="truncate">
+                        {areaLabel(s.scenarioObj.area)}: {s.scenarioObj.label}
+                      </BreadcrumbPage>
+                      <ChevronDownIcon className="size-3.5 opacity-60" />
+                    </button>
+                  </BreadcrumbItem>
+                </>
+              )}
             </>
           )}
         </BreadcrumbList>
       </Breadcrumb>
-      <div className="ml-1 hidden sm:block" aria-live="polite">
-        {s.view === "inspect" && <StatusNow />}
-        {s.view === "inspect" && <EditedNow spaced />}
+      <div className="ml-1 hidden shrink-0 sm:block" aria-live="polite">
+        {s.view === "inspect" && !s.module && <StatusNow />}
+        {/* Edited also shows in Details; a narrow bar leaves it there. */}
+        {s.view === "inspect" && !s.module && (
+          <span className="@max-xl/header:hidden">
+            <EditedNow spaced />
+          </span>
+        )}
       </div>
       {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
-      {s.view === "inspect" && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
-        <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden sm:inline-flex">
+      {s.view === "inspect" && !s.module && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
+        <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden shrink-0 @xl/header:inline-flex">
           {adapter.target.label}
         </FidelityBadge>
       )}
       <div className="ml-auto flex shrink-0 items-center gap-1">
+        {mobile && (
+          <Slot>
+            <WorkspaceNav part="details-button" />
+          </Slot>
+        )}
         {!mobile && (
           <Button variant="outline" size="sm" className="hidden w-52 justify-start gap-2 text-muted-foreground xl:inline-flex" onClick={() => s.set({ commandOpen: true })}>
             <SearchIcon />
@@ -219,7 +255,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
             </KbdGroup>
           </Button>
         )}
-        <MobileFold mobile={mobile} open={more} onOpenChange={setMore}>
+        <MobileFold mobile={fold} open={more} onOpenChange={setMore}>
           <Button
             variant="ghost"
             size="icon-sm"
@@ -273,7 +309,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
             </Button>
           </Tip>
         </MobileFold>
-        {!mobile && (
+        {!mobile && !(s.module && !s.moduleDetails) && (
           <Tip label="Toggle details" keys={["⌘", "."]}>
             <Button variant="ghost" size="icon-sm" aria-pressed={s.detailsOpen} className="aria-pressed:bg-muted" onClick={() => s.set({ detailsOpen: !s.detailsOpen })} aria-label="Toggle details">
               <PanelRightIcon />
@@ -348,11 +384,12 @@ function BrandColor() {
       </div>
       <InputGroup className="h-7 font-mono text-xs">
         <InputGroupAddon className="pl-2">
-          <label className="relative size-3.5 cursor-pointer overflow-hidden rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)]" style={{ background: valid && draft ? draft : "transparent" }}>
+          <label className="relative size-3.5 cursor-pointer overflow-hidden rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)] pointer-coarse:overflow-visible" style={{ background: valid && draft ? draft : "transparent" }}>
             <span className="sr-only">Pick a color</span>
+            {/* On a touch screen the invisible picker reaches 44 px around the swatch. */}
             <input
               type="color"
-              className="absolute inset-0 cursor-pointer opacity-0"
+              className="absolute inset-0 cursor-pointer opacity-0 pointer-coarse:inset-[calc(50%-22px)]"
               value={/^#[0-9a-f]{6}$/i.test(draft) ? draft : "#000000"}
               onChange={(e) => {
                 setDraft(e.target.value)
@@ -824,10 +861,11 @@ export function StageControls({ variant, compact, lookOnly, noZoom, canvasZoom }
       role="toolbar"
       aria-label="Preview controls"
       className={cn(
-        "flex items-center gap-1",
-        variant === "dock" && "pointer-events-auto max-w-full animate-in overflow-x-auto rounded-xl border bg-popover/95 p-1 text-popover-foreground shadow-[var(--dock-shadow)] backdrop-blur-md duration-300 fade-in-0 slide-in-from-bottom-2",
+        // Controls that do not fit wrap onto another row, so every one stays on screen and reachable.
+        "flex flex-wrap items-center gap-1",
+        variant === "dock" && "pointer-events-auto max-w-full animate-in justify-center rounded-xl border bg-popover/95 p-1 text-popover-foreground shadow-[var(--dock-shadow)] backdrop-blur-md duration-300 fade-in-0 slide-in-from-bottom-2",
         variant === "toolbar" && !compact && "w-full border-b bg-background/95 px-2 py-1 backdrop-blur",
-        compact && "w-full justify-between overflow-x-auto"
+        compact && "w-full justify-center"
       )}
     >
       <ToggleGroup value={[paired ? base : s.theme]} onValueChange={(v) => v[0] && (paired ? chooseTheme(v[0]) : s.setTheme(v[0]))} size="sm" spacing={0} aria-label={ax.themeLabel}>
@@ -888,6 +926,12 @@ const DIMENSIONS: [CapabilityDimension, string][] = [
 /** Details: the summary is always visible; Scenario, Fidelity and Evidence as line tabs. */
 export function DetailsContent({ onClose }: { onClose?: () => void }) {
   const s = useStudio()
+  if (s.module)
+    return (
+      <Slot>
+        <WorkspacePage part="details" onClose={onClose} />
+      </Slot>
+    )
   if (s.view === "design" && designTab(s.design.tab) === "tokens") return <TokenEditor />
   const sc = s.scenarioObj
   const list = adapter.scenarios

@@ -13,9 +13,11 @@ npm run dev
 
 Open the printed local URL. `npm run build` type checks and builds both the Studio (`index.html`) and the example preview entry (`example/index.html`) into `dist/`. `npm run lint` and `npm run typecheck` run the static checks. `npm run acceptance` measures the shell against the acceptance criteria in `references/shell.md` (it needs Playwright).
 
+`VITE_STUDIO_ADAPTER=workspace npm run dev` runs the example with its synthetic workspace and mock operations host.
+
 ## What a product changes
 
-A new Studio changes four things (and gains `layouts.json` and `scenarios.json` as the team saves layouts and states) and leaves the shell alone. Create it with the skill's `scripts/update-studio.mjs <dir> --create`, which also writes `studio-shell.lock.json` so later shell releases can reach it (see `UPDATING.md`).
+A new Studio changes four things, five with workspace modules, gains `layouts.json` and `scenarios.json` as the team saves layouts and states, and leaves the shell alone. Create it with the skill's `scripts/update-studio.mjs <dir> --create`, which also writes `studio-shell.lock.json` so later shell releases can reach it (see `UPDATING.md`).
 
 | File | Change |
 | --- | --- |
@@ -23,6 +25,7 @@ A new Studio changes four things (and gains `layouts.json` and `scenarios.json` 
 | `studio.config.ts` | The page title, the output folder and any extra pages to build. A product file: updates never change it. |
 | `layouts.json` | Responsive layouts the team saved from the Studio while it ran with `npm run dev`. A product file, written only by the dev server; commit it to share layouts. |
 | `scenarios.json` | Named states the team saved from property edits with Save as scenario while the Studio ran with `npm run dev` (`studio-scenarios/1`). A product file, written only by the dev server; commit it to share them. |
+| `src/workspace/` | Only when the product asks for workspace tools: map the modules the adapter declares under `workspace` to components with `defineWorkspace`, built from `@studio/kit` and `@studio/workspace` (see `references/workspace.md` in the skill). A product folder: updates create `index.ts`, empty, when it is missing and never change anything in it. |
 | `src/adapters/` | Add the product adapter, generated from the manifest and runtime catalog: product name and mark, target fidelity and capabilities, themes, profiles, scenario inputs and component properties, areas, scenarios, walkthroughs, comparisons and tokens. The starter's `example.ts` and `synthetic.ts` serve the acceptance suite; keep them with `example/` and `scripts/acceptance.mjs`, or delete all four together and record them as removed with the updater. |
 | The product's preview entry | A route or document in the product that renders one scenario in isolation and calls `connectStudioFrame` from `src/studio/frame-client.ts`. Set the adapter's `frameEntry` to its URL. Import `connectStudioFrame` from the Studio rather than copying it, so shell updates reach it. Remove the example from `inputs` in `studio.config.ts` when `example/` goes. |
 
@@ -38,6 +41,9 @@ src/
   adapter.ts                 the one product seam (product file)
   adapters/example.ts        synthetic example adapter (replace)
   adapters/synthetic.ts      stress and capture-only adapters for the acceptance script
+  workspace/index.ts         the product's workspace modules (product file, created empty)
+  kit/                       studio-kit/1, imported by modules as @studio/kit: the shell's components with its floors
+  hooks/use-mobile.ts        phone width, media queries and coarse pointers
   studio/
     types.ts                 adapter declaration types
     protocol.ts              studio-preview/1 messages
@@ -51,6 +57,7 @@ src/
     scenarios.ts             saved states and the studio-scenarios/1 file
     saved.ts                 saved-state ID and value rules that properties.ts and scenarios.ts share
     frame-sync.ts            Responsive sync inside a preview frame (framework free)
+    workspace/               the workspace layer: declaration, operation client, stores, the @studio/workspace API, and the lazily loaded navigation (workspace-nav) and module page (workspace-page)
   store.tsx                  Studio state, URL selection, per-viewer settings
   App.tsx                    desktop and phone shells, global keys
   components/studio/         rail, panels, top bar, stage controls, views, Responsive view and canvas, Design view, details, Properties (loaded on demand), resize handles
@@ -58,7 +65,10 @@ src/
   components/theme-provider.tsx   Studio appearance and brand color
   index.css, studio.css      shadcn tokens plus the Studio extensions
 example/                     synthetic example product preview entry (replace)
-scripts/acceptance.mjs       measures AC-01 to AC-60 in headless Chromium
+example/workspace/           synthetic example workspace and mock operations host for the acceptance suite (remove with example/)
+scripts/acceptance.mjs       measures AC-01 to AC-64 and WS-01 to WS-09 in headless Chromium
+scripts/saved-file.ts        the dev server's layouts and scenarios endpoints, with revisions
+scripts/workspace-boundary.mjs   the lint rule that keeps module code to @studio/kit and @studio/workspace
 ```
 
 ## Keep these rules

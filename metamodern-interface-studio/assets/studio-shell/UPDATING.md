@@ -90,3 +90,25 @@ Nothing to do by hand, except for a preview entry that copied `frame-client.ts` 
 - Saving a state now reads `scenarios.json` first and writes back every entry it does not change exactly as stored, including entries the Studio skips. A saved state can Clear an optional property it sets, and Save writes the state as it now shows, so an unset property is left out.
 - Present mounts a fresh runtime for every step, so two steps on one scenario that differ only in values never share product state.
 - Fix: a Design `font` parameter set to a generic family (`system-ui`, `serif`, `ui-monospace` and the like) is no longer quoted into a missing named font, and requests no Google Fonts stylesheet.
+
+## 0.12.0
+
+Nothing to do by hand for a Studio that declares no workspace, apart from checking the visible changes below. Workspace modules are new and optional.
+
+- A product can add its own tools beside the views, declared under `workspace` in the adapter and built in `src/workspace/` from `@studio/kit` (`studio-kit/1`) and `@studio/workspace` (see `references/workspace.md` in the skill). A Studio whose adapter declares no `workspace` builds without any workspace code, provided Vite can load the adapter at build time; otherwise the build warns and keeps the layer (see `references/workspace.md`).
+- The updater creates `src/workspace/index.ts`, an empty `defineWorkspace({})`, when it is missing. That file and everything in `src/workspace/` belong to the product; updates never compare or change them. `npm run lint` keeps files there to `@studio/kit`, `@studio/workspace`, React and their own imports.
+- A later major kit version is reported as Breaking, and `--apply` writes nothing until `--accept-kit <version>` names it.
+- `module` and `section` are now reserved link keys. A component property with either ID is rejected, as for the other link keys; a dock input with either ID keeps working but no longer travels in links, and the console says so. Rename it.
+- Saving layouts and states now detects a save made elsewhere. A host other than Vite that implements `__studio/layouts` or `__studio/scenarios` should answer `x-studio-revision` on GET and on a successful POST, and honor `x-studio-expected-revision` on POST with a 409 and `{ ok: false, error: { code: "conflict", reason, recoverable: true }, current: { data, revision } }`, writing nothing, as `shell.md` describes, and answer `x-studio-unreadable: 1` on a GET of a file that is not JSON, so the Studio refuses to save over it. A host without revisions keeps working; its saves stay last writer wins. Layout saves now wait until the page has read `layouts.json` ("Loading layouts…"). The dev server's endpoint moved to `scripts/saved-file.ts`, and `tsconfig.node.json` now includes it.
+- `scripts/acceptance.mjs` builds a fourth Studio with the example workspace (`example/workspace/`, removed with `example/`) and measures WS-01 to WS-09, WS-06b and AC-61 to AC-64. The updater skips acceptance, with the reason, when `example/workspace/` is missing. Checks that count the phone bottom bar's buttons should expect a Workspace entry in Details' place when a workspace is declared; Details then moves to the top bar.
+- The core shell keeps its floors on tablets and touch screens, which changes how every Studio looks there:
+  - On a coarse pointer, at any width, targets are at least 44 px and text fields use 16 px text.
+  - The dock wraps onto another row instead of scrolling, so every control stays on screen.
+  - On a touch screen whose top bar is narrower than 576 px, the top bar's actions fold behind one trigger, as on a phone. The breadcrumb truncates instead of being overlapped.
+  - Present's narration bar lays out by its own width, and Tokens stacks the stage under the table below 1024 px, with values on up to two lines.
+  - The phone bottom bar's entries grow with their labels.
+- The fidelity badge (static captures and recreations) and Edited leave any top bar narrower than 576 px, touch or not; both remain in Details.
+- Keyboard focus draws a 2 px outline in `--ring` on buttons, links, tabs, rows, options, menu items and switches, on desktop too. The light `--ring` and `--sidebar-ring` move from OKLCH lightness 0.708 to 0.556, and a light brand color is lowered to at most 0.5 for the ring and the active rail label. The dark active rail label uses the new `--rail-active` token. A product stylesheet that relied on the old light ring, or that styled the dock's scroll, should be checked.
+- Retry on a preview that did not start now mounts it again.
+- The update deletes the stray `src/drag2-after.png` and `src/drag2-mid.png`.
+- `src/hooks/use-mobile.ts` also exports `useMedia` and `useCoarse`.

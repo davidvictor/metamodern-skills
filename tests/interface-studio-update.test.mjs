@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -74,7 +74,7 @@ test('UP-01 a created Studio is stamped with the shell files only', () => {
   assert.equal(lock.shell, '1.0.0');
   const files = tree(dir);
   for (const [path, hash] of Object.entries(lock.files)) assert.equal(files[path], hash, path);
-  for (const product of ['src/adapter.ts', 'studio.config.ts', 'package.json', 'package-lock.json', 'studio-shell.lock.json']) assert.ok(!(product in lock.files), `${product} must not be locked as a shell file`);
+  for (const product of ['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'package.json', 'package-lock.json', 'studio-shell.lock.json']) assert.ok(!(product in lock.files), `${product} must not be locked as a shell file`);
   assert.ok(SHELL_FILE in lock.files && 'vite.config.ts' in lock.files && 'index.html' in lock.files);
   assert.deepEqual(lock.package.scripts, pkgOf(base).scripts);
 });
@@ -276,6 +276,82 @@ test('UP-10 applying refuses uncommitted changes to shell files', (t) => {
   assert.match(human.out, /commit or stash them first/);
   g('commit', '-qam', 'verify script');
   assert.equal(update(dir, next, '1.1.0', '--apply').code, 0);
+});
+
+test('UP-11 the workspace seed is created once, and nothing in src/workspace/ is ever compared or updated', () => {
+  const old = shell('old', (d) => rmSync(join(d, 'src/workspace'), { recursive: true }));
+  const dir = create(old);
+  assert.ok(!existsSync(join(dir, 'src/workspace/index.ts')));
+  const next = shell('next');
+  const r = update(dir, next, '1.1.0', '--apply');
+  assert.equal(r.code, 0, r.err || r.out);
+  assert.ok(r.data.actions.some((a) => a.kind === 'seed' && a.path === 'src/workspace/index.ts'));
+  assert.match(readFileSync(join(dir, 'src/workspace/index.ts'), 'utf8'), /export default defineWorkspace\(\{\}\)/);
+  assert.ok(!Object.keys(lockOf(dir).files).some((p) => p.startsWith('src/workspace/')), 'nothing under src/workspace/ is a shell file');
+  writeFileSync(join(dir, 'src/workspace/index.ts'), 'export default "product"\n');
+  writeFileSync(join(dir, 'src/workspace/env.tsx'), 'export const env = 1\n');
+  const later = shell('later', (d) => {
+    writeFileSync(join(d, 'src/workspace/index.ts'), '// the shell changed its seed\n');
+    writeFileSync(join(d, 'src/workspace/extra.ts'), 'export const extra = 1\n');
+  });
+  const again = update(dir, later, '1.2.0', '--apply');
+  assert.equal(again.code, 0, again.err || again.out);
+  assert.equal(readFileSync(join(dir, 'src/workspace/index.ts'), 'utf8'), 'export default "product"\n');
+  assert.equal(readFileSync(join(dir, 'src/workspace/env.tsx'), 'utf8'), 'export const env = 1\n');
+  assert.ok(!existsSync(join(dir, 'src/workspace/extra.ts')), 'the shell never adds files to the product folder');
+});
+
+test('UP-12 a major kit change is reported as breaking and applied only when accepted', () => {
+  const dir = create(shell('base'));
+  const next = shell('next', (d) => {
+    const f = join(d, 'src/kit/index.ts');
+    writeFileSync(f, readFileSync(f, 'utf8').replace('KIT_VERSION = "studio-kit/1"', 'KIT_VERSION = "studio-kit/2"'));
+  });
+  assert.deepEqual(update(dir, next, '2.0.0').data.kit, { from: 'studio-kit/1', to: 'studio-kit/2' });
+  const human = run([dir, '--shell', next, '--shell-version', '2.0.0', '--skip-checks'], { json: false });
+  assert.match(human.out, /Breaking: the Studio UI kit changes from studio-kit\/1 to studio-kit\/2/);
+  assert.match(human.out, /--accept-kit studio-kit\/2/);
+  const refused = update(dir, next, '2.0.0', '--apply');
+  assert.equal(refused.code, 1);
+  assert.equal(refused.data.applied, false);
+  assert.equal(lockOf(dir).shell, '1.0.0');
+  const refusedHuman = run([dir, '--shell', next, '--shell-version', '2.0.0', '--skip-checks', '--apply'], { json: false });
+  assert.equal(refusedHuman.code, 1);
+  assert.match(refusedHuman.out, /\(nothing written\)/);
+  assert.doesNotMatch(refusedHuman.out, /add --apply/, 'a refused --apply does not ask for --apply');
+  const wrong = update(dir, next, '2.0.0', '--apply', '--accept-kit', 'studio-kit/3');
+  assert.equal(wrong.code, 1, 'a different kit version is not an acceptance');
+  assert.equal(wrong.data.applied, false);
+  assert.equal(lockOf(dir).shell, '1.0.0');
+  const acceptedPlan = run([dir, '--shell', next, '--shell-version', '2.0.0', '--skip-checks', '--accept-kit', 'studio-kit/2'], { json: false });
+  assert.match(acceptedPlan.out, /Breaking: the Studio UI kit changes from studio-kit\/1 to studio-kit\/2/);
+  assert.doesNotMatch(acceptedPlan.out, /Nothing is applied without/);
+  const accepted = update(dir, next, '2.0.0', '--apply', '--accept-kit', 'studio-kit/2');
+  assert.equal(accepted.code, 0, accepted.err || accepted.out);
+  assert.equal(lockOf(dir).shell, '2.0.0');
+  assert.equal(update(dir, next, '2.0.1').data.kit, null, 'the same major needs nothing');
+});
+
+test('UP-13 acceptance is skipped with a reason when the workspace example it loads is missing', (t) => {
+  if (process.platform === 'win32') return t.skip('the stand-in npm is a POSIX shell script');
+  const bin = tmp('npm');
+  writeFileSync(join(bin, 'npm'), '#!/bin/sh\nexit 0\n');
+  chmodSync(join(bin, 'npm'), 0o755);
+  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, PLAYWRIGHT_MODULE: 'stand-in' };
+  const checks = (dir, ...extra) => {
+    const r = spawnSync(process.execPath, [updater, dir, '--shell', starter, '--shell-version', '1.0.0', '--apply', '--json', ...extra], { encoding: 'utf8', env });
+    assert.equal(r.status, 0, r.stderr || r.stdout);
+    return JSON.parse(r.stdout).checks.find((c) => c.name === 'acceptance');
+  };
+  const whole = create(starter);
+  assert.equal(checks(whole).ok, true, 'a Studio with the whole example runs acceptance');
+  for (const missing of ['example/workspace/mock-host.mjs', 'example/workspace/adapter.ts']) {
+    const dir = create(starter);
+    rmSync(join(dir, missing));
+    const acceptance = checks(dir, '--keep', missing, '--reason', 'removed for the test');
+    assert.ok(acceptance.skipped, `acceptance is skipped without ${missing}`);
+    assert.match(acceptance.skipped, /example\/workspace\//);
+  }
 });
 
 test('release fingerprints include the current shell', () => {

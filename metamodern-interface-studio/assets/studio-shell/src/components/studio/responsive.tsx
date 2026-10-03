@@ -32,7 +32,7 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field"
 import { adapter } from "@/adapter"
 import { canSaveLayouts, captureFor, PRESETS, useStudio, type State } from "@/store"
-import { FULL_PAGE_MAX, frameId, MAX_FRAMES, nearestProfile, SHELL_DEVICES, slug, type PresetFrame, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
+import { FULL_PAGE_MAX, frameId, MAX_FRAMES, nearestProfile, SHELL_DEVICES, slug, validateLayouts, type PresetFrame, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import type { LivePreviewHandle, LiveStatus } from "@/studio/live-preview"
 import type { SyncEvent } from "@/studio/protocol"
 import { Switch } from "@/components/ui/switch"
@@ -75,6 +75,13 @@ type SyncState = {
   out: Record<string, string>
 }
 const SyncContext = React.createContext<SyncState | null>(null)
+
+/** Why the dev server's layouts cannot be saved yet, by how far layouts.json has been read. */
+const NOT_SAVABLE: Record<Exclude<State["layoutsLoad"], "ready">, string> = {
+  loading: "Loading layouts…",
+  unreadable: "layouts.json is not a valid layouts file (a merge conflict, say). Fix or remove it, then reload the Studio to save.",
+  failed: "The saved layouts could not be read. Reload the Studio to save.",
+}
 const channelOf = (e: SyncEvent): keyof SyncChannels => (e.kind === "scroll" ? "scroll" : e.kind === "navigate" ? "navigation" : "interaction")
 const capOf = { scroll: "sync-scroll", interaction: "sync-interaction", navigation: "sync-navigation" } as const
 
@@ -85,13 +92,27 @@ function useResponsive() {
   const all = [...PRESETS, ...s.saved]
   const isSaved = s.saved.some((l) => l.id === r.layout)
   const toLayout = (id: string, name: string): ResponsiveLayout => ({ id, name, frames: r.frames, arrangement: r.arrangement, height: r.height, ...(r.viewport ? { viewport: r.viewport } : {}), sync: r.sync })
+  /*
+   * Sent with the revision of layouts.json this page last read or wrote. When the file changed elsewhere since, the
+   * dev server writes nothing and answers the file as it now is: the list shows that, the working layout keeps its
+   * unsaved edits, and the person is told.
+   */
+  const blocked = !canSaveLayouts ? "Saving needs the local Studio (npm run dev). A published Studio reads its saved layouts but cannot change them." : s.layoutsLoad === "ready" ? null : NOT_SAVABLE[s.layoutsLoad]
   const persist = async (next: ResponsiveLayout[]) => {
-    const res = await fetch("__studio/layouts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ schema: "studio-layouts/1", layouts: next }) })
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      throw new Error(body.error ?? `The Studio refused the save (${res.status})`)
+    // Until the page has read layouts.json (and its revision) a save could overwrite a change it never saw.
+    if (blocked) throw new Error(blocked)
+    const revision = s.layoutsRevision
+    const res = await fetch("__studio/layouts", { method: "POST", headers: { "content-type": "application/json", ...(revision ? { "x-studio-expected-revision": revision } : {}) }, body: JSON.stringify({ schema: "studio-layouts/1", layouts: next }) })
+    const body = res.ok ? null : await res.json().catch(() => ({}))
+    if (res.status === 409) {
+      // data is null when layouts.json no longer reads as JSON (a merge conflict, say): the list stays as it is.
+      const latest = body?.current
+      const readable = !!latest && !validateLayouts(latest.data).length
+      if (latest && typeof latest.revision === "string") s.set(readable ? { saved: latest.data.layouts, layoutsRevision: latest.revision } : { layoutsRevision: latest.revision, layoutsLoad: "unreadable" })
+      throw new Error(readable ? "Saved layouts changed elsewhere. The latest is loaded; your change was not saved." : "layouts.json changed elsewhere and is not a valid layouts file. Your change was not saved.")
     }
-    s.set({ saved: next })
+    if (!res.ok) throw new Error(body.error ?? `The Studio refused the save (${res.status})`)
+    s.set({ saved: next, layoutsRevision: res.headers.get("x-studio-revision") })
   }
   const open = (layout: ResponsiveLayout) => {
     const before = r
@@ -105,7 +126,7 @@ function useResponsive() {
     // Each frame starts where it sits in the row, at the row's scale.
     else set({ arrangement: "canvas", viewport: undefined, frames: r.frames.map(({ x: _x, y: _y, ...f }) => (void _x, void _y, f)) })
   }
-  return { s, r, set, all, isSaved, toLayout, persist, open, arrange }
+  return { s, r, set, all, isSaved, toLayout, persist, blocked, open, arrange }
 }
 
 /* ---------------- panel ---------------- */
@@ -142,8 +163,8 @@ function SaveAs({ trigger, title, initial, onSave }: { trigger: React.ReactEleme
 
 /** The working layout's actions: save, save as, rename, duplicate, delete, revert. */
 export function LayoutActions() {
-  const { s, r, isSaved, toLayout, persist, open, all } = useResponsive()
-  const why = canSaveLayouts ? undefined : "Saving needs the local Studio (npm run dev). A published Studio reads its saved layouts but cannot change them."
+  const { s, r, isSaved, toLayout, persist, blocked, open, all } = useResponsive()
+  const why = blocked ?? undefined
   const unique = (name: string) => {
     let id = slug(name)
     for (let n = 2; all.some((l) => l.id === id); n++) id = `${slug(name)}-${n}`
@@ -155,13 +176,18 @@ export function LayoutActions() {
     s.set({ responsive: { ...r, layout: layout.id, name, dirty: false } })
     toast.success(`Saved ${name}`, { description: "In this Studio's layouts.json. Commit it to share." })
   }
+  // One save at a time: a second click would otherwise be refused against the first one's write.
+  const [saving, setSaving] = React.useState(false)
   const save = async () => {
+    setSaving(true)
     try {
       await persist(s.saved.map((l) => (l.id === r.layout ? toLayout(l.id, l.name) : l)))
       s.set({ responsive: { ...r, dirty: false } })
       toast.success(`Saved ${r.name}`)
     } catch (e) {
       toast.error("Not saved", { description: e instanceof Error ? e.message : String(e) })
+    } finally {
+      setSaving(false)
     }
   }
   const rename = async (name: string) => {
@@ -191,11 +217,11 @@ export function LayoutActions() {
       </div>
       <div className="flex flex-wrap gap-1.5">
         {isSaved && (
-          <Button size="sm" variant="outline" disabled={!canSaveLayouts || !r.dirty} title={why} onClick={save}>
+          <Button size="sm" variant="outline" disabled={!!why || !r.dirty || saving} title={why} onClick={save}>
             <SaveIcon /> Save
           </Button>
         )}
-        <SaveAs title="Save as a new layout" initial={isSaved ? `${r.name} copy` : `${r.name} (mine)`} onSave={saveAs} trigger={<Button size="sm" variant={isSaved ? "ghost" : "outline"} disabled={!canSaveLayouts} title={why}>{isSaved ? "Save as" : <><SaveIcon /> Save as</>}</Button>} />
+        <SaveAs title="Save as a new layout" initial={isSaved ? `${r.name} copy` : `${r.name} (mine)`} onSave={saveAs} trigger={<Button size="sm" variant={isSaved ? "ghost" : "outline"} disabled={!!why} title={why}>{isSaved ? "Save as" : <><SaveIcon /> Save as</>}</Button>} />
         {r.dirty && (
           <Button size="sm" variant="ghost" onClick={revert}>
             <RotateCcwIcon /> Revert
@@ -207,15 +233,15 @@ export function LayoutActions() {
               <EllipsisIcon />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem disabled={!canSaveLayouts} onClick={() => { const name = window.prompt("Rename the layout", r.name)?.trim(); if (name) rename(name).catch((e) => toast.error("Not renamed", { description: String(e) })) }}>Rename</DropdownMenuItem>
-              <DropdownMenuItem disabled={!canSaveLayouts} onClick={() => saveAs(`${r.name} copy`).catch((e) => toast.error("Not duplicated", { description: String(e) }))}>Duplicate</DropdownMenuItem>
+              <DropdownMenuItem disabled={!!why} onClick={() => { const name = window.prompt("Rename the layout", r.name)?.trim(); if (name) rename(name).catch((e) => toast.error("Not renamed", { description: e instanceof Error ? e.message : String(e) })) }}>Rename</DropdownMenuItem>
+              <DropdownMenuItem disabled={!!why} onClick={() => saveAs(`${r.name} copy`).catch((e) => toast.error("Not duplicated", { description: e instanceof Error ? e.message : String(e) }))}>Duplicate</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" disabled={!canSaveLayouts} onClick={remove}>Delete</DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" disabled={!!why} onClick={remove}>Delete</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
       </div>
-      {!canSaveLayouts && <p className="text-[11px] text-muted-foreground">{why}</p>}
+      {why && <p className="text-[11px] text-muted-foreground">{why}</p>}
     </div>
   )
 }

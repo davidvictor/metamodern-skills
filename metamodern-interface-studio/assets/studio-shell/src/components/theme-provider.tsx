@@ -65,9 +65,11 @@ function applyBrand(color: string | null) {
   }
   const fg = readableOn(color)
   const lifted = `oklch(from ${color} max(l, 0.72) c h)`
+  // In light appearance the focus ring and the active rail label use the brand lowered to at most L 0.5, so a pale brand still reaches 3:1 and 4.5:1.
+  const lowered = `oklch(from ${color} min(l, 0.5) c h)`
   el.textContent = `
 :root { --mark-fill: ${color}; --mark-ink: ${fg}; }
-:root:not(.dark) { --primary: ${color}; --primary-foreground: ${fg}; --ring: ${color}; --sidebar-primary: ${color}; --sidebar-primary-foreground: ${fg}; --sidebar-ring: ${color}; }
+:root:not(.dark) { --primary: ${color}; --primary-foreground: ${fg}; --ring: ${lowered}; --sidebar-primary: ${color}; --sidebar-primary-foreground: ${fg}; --sidebar-ring: ${lowered}; --rail-active: ${lowered}; }
 :root.dark { --primary: ${lifted}; --primary-foreground: oklch(0.18 0 0); --ring: ${lifted}; --sidebar-primary: ${lifted}; --sidebar-primary-foreground: oklch(0.18 0 0); --sidebar-ring: ${lifted}; }`
 }
 

@@ -123,16 +123,50 @@
 .studio-canvas .react-flow__node { cursor: default; }
 .studio-canvas .react-flow__node.selected .preview-frame { outline: 2px solid var(--anchor); outline-offset: 3px; }
 
+/*
+ * Coarse pointers, at any width (a tablet is not a phone): every Studio target reaches 44 px and text fields use
+ * 16 px text so a touch screen does not zoom. A switch, checkbox or radio keeps its drawing and grows its hit area. The panel's
+ * edge handle stays narrow so it never covers the panel or the stage; the top bar's Hide panel is its target.
+ */
 @media (pointer: coarse) {
-  header button,
-  [role="toolbar"] button,
-  nav[aria-label="Views"] button,
-  [aria-label="Studio"] button,
-  [data-frame] figcaption button,
-  ul[aria-label="Frames"] button { min-height: 44px; min-width: 44px; }
+  :where(button, a[href], summary, select, textarea, [role="button"], [role="tab"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="combobox"], [data-slot="input"], [data-slot="input-group"], [data-slot="input-group-control"], input[type="color"]):not([role="switch"], [role="checkbox"], [role="radio"], [data-sidebar="rail"]) { min-height: 44px; min-width: 44px; }
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="hidden"], [type="file"]), textarea, select { font-size: 16px; }
+  :is([role="switch"], [role="checkbox"], [role="radio"])::after { inset-block: min(-0.5rem, calc(50% - 22px)); inset-inline: min(-0.75rem, calc(50% - 22px)); }
+  [data-slot="slider-thumb"]::after { content: ""; position: absolute; inset: calc(50% - 22px); }
+  [data-slot="tabs-list"] { height: auto; }
+  /* A count beside a taller row stays centered on it. */
+  [data-sidebar="menu-badge"] { top: calc(50% - 10px); }
   [data-frame] figcaption { height: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .preview-frame, .preview-img, .panel-slide, .anchor-ring { transition: none !important; animation: none !important; }
 }
+
+/*
+ * Keyboard focus in the core shell: one indicator, a 2 px outline in --ring (3:1 or more on the Studio's grounds in both
+ * appearances) that replaces the controls' faint rings and sits against their border. Rows, options, menu items, tabs and the
+ * rail draw it inside, where a clipping list would cut it, in place of their inset ring. Text fields keep their border and ring.
+ */
+:where(button, a[href], summary, [tabindex="0"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"], [role="row"], [role="option"], [role^="menuitem"]):focus-visible:not(input, textarea, select, iframe) { outline: 2px solid var(--ring); outline-offset: 0; --tw-ring-shadow: 0 0 #0000; }
+:is([role="row"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="tab"], [aria-label="Studio"] button):focus-visible { outline-offset: -2px; --tw-shadow: 0 0 #0000; }
+@media (forced-colors: active) {
+  :focus-visible { outline-color: Highlight; }
+}
+/* The active rail item: the brand accent, lifted in dark so its label reaches 4.5:1 on the active tile. */
+:root { --rail-active: var(--sidebar-primary); }
+.dark { --rail-active: color-mix(in oklch, var(--sidebar-primary), white 50%); }
+
+/* Studio UI kit (studio-kit/1): focus stays visible in forced colors, and nothing moves under reduced motion. */
+[data-kit] :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+/* Rows, options and column headers sit inside clipping containers, so their ring is drawn inside. */
+[data-kit] [role="row"]:focus-visible, [data-kit] [role="option"]:focus-visible, [data-kit] [role="columnheader"] :focus-visible { outline-offset: -2px; }
+@media (forced-colors: active) {
+  [data-kit] :focus-visible { outline-color: Highlight; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-kit], [data-kit] * { animation: none !important; transition: none !important; }
+}
+/* Measured floors: the kit's ring (--ring) reaches 3:1 or more against the page, card, popover and muted grounds in both appearances. */
+[data-kit] { --ring: oklch(0.556 0 0); --kit-danger-ink: oklch(0.5 0.19 27); }
+.dark [data-kit] { --kit-danger-ink: var(--danger); }

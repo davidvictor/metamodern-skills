@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import { stripTypeScriptTypes } from 'node:module';
+import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = fileURLToPath(new URL('../metamodern-interface-studio/assets/studio-shell/', import.meta.url));
 const files = (dir) => readdirSync(dir).flatMap((name) => {
@@ -135,12 +139,21 @@ test('every key the Studio writes to or reads from its links is reserved against
   assert.ok(ctor, 'the link writer starts from a URLSearchParams object');
   for (const m of ctor[1].matchAll(/(\w+):/g)) keys.add(m[1]);
   assert.ok(keys.has('edited') && keys.has('view') && keys.has('size'), `found ${[...keys].join(', ')}`);
+  // An open workspace module's link is written by the store too, with q.set, so the scan above sees its keys.
+  assert.ok(keys.has('module') && keys.has('section'), `the store's module link writer uses q.set("module") and q.set("section"); found ${[...keys].join(', ')}`);
+  assert.doesNotMatch(store, /new URLSearchParams\([^)]*\?\s*\{/, 'no link is written from a conditional object literal the scan cannot read');
+  // Workspace places (module=, section=) are read by the workspace link module before any workspace code loads.
+  const link = read('src/studio/workspace/link.ts');
+  const linkKeys = [...link.matchAll(/\bq\.(?:get|set)\("([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(linkKeys.includes('module') && linkKeys.includes('section'), `found ${linkKeys.join(', ')} in link.ts`);
+  for (const key of linkKeys) keys.add(key);
   const input = read('src/studio/input.ts');
   const reserved = JSON.parse(/RESERVED_LINK_KEYS: readonly string\[\] = (\[[^\]]*\])/.exec(input)[1]);
   for (const key of keys) assert.ok(reserved.includes(key), `link key "${key}" is not in RESERVED_LINK_KEYS`);
   // Property values reach the link only through linkEdits, which leaves out readonly and reserved-key properties.
   assert.match(store, /linkEdits\(A\.axes\.inputs/);
-  assert.match(store, /i\.placement === "dock" && !isProperty\(i\) && state\.values\[i\.id\] !== undefined\) q\.set/, 'the dock writer never writes a property');
+  assert.match(store, /i\.placement === "dock" && !isProperty\(i\) && !RESERVED_LINK_KEYS\.includes\(i\.id\) && state\.values\[i\.id\] !== undefined\) q\.set/, 'the dock writer never writes a property or a reserved key');
+  assert.match(store, /i\.placement === "dock" && !isProperty\(i\) && !RESERVED_LINK_KEYS\.includes\(i\.id\)\)\.flatMap/, 'the dock reader never reads a reserved key');
 });
 
 test('properties stay out of scenario inputs and the dock, reach Compare only with named values, and edit without a remount', () => {
@@ -192,6 +205,94 @@ test('saved states share the layouts guards and stay pure', () => {
   assert.doesNotMatch(read('src/studio/properties.ts'), /^import \{[^}]*\} from "\.\/scenarios"/m, 'the catalog model takes only types from scenarios.ts, so the validator stays in the lazy chunk');
 });
 
+test('saved files carry a revision: a stale save gets 409 with the current file and writes nothing', async (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'studio-saved-file-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  // Loaded as the dev server loads it, without a TypeScript toolchain.
+  const module = join(dir, 'saved-file.mjs');
+  writeFileSync(module, stripTypeScriptTypes(read('scripts/saved-file.ts'), { mode: 'strip', sourceMap: false }));
+  const { savedFileMiddleware, EMPTY_REVISION } = await import(pathToFileURL(module).href);
+  const file = join(dir, 'layouts.json');
+  const middleware = savedFileMiddleware({ file, schema: 'studio-layouts/1', list: 'layouts', maxBytes: 1024, validate: (d) => (d && Array.isArray(d.layouts) ? [] : ['no layouts']), forbidden: 'Only this Studio can save its layouts', tooBig: 'Too big' });
+  // Mounted as vite.config.ts mounts it: the connect mount strips the route from req.url.
+  const server = createServer((req, res) => middleware(req, res));
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const get = async () => {
+    const res = await fetch(`${base}/__studio/layouts`);
+    return { status: res.status, revision: res.headers.get('x-studio-revision'), unreadable: res.headers.get('x-studio-unreadable'), body: await res.json() };
+  };
+  const post = async (data, headers = {}) => {
+    const res = await fetch(`${base}/__studio/layouts`, { method: 'POST', headers: { 'content-type': 'application/json', origin: base, ...headers }, body: JSON.stringify(data) });
+    return { status: res.status, revision: res.headers.get('x-studio-revision'), body: await res.json() };
+  };
+  const sha = (text) => createHash('sha256').update(text).digest('hex');
+  const one = { schema: 'studio-layouts/1', layouts: [{ id: 'one' }] };
+  const two = { schema: 'studio-layouts/1', layouts: [{ id: 'two' }] };
+
+  const missing = await get();
+  assert.equal(missing.revision, EMPTY_REVISION, 'a missing file has the fixed empty revision');
+  assert.equal(EMPTY_REVISION, 'empty');
+  assert.deepEqual(missing.body, { schema: 'studio-layouts/1', layouts: [] });
+  assert.equal(missing.unreadable, null, 'a missing file is an empty list, not an unreadable one');
+  const first = await post(one, { 'x-studio-expected-revision': missing.revision });
+  assert.equal(first.status, 200);
+  assert.deepEqual(first.body, { ok: true });
+  assert.equal(first.revision, sha(readFileSync(file)), 'the revision is a SHA-256 of the file as stored');
+  const loaded = await get();
+  assert.equal(loaded.revision, first.revision, 'GET answers the same revision for the same bytes');
+  assert.deepEqual(loaded.body, one);
+  assert.equal(loaded.unreadable, null);
+  // Someone else saves; the page still holds the revision it loaded.
+  const elsewhere = await post(two);
+  assert.equal(elsewhere.status, 200, 'a save without the header is unconditional, as before revisions');
+  assert.notEqual(elsewhere.revision, first.revision);
+  const stale = await post({ schema: 'studio-layouts/1', layouts: [{ id: 'mine' }] }, { 'x-studio-expected-revision': loaded.revision });
+  assert.equal(stale.status, 409);
+  assert.deepEqual(stale.body.ok, false);
+  assert.deepEqual(stale.body.error, { code: 'conflict', reason: 'layouts.json changed since you loaded it', recoverable: true });
+  assert.deepEqual(stale.body.current, { data: two, revision: elsewhere.revision });
+  assert.equal(stale.revision, elsewhere.revision);
+  assert.deepEqual(JSON.parse(readFileSync(file, 'utf8')), two, 'a conflict writes nothing');
+  // A save naming the current revision writes; an invalid file is refused before the revision is compared.
+  assert.equal((await post({ schema: 'studio-layouts/1', layouts: [] }, { 'x-studio-expected-revision': stale.body.current.revision })).status, 200);
+  assert.equal((await post({ schema: 'studio-layouts/1' }, { 'x-studio-expected-revision': 'anything' })).status, 422);
+  assert.equal((await post(two, { origin: 'https://elsewhere.example' })).status, 403);
+  // An unreadable file still has a revision of its bytes and answers the empty file.
+  writeFileSync(file, 'not json');
+  const broken = await get();
+  assert.equal(broken.revision, sha('not json'));
+  assert.deepEqual(broken.body, { schema: 'studio-layouts/1', layouts: [] });
+  assert.equal(broken.unreadable, '1', 'GET says the file is unreadable, so a Studio refuses to save over it');
+  const unreadable = await post(one, { 'x-studio-expected-revision': first.revision });
+  assert.equal(unreadable.status, 409);
+  assert.deepEqual(unreadable.body.current, { data: null, revision: broken.revision }, 'an unreadable file is never presented as an empty list');
+  assert.equal(readFileSync(file, 'utf8'), 'not json');
+  // The 0.11 guards still answer as before.
+  const raw = async (body, contentType) => (await fetch(`${base}/__studio/layouts`, { method: 'POST', headers: { 'content-type': contentType, origin: base }, body })).status;
+  assert.equal(await raw('{}', 'text/plain'), 415);
+  assert.equal(await raw('{not json', 'application/json'), 400);
+  assert.equal(readFileSync(file, 'utf8'), 'not json');
+  // Writes go through a uniquely named temporary file, none of which is left behind.
+  assert.match(read('scripts/saved-file.ts'), /const tmp = `\$\{o\.file\}\.\$\{process\.pid\}\.\$\{randomUUID\(\)\}\.tmp`/);
+  assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith('.tmp')), []);
+  // The dev server mounts this one middleware for both saved files, and the clients send the revision they read.
+  const vite = read('vite.config.ts');
+  assert.match(vite, /server\.middlewares\.use\(o\.route, savedFileMiddleware\(\{ \.\.\.o, file \}\)\)/);
+  assert.match(read('src/components/studio/responsive.tsx'), /"x-studio-expected-revision": revision/);
+  assert.match(read('src/components/studio/properties.tsx'), /const revision = read\.headers\.get\("x-studio-revision"\)[\s\S]*"x-studio-expected-revision": revision/);
+  const store = read('src/store.tsx');
+  assert.match(store, /set\(\{ saved: \(data as LayoutsFile\)\.layouts, layoutsRevision, layoutsLoad: "ready" \}\)/, 'the page keeps the revision of the layouts it loaded');
+  assert.match(store, /x-studio-unreadable"\) === "1" \|\| validateLayouts\(data\)\.length\) return set\(\{ layoutsRevision, layoutsLoad: "unreadable" \}\)/, 'an unreadable layouts.json is never taken as an empty list to save over');
+  assert.match(store, /layoutsLoad: "loading",/, 'the page starts without a revision and says so');
+  const responsive = read('src/components/studio/responsive.tsx');
+  assert.match(responsive, /if \(blocked\) throw new Error\(blocked\)/, 'no layouts save before layouts.json has been read');
+  assert.match(responsive, /loading: "Loading layouts…"/);
+  assert.equal((responsive.match(/disabled=\{!!why/g) ?? []).length, 5, 'Save, Save as, Rename, Duplicate and Delete wait for the revision');
+  assert.match(read('src/components/studio/properties.tsx'), /read\.headers\.get\("x-studio-unreadable"\) === "1" \|\| !Array\.isArray\(current\)\) throw/, 'a scenarios save never replaces an unreadable file');
+});
+
 test('final fix wave: ordered value updates, file-preserving saves, a lazy-chunk boundary and a fresh runtime per Present step', () => {
   const client = read('src/studio/frame-client.ts');
   // Only the newest values message may affect the runtime: updates chain, a superseded one is skipped or ignored.
@@ -209,4 +310,13 @@ test('final fix wave: ordered value updates, file-preserving saves, a lazy-chunk
   assert.match(chrome, /Properties could not load\. Reload the Studio\./);
   assert.match(chrome, /<PartBoundary part=\{p\.part\}>\s*<React\.Suspense/);
   assert.match(read('src/components/studio/views.tsx'), /<ScenarioPreview\s*\n\s*\/\/[^\n]*\n\s*key=\{`\$\{i\}:\$\{stepKey\}`\}/);
+});
+
+test('acceptance script covers the workspace criteria', () => {
+  const script = read('scripts/acceptance.mjs');
+  for (let i = 1; i <= 9; i++) assert.match(script, new RegExp(`"WS-0${i}"`), `WS-0${i} is not checked`);
+  assert.match(script, /"WS-06b"/, 'WS-06b is not checked');
+  assert.match(script, /"WS-05b"/, 'WS-05b is not checked');
+  assert.match(script, /STUDIO_CHUNK_BASELINE_GZ = \d+/);
+  assert.match(script, /workspace: "workspace"/);
 });

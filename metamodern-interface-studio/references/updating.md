@@ -8,7 +8,7 @@ Every file in a Studio has one owner.
 
 | Owner | Files | The updater |
 | --- | --- | --- |
-| Product | `src/adapter.ts`, `studio.config.ts`, the product adapter under `src/adapters/`, `layouts.json`, `scenarios.json`, captures, and every file that did not come from the starter | Never writes them. `src/adapter.ts` and `studio.config.ts` are created once, when missing. |
+| Product | `src/adapter.ts`, `studio.config.ts`, `src/workspace/` (every file in it), the product adapter under `src/adapters/`, `layouts.json`, `scenarios.json`, captures, and every file that did not come from the starter | Never writes them. `src/adapter.ts`, `studio.config.ts` and `src/workspace/index.ts` are created when missing, so a deleted one comes back on the next update: the workspace seed empty, `src/adapter.ts` as the starter's, and `studio.config.ts` rebuilt from the Studio's `index.html`. Nothing under `src/workspace/` is compared, locked, added, replaced or deleted. |
 | Shell | Every other starter file: `src/studio/`, `src/components/`, `src/store.tsx`, `src/App.tsx`, the CSS, `index.html`, `vite.config.ts`, the TypeScript and lint configs, `UPDATING.md` | Replaces them whole. A local edit blocks the update. |
 | Shell, optional | `README.md`, `example/`, `src/adapters/example.ts`, `src/adapters/synthetic.ts`, `scripts/acceptance.mjs` | As shell files, but a Studio may delete them on purpose and record that. |
 | Merged | `package.json` | The shell's packages take the shell's versions; packages and scripts the Studio added stay; a script the Studio removed stays removed; a package the previous shell declared and the new one dropped is removed. `name`, `version` and `private` stay the Studio's. |
@@ -27,8 +27,9 @@ node ~/.agents/skills/metamodern-interface-studio/scripts/update-studio.mjs <stu
 
 - `--create` copies the starter into an empty folder and writes `studio-shell.lock.json`. Use it for Build instead of copying by hand.
 - Without `--apply` the updater writes nothing. It lists every action, every blocked file with a diff against the new shell file, the update notes between the two versions, and the files recorded as removed.
-- `--apply` writes only when nothing is blocked and no shell file has uncommitted Git changes (`--allow-dirty` overrides the Git check). It then runs `npm install`, `typecheck`, `lint`, `build`, and `acceptance` when the acceptance script, the example, the acceptance adapters and Playwright are all present. A failing check is reported by name with its output; the files stay updated, so fix it in place and let Git hold the previous state.
-- `--skip-checks` skips the install and checks. `--json` prints the result as JSON.
+- `--apply` writes only when nothing is blocked and no shell file has uncommitted Git changes (`--allow-dirty` overrides the Git check). It then runs `npm install`, `typecheck`, `lint`, `build`, and `acceptance` when the acceptance script, the example (with `example/workspace/`), the acceptance adapters and Playwright are all present; otherwise acceptance is reported as skipped with that reason. A failing check is reported by name with its output; the files stay updated, so fix it in place and let Git hold the previous state.
+- `--accept-kit studio-kit/<n>` confirms an update that changes the Studio UI kit's major version (see below).
+- `--skip-checks` skips the install and checks. `--json` prints the result as JSON, with a `kit` field (`{ from, to }` when the kit's major version changes, else null).
 
 Update in this order: publish and install the skill release (`bash skills/install.sh` in the Agency), then run the updater on each Studio, review the report, apply, and commit the Studio.
 
@@ -60,12 +61,16 @@ Nothing is written until every blocked file is resolved. Each flag may repeat an
 
 Studios made from shell 0.2.0 to 0.5.0 have no lock. `--adopt` compares the Studio with every released shell in [studio-shell.releases.json](../assets/studio-shell.releases.json), picks the best match (the newer one on a tie), and treats that release as the Studio's starting point. The report lists every shell file that differs from it; resolve them as above and apply with `--adopt --apply`. The first adoption also creates `studio.config.ts` from the Studio's own `index.html` title and `vite.config.ts` output folder.
 
+## Studio UI kit versions
+
+Workspace modules (see [workspace](workspace.md)) build on `@studio/kit`, whose major version is `KIT_VERSION` in `src/kit/index.ts` (`studio-kit/1`). When an update changes it, the report says Breaking and names both versions, and `--apply` writes nothing and exits 1 until `--accept-kit <new version>` names exactly the new version. Read the update notes, change the modules in `src/workspace/`, then apply. A Studio without modules can accept at once. An update within one kit version needs nothing.
+
 ## Releasing a shell change
 
 For every change to `assets/studio-shell/`:
 
 1. Bump `PACKAGE_VERSION` and the catalog entry.
-2. Add a section to `assets/studio-shell/UPDATING.md` for anything a product must do by hand: new required adapter fields, frame-client changes the preview entry must pick up, protocol changes, renamed product files. Write "Nothing to do by hand." when there is nothing.
+2. Add a section to `assets/studio-shell/UPDATING.md` for anything a product must do by hand: new required adapter fields, frame-client changes the preview entry must pick up, protocol changes, renamed product files. Write "Nothing to do by hand." when there is nothing. For a kit major change, say what modules must change.
 3. Regenerate the release fingerprints with `node scripts/generate-studio-shell-releases.mjs` in the skill collection repository.
 4. Run the collection tests, then publish, pin and install as usual.
 5. Update one real Studio with the new release and report what the updater said.

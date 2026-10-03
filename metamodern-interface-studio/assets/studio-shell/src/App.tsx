@@ -15,6 +15,7 @@ import { CompareStage, GalleryStage, InspectStage, PresentStage, TokensStage } f
 import { DesignStage } from "@/components/studio/design"
 import { ResponsiveStage } from "@/components/studio/responsive"
 import { CommandMenu, ShortcutsDialog } from "@/components/studio/command"
+import { hasWorkspace, Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
 import { stepZoom, zoomTarget } from "@/components/studio/stage-nav"
 
 function useGlobalKeys() {
@@ -32,6 +33,8 @@ function useGlobalKeys() {
       // Never steal keys from fields, open dialogs, or a preview frame.
       if (t?.closest("input, textarea, select, [contenteditable='true'], [role='dialog'], [role='menu'], [role='listbox'], iframe")) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
+      // In a workspace module only the view keys and the shortcut list apply.
+      if (s.module && e.key !== "?" && !VIEWS.some((x) => x.key === e.key)) return
       // Zoom keys act on the stage on screen (a canvas has its own viewport); without one they set the Studio zoom.
       const z = zoomTarget.current
       if (e.shiftKey && e.code === "Digit1") { if (z) z.fit(); else s.set({ zoom: "fit" }); return }
@@ -82,20 +85,28 @@ function usePresentFocus() {
 function StageForView({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
   return (
-    <div key={s.view} className="flex min-h-0 min-w-0 flex-1 animate-in fade-in-0 duration-200">
-      {s.view === "inspect" && <InspectStage narrow={narrow} />}
-      {s.view === "compare" && <CompareStage narrow={narrow} />}
-      {s.view === "responsive" && <ResponsiveStage narrow={narrow} />}
-      {s.view === "gallery" && <GalleryStage />}
-      {s.view === "present" && <PresentStage narrow={narrow} />}
-      {s.view === "design" && (designTab(s.design.tab) === "tokens" ? <TokensStage /> : <DesignStage narrow={narrow} />)}
+    <div key={s.module ? "module" : s.view} className="flex min-h-0 min-w-0 flex-1 animate-in fade-in-0 duration-200">
+      {s.module ? (
+        <Slot>
+          <WorkspacePage part="stage" />
+        </Slot>
+      ) : (
+        <>
+          {s.view === "inspect" && <InspectStage narrow={narrow} />}
+          {s.view === "compare" && <CompareStage narrow={narrow} />}
+          {s.view === "responsive" && <ResponsiveStage narrow={narrow} />}
+          {s.view === "gallery" && <GalleryStage />}
+          {s.view === "present" && <PresentStage narrow={narrow} />}
+          {s.view === "design" && (designTab(s.design.tab) === "tokens" ? <TokensStage /> : <DesignStage narrow={narrow} />)}
+        </>
+      )}
     </div>
   )
 }
 
 function Details() {
   const s = useStudio()
-  const hidden = s.view === "gallery" || s.view === "present"
+  const hidden = s.module ? !s.moduleDetails : s.view === "gallery" || s.view === "present"
   const open = s.detailsOpen && !hidden
   if (s.options.details === "floating")
     return (
@@ -160,6 +171,8 @@ function DesktopShell() {
   )
 }
 
+const TAB = "flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground"
+
 function MobileShell() {
   const s = useStudio()
   // On a phone with no profile chosen, open on the product's phone profile when it exists.
@@ -178,28 +191,48 @@ function MobileShell() {
       <div className="relative flex min-h-0 flex-1 flex-col">
         <StageForView narrow />
       </div>
-      {(s.view === "inspect" || s.view === "responsive") && (
+      {!s.module && (s.view === "inspect" || s.view === "responsive") && (
         <div className="flex justify-center border-t bg-background px-2 py-1.5">
           <StageControls variant="toolbar" compact lookOnly={s.view === "responsive"} />
         </div>
       )}
-      <nav aria-label="Views" className="grid border-t bg-background pb-[env(safe-area-inset-bottom)]" style={{ gridTemplateColumns: `repeat(${tabs.length + 2}, minmax(0, 1fr))` }}>
-        <button className="flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground" onClick={() => s.set({ mobilePanel: "panel" })}>
-          <ListTreeIcon className="size-5" />Panel
+      {/* Each entry is at least 44 px and grows from its label's width, so a long label (Responsive, Workspace) keeps its room. */}
+      <nav aria-label="Views" className="flex border-t bg-background pb-[env(safe-area-inset-bottom)]">
+        <button className={TAB} onClick={() => s.set({ mobilePanel: "panel" })}>
+          <ListTreeIcon className="size-5" />
+          <span className="max-w-full truncate">Panel</span>
         </button>
         {tabs.map((v) => (
-          <button key={v.id} aria-current={s.view === v.id ? "page" : undefined} className={cn("flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-colors", s.view === v.id && "text-foreground")} onClick={() => s.set({ view: v.id })}>
-            <v.icon className="size-5" />{v.label}
+          <button key={v.id} aria-current={!s.module && s.view === v.id ? "page" : undefined} className={cn(TAB, "transition-colors", !s.module && s.view === v.id && "text-foreground")} onClick={() => s.set({ view: v.id })}>
+            <v.icon className="size-5" />
+            <span className="max-w-full truncate">{v.label}</span>
           </button>
         ))}
-        <button className="flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground" onClick={() => s.set({ mobilePanel: "details" })}>
-          <InfoIcon className="size-5" />Details
-        </button>
+        {hasWorkspace ? (
+          <Slot>
+            <WorkspaceNav part="tab" />
+          </Slot>
+        ) : (
+          <button className={TAB} onClick={() => s.set({ mobilePanel: "details" })}>
+            <InfoIcon className="size-5" />
+            <span className="max-w-full truncate">Details</span>
+          </button>
+        )}
       </nav>
       <Drawer open={s.mobilePanel !== null} onOpenChange={(o) => !o && s.set({ mobilePanel: null })} showSwipeHandle>
         <DrawerContent className="h-[82svh]">
-          <DrawerTitle className="sr-only">{s.mobilePanel === "details" ? "Details" : "Panel"}</DrawerTitle>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{s.mobilePanel === "details" ? <DetailsContent /> : <MobilePanel />}</div>
+          <DrawerTitle className="sr-only">{s.mobilePanel === "details" ? "Details" : s.mobilePanel === "workspace" ? "Workspace" : "Panel"}</DrawerTitle>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {s.mobilePanel === "details" ? (
+              <DetailsContent />
+            ) : s.mobilePanel === "workspace" ? (
+              <Slot>
+                <WorkspaceNav part="drawer" />
+              </Slot>
+            ) : (
+              <MobilePanel />
+            )}
+          </div>
         </DrawerContent>
       </Drawer>
     </SidebarProvider>
@@ -215,6 +248,9 @@ function Shell() {
       {mobile ? <MobileShell /> : <DesktopShell />}
       <CommandMenu />
       <ShortcutsDialog />
+      <Slot>
+        <WorkspaceNav part="runtime" />
+      </Slot>
       <Toaster position="bottom-right" />
     </TooltipProvider>
   )

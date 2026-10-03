@@ -23,7 +23,9 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@studio/kit": ["./src/kit/index.ts"],
+      "@studio/workspace": ["./src/studio/workspace/api.ts"]
     }
   },
   "include": ["src", "example"]

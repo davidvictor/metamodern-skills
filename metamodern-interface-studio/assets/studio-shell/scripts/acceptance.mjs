@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 /*
  * Measures the shell against the acceptance criteria in the skill's shell.md.
- * It builds the Studio three ways (the example product, a 1,000-scenario stress
- * adapter, and a capture-only adapter), serves them locally, and drives them
- * in headless Chromium. It needs Playwright: `npm i -D playwright` and
+ * It builds the Studio four ways (the example product, a 1,000-scenario stress
+ * adapter, a capture-only adapter, and the example with its synthetic workspace),
+ * serves them locally (the workspace build also without its operations host),
+ * and drives them in headless Chromium. It needs Playwright: `npm i -D playwright` and
  * `npx playwright install chromium`, or set PLAYWRIGHT_MODULE to an existing
  * install. Results print as a table and are written to acceptance-report.json.
  * A result is pass, fail, or not-measured; nothing is inferred. Set ONLY=AC-03,AC-10 to run a subset.
  */
-import { execFileSync, spawn } from "node:child_process"
-import { copyFileSync, createReadStream, existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
+import { execFileSync, spawn, spawnSync } from "node:child_process"
+import { copyFileSync, createReadStream, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { createServer } from "node:http"
+import { tmpdir } from "node:os"
 import { extname, join, normalize } from "node:path"
+import { pathToFileURL } from "node:url"
 import { gzipSync } from "node:zlib"
 
 const root = new URL("..", import.meta.url).pathname
@@ -22,22 +25,35 @@ try {
   console.error("Playwright is not installed. Run `npm i -D playwright && npx playwright install chromium`, or set PLAYWRIGHT_MODULE.")
   process.exit(2)
 }
+const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
-const builds = { normal: "example", stress: "synthetic", captures: "captures" }
+const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace" }
+// WS-01: the initial Studio chunk of the 0.11.0 shell, gzipped, built with the example product. A Studio that
+// declares no workspace may grow by at most 3 KB over it. Change it only with a release that accepts the growth.
+const STUDIO_CHUNK_BASELINE_GZ = 296543
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
-for (const [name, variant] of Object.entries(builds)) {
-  const out = join(root, ".acceptance", name)
-  execFileSync("npx", ["vite", "build", "--outDir", out, "--emptyOutDir", "--logLevel", "error"], { cwd: root, env: { ...process.env, ...(variant ? { VITE_STUDIO_ADAPTER: variant } : {}) }, stdio: "inherit" })
-  const server = createServer((req, res) => {
-    const path = normalize(join(out, decodeURIComponent(new URL(req.url, "http://x").pathname)))
+const serve = (out, host) =>
+  createServer((req, res) => {
+    const pathname = decodeURIComponent(new URL(req.url, "http://x").pathname)
+    // The example workspace's mock operations host, as the dev server serves it; "nohost" serves the same build without one.
+    if (host && pathname.startsWith("/__studio/ops/")) return host()(req, res, pathname.slice("/__studio/ops/".length))
+    const path = normalize(join(out, pathname))
     const file = path.startsWith(out) && existsSync(path) && statSync(path).isFile() ? path : join(out, "index.html")
     res.setHeader("content-type", mime[extname(file)] ?? "application/octet-stream")
     createReadStream(file).pipe(res)
   })
+const listen = async (name, server) => {
   await new Promise((r) => server.listen(0, "127.0.0.1", r))
-  servers[name] = { server, url: `http://127.0.0.1:${server.address().port}/` }
+  servers[name] = { ...servers[name], server, url: `http://127.0.0.1:${server.address().port}/` }
 }
+for (const [name, variant] of Object.entries(builds)) {
+  const out = join(root, ".acceptance", name)
+  execFileSync("npx", ["vite", "build", "--outDir", out, "--emptyOutDir", "--logLevel", "error"], { cwd: root, env: { ...process.env, ...(variant ? { VITE_STUDIO_ADAPTER: variant } : {}) }, stdio: "inherit" })
+  if (name === "workspace") servers.workspace = { host: createMockHost() }
+  await listen(name, serve(out, name === "workspace" ? () => servers.workspace.host : null))
+}
+await listen("nohost", serve(join(root, ".acceptance", "workspace"), null))
 
 const browser = await chromium.launch()
 const results = []
@@ -46,9 +62,10 @@ const record = (id, status, detail) => {
   console.log(`${status.toUpperCase().padEnd(12)} ${id}  ${detail}`)
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
-async function open(name, { width = 1440, height = 900, touch = false, hash = "", appearance } = {}) {
+async function open(name, { width = 1440, height = 900, touch = false, hash = "", appearance, brand } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, hasTouch: touch, isMobile: touch, colorScheme: appearance ?? "light" })
   if (appearance) await context.addInitScript((a) => localStorage.setItem("studio.appearance", a), appearance)
+  if (brand) await context.addInitScript((b) => localStorage.setItem("studio.example-tasks.brand", b), brand)
   const page = await context.newPage()
   const errors = []
   page.on("pageerror", (e) => errors.push(String(e)))
@@ -1076,6 +1093,70 @@ await check("AC-23", async () => {
     await p.getByRole("menuitem", { name: "Delete" }).click()
     await wait(600)
     const one = JSON.parse(readFileSync(file, "utf8")).layouts.map((l) => l.name)
+    // A save after layouts.json changed elsewhere (another browser) is refused with 409: nothing is overwritten, the list
+    // shows the latest file, the working layout keeps its unsaved edit, and saving again then writes it.
+    await p.getByRole("button", { name: "Checkout sizes, renamed" }).first().click()
+    await wait(800)
+    await p.getByRole("button", { name: "Remove 430 by 932" }).click()
+    await wait(300)
+    const theirs = JSON.parse(readFileSync(file, "utf8"))
+    theirs.layouts.push({ ...theirs.layouts[0], id: "from-elsewhere", name: "From elsewhere" })
+    const other = await browser.newContext()
+    const q = await other.newPage()
+    await q.goto(url)
+    const otherStatus = await q.evaluate((body) => fetch("__studio/layouts", { method: "POST", headers: { "content-type": "application/json" }, body }).then((r) => r.status), JSON.stringify(theirs))
+    await other.close()
+    const onDisk = readFileSync(file, "utf8")
+    await p.getByRole("button", { name: "Save", exact: true }).first().click()
+    await wait(1000)
+    const conflict = {
+      kept: readFileSync(file, "utf8") === onDisk,
+      listed: await p.getByRole("button", { name: "From elsewhere" }).count(),
+      frames: await p.locator("[data-frame]").count(),
+      unsaved: await p.getByText("Unsaved", { exact: true }).count(),
+      told: await p.locator("[data-sonner-toast]").filter({ hasText: /changed elsewhere/ }).innerText().catch(() => ""),
+    }
+    await p.getByRole("button", { name: "Save", exact: true }).first().click()
+    await wait(1000)
+    const retried = JSON.parse(readFileSync(file, "utf8")).layouts.map((l) => `${l.name} ${l.frames.length}`)
+    // A merge leaves layouts.json unreadable: a save (here Rename) is refused, the list keeps its layouts and the file is untouched.
+    const merged = `<<<<<<< ours\n${readFileSync(file, "utf8")}=======\n{}\n>>>>>>> theirs\n`
+    writeFileSync(file, merged)
+    const listedBefore = await p.getByRole("button", { name: "From elsewhere" }).count()
+    await p.getByRole("button", { name: "More layout actions" }).click()
+    await p.getByRole("menuitem", { name: "Rename" }).click()
+    await wait(1000)
+    const unreadable = {
+      untouched: readFileSync(file, "utf8") === merged,
+      listed: await p.getByRole("button", { name: "From elsewhere" }).count(),
+      before: listedBefore,
+      told: await p.locator("[data-sonner-toast]").filter({ hasText: /not a valid layouts file/ }).innerText().catch(() => ""),
+      // After that refusal the page offers no layouts save until it is reloaded.
+      after: await p.getByRole("button", { name: /Save as/ }).first().isDisabled(),
+    }
+    // A page opened on a layouts.json that is JSON but not a layouts file never offers a save that would replace it.
+    // (A file that is not JSON at all stops the dev server's bundled import before the page renders.)
+    writeFileSync(file, `${JSON.stringify({ schema: "studio-layouts/1", layouts: "merged by hand" })}\n`)
+    const fresh0 = await context.newPage()
+    await fresh0.goto(`${url}#view=responsive&scenario=tasks.list&layout=phones`)
+    await fresh0.waitForSelector("header")
+    await wait(1500)
+    unreadable.loaded = { disabled: await fresh0.getByRole("button", { name: /Save as/ }).first().isDisabled(), reason: await fresh0.getByText(/is not a valid layouts file/).count() }
+    await fresh0.close()
+    writeFileSync(file, `${JSON.stringify(theirs, null, 2)}\n`)
+    // Until layouts.json (and its revision) has been read, no save is offered; then it is.
+    let release
+    const held = new Promise((r) => (release = r))
+    const early = await context.newPage()
+    await early.route("**/__studio/layouts", async (route) => (route.request().method() === "GET" ? (await held, route.continue()) : route.continue()))
+    await early.goto(`${url}#view=responsive&scenario=tasks.list&layout=phones`)
+    await early.waitForSelector("header")
+    await wait(800)
+    const loading = { disabled: await early.getByRole("button", { name: /Save as/ }).first().isDisabled(), reason: await early.getByText("Loading layouts…").count() }
+    release()
+    for (let i = 0; i < 50 && (await early.getByRole("button", { name: /Save as/ }).first().isDisabled()); i++) await wait(100)
+    loading.after = await early.getByRole("button", { name: /Save as/ }).first().isDisabled()
+    await early.close()
     await context.close()
     const post = (body, headers = {}) => fetch(`${url}__studio/layouts`, { method: "POST", headers: { "content-type": "application/json", origin: `http://localhost:${port}`, ...headers }, body })
     const cross = (await post(JSON.stringify(written), { origin: "https://evil.example" })).status
@@ -1098,8 +1179,8 @@ await check("AC-23", async () => {
     await wait(1200)
     const shared = await fresh.locator("[data-frame]").count()
     await fresh.closeAll()
-    const ok = presetSave === 0 && written.schema === "studio-layouts/1" && written.layouts[0]?.name === "Checkout sizes" && written.layouts[0].frames.length === 2 && restored.join() === "390 × 844,430 × 932" && two.join("|") === "Checkout sizes, renamed|Checkout sizes, renamed copy" && one.join("|") === "Checkout sizes, renamed" && cross === 403 && invalid === 422 && huge === 413 && builtSave && reason > 0 && kept === 2 && unsaved > 0 && shared === 2 && /frames=/.test(link)
-    return [ok ? "pass" : "fail", `a preset offers no Save (${presetSave}); Save as wrote ${written.layouts.length} layout "${written.layouts[0]?.name}" with ${written.layouts[0]?.frames.length} frames, restored after a reload as ${restored.join(", ")}; rename and duplicate gave ${two.join(" and ")} (the copy opens), and deleting the copy left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${huge} to an oversized one; a built Studio disables Save as (${builtSave}) and says why, kept ${kept} unsaved frames across a reload marked Unsaved, and its link opened ${shared} frames in a fresh browser`]
+    const ok = presetSave === 0 && written.schema === "studio-layouts/1" && written.layouts[0]?.name === "Checkout sizes" && written.layouts[0].frames.length === 2 && restored.join() === "390 × 844,430 × 932" && two.join("|") === "Checkout sizes, renamed|Checkout sizes, renamed copy" && one.join("|") === "Checkout sizes, renamed" && cross === 403 && invalid === 422 && huge === 413 && builtSave && reason > 0 && kept === 2 && unsaved > 0 && shared === 2 && /frames=/.test(link) && otherStatus === 200 && conflict.kept && conflict.listed > 0 && conflict.frames === 1 && conflict.unsaved > 0 && /latest is loaded/.test(conflict.told) && retried.join("|") === "Checkout sizes, renamed 1|From elsewhere 2" && unreadable.untouched && unreadable.before > 0 && unreadable.listed === unreadable.before && /not a valid layouts file/.test(unreadable.told) && unreadable.after && unreadable.loaded.disabled && unreadable.loaded.reason > 0 && loading.disabled && loading.reason > 0 && !loading.after
+    return [ok ? "pass" : "fail", `a preset offers no Save (${presetSave}); Save as wrote ${written.layouts.length} layout "${written.layouts[0]?.name}" with ${written.layouts[0]?.frames.length} frames, restored after a reload as ${restored.join(", ")}; rename and duplicate gave ${two.join(" and ")} (the copy opens), and deleting the copy left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${huge} to an oversized one; a built Studio disables Save as (${builtSave}) and says why, kept ${kept} unsaved frames across a reload marked Unsaved, and its link opened ${shared} frames in a fresh browser; after another browser saved (${otherStatus}) a stale Save left the file as that browser wrote it (${conflict.kept}), listed its layout (${conflict.listed}), kept ${conflict.frames} unsaved frame (Unsaved ${conflict.unsaved > 0}) and said "${conflict.told.replace(/\s+/g, " ")}"; saving again wrote ${retried.join(", ")}; with layouts.json left unreadable by a merge, a save left it untouched (${unreadable.untouched}), the list kept From elsewhere (${unreadable.before} then ${unreadable.listed}) and said "${unreadable.told.replace(/\s+/g, " ")}", then offered no save (${unreadable.after}); a page opened on it disabled Save as (${unreadable.loaded.disabled}) and said why (${unreadable.loaded.reason}) for a JSON file that is not a layouts file; while layouts.json was still loading Save as was disabled (${loading.disabled}) with "Loading layouts…" (${loading.reason}), and enabled once read (${!loading.after})`]
   } finally {
     dev.kill()
     if (backup) copyFileSync(backup, file), rmSync(backup)
@@ -1868,17 +1949,16 @@ const flagged = async (flag, hash) => {
   return page
 }
 
-// AC-53 A Studio with no property inputs renders exactly as 0.10.2 (an empty range link value now reads as unset), and the initial chunk grows by at most 3 KB gzipped
+// AC-53 A Studio with no property inputs renders exactly as 0.10.2 (an empty range link value now reads as unset), and its build keeps
+// the 0.11.0 chunks. Since 0.12.0 the initial chunk's size budget is per release and is checked by WS-01; this reports the growth only.
 await check("AC-53", async () => {
-  // The 0.10.2 studio chunk of the normal build, gzipped as AC-28 measures it (287.0 KB).
-  const BASELINE = 293900
-  const BUDGET = 3072
   const dir = join(root, ".acceptance", "normal", "assets")
   const scripts = readdirSync(dir).filter((f) => f.endsWith(".js"))
-  // A split would make the studio chunk look smaller while the initial load grows: expect exactly these chunks.
+  // A split would make the studio chunk look smaller while the initial load grows: expect exactly these chunks. The normal
+  // build declares no workspace, so it has no workspace chunk either.
   const layout = scripts.map((f) => f.split("-")[0]).sort().join(",")
   const main = scripts.find((f) => /^studio-.*\.js$/.test(f))
-  const grew = gzipSync(readFileSync(join(dir, main))).length - BASELINE
+  const grew = gzipSync(readFileSync(join(dir, main))).length - STUDIO_CHUNK_BASELINE_GZ
   // The stress Studio declares no properties.
   const p = await open("stress", { hash: "view=inspect&scenario=syn.tasks.2" })
   await wait(800)
@@ -1895,8 +1975,8 @@ await check("AC-53", async () => {
   const isolated = await p.locator("iframe[sandbox], iframe[credentialless]").count()
   await p.closeAll()
   const same = isolated === 0 && tabs.join() === "Scenario,Fidelity,Evidence" && section === 0 && picker === 0 && edited === 0 && keys === "view,scenario,theme,profile" && values === "density" && loaded.length === 0 && stored.length === 0
-  const ok = same && layout === "canvas,example,properties,protocol,studio" && grew <= BUDGET
-  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against 0.10.2 (budget ${BUDGET})`]
+  const ok = same && layout === "canvas,example,properties,protocol,studio"
+  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against 0.11.0 (${STUDIO_CHUNK_BASELINE_GZ}; budget checked by WS-01)`]
 })
 
 // AC-54 Switch, text, number and choice change the live frame without a remount; booleans arrive as booleans; a choice sends only its ID;
@@ -2151,6 +2231,46 @@ await check("AC-58", async () => {
     const kept = same(orphan) && same(extra)
     const notedSaved = rewritten.find((x) => x.id === "saved.noted")
     const unset = notedMounted === "Saved note" && !("note" in clearedFrame) && !!notedSaved && !("note" in notedSaved.values) && rewritten.length === 4
+    // Another browser saves between this page reading scenarios.json and writing it: the write is refused with 409,
+    // nothing is overwritten, the catalog shows the other state, the edit stays unsaved, and saving again writes it.
+    await details(p).getByRole("switch", { name: "Done" }).click()
+    await wait(600)
+    const other = await browser.newContext()
+    const q = await other.newPage()
+    await q.goto(url)
+    let otherStatus = 0
+    await p.route("**/__studio/scenarios", async (route) => {
+      if (route.request().method() === "POST" && !otherStatus) {
+        const theirs = JSON.parse(readFileSync(file, "utf8"))
+        theirs.scenarios.push({ id: "saved.from-elsewhere", label: "From elsewhere", base: CARD, values: { done: true } })
+        otherStatus = await q.evaluate((body) => fetch("__studio/scenarios", { method: "POST", headers: { "content-type": "application/json" }, body }).then((r) => r.status), JSON.stringify(theirs))
+      }
+      await route.continue()
+    })
+    await details(p).getByRole("button", { name: "Save", exact: true }).click()
+    await wait(1000)
+    await p.unroute("**/__studio/scenarios")
+    await other.close()
+    const onDisk = JSON.parse(readFileSync(file, "utf8")).scenarios
+    const conflict = {
+      kept: onDisk.some((x) => x.id === "saved.from-elsewhere") && !("done" in (onDisk.find((x) => x.id === "saved.noted")?.values ?? {})),
+      listed: await p.locator('[role="treeitem"][title="From elsewhere"]').count(),
+      edited: await details(p).getByRole("switch", { name: "Done" }).getAttribute("aria-checked"),
+      told: await p.locator("[data-sonner-toast]").filter({ hasText: /changed elsewhere/ }).innerText().catch(() => ""),
+    }
+    await details(p).getByRole("button", { name: "Save", exact: true }).click()
+    await wait(1000)
+    const retried = JSON.parse(readFileSync(file, "utf8")).scenarios
+    const retriedOk = retried.find((x) => x.id === "saved.noted")?.values?.done === true && retried.some((x) => x.id === "saved.from-elsewhere")
+    // A merge leaves scenarios.json unreadable: a save is refused and the file is untouched.
+    const merged = `<<<<<<< ours\n${readFileSync(file, "utf8")}=======\n{}\n>>>>>>> theirs\n`
+    writeFileSync(file, merged)
+    await details(p).getByRole("switch", { name: "Done" }).click()
+    await wait(600)
+    await details(p).getByRole("button", { name: "Save", exact: true }).click()
+    await wait(1000)
+    const unreadable = { untouched: readFileSync(file, "utf8") === merged, told: await p.locator("[data-sonner-toast]").filter({ hasText: /not a valid saved-states file/ }).innerText().catch(() => "") }
+    writeFileSync(file, `${JSON.stringify({ schema: "studio-scenarios/1", scenarios: retried }, null, 2)}\n`)
     await context.close()
     const post = (body, headers = {}) => fetch(`${url}__studio/scenarios`, { method: "POST", headers: { "content-type": "application/json", origin: `http://localhost:${port}`, ...headers }, body })
     const cross = (await post(JSON.stringify(written), { origin: "https://evil.example" })).status
@@ -2175,8 +2295,8 @@ await check("AC-58", async () => {
     const shownJson = await details(b).locator("[data-copy-json]").innerText().then((t) => JSON.parse(t)).catch(() => ({}))
     await b.closeAll()
     const s0 = written.scenarios[0] ?? {}
-    const ok = written.schema === "studio-scenarios/1" && s0.id === "saved.finished-card" && s0.base === CARD && s0.label === "Finished card" && s0.values?.done === true && selected === s0.id && /Finished card/.test(row) && /Saved/.test(row) && /Finished card/.test(title) && mounted.scenario === CARD && mounted.values.done === true && two.join("|") === "Finished card, renamed|Finished card, renamed copy" && one.join("|") === "Finished card, renamed" && cross === 403 && invalid === 422 && generated === 422 && huge === 413 && builtSave && reason > 0 && copy === 1 && marker === "kept" && copyRow === 1 && deletedRow === 0 && /cannot be overwritten/.test(clientRefuses) && copied.base === CARD && copied.values?.done === true && /^saved\./.test(copied.id ?? "") && shownJson.base === CARD && shownJson.values?.done === true && kept && unset
-    return [ok ? "pass" : "fail", `Save as wrote ${written.scenarios.length} state ${s0.id} from ${s0.base} with ${JSON.stringify(s0.values)} and selected it (${selected}); after a reload the catalog row reads "${row.replace(/\s+/g, " ")}", Details "${title}", the frame mounted ${mounted.scenario} with done ${mounted.values.done}; rename and duplicate gave ${two.join(" and ")}, delete left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${generated} to a generated ID, ${huge} to an oversized one; a built Studio disables Save as scenario (${builtSave}), says why (${reason}) and offers Copy as JSON (${copy}); in the page that created the file the marker was ${marker}, the duplicate's row showed (${copyRow}) and was gone after Delete (${deletedRow}); the client refuses a generated ID (${clientRefuses ? "yes" : "no"}); Copy as JSON gave ${copied.id} from ${copied.base} with ${JSON.stringify(copied.values)}, and without a clipboard showed ${shownJson.base} with ${JSON.stringify(shownJson.values)} to select; saving another state kept the skipped entry and the unknown value as written (${kept}); a saved state mounted with note ${JSON.stringify(notedMounted)}, Clear sent values without it (${!("note" in clearedFrame)}) and Save wrote ${JSON.stringify(notedSaved?.values)} among ${rewritten.length} entries`]
+    const ok = written.schema === "studio-scenarios/1" && s0.id === "saved.finished-card" && s0.base === CARD && s0.label === "Finished card" && s0.values?.done === true && selected === s0.id && /Finished card/.test(row) && /Saved/.test(row) && /Finished card/.test(title) && mounted.scenario === CARD && mounted.values.done === true && two.join("|") === "Finished card, renamed|Finished card, renamed copy" && one.join("|") === "Finished card, renamed" && cross === 403 && invalid === 422 && generated === 422 && huge === 413 && builtSave && reason > 0 && copy === 1 && marker === "kept" && copyRow === 1 && deletedRow === 0 && /cannot be overwritten/.test(clientRefuses) && copied.base === CARD && copied.values?.done === true && /^saved\./.test(copied.id ?? "") && shownJson.base === CARD && shownJson.values?.done === true && kept && unset && otherStatus === 200 && conflict.kept && conflict.listed === 1 && conflict.edited === "true" && /latest is loaded/.test(conflict.told) && retriedOk && unreadable.untouched && /not a valid saved-states file/.test(unreadable.told)
+    return [ok ? "pass" : "fail", `Save as wrote ${written.scenarios.length} state ${s0.id} from ${s0.base} with ${JSON.stringify(s0.values)} and selected it (${selected}); after a reload the catalog row reads "${row.replace(/\s+/g, " ")}", Details "${title}", the frame mounted ${mounted.scenario} with done ${mounted.values.done}; rename and duplicate gave ${two.join(" and ")}, delete left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${generated} to a generated ID, ${huge} to an oversized one; a built Studio disables Save as scenario (${builtSave}), says why (${reason}) and offers Copy as JSON (${copy}); in the page that created the file the marker was ${marker}, the duplicate's row showed (${copyRow}) and was gone after Delete (${deletedRow}); the client refuses a generated ID (${clientRefuses ? "yes" : "no"}); Copy as JSON gave ${copied.id} from ${copied.base} with ${JSON.stringify(copied.values)}, and without a clipboard showed ${shownJson.base} with ${JSON.stringify(shownJson.values)} to select; saving another state kept the skipped entry and the unknown value as written (${kept}); a saved state mounted with note ${JSON.stringify(notedMounted)}, Clear sent values without it (${!("note" in clearedFrame)}) and Save wrote ${JSON.stringify(notedSaved?.values)} among ${rewritten.length} entries; when another browser saved (${otherStatus}) between this page's read and write, the file kept its state and nothing of this edit (${conflict.kept}), the catalog listed it (${conflict.listed}), Done stayed edited (${conflict.edited}) and the page said "${conflict.told.replace(/\s+/g, " ")}"; saving again wrote the edit beside it (${retriedOk}); with scenarios.json left unreadable by a merge a save left it untouched (${unreadable.untouched}) and said "${unreadable.told.replace(/\s+/g, " ")}"`]
   } finally {
     dev.kill()
     if (backup) copyFileSync(backup, file), rmSync(backup)
@@ -2237,6 +2357,1129 @@ await check("AC-60", async () => {
   await q.close()
   const ok = /<TaskCard/.test(shown) && /title=\{"Ship it"\}/.test(shown) && /\bdone\b/.test(shown) && !/assignee/.test(shown) && copied === shown && !without.includes("Code")
   return [ok ? "pass" : "fail", `with the capability the Code tab showed ${JSON.stringify(shown)} (only changed props) and Copy put the same text on the clipboard (${copied === shown}); a frame without it shows tabs ${without.join(", ")}`]
+})
+
+// AC-61 A preview that did not start offers Retry, and Retry mounts the frame again: once the cause is gone the preview is Ready
+await check("AC-61", async () => {
+  const until = async (read, test, ms) => {
+    const end = Date.now() + ms
+    let value = await read()
+    while (!test(value) && Date.now() < end) {
+      await wait(100)
+      value = await read()
+    }
+    return value
+  }
+  const q = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const p = await q.newPage()
+  // Frames reject this title until the page says the cause is gone.
+  await p.addInitScript(() => {
+    if (window === window.top) return
+    try {
+      if (!window.top.__causeGone) window.__studioStrictTitle = true
+    } catch {
+      window.__studioStrictTitle = true
+    }
+  })
+  await p.goto(servers.normal.url + `#view=inspect&scenario=${CARD}&title=${encodeURIComponent("Reject this title")}`)
+  await p.waitForSelector("header")
+  const retry = p.locator(".preview-frame").getByRole("button", { name: "Retry" })
+  const offered = await until(() => retry.count(), (n) => n > 0, 8000)
+  const failed = await p.locator("header").innerText()
+  await p.evaluate(() => (window.__causeGone = true))
+  if (offered) await retry.click()
+  const ready = await until(() => p.locator("header").innerText(), (t) => /Ready/.test(t), 8000)
+  const left = await retry.count()
+  const shown = left ? "" : ((await frameState(await liveFrame(p))).text ?? "")
+  await q.close()
+  // A failure belongs to its frame: with the cause gone, choosing another theme mounts afresh without Retry.
+  const r = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const t = await r.newPage()
+  await t.addInitScript(() => {
+    if (window === window.top) return
+    try {
+      if (!window.top.__causeGone) window.__studioStrictTitle = true
+    } catch {
+      window.__studioStrictTitle = true
+    }
+  })
+  await t.goto(servers.normal.url + `#view=inspect&scenario=${CARD}&title=${encodeURIComponent("Reject this title")}`)
+  await t.waitForSelector("header")
+  const failedAgain = await until(() => t.locator(".preview-frame").getByRole("button", { name: "Retry" }).count(), (n) => n > 0, 8000)
+  await t.evaluate(() => (window.__causeGone = true))
+  await t.locator('[role="toolbar"] [aria-label="Dark"]').click()
+  const moved = await until(() => t.locator("header").innerText(), (x) => /Ready/.test(x), 8000)
+  const stuck = await t.locator(".preview-frame").getByRole("button", { name: "Retry" }).count()
+  await r.close()
+  const ok = offered > 0 && /Did not start/.test(failed) && /Ready/.test(ready) && left === 0 && /Reject this title/.test(shown) && failedAgain > 0 && /Ready/.test(moved) && stuck === 0
+  return [ok ? "pass" : "fail", `a frame that failed to mount showed Retry (${offered > 0}) with "${/Did not start/.test(failed) ? "Did not start" : failed.replace(/\s+/g, " ").slice(0, 40)}" in the top bar; after the cause was removed, Retry mounted the frame (${left === 0 ? "Retry gone" : "Retry still shown"}), the top bar read ${/Ready/.test(ready) ? "Ready" : JSON.stringify(ready.replace(/\s+/g, " ").slice(0, 40))} and the card shows "${shown.slice(0, 40)}"; a second failure was cleared by choosing the Dark theme (${stuck === 0 ? "frame mounted" : "failure kept"}, top bar ${/Ready/.test(moved) ? "Ready" : JSON.stringify(moved.replace(/\s+/g, " ").slice(0, 40))})`]
+})
+
+/** Page helpers for AC-62 to AC-64: painted colors, contrast, the backdrop behind an element and a target's hit box. */
+const floorHelpers = () => {
+  const canvas = document.createElement("canvas")
+  canvas.width = canvas.height = 1
+  const g = canvas.getContext("2d", { willReadFrequently: true })
+  const paint = (layers) => {
+    g.clearRect(0, 0, 1, 1)
+    for (const c of layers) {
+      g.fillStyle = c
+      g.fillRect(0, 0, 1, 1)
+    }
+    return Array.from(g.getImageData(0, 0, 1, 1).data)
+  }
+  const lum = (c) => {
+    const f = (v) => {
+      v /= 255
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    }
+    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
+  }
+  const ratio = (a, b) => {
+    const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
+    return (x + 0.05) / (y + 0.05)
+  }
+  const backdrop = (el) => {
+    const chain = []
+    for (let a = el; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+    return paint(["#ffffff", ...chain]).slice(0, 3)
+  }
+  const on = (color, el) => {
+    const bg = backdrop(el)
+    return ratio(paint([`rgb(${bg.join(",")})`, color]).slice(0, 3), bg)
+  }
+  // A switch, checkbox, radio or slider thumb counts the hit area its ::after adds; a slider's input is its thumb.
+  const hit = (el) => {
+    const e = (el.matches('input[type="range"]') && el.closest('[data-slot="slider-thumb"]')) || el
+    const r = e.getBoundingClientRect()
+    let w = r.width
+    let h = r.height
+    if (/^(switch|checkbox|radio)$/.test(e.getAttribute("role") ?? "") || e.matches('[data-slot="slider-thumb"]')) {
+      const a = getComputedStyle(e, "::after")
+      if (a.position === "absolute") {
+        h -= (parseFloat(a.top) || 0) + (parseFloat(a.bottom) || 0)
+        w -= (parseFloat(a.left) || 0) + (parseFloat(a.right) || 0)
+      }
+    }
+    return { w: Math.round(w), h: Math.round(h) }
+  }
+  const name = (e) => (e.getAttribute("aria-label") || e.textContent.trim() || e.id || e.tagName).replace(/\s+/g, " ").slice(0, 24)
+  const shown = (e) => {
+    if (!e.getClientRects().length || e.closest("[inert]")) return false
+    const r = e.getBoundingClientRect()
+    return r.width > 2 && r.height > 2 && getComputedStyle(e).visibility !== "hidden"
+  }
+  window.__floors = { paint, ratio, backdrop, on, hit, name, shown }
+}
+const openFloors = async (name, o) => {
+  const p = await open(name, o)
+  await p.evaluate(floorHelpers)
+  return p
+}
+
+// AC-62 Tablets and phones (touch): the narration never overlaps its controls; the top bar truncates its breadcrumb and keeps every
+// action on screen; every dock control stays on screen; Tokens values and stage are readable; the bottom bar's labels fit their entries
+await check("AC-62", async () => {
+  const bad = []
+  const notes = []
+  for (const appearance of ["light", "dark"]) {
+    // 1. Present: text and controls never overlap, nothing spills sideways, no word runs out of the text column.
+    for (const width of [390, 600, 768, 900, 1024]) {
+      const p = await openFloors("normal", { appearance, width, height: width < 768 ? 844 : 1024, touch: true, hash: "view=present" })
+      const m = await p.evaluate(() => {
+        const sec = document.querySelector('section[aria-label="Narration"]')
+        const text = sec.querySelector('[aria-live="polite"]')
+        const ctl = sec.querySelector('[aria-label="Walkthrough controls"]')
+        const a = text.getBoundingClientRect()
+        const b = ctl.getBoundingClientRect()
+        const box = sec.getBoundingClientRect()
+        const overlap = a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1
+        const spill = [...sec.querySelectorAll("*")].filter((e) => e.getClientRects().length && (e.getBoundingClientRect().right > box.right + 1 || e.getBoundingClientRect().left < box.left - 1)).length
+        return { overlap, spill, words: text.scrollWidth > text.clientWidth + 1, buttons: ctl.querySelectorAll("button").length, columns: getComputedStyle(text.parentElement).gridTemplateColumns.split(" ").length }
+      })
+      // A phone (under 768 px) keeps one column.
+      if (m.overlap || m.spill || m.words || !m.buttons || (width < 768 && m.columns !== 1)) bad.push(`${appearance} Present@${width}: ${JSON.stringify(m)}`)
+      await p.closeAll()
+    }
+    // 2. Top bar at 768 with the panel open, a status and an Edited badge: nothing overlaps, every action is on screen.
+    {
+      const p = await openFloors("normal", { appearance, width: 768, height: 1024, touch: true, hash: `view=inspect&scenario=${CARD}&title=${encodeURIComponent("Edited in the link")}` })
+      await wait(800)
+      const m = await p.evaluate(() => {
+        const h = document.querySelector("header")
+        const hr = h.getBoundingClientRect()
+        const parts = [...h.children].filter((e) => e.getClientRects().length && e.getBoundingClientRect().width > 0).map((e) => ({ n: e.tagName === "NAV" ? "breadcrumb" : e.getAttribute("aria-live") ? "status" : e.matches("button") ? "button" : e.className.includes("ml-auto") ? "actions" : "badge", r: e.getBoundingClientRect().toJSON() }))
+        const overlaps = []
+        for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) if (parts[i].r.right > parts[j].r.left + 1) overlaps.push(`${parts[i].n}/${parts[j].n}`)
+        const off = [...h.querySelectorAll("button")].filter((b) => window.__floors.shown(b)).filter((b) => { const r = b.getBoundingClientRect(); return r.left < hr.left - 1 || r.right > Math.min(hr.right, innerWidth) + 1 }).map((b) => window.__floors.name(b))
+        const crumb = h.querySelector("nav")
+        return { overlaps, off, truncated: crumb.scrollWidth > crumb.clientWidth + 1 || [...crumb.querySelectorAll(".truncate")].some((e) => e.scrollWidth > e.clientWidth + 1), status: h.querySelector("[aria-live]")?.innerText.replace(/\s+/g, " ") }
+      })
+      if (m.overlaps.length || m.off.length || !/Ready/.test(m.status)) bad.push(`${appearance} top bar@768: ${JSON.stringify(m)}`)
+      if (appearance === "light") notes.push(`top bar at 768: status "${m.status}", breadcrumb ${m.truncated ? "truncated" : "whole"}`)
+      await p.closeAll()
+    }
+    // 3. The dock (and the phone's control strip) on Inspect and Responsive: every control on screen and inside the dock.
+    for (const [width, view] of [[768, "inspect"], [768, "responsive"], [390, "inspect"], [390, "responsive"]]) {
+      const p = await openFloors("normal", { appearance, width, height: width < 768 ? 844 : 1024, touch: true, hash: `view=${view}&scenario=tasks.list${view === "responsive" ? "&layout=task-sizes" : ""}` })
+      await wait(800)
+      const m = await p.evaluate(() => {
+        const t = document.querySelector('[role="toolbar"][aria-label="Preview controls"]')
+        const tr = t.getBoundingClientRect()
+        const vp = { left: 0, top: 0, right: innerWidth, bottom: innerHeight }
+        const names = [...t.querySelectorAll("button")].filter((b) => b.getClientRects().length).map((b) => {
+          const r = b.getBoundingClientRect()
+          const onScreen = r.left >= -1 && r.right <= vp.right + 1 && r.top >= -1 && r.bottom <= vp.bottom + 1 && r.left >= tr.left - 1 && r.right <= tr.right + 1 && r.top >= tr.top - 1 && r.bottom <= tr.bottom + 1
+          return { n: window.__floors.name(b), onScreen }
+        })
+        return { off: names.filter((x) => !x.onScreen).map((x) => x.n), names: names.map((x) => x.n), scrolls: t.scrollWidth > t.clientWidth + 1 }
+      })
+      const zoom = m.names.some((n) => /^Zoom/.test(n))
+      const role = m.names.some((n) => /^Role/.test(n))
+      const reset = view === "responsive" || m.names.some((n) => /Reset preview/.test(n))
+      if (m.off.length || m.scrolls || !zoom || !role || !reset) bad.push(`${appearance} dock ${view}@${width}: off ${JSON.stringify(m.off)}, scrolls ${m.scrolls}, zoom ${zoom}, Role lens ${role}, reset ${reset}`)
+      if (appearance === "light" && view === "inspect") notes.push(`dock at ${width}: ${m.names.length} controls on screen`)
+      await p.closeAll()
+    }
+    // 4. Tokens: every value is shown in full and the stage (its toggles and preview) is on screen.
+    for (const width of [768, 390]) {
+      const p = await openFloors("normal", { appearance, width, height: width < 768 ? 844 : 1024, touch: true, hash: "view=tokens" })
+      await wait(800)
+      const m = await p.evaluate(() => {
+        const cut = [...document.querySelectorAll('[role="treegrid"] [role="row"] > [role="gridcell"]:not(:first-child) code')].filter((c) => c.getClientRects().length && (c.scrollWidth > c.clientWidth + 1 || c.scrollHeight > c.clientHeight + 1)).map((c) => c.textContent)
+        const values = document.querySelectorAll('[role="treegrid"] [role="row"] > [role="gridcell"]:not(:first-child) code').length
+        const vp = { left: 0, top: 0, right: innerWidth, bottom: innerHeight }
+        const toggles = [...document.querySelectorAll('[aria-label="Preview theme"] button, [aria-label="Values"] button')].filter((b) => b.getClientRects().length)
+        const offToggles = toggles.filter((b) => !((r) => r.left >= -1 && r.right <= vp.right + 1 && r.top >= -1 && r.bottom <= vp.bottom + 1)(b.getBoundingClientRect())).map((b) => b.textContent)
+        const f = document.querySelector('[aria-label="Token preview"]')?.closest(".preview-frame")?.getBoundingClientRect()
+        return { values, cut, toggles: toggles.length, offToggles, frame: f ? { left: Math.round(f.left), right: Math.round(f.right), width: Math.round(f.width) } : null, page: document.documentElement.scrollWidth - innerWidth }
+      })
+      const frameOk = m.frame && m.frame.left >= -1 && m.frame.right <= width + 1 && m.frame.width >= 60
+      if (!m.values || m.cut.length || m.toggles < 3 || m.offToggles.length || !frameOk || m.page > 0) bad.push(`${appearance} tokens@${width}: ${JSON.stringify(m)}`)
+      if (appearance === "light") notes.push(`Tokens at ${width}: ${m.values} values in full, stage frame ${m.frame?.width} px wide`)
+      await p.closeAll()
+    }
+    // 8. The bottom bar: each label stays inside its entry; at 390 and 430 it is shown in full (with and without a workspace).
+    for (const [name, width] of [["workspace", 360], ["workspace", 390], ["workspace", 430], ["normal", 390]]) {
+      const p = await openFloors(name, { appearance, width, height: 844, touch: true, hash: "view=inspect&scenario=tasks.list" })
+      const m = await p.evaluate(() =>
+        [...document.querySelectorAll('nav[aria-label="Views"] > button')].map((b) => {
+          // The label's own box: a truncated label is clipped to it.
+          const label = b.querySelector("span") ?? b
+          const t = label.getBoundingClientRect()
+          const c = b.getBoundingClientRect()
+          return { n: b.textContent, within: t.left >= c.left - 0.5 && t.right <= c.right + 0.5, whole: label.scrollWidth <= label.clientWidth + 1, w: Math.round(c.width), h: Math.round(c.height) }
+        })
+      )
+      const out = m.filter((x) => !x.within || x.w < 44 || x.h < 44 || (width >= 390 && !x.whole))
+      if (out.length || !m.length) bad.push(`${appearance} ${name} bottom bar@${width}: ${JSON.stringify(out)}`)
+      if (appearance === "light" && name === "workspace" && width === 390) notes.push(`bottom bar at 390 with a workspace: ${m.map((x) => `${x.n} ${x.w}`).join(", ")}`)
+      await p.closeAll()
+    }
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 8).join("; ") : `light and dark, touch: Present at 390, 600, 768, 900 and 1024 keeps narration and controls apart with nothing spilling; ${notes.join("; ")}; every label fits its entry at 360, 390 and 430`]
+})
+
+// AC-63 Coarse pointers at any width: every Studio target is at least 44 px and text fields use 16 px text (768 and 390, both appearances)
+await check("AC-63", async () => {
+  const measure = (p) =>
+    p.evaluate(() => {
+      const f = window.__floors
+      const targets = [...document.querySelectorAll('button, a[href], summary, select, textarea, input:not([type="hidden"]), [role="button"], [role="tab"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="combobox"], [role="switch"], [role="checkbox"], [role="radio"]')].filter((e) => f.shown(e) && !e.closest(".react-flow__viewport") && !e.matches('[data-sidebar="rail"]'))
+      const small = targets.map((e) => ({ n: f.name(e), ...f.hit(e) })).filter((m) => m.w < 44 || m.h < 44)
+      const text = targets.filter((e) => e.matches('textarea, select, input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"])')).map((e) => ({ n: f.name(e), px: parseFloat(getComputedStyle(e).fontSize) })).filter((m) => m.px < 16)
+      return { count: targets.length, small: small.map((m) => `${m.n} ${m.w}×${m.h}`), text: text.map((m) => `${m.n} ${m.px}px`) }
+    })
+  const bad = []
+  let measured = 0
+  let states = 0
+  for (const appearance of ["light", "dark"]) {
+    // A tablet: every view with its panel, Details on Inspect, and an open dock menu.
+    for (const hash of ["view=inspect&scenario=tasks.list", "view=compare", "view=responsive&scenario=tasks.list&layout=task-sizes", "view=gallery", "view=present", "view=design", "view=tokens", "view=inspect&scenario=components.task-card&details"]) {
+      const p = await openFloors("normal", { appearance, width: 768, height: 1024, touch: true, hash: hash.replace("&details", "") })
+      if (hash.endsWith("&details")) {
+        await p.getByRole("button", { name: "Toggle details" }).click()
+        await wait(800)
+      }
+      const m = await measure(p)
+      measured += m.count
+      states++
+      if (m.small.length || m.text.length) bad.push(`${appearance} 768 ${hash}: under 44 px ${m.small.slice(0, 6).join(", ")}${m.text.length ? `; text ${m.text.slice(0, 4).join(", ")}` : ""}`)
+      if (hash.startsWith("view=inspect&scenario=tasks.list")) {
+        await p.getByRole("button", { name: /^Size,/ }).click()
+        await wait(500)
+        const menu = await measure(p)
+        measured += menu.count
+        states++
+        if (menu.small.length) bad.push(`${appearance} 768 size menu: ${menu.small.slice(0, 6).join(", ")}`)
+        await p.keyboard.press("Escape")
+        await wait(300)
+        // The folded top bar's actions and Studio settings.
+        if (await p.getByRole("button", { name: "More actions" }).count()) {
+          await p.getByRole("button", { name: "More actions" }).click()
+          await wait(500)
+        }
+        await p.getByRole("button", { name: "Studio settings" }).click()
+        await wait(600)
+        const settings = await measure(p)
+        measured += settings.count
+        states++
+        if (settings.small.length || settings.text.length) bad.push(`${appearance} 768 Studio settings: ${settings.small.slice(0, 6).join(", ")}${settings.text.length ? `; text ${settings.text.slice(0, 4).join(", ")}` : ""}`)
+      }
+      await p.closeAll()
+    }
+    // A phone: every view, and the Panel and Details drawers.
+    for (const hash of ["view=inspect&scenario=tasks.list", "view=compare", "view=responsive&scenario=tasks.list&layout=task-sizes", "view=gallery", "view=present", "view=design", "view=tokens", "drawer=Panel", "drawer=Details"]) {
+      const drawer = hash.startsWith("drawer=") ? hash.slice(7) : null
+      const p = await openFloors("normal", { appearance, width: 390, height: 844, touch: true, hash: drawer ? `view=inspect&scenario=${CARD}` : hash })
+      if (drawer) {
+        await p.getByRole("button", { name: drawer, exact: true }).click()
+        await wait(800)
+      }
+      const m = await measure(p)
+      measured += m.count
+      states++
+      if (m.small.length || m.text.length) bad.push(`${appearance} 390 ${hash}: under 44 px ${m.small.slice(0, 6).join(", ")}${m.text.length ? `; text ${m.text.slice(0, 4).join(", ")}` : ""}`)
+      await p.closeAll()
+    }
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 8).join("; ") : `${states} states on a 768 px tablet and a 390 px phone with touch, light and dark (every view with its panel, Details, the Size menu, the Panel and Details drawers): ${measured} targets, every one at least 44 px (a switch, checkbox or radio by its hit area) and every text field at 16 px. Real devices are not covered.`]
+})
+
+// AC-64 Keyboard focus in the core shell (rail, top bar, panel, dock; on a phone the top bar, control strip, bottom bar and drawers)
+// adds exactly one indicator at 3:1 or more, and the active view label reaches 4.5:1, in both appearances and with a pale brand color
+await check("AC-64", async () => {
+  const bad = []
+  const notes = []
+  // Every ring utility leaves a computed box-shadow even unfocused: record each element unfocused, then count only what focus adds.
+  const record = (p) =>
+    p.evaluate(() => {
+      const before = new WeakMap()
+      for (const e of document.querySelectorAll("body *")) {
+        const s = getComputedStyle(e)
+        before.set(e, { outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}`, shadow: s.boxShadow })
+      }
+      window.__unfocused = before
+    })
+  const walk = async (p, stops, regions, faint, doubled) => {
+    for (let i = 0; i < stops; i++) {
+      await p.keyboard.press("Tab")
+      // Controls transition their ring in: read once the running transitions end.
+      await p.evaluate(async () => {
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+        await Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => null)))
+      })
+      const f = await p.evaluate(() => {
+        const e = document.activeElement
+        if (!e || e === document.body || e.tagName === "IFRAME") return null
+        const region = e.closest('[role="dialog"]') ? "drawer" : e.closest('[aria-label="Studio"]') ? "rail" : e.closest("header") ? "header" : e.closest('[role="toolbar"]') ? "dock" : e.closest('nav[aria-label="Views"]') ? "bar" : e.closest('[data-sidebar="sidebar"]') ? "panel" : null
+        if (!region || e.matches("input, textarea, select")) return null
+        const F = window.__floors
+        const s = getComputedStyle(e)
+        const was = window.__unfocused.get(e) ?? { outline: "none", shadow: "none" }
+        const split = (v) => (v === "none" ? [] : v.split(/,(?![^(]*\))/).map((x) => x.trim()))
+        const marks = []
+        if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 1 && `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}` !== was.outline && F.paint([s.outlineColor])[3] > 0) marks.push({ color: s.outlineColor, inside: parseFloat(s.outlineOffset) < 0, width: parseFloat(s.outlineWidth) })
+        for (const layer of split(s.boxShadow)) {
+          if (split(was.shadow).includes(layer)) continue
+          const color = /^(rgba?|oklch|oklab|lab|lch|color|hsla?)\([^)]*\)/.exec(layer)?.[0]
+          const lengths = layer.replace(color ?? "", "").match(/-?[\d.]+px/g)?.map(parseFloat) ?? []
+          const width = Math.max(lengths[3] ?? 0, lengths[2] ?? 0)
+          if (color && F.paint([color])[3] > 0 && width > 0) marks.push({ color, inside: /\binset\b/.test(layer), width })
+        }
+        const strong = marks.filter((m) => m.width >= 2).map((m) => F.on(m.color, m.inside ? e : e.parentElement))
+        return { region, n: F.name(e), ratio: Math.max(0, ...strong), marks: marks.length }
+      })
+      if (!f) continue
+      regions[f.region]?.push(f.ratio)
+      if (f.ratio < 3) faint.push(`${f.region} "${f.n}" ${f.ratio.toFixed(2)}`)
+      if (f.marks > 1) doubled.push(`${f.region} "${f.n}"`)
+    }
+  }
+  const runs = []
+  for (const appearance of ["light", "dark"]) for (const width of [1440, 768, 390]) runs.push({ appearance, width })
+  // A pale brand color: the light ring and the active rail label are lowered from it.
+  for (const width of [1440, 768]) runs.push({ appearance: "light", width, brand: "#fde68a" })
+  for (const { appearance, width, brand } of runs) {
+    const phone = width < 768
+    const p = await openFloors("normal", { appearance, width, height: width === 1440 ? 900 : phone ? 844 : 1024, touch: width < 1440, hash: "view=inspect&scenario=tasks.list", brand })
+    const label = `${appearance}${brand ? ` brand ${brand}` : ""} ${width}`
+    await p.mouse.move(0, 0)
+    await record(p)
+    const active = await p.evaluate((phone) => {
+      const b = phone ? document.querySelector('nav[aria-label="Views"] button[aria-current="page"]') : document.querySelector('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]')
+      const text = b.querySelector("span") ?? b
+      return { text: text.textContent, ratio: window.__floors.on(getComputedStyle(text).color, b), size: parseFloat(getComputedStyle(text).fontSize) }
+    }, phone)
+    if (active.ratio < 4.5) bad.push(`${label}: active view label "${active.text}" ${active.ratio.toFixed(2)}:1`)
+    const regions = phone ? { header: [], dock: [], bar: [], drawer: [] } : { rail: [], header: [], panel: [], dock: [] }
+    const faint = []
+    const doubled = []
+    await walk(p, phone ? 40 : 70, regions, faint, doubled)
+    if (phone) {
+      // The Panel and Details drawers.
+      for (const name of ["Panel", "Details"]) {
+        await p.getByRole("button", { name, exact: true }).click()
+        await wait(800)
+        await record(p)
+        await walk(p, 12, regions, faint, doubled)
+        await p.keyboard.press("Escape")
+        await wait(600)
+      }
+    }
+    const missing = Object.entries(regions).filter(([, r]) => !r.length).map(([k]) => k)
+    if (faint.length || missing.length || doubled.length) bad.push(`${label}:${faint.length ? ` under 3:1 ${faint.slice(0, 6).join(", ")}` : ""}${doubled.length ? ` two indicators on ${doubled.slice(0, 6).join(", ")}` : ""}${missing.length ? ` not reached ${missing.join(", ")}` : ""}`)
+    const low = Object.entries(regions).filter(([, r]) => r.length).map(([k, r]) => `${k} ${Math.min(...r).toFixed(1)}`)
+    notes.push(`${label}: active label ${active.ratio.toFixed(1)}:1 at ${active.size} px, lowest indicator ${low.join(", ")}`)
+    await p.closeAll()
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `${notes.join("; ")} (Tab walks; an indicator counts only where focus adds it, and every stop has exactly one)`]
+})
+
+// ---------- Workspace modules (WS-01 to WS-09, references/workspace.md) ----------
+
+const railModule = (p, name) => p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button', { hasText: name })
+const railView = (p, name) => p.locator('[aria-label="Studio"] nav[aria-label="Views"] button', { hasText: name })
+const resources = (p) => p.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name))
+const siteName = (p) => p.getByLabel("Site name", { exact: true })
+/** Reads until the test passes or the time runs out, and returns the last reading. */
+const poll = async (read, test, ms = 5000) => {
+  const end = Date.now() + ms
+  let value = await read()
+  while (!test(value) && Date.now() < end) {
+    await wait(100)
+    value = await read()
+  }
+  return value
+}
+const ops = async (name, body, actor) => {
+  const base = servers.workspace.url
+  const res = await fetch(`${base}__studio/ops/${name}`, { method: "POST", headers: { "content-type": "application/json", origin: base.replace(/\/$/, ""), "x-studio-operation-kind": name.endsWith(".write") ? "write" : "read", ...(actor ? { "x-example-actor": actor } : {}) }, body: JSON.stringify(body) })
+  return res.json()
+}
+/** Kit controls smaller than 44 px (a switch counts its hit area), and kit inputs under 16 px text. */
+const kitTargets = (p) =>
+  p.evaluate(() => {
+    const kit = [...document.querySelectorAll('[data-kit] button, [data-kit] input, [data-kit] [role="combobox"], [data-kit] [role="switch"], [data-kit] [role="option"]')].filter((e) => {
+      const r = e.getBoundingClientRect()
+      return r.width > 2 && r.height > 2
+    })
+    const measured = kit.map((e) => {
+      const r = e.getBoundingClientRect()
+      let w = r.width
+      let h = r.height
+      if (e.getAttribute("role") === "switch") {
+        const a = getComputedStyle(e, "::after")
+        h -= (parseFloat(a.top) || 0) + (parseFloat(a.bottom) || 0)
+        w -= (parseFloat(a.left) || 0) + (parseFloat(a.right) || 0)
+      }
+      return { n: e.getAttribute("aria-label") || e.id || e.textContent.trim().slice(0, 16), w: Math.round(w), h: Math.round(h), input: e.tagName === "INPUT", text: parseFloat(getComputedStyle(e).fontSize) }
+    })
+    return { small: measured.filter((m) => m.w < 44 || m.h < 44), smallText: measured.filter((m) => m.input && m.text < 16), count: measured.length }
+  })
+/**
+ * Walks the Site page of the example through the kit's states and measures each: the page, an unsaved edit (SaveBar with Discard
+ * and Save), an open Select, a conflict (Use current value, Save mine again) and the leave dialog. The page is left in the conflict.
+ * Returns the measurements by state and `missed`, every state (or closing step) the walk did not reach in time; a measurement taken
+ * after a missed step is not of the state it is named for, so callers fail on any miss.
+ */
+const kitStates = async (p, measure, between = async () => {}) => {
+  const measured = { page: await measure() }
+  const missed = []
+  const reach = async (state, read, test, ms) => {
+    if (!test(await poll(read, test, ms))) missed.push(state)
+  }
+  await siteName(p).fill("Floors")
+  await reach("dirty", () => p.getByRole("button", { name: "Save", exact: true }).isVisible().catch(() => false), Boolean)
+  measured.dirty = await measure()
+  await between("dirty")
+  await p.locator('[data-kit] [role="combobox"]').first().click()
+  await reach("select", () => p.locator('[data-kit] [role="listbox"] [role="option"]').first().isVisible().catch(() => false), Boolean)
+  await wait(300)
+  measured.select = await measure()
+  await p.keyboard.press("Escape")
+  // The select keeps its closed list mounted and hidden, so closing is judged by visibility.
+  await reach("select closed", () => p.locator('[data-kit] [role="listbox"]:visible').count(), (n) => n === 0, 2000)
+  const current = await ops("site.read", { input: null })
+  await ops("site.write", { input: { siteName: "Theirs" }, expectedRevision: current.revision }, "someone else")
+  await p.getByRole("button", { name: "Save", exact: true }).click()
+  await reach("conflict", () => p.getByRole("button", { name: "Save mine again" }).isVisible().catch(() => false), Boolean)
+  measured.conflict = await measure()
+  await p.locator('nav[aria-label="Views"] button:visible', { hasText: "Compare" }).first().click()
+  await reach("leave", () => p.getByRole("dialog", { name: "Leave without saving?" }).isVisible().catch(() => false), Boolean)
+  await wait(300)
+  measured.leave = await measure()
+  await p.keyboard.press("Escape")
+  await reach("leave closed", () => p.getByRole("dialog", { name: "Leave without saving?" }).count(), (n) => n === 0, 2000)
+  return { measured, missed }
+}
+
+// WS-01 Without a workspace nothing changes: the AC suite, at most 3 KB more initial chunk, no workspace chunk; with one, module code loads only when a module opens
+await check("WS-01", async () => {
+  const dir = join(root, ".acceptance", "normal", "assets")
+  const files = readdirSync(dir)
+  const main = files.find((f) => /^studio-.*\.js$/.test(f))
+  const gz = gzipSync(readFileSync(join(dir, main))).length
+  const growth = gz - STUDIO_CHUNK_BASELINE_GZ
+  // A Studio without a declaration is built without the workspace layer: no workspace chunk exists to request.
+  const built = files.filter((f) => /^workspace-/.test(f))
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  for (const name of ["Compare", "Responsive", "Gallery", "Present", "Design", "Inspect"]) {
+    await railView(p, name).click()
+    await wait(500)
+  }
+  await p.keyboard.press("ControlOrMeta+k")
+  await wait(400)
+  await p.keyboard.press("Escape")
+  const plain = (await resources(p)).filter((u) => /workspace-/.test(u))
+  const railItems = await p.locator('nav[aria-label="Workspace"]').count()
+  const errors = [...p.errors]
+  await p.closeAll()
+  servers.workspace.host = createMockHost()
+  const w = await open("workspace", { hash: "view=inspect&scenario=tasks.list" })
+  const start = await resources(w)
+  const navEarly = start.some((u) => /workspace-nav-/.test(u))
+  const pageEarly = start.some((u) => /workspace-page-/.test(u))
+  // Reported, not gated: the scripts a Studio with a workspace loads before any interaction, so a core split stays visible.
+  const wsDir = join(root, ".acceptance", "workspace", "assets")
+  const initial = [...new Set(start.map((u) => new URL(u).pathname).filter((u) => /^\/assets\/[^/]+\.js$/.test(u)).map((u) => u.slice("/assets/".length)))].filter((f) => existsSync(join(wsDir, f))).sort()
+  const initialGz = initial.reduce((sum, f) => sum + gzipSync(readFileSync(join(wsDir, f))).length, 0)
+  await railModule(w, "Site").click()
+  await wait(1200)
+  const pageAfter = (await resources(w)).some((u) => /workspace-page-/.test(u))
+  errors.push(...w.errors)
+  await w.closeAll()
+  const acRun = results.filter((r) => r.id.startsWith("AC-"))
+  const acFailed = acRun.filter((r) => r.status === "fail").map((r) => r.id)
+  const met = growth <= 3072 && built.length === 0 && plain.length === 0 && railItems === 0 && navEarly && !pageEarly && pageAfter && !errors.length
+  const status = !met || acFailed.length ? "fail" : acRun.length ? "pass" : "not-measured"
+  const acNote = acRun.length ? `${acRun.length} AC criteria ran in this pass, failing: ${acFailed.join(", ") || "none"}` : "the AC suite did not run in this pass (ONLY), so that part is not measured"
+  return [status, `initial Studio chunk ${(gz / 1024).toFixed(1)} KB gzipped, ${growth >= 0 ? "+" : ""}${growth} bytes against the 0.11.0 baseline of ${STUDIO_CHUNK_BASELINE_GZ} (budget 3,072); without a workspace the build has ${built.length} workspace chunks, ${plain.length} were requested across every view and Go to, and the rail has ${railItems} workspace items; with one, the navigation chunk loaded at start ${navEarly}, module code before a module opened ${pageEarly} and after ${pageAfter}, and the scripts loaded before any interaction were ${initial.map((f) => f.replace(/-[\w-]{8}\.js$/, "")).join(", ")} at ${(initialGz / 1024).toFixed(1)} KB gzipped in all (reported, not gated); page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}; ${acNote}`]
+})
+
+// WS-02 Modules follow the views with the views' marker, focus and labels; keyboard, Go to, links and Back reach every module and section
+await check("WS-02", async () => {
+  const errors = []
+  servers.workspace.host = createMockHost()
+  const p = await open("workspace", { hash: "view=inspect&scenario=tasks.list" })
+  const hash = () => p.evaluate(() => location.hash)
+  const order = await p.evaluate(() => {
+    const views = document.querySelector('[aria-label="Studio"] nav[aria-label="Views"]')
+    const ws = document.querySelector('[aria-label="Studio"] nav[aria-label="Workspace"]')
+    return { after: !!views && !!ws && !!(views.compareDocumentPosition(ws) & Node.DOCUMENT_POSITION_FOLLOWING), divider: ws?.previousElementSibling?.getAttribute("role") === "separator", labels: [...(ws?.querySelectorAll("button") ?? [])].map((b) => b.textContent.trim()) }
+  })
+  const marker = (locator) => locator.first().evaluate((el) => {
+    const b = getComputedStyle(el, "::before")
+    return `${b.width} ${b.backgroundColor}`
+  })
+  const viewMarker = await marker(p.locator('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]'))
+  await railView(p, "Design").focus()
+  await p.keyboard.press("Tab")
+  // The views' focus indicator, drawn inside the rail item: an inset outline (0.12) or an inset ring.
+  const focused = await p.evaluate(() => {
+    const s = getComputedStyle(document.activeElement)
+    return { text: document.activeElement?.textContent?.trim(), ring: s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 2 && parseFloat(s.outlineOffset) < 0 ? `inset outline ${s.outlineWidth} ${s.outlineColor}` : s.boxShadow }
+  })
+  await p.keyboard.press("Enter")
+  await poll(hash, (h) => /module=site/.test(h))
+  await wait(600)
+  const moduleMarker = await marker(p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button[aria-pressed="true"]'))
+  const viewsPressed = await p.locator('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]').count()
+  const opened = await p.evaluate(() => ({ hash: location.hash, h1: document.querySelector("h1")?.textContent, crumbs: document.querySelector("header")?.innerText ?? "" }))
+  // Sections by keyboard: focus Secrets in the module's panel and press Enter.
+  await p.locator('nav[aria-label="Sections"] button', { hasText: "Secrets" }).focus()
+  await p.keyboard.press("Enter")
+  const sectionHash = await poll(hash, (h) => /section=secrets/.test(h))
+  const goTo = async (target) => {
+    await p.keyboard.press("ControlOrMeta+k")
+    await wait(400)
+    await p.keyboard.type("workspace")
+    await wait(300)
+    // An option's name is its parts in order, e.g. "Secrets Site" for the Secrets section of Site.
+    const options = await p.evaluate(() => [...document.querySelectorAll('[role="dialog"] [role="option"]')].map((o) => [...o.childNodes].map((n) => n.textContent.trim()).filter(Boolean).join(" ")))
+    let selected = ""
+    for (let i = 0; i < 40 && selected !== target; i++) {
+      selected = await p.evaluate(() => {
+        const o = document.querySelector('[role="dialog"] [role="option"][aria-selected="true"]')
+        return o ? [...o.childNodes].map((n) => n.textContent.trim()).filter(Boolean).join(" ") : ""
+      })
+      if (selected !== target) await p.keyboard.press("ArrowDown")
+    }
+    await p.keyboard.press("Enter")
+    await wait(700)
+    return { options, selected }
+  }
+  const viaGoTo = { first: await goTo("General Site") }
+  viaGoTo.hash = await poll(hash, (h) => /section=general/.test(h))
+  const back = []
+  for (let i = 0; i < 3; i++) {
+    const was = await hash()
+    await p.evaluate(() => history.back())
+    const h = await poll(hash, (x) => x !== was)
+    await wait(300)
+    back.push({ hash: h, open: await p.evaluate(() => !!document.querySelector('[aria-label="Studio"] nav[aria-label="Workspace"] button[aria-pressed="true"]')) })
+  }
+  // The second module by keyboard: Tab from Site to Audit, then Enter.
+  await railModule(p, "Site").focus()
+  await p.keyboard.press("Tab")
+  const nextFocused = await p.evaluate(() => document.activeElement?.textContent?.trim())
+  await p.keyboard.press("Enter")
+  const auditHash = await poll(hash, (h) => /module=audit/.test(h))
+  const audit = await poll(() => p.getByText(/No component for the "audit" module/).first().isVisible().catch(() => false), Boolean)
+  // Go to reaches every module and section.
+  const reached = {}
+  for (const [target, want] of [["Site", /^#module=site&section=general/], ["General Site", /^#module=site&section=general/], ["Secrets Site", /^#module=site&section=secrets/], ["Audit", /^#module=audit/]]) {
+    if (target === "General Site") {
+      // Leave General first so this entry is a real move.
+      await goTo("Audit")
+      await poll(hash, (h) => /module=audit/.test(h))
+    }
+    const { selected } = await goTo(target)
+    const h = await poll(hash, (x) => want.test(x))
+    reached[target] = selected === target && want.test(h)
+  }
+  const options = viaGoTo.first.options
+  await p.closeAll()
+  // Links reach every module and section.
+  const links = {}
+  for (const [link, pressed, expect] of [["module=site&section=general", "Site", (m) => m.h1 === "Site" && m.field && !m.secret], ["module=site&section=secrets", "Site", (m) => m.h1 === "Site" && m.secret], ["module=audit", "Audit", (m) => m.reason]]) {
+    servers.workspace.host = createMockHost()
+    const l = await open("workspace", { hash: link })
+    const m = await poll(() => l.evaluate(() => ({ h1: document.querySelector("h1")?.textContent, field: !!document.querySelector('[data-kit] input[type="text"], [data-kit] input:not([type])'), secret: !!document.querySelector('input[type="password"]'), reason: /No component for the "audit" module/.test(document.body.innerText), pressed: document.querySelector('[aria-label="Studio"] nav[aria-label="Workspace"] button[aria-pressed="true"]')?.textContent?.trim(), hash: location.hash })), (m) => m.pressed === pressed && expect(m))
+    links[link] = m.pressed === pressed && expect(m)
+    errors.push(...l.errors)
+    await l.closeAll()
+  }
+  errors.push(...p.errors)
+  const wantOptions = ["Site", "General Site", "Secrets Site", "Audit"]
+  const listed = wantOptions.every((o) => options.includes(o))
+  const ok = order.after && order.divider && order.labels.join() === "Site,Audit" && /^2px /.test(viewMarker) && viewMarker === moduleMarker && focused.text === "Site" && /inset/.test(focused.ring) && /module=site&section=general/.test(opened.hash) && opened.h1 === "Site" && /Site/.test(opened.crumbs) && /General/.test(opened.crumbs) && viewsPressed === 0 && /section=secrets/.test(sectionHash) && /section=general/.test(viaGoTo.hash) && /section=secrets/.test(back[0].hash) && /section=general/.test(back[1].hash) && !/module=/.test(back[2].hash) && !back[2].open && nextFocused === "Audit" && /module=audit/.test(auditHash) && audit && listed && Object.values(reached).every(Boolean) && Object.values(links).every(Boolean) && !errors.length
+  return [ok ? "pass" : "fail", `rail order ${order.after ? "views then modules" : "wrong"}${order.divider ? " after a divider" : ", no divider"}, labels ${order.labels.join(", ")}; marker ${viewMarker} on a view and ${moduleMarker} on a module; Tab from the last view reached "${focused.text}" with ${/inset/.test(focused.ring) ? "the inset ring" : "no ring"}; Enter opened ${opened.hash} titled "${opened.h1}" (views pressed ${viewsPressed}); Enter on Secrets in the panel opened ${sectionHash}; Go to opened ${viaGoTo.hash}; Back went to ${back.map((b) => b.hash || "(none)").join(", then ")}; Tab then Enter reached "${nextFocused}" at ${auditHash}, which ${audit ? "says it has no component" : "gave no reason"}; Go to listed ${options.join(", ")} and reached ${Object.entries(reached).map(([k, v]) => `${k} ${v ? "yes" : "no"}`).join(", ")}; links reached ${Object.entries(links).map(([k, v]) => `${k} ${v ? "yes" : "no"}`).join(", ")}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// WS-03 A deep import from shell internals in src/workspace/ fails lint; an undeclared module fails the build by name
+await check("WS-03", async () => {
+  for (const f of readdirSync(join(root, "src/workspace"))) if (/^acceptance-probe.*\.tsx$/.test(f)) rmSync(join(root, "src/workspace", f), { force: true })
+  const probe = join(root, `src/workspace/acceptance-probe-${process.pid}-${Date.now()}.tsx`)
+  const lint = (code) => {
+    writeFileSync(probe, code)
+    const r = spawnSync("npx", ["eslint", "--no-warn-ignored", probe], { cwd: root, encoding: "utf8" })
+    return { code: r.status, out: `${r.stdout}${r.stderr}` }
+  }
+  let deep
+  let own
+  try {
+    deep = lint('import { Button } from "@/components/ui/button"\nimport { cn } from "../lib/utils"\nexport const probe = [Button, cn]\n')
+    own = lint('import { ModulePage } from "@studio/kit"\nimport { useModule } from "@studio/workspace"\nimport workspace from "./index"\nexport const probe = [ModulePage, useModule, workspace]\n')
+  } finally {
+    rmSync(probe, { force: true })
+  }
+  const b = spawnSync("npx", ["vite", "build", "--outDir", join(root, ".acceptance", "orphan"), "--emptyOutDir", "--logLevel", "error"], { cwd: root, encoding: "utf8", env: { ...process.env, VITE_STUDIO_ADAPTER: "workspace", VITE_STUDIO_WORKSPACE: "orphan" } })
+  const built = `${b.stdout}${b.stderr}`
+  const named = /@\/components\/ui\/button is outside the workspace boundary/.test(deep.out) && /\.\.\/lib\/utils is outside the workspace boundary/.test(deep.out)
+  const ok = deep.code !== 0 && named && own.code === 0 && b.status !== 0 && /"orphan", which the adapter does not declare/.test(built)
+  return [ok ? "pass" : "fail", `a deep import and a relative escape from src/workspace/ ${deep.code !== 0 ? "fail" : "pass"} lint${named ? ", each named" : ""}; imports of the kit, the workspace API and the module's own files ${own.code === 0 ? "pass" : `fail: ${own.out.split("\n").slice(0, 3).join(" ")}`}; a module map that defines an undeclared module ${b.status !== 0 ? "fails the build" : "builds"}${/"orphan"/.test(built) ? ' naming "orphan"' : ""}`]
+})
+
+// WS-04 Undeclared operations, kind mismatches and cross-origin endpoints are refused without a request
+await check("WS-04", async () => {
+  const { stripTypeScriptTypes } = await import("node:module")
+  const tmp = mkdtempSync(join(tmpdir(), "studio-ops-"))
+  let sent = 0
+  let codes
+  let before
+  let control
+  // Node marks type stripping experimental; keep that notice out of the acceptance output.
+  const emitWarning = process.emitWarning
+  process.emitWarning = (warning, ...rest) => (/stripTypeScriptTypes/.test(String(warning)) ? undefined : emitWarning.call(process, warning, ...rest))
+  try {
+    const file = join(tmp, "operations.mjs")
+    writeFileSync(file, stripTypeScriptTypes(readFileSync(join(root, "src/studio/workspace/operations.ts"), "utf8"), { mode: "strip" }))
+    const { createOperationClient } = await import(pathToFileURL(file).href)
+    const transport = async () => {
+      sent++
+      return { status: 200, text: async () => JSON.stringify({ ok: true, data: null }) }
+    }
+    const uses = [{ name: "site.read", kind: "read" }, { name: "site.write", kind: "write" }]
+    const client = (base) => createOperationClient({ base, uses, location: "http://127.0.0.1:4000/", fetch: transport })
+    const refused = [
+      await client("./__studio/ops")("audit.list", "read"),
+      await client("./__studio/ops")("site.write", "read"),
+      await client("./__studio/ops")("site.read", "write"),
+      await client("https://elsewhere.example/ops")("site.read", "read"),
+      await client("//elsewhere.example/ops")("site.read", "read"),
+    ]
+    codes = refused.map((r) => (r.ok ? "sent" : r.error.code))
+    before = sent
+    await client("./__studio/ops")("site.read", "read")
+    control = sent - before
+  } finally {
+    process.emitWarning = emitWarning
+    rmSync(tmp, { recursive: true, force: true })
+  }
+  servers.workspace.host = createMockHost()
+  const p = await open("workspace", { hash: "module=site&section=general" })
+  const names = []
+  p.on("request", (r) => {
+    const m = /\/__studio\/ops\/([^?]+)/.exec(r.url())
+    if (m) names.push(decodeURIComponent(m[1]))
+  })
+  await p.reload()
+  await p.waitForSelector("header")
+  await wait(1500)
+  await siteName(p).fill("Acceptance")
+  await p.getByRole("button", { name: "Save", exact: true }).click()
+  await poll(() => names.filter((n) => n === "site.write").length, (n) => n > 0)
+  await wait(300)
+  const errors = [...p.errors]
+  await p.closeAll()
+  const declared = names.every((n) => n === "site.read" || n === "site.write")
+  const ok = codes.join() === "undeclared,kind-mismatch,kind-mismatch,cross-origin,cross-origin" && before === 0 && control === 1 && declared && names.includes("site.read") && names.includes("site.write") && !errors.length
+  return [ok ? "pass" : "fail", `the operation client answered ${codes.join(", ")} for an undeclared name, a write declared as a read, a read declared as a write, another origin and a protocol-relative origin, with ${before} requests sent; a declared read sent ${control}; in the browser the example module requested only ${[...new Set(names)].join(" and ") || "nothing"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// WS-05 A conflicting write keeps the edit, shows the current value and offers retry; nothing is overwritten
+await check("WS-05", async () => {
+  servers.workspace.host = createMockHost()
+  const p = await open("workspace", { hash: "module=site&section=general" })
+  await wait(1000)
+  await siteName(p).fill("Mine")
+  const opened = await ops("site.read", { input: null })
+  const theirs = await ops("site.write", { input: { siteName: "Theirs" }, expectedRevision: opened.revision }, "someone else")
+  await p.getByRole("button", { name: "Save", exact: true }).click()
+  const barText = () => p.getByRole("region", { name: "Changes", exact: true }).innerText().catch(() => "")
+  const bar = await poll(barText, (t) => /Changed elsewhere/.test(t))
+  const kept = await siteName(p).inputValue()
+  const host1 = (await ops("site.read", { input: null })).data.settings.siteName
+  await p.getByRole("button", { name: "Save mine again" }).click()
+  const after = await poll(barText, (t) => /Saved/.test(t))
+  const host2 = (await ops("site.read", { input: null })).data.settings.siteName
+  const errors = [...p.errors]
+  await p.closeAll()
+  const ok = !errors.length && theirs.ok && /Changed elsewhere/.test(bar) && /Theirs/.test(bar) && kept === "Mine" && host1 === "Theirs" && host2 === "Mine" && /Saved/.test(after)
+  return [ok ? "pass" : "fail", `another writer set the site name to "${host1}"; Save then showed ${/Changed elsewhere/.test(bar) ? "the conflict" : "no conflict"} with the current value ${/Theirs/.test(bar) ? '"Theirs"' : "missing"}, kept the edit "${kept}" and left the host at "${host1}"; Save mine again wrote "${host2}"${/Saved/.test(after) ? " and said Saved" : ""}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// WS-05b A host that stops answering after a module opened fails only that operation: the page and the edit stay, SaveBar shows
+// the error with Retry, leaving still asks, and Retry saves once the host answers again
+await check("WS-05b", async () => {
+  const host = createMockHost()
+  servers.workspace.host = host
+  const p = await open("workspace", { hash: "module=site&section=general" })
+  try {
+    await wait(1200)
+    await siteName(p).fill("Kept edit")
+    // The host goes away: whatever answers now is not the operations host (a proxy's HTML error page).
+    servers.workspace.host = (req, res) => {
+      res.statusCode = 502
+      res.setHeader("content-type", "text/html")
+      res.end("<html><body>Bad gateway</body></html>")
+    }
+    await p.getByRole("button", { name: "Save", exact: true }).click()
+    const barText = () => p.getByRole("region", { name: "Changes", exact: true }).innerText().catch(() => "")
+    const bar = await poll(barText, (t) => /No operations host answered/.test(t))
+    const failed = { retry: await p.getByRole("button", { name: "Retry", exact: true }).count(), value: await siteName(p).inputValue(), h1: await p.locator("h1").first().innerText().catch(() => ""), unavailable: await p.getByText(/is unavailable/).count() }
+    await railView(p, "Compare").click()
+    await wait(500)
+    const asked = await p.getByRole("dialog", { name: "Leave without saving?" }).isVisible().catch(() => false)
+    await p.getByRole("button", { name: "Stay", exact: true }).click()
+    await wait(400)
+    servers.workspace.host = host
+    await p.getByRole("button", { name: "Retry", exact: true }).click()
+    const after = await poll(barText, (t) => /Saved/.test(t))
+    const stored = (await ops("site.read", { input: null })).data.settings.siteName
+    const errors = [...p.errors]
+    const ok = !errors.length && /No operations host answered/.test(bar) && failed.retry === 1 && failed.value === "Kept edit" && failed.h1 === "Site" && failed.unavailable === 0 && asked && /Saved/.test(after) && stored === "Kept edit"
+    return [ok ? "pass" : "fail", `with the host gone Save ${/No operations host answered/.test(bar) ? "showed the host error" : "showed no host error"} with ${failed.retry} Retry, kept "${failed.value}" on the ${failed.h1} page (${failed.unavailable} unavailable notices) and leaving ${asked ? "asked" : "did not ask"}; with the host back Retry ${/Saved/.test(after) ? "saved" : "did not save"} and the host holds "${stored}"; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  } finally {
+    servers.workspace.host = host
+    await p.closeAll()
+  }
+})
+
+// WS-06 The dirty guard stops leaving unsaved changes (rail, view keys and Back) and Esc keeps them
+await check("WS-06", async () => {
+  servers.workspace.host = createMockHost()
+  const p = await open("workspace", { hash: "view=inspect&scenario=tasks.list" })
+  await railModule(p, "Site").click()
+  await wait(1500)
+  await siteName(p).fill("Unsaved edit")
+  const dialog = () => p.getByRole("dialog", { name: "Leave without saving?" })
+  await railView(p, "Compare").click()
+  await wait(500)
+  const asked = await dialog().isVisible().catch(() => false)
+  await p.keyboard.press("Escape")
+  await wait(500)
+  const stayed = { open: await dialog().count(), hash: await p.evaluate(() => location.hash), value: await siteName(p).inputValue() }
+  await p.locator("h1").click()
+  await p.keyboard.press("2")
+  await wait(500)
+  const keyAsked = await dialog().isVisible().catch(() => false)
+  await p.getByRole("button", { name: "Stay", exact: true }).click()
+  await wait(400)
+  await p.evaluate(() => history.back())
+  const backAsked = await poll(() => dialog().isVisible().catch(() => false), Boolean)
+  await p.getByRole("button", { name: "Stay", exact: true }).click()
+  await wait(400)
+  const afterBack = { hash: await poll(() => p.evaluate(() => location.hash), (h) => /module=site/.test(h)), value: await siteName(p).inputValue() }
+  await railView(p, "Compare").click()
+  await wait(500)
+  await p.getByRole("button", { name: "Leave without saving", exact: true }).click()
+  const left = await poll(() => p.evaluate(() => ({ hash: location.hash, pressed: document.querySelector('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]')?.textContent?.trim() })), (l) => l.pressed === "Compare")
+  const errors = [...p.errors]
+  await p.closeAll()
+  const ok = !errors.length && asked && stayed.open === 0 && /module=site/.test(stayed.hash) && stayed.value === "Unsaved edit" && keyAsked && backAsked && /module=site/.test(afterBack.hash) && afterBack.value === "Unsaved edit" && /view=compare/.test(left.hash) && left.pressed === "Compare"
+  return [ok ? "pass" : "fail", `with an unsaved edit the rail ${asked ? "asked" : "did not ask"}, Esc kept ${stayed.hash} with "${stayed.value}"; the 2 key ${keyAsked ? "asked" : "did not ask"}; Back ${backAsked ? "asked" : "did not ask"} and Stay kept ${afterBack.hash} with "${afterBack.value}"; Leave without saving opened ${left.hash} with ${left.pressed} pressed; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// WS-06b Back and Forward out of a module with unsaved changes ask on any step; Stay keeps the module's link and page and later
+// history steps still work; leaving through history leaves no duplicate entry behind (the example workspace in the dev server)
+await check("WS-06b", async () => {
+  const port = 5396
+  const dev = spawn("npx", ["vite", "--port", String(port), "--strictPort", "--logLevel", "error"], { cwd: root, stdio: "ignore", env: { ...process.env, VITE_STUDIO_ADAPTER: "workspace" } })
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  try {
+    const url = `http://localhost:${port}/`
+    for (let i = 0; i < 60 && !(await fetch(url).then((r) => r.ok).catch(() => false)); i++) await wait(500)
+    const p = await context.newPage()
+    const errors = []
+    p.on("pageerror", (e) => errors.push(String(e)))
+    const hash = () => p.evaluate(() => location.hash)
+    const h1 = () => p.locator("h1").first().innerText().catch(() => "")
+    const dialog = () => p.getByRole("dialog", { name: "Leave without saving?" })
+    const rail = (label) => p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button', { hasText: label })
+    const name = () => p.getByLabel("Site name", { exact: true })
+    await p.goto(`${url}#view=inspect&scenario=tasks.list`)
+    await p.waitForSelector('nav[aria-label="Workspace"]')
+    await rail("Site").click()
+    await name().waitFor()
+    await rail("Audit").click()
+    await wait(600)
+    await p.goBack()
+    await name().waitFor()
+    await wait(600)
+    await name().fill("Unsaved edit")
+    // Forward would leave Site for Audit: it asks, and Stay keeps Site.
+    await p.goForward()
+    await wait(800)
+    const forwardAsked = await dialog().isVisible().catch(() => false)
+    await p.getByRole("button", { name: "Stay", exact: true }).click()
+    await wait(500)
+    const stayed = { hash: await hash(), h1: await h1(), value: await name().inputValue() }
+    // Stay put Site's place back on top of Audit's entry, so the next Back asks again; Leave without saving opens Audit.
+    await p.goBack()
+    await wait(800)
+    const backAsked = await dialog().isVisible().catch(() => false)
+    await p.getByRole("button", { name: "Leave without saving", exact: true }).click()
+    await wait(900)
+    const leftTo = { hash: await hash(), h1: await h1() }
+    // The next Back reaches Site's own entry, not a duplicate of Audit's.
+    await p.goBack()
+    await name().waitFor()
+    await wait(600)
+    const backAgain = { hash: await hash(), h1: await h1() }
+    // A guarded Back out to the view, then Leave: Forward returns to Site, not to a duplicate of the view.
+    await name().fill("Second edit")
+    await p.goBack()
+    await wait(800)
+    const viewAsked = await dialog().isVisible().catch(() => false)
+    await p.getByRole("button", { name: "Leave without saving", exact: true }).click()
+    await wait(900)
+    const atView = { hash: await hash(), h1: await p.locator("h1").count() }
+    await p.goForward()
+    await wait(900)
+    const forwardAgain = { hash: await hash(), h1: await h1() }
+    const ok = !errors.length && forwardAsked && /module=site/.test(stayed.hash) && stayed.h1 === "Site" && stayed.value === "Unsaved edit" && backAsked && /module=audit/.test(leftTo.hash) && leftTo.h1 === "Audit" && /module=site/.test(backAgain.hash) && backAgain.h1 === "Site" && viewAsked && /view=inspect/.test(atView.hash) && atView.h1 === 0 && /module=site/.test(forwardAgain.hash) && forwardAgain.h1 === "Site"
+    return [ok ? "pass" : "fail", `Forward with an unsaved edit ${forwardAsked ? "asked" : "did not ask"}; Stay kept ${stayed.hash} showing ${stayed.h1} with "${stayed.value}"; the next Back ${backAsked ? "asked" : "did not ask"} and Leave opened ${leftTo.hash} (${leftTo.h1}); Back then opened ${backAgain.hash} (${backAgain.h1}); a guarded Back to the view ${viewAsked ? "asked" : "did not ask"}, Leave opened ${atView.hash}, and Forward opened ${forwardAgain.hash} (${forwardAgain.h1}); page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  } finally {
+    await context.close()
+    dev.kill()
+  }
+})
+
+// WS-07 Without an operations host every module says why it is unavailable; nothing is simulated
+await check("WS-07", async () => {
+  const p = await open("nohost", { hash: "module=site&section=general" })
+  await wait(1800)
+  const site = { reason: await p.getByText(/No operations host answered at \.\/__studio\/ops/).first().isVisible().catch(() => false), form: await siteName(p).count() }
+  await railModule(p, "Audit").click()
+  await wait(900)
+  const audit = await p.getByText(/No component for the "audit" module/).first().isVisible().catch(() => false)
+  await railModule(p, "Site").click()
+  await wait(900)
+  const still = await p.getByText(/No operations host answered/).first().isVisible().catch(() => false)
+  const errors = [...p.errors]
+  await p.closeAll()
+  const ok = !errors.length && site.reason && site.form === 0 && audit && still
+  return [ok ? "pass" : "fail", `a built Studio served without its host: Site ${site.reason ? "says no operations host answered" : "gave no reason"} and shows ${site.form} form fields; Audit ${audit ? "says it has no component" : "gave no reason"}; reopening Site ${still ? "still says why" : "lost the reason"}. A Studio that declares no operations is covered by the model test WM-01; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// WS-08 At 360 to 430 px modules open from the bottom bar's Workspace drawer: no sideways scroll, 44 px targets, 16 px input text
+await check("WS-08", async () => {
+  const bad = []
+  const errors = []
+  const wideRegions = (p) =>
+    p.evaluate(() => {
+      const wide = [...document.querySelectorAll("body *")].filter((e) => e.scrollWidth > innerWidth + 1 && !["auto", "scroll"].includes(getComputedStyle(e).overflowX) && !e.closest(".preview-frame"))
+      return { doc: document.documentElement.scrollWidth, iw: innerWidth, wide: wide.length, h1: document.querySelector("h1")?.textContent, dialogs: document.querySelectorAll('[role="dialog"]').length, secret: !!document.querySelector('[data-kit] input[type="password"]') }
+    })
+  // Every kit target and input across the page's states, named by state.
+  const misses = (states) => Object.entries(states).flatMap(([state, m]) => [...m.small.map((x) => `${state}: ${x.n} ${x.w}x${x.h}`), ...m.smallText.map((x) => `${state}: ${x.n} text ${x.text}px`), ...(m.count ? [] : [`${state}: no kit controls`])])
+  for (const width of [360, 390, 430]) {
+    servers.workspace.host = createMockHost()
+    const p = await open("workspace", { width, height: 844, touch: true, hash: "view=inspect&scenario=tasks.list" })
+    const bottomDetails = await p.locator('nav[aria-label="Views"] button', { hasText: "Details" }).count()
+    const headerDetails = await p.locator('header button[aria-label="Details"]').count()
+    await p.locator('nav[aria-label="Views"] button', { hasText: "Workspace" }).click()
+    await wait(800)
+    const drawer = p.getByRole("dialog")
+    const listed = await drawer.getByRole("button", { name: "Site", exact: true }).count()
+    const small = await p.evaluate(() => [...document.querySelectorAll('[role="dialog"] button, nav[aria-label="Views"] button, header button')].filter((e) => e.offsetParent).map((e) => {
+      const r = e.getBoundingClientRect()
+      return { n: e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16), w: Math.round(r.width), h: Math.round(r.height) }
+    }).filter((r) => r.w < 44 || r.h < 44))
+    await drawer.getByRole("button", { name: "Site", exact: true }).click()
+    await poll(() => siteName(p).isVisible().catch(() => false), Boolean)
+    await wait(600)
+    const page = await wideRegions(p)
+    const { measured: states, missed: unreached } = await kitStates(p, () => kitTargets(p))
+    errors.push(...p.errors)
+    await p.closeAll()
+    // The Secrets section: a secret field with Reveal inside an input group.
+    servers.workspace.host = createMockHost()
+    const s = await open("workspace", { width, height: 844, touch: true, hash: "module=site&section=secrets" })
+    await poll(() => s.locator('[data-kit] input[type="password"]').count(), (n) => n > 0)
+    const secrets = await wideRegions(s)
+    const secretKit = await kitTargets(s)
+    errors.push(...s.errors)
+    await s.closeAll()
+    const fits = (m) => m.doc <= m.iw && m.wide === 0 && m.h1 === "Site" && m.dialogs === 0
+    const missed = misses({ ...states, secrets: secretKit })
+    const fine = bottomDetails === 0 && headerDetails === 1 && listed === 1 && !small.length && fits(page) && fits(secrets) && secrets.secret && !missed.length && !unreached.length
+    if (!fine) bad.push(`${width}: ${JSON.stringify({ bottomDetails, headerDetails, listed, small, page, secrets, missed, unreached })}`)
+  }
+  if (errors.length) bad.push(`page errors ${errors.slice(0, 2).join(" | ")}`)
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : "at 360, 390 and 430 px the bottom bar's Workspace entry (Details in the top bar) opened a drawer listing Site; every bar, header and drawer target is at least 44 px, and every kit control is at least 44 px with 16 px input text on the General section as loaded, with an unsaved edit (Discard, Save), with the Region list open, in a conflict (Use current value, Save mine again) and in the leave dialog, and on the Secrets section (the secret field and Reveal); the drawer closed on choosing, nothing scrolls sideways, and no page errors. Real devices and swipe are not covered."]
+})
+
+// WS-09 Kit components meet the contrast, focus, target, reduced-motion and forced-color floors in both appearances
+await check("WS-09", async () => {
+  const contrast = (p) =>
+    p.evaluate(() => {
+      const canvas = document.createElement("canvas")
+      canvas.width = canvas.height = 1
+      const g = canvas.getContext("2d", { willReadFrequently: true })
+      const rgb = (layers) => {
+        g.clearRect(0, 0, 1, 1)
+        for (const c of layers) {
+          g.fillStyle = c
+          g.fillRect(0, 0, 1, 1)
+        }
+        return Array.from(g.getImageData(0, 0, 1, 1).data.slice(0, 3))
+      }
+      const lum = (c) => {
+        const f = (v) => {
+          v /= 255
+          return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+        }
+        return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
+      }
+      const ratio = (a, b) => {
+        const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
+        return (x + 0.05) / (y + 0.05)
+      }
+      const low = []
+      for (const el of document.querySelectorAll("[data-kit] *")) {
+        if (!el.getClientRects().length) continue
+        if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue
+        if (el.closest(":disabled, [aria-disabled='true'], [data-disabled]")) continue
+        const chain = []
+        for (let a = el; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+        const bg = rgb(["#ffffff", ...chain])
+        const st = getComputedStyle(el)
+        const fg = rgb([`rgb(${bg.join(",")})`, st.color])
+        const size = parseFloat(st.fontSize)
+        const need = size >= 24 || (size >= 18.66 && Number(st.fontWeight) >= 700) ? 3 : 4.5
+        const r = ratio(fg, bg)
+        if (r < need) low.push(`"${el.textContent.trim().slice(0, 24)}" ${r.toFixed(2)}`)
+      }
+      // Typed values and placeholders are text too.
+      for (const el of document.querySelectorAll('[data-kit] input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), [data-kit] textarea')) {
+        if (!el.getClientRects().length || el.disabled) continue
+        const text = el.value || el.placeholder
+        if (!text) continue
+        const chain = []
+        for (let a = el; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+        const bg = rgb(["#ffffff", ...chain])
+        const st = getComputedStyle(el, el.value ? null : "::placeholder")
+        const fg = rgb([`rgb(${bg.join(",")})`, st.color])
+        const size = parseFloat(getComputedStyle(el).fontSize)
+        const r = ratio(fg, bg)
+        if (r < (size >= 24 ? 3 : 4.5)) low.push(`${el.value ? "value" : "placeholder"} "${text.slice(0, 24)}" ${r.toFixed(2)}`)
+      }
+      return low
+    })
+  // Tailwind gives every ring utility a computed box-shadow even unfocused, so "has a box-shadow" proves nothing: record each kit
+  // element's outline and shadow layers unfocused, then count a focus indicator only where focus adds a visible layer.
+  // Controls transition their ring in: read styles once the running transitions end (infinite animations such as spinners are skipped).
+  const settle = (p) => p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => null))))
+  const unfocused = async (p) => {
+    await p.mouse.move(0, 0)
+    await p.evaluate(() => document.activeElement?.blur?.())
+    await settle(p)
+    await p.evaluate(() => {
+      const before = new WeakMap()
+      for (const e of document.querySelectorAll("[data-kit] *")) {
+        const s = getComputedStyle(e)
+        before.set(e, { outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} ${s.outlineOffset}`, shadow: s.boxShadow })
+      }
+      window.__kitUnfocused = before
+    })
+  }
+  const tabWalk = async (p, forced) => {
+    await p.evaluate(() => {
+      const h = document.querySelector("[data-kit] h1")
+      h.tabIndex = -1
+      h.focus()
+    })
+    const lost = []
+    const faint = []
+    const ratios = []
+    let reached = 0
+    for (let i = 0; i < 14; i++) {
+      await p.keyboard.press("Tab")
+      await settle(p)
+      const f = await p.evaluate(() => {
+        const e = document.activeElement
+        if (!e?.closest("[data-kit]")) return null
+        const canvas = document.createElement("canvas")
+        canvas.width = canvas.height = 1
+        const g = canvas.getContext("2d", { willReadFrequently: true })
+        const paint = (layers) => {
+          g.clearRect(0, 0, 1, 1)
+          for (const c of layers) {
+            g.fillStyle = c
+            g.fillRect(0, 0, 1, 1)
+          }
+          return Array.from(g.getImageData(0, 0, 1, 1).data)
+        }
+        const lum = (c) => {
+          const f = (v) => {
+            v /= 255
+            return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+          }
+          return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
+        }
+        const ratio = (a, b) => {
+          const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
+          return (x + 0.05) / (y + 0.05)
+        }
+        // The backdrop the indicator is drawn on: the parent's for an outer ring, the element's own for an inset one.
+        const backdrop = (inside) => {
+          const chain = []
+          for (let a = inside ? e : e.parentElement; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+          return paint(["#ffffff", ...chain]).slice(0, 3)
+        }
+        const split = (v) => (v === "none" ? [] : v.split(/,(?![^(]*\))/).map((x) => x.trim()))
+        const s = getComputedStyle(e)
+        const before = window.__kitUnfocused?.get(e) ?? { outline: "none", shadow: "none" }
+        const marks = []
+        const outline = `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} ${s.outlineOffset}`
+        if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0 && outline !== before.outline && paint([s.outlineColor])[3] > 0) marks.push({ kind: "outline", color: s.outlineColor, inside: parseFloat(s.outlineOffset) < 0 })
+        const was = split(before.shadow)
+        for (const layer of split(s.boxShadow)) {
+          if (was.includes(layer)) continue
+          const color = /^(rgba?|oklch|oklab|lab|lch|color|hsla?)\([^)]*\)/.exec(layer)?.[0] ?? /^#\w+/.exec(layer)?.[0]
+          const lengths = layer.replace(color ?? "", "").match(/-?[\d.]+px/g)?.map(parseFloat) ?? []
+          const [, , blur = 0, spread = 0] = lengths
+          if (color && paint([color])[3] > 0 && (spread > 0 || blur > 0)) marks.push({ kind: "ring", color, inside: /\binset\b/.test(layer) })
+        }
+        const best = marks.map((m) => {
+          const bg = backdrop(m.inside)
+          return ratio(paint([`rgb(${bg.join(",")})`, m.color]).slice(0, 3), bg)
+        }).sort((a, b) => b - a)[0]
+        return { n: e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16) || e.id, outline: marks.some((m) => m.kind === "outline"), visible: marks.length > 0, ratio: best ?? 0 }
+      })
+      if (!f) continue
+      reached++
+      if (forced ? !f.outline : !f.visible) lost.push(f.n)
+      else if (!forced) {
+        ratios.push(f.ratio)
+        if (f.ratio < 3) faint.push(`${f.n} ${f.ratio.toFixed(2)}`)
+      }
+    }
+    return { reached, lost, faint, min: ratios.length ? Math.min(...ratios) : 0 }
+  }
+  // A control's boundary in forced colors is a drawn border; a control inside an input group uses the group's.
+  const boundaryless = (p) =>
+    p.evaluate(() => {
+      const drawn = (e) => {
+        const s = getComputedStyle(e)
+        return s.borderTopStyle !== "none" && parseFloat(s.borderTopWidth) > 0
+      }
+      return [...document.querySelectorAll('[data-kit] button, [data-kit] input, [data-kit] [role="switch"], [data-kit] [role="combobox"]')].filter((e) => e.getBoundingClientRect().width > 2).filter((e) => {
+        const group = e.closest('[data-slot="input-group"]')
+        return !drawn(e) && !(group && drawn(group))
+      }).map((e) => e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16) || e.id)
+    })
+  const notes = []
+  const errors = []
+  let ok = true
+  for (const appearance of ["light", "dark"]) {
+    for (const section of ["general", "secrets"]) {
+      servers.workspace.host = createMockHost()
+      const p = await open("workspace", { appearance, hash: `module=site&section=${section}` })
+      await poll(() => p.locator("[data-kit] h1").count(), (n) => n > 0)
+      await wait(600)
+      let focus
+      let low
+      const unreached = []
+      if (section === "general") {
+        // The page as loaded, with an unsaved edit (where the focus walk runs, through Discard and Save), with the Region list open, in a
+        // conflict and in the leave dialog.
+        const { measured: states, missed } = await kitStates(p, () => contrast(p), async () => {
+          await unfocused(p)
+          focus = await tabWalk(p, false)
+        })
+        unreached.push(...missed.map((state) => `desktop ${state}`))
+        low = Object.entries(states).flatMap(([state, l]) => l.map((x) => `${state}: ${x}`))
+      } else {
+        low = await contrast(p)
+        await unfocused(p)
+        focus = await tabWalk(p, false)
+      }
+      await p.emulateMedia({ reducedMotion: "reduce" })
+      const moving = await p.evaluate(() => [...document.querySelectorAll("[data-kit], [data-kit] *")].filter((e) => {
+        const s = getComputedStyle(e)
+        return (s.animationName !== "none" && parseFloat(s.animationDuration) > 0) || s.transitionDuration.split(",").some((d) => parseFloat(d) > 0)
+      }).length)
+      await p.emulateMedia({ reducedMotion: "reduce", forcedColors: "active" })
+      await unfocused(p)
+      const forced = await tabWalk(p, true)
+      const borderless = await boundaryless(p)
+      errors.push(...p.errors)
+      await p.closeAll()
+      servers.workspace.host = createMockHost()
+      const t = await open("workspace", { appearance, width: 390, height: 844, touch: true, hash: `module=site&section=${section}` })
+      await poll(() => t.locator("[data-kit] h1").count(), (n) => n > 0)
+      await wait(600)
+      const touch = section === "general" ? await kitStates(t, () => kitTargets(t)) : { measured: { page: await kitTargets(t) }, missed: [] }
+      const measured = touch.measured
+      unreached.push(...touch.missed.map((state) => `touch ${state}`))
+      errors.push(...t.errors)
+      await t.closeAll()
+      const small = Object.entries(measured).flatMap(([state, m]) => [...m.small.map((x) => `${state}: ${x.n} ${x.w}x${x.h}`), ...m.smallText.map((x) => `${state}: ${x.n} text ${x.text}px`), ...(m.count ? [] : [`${state}: no kit controls`])])
+      const stops = section === "general" ? 5 : 2
+      const fine = !low.length && focus.reached >= stops && !focus.lost.length && !focus.faint.length && moving === 0 && forced.reached >= stops && !forced.lost.length && !borderless.length && !small.length && !unreached.length
+      ok &&= fine
+      notes.push(`${appearance} ${section}: text below AA (text, values and placeholders${section === "general" ? "; as loaded, unsaved, Region list open, conflict and leave dialog" : ""}) ${low.length ? low.slice(0, 4).join(", ") : "none"}; focus adds a visible indicator on ${focus.reached - focus.lost.length} of ${focus.reached} kit stops${focus.lost.length ? `, none on ${focus.lost.join(", ")}` : ""}, lowest indicator contrast ${focus.min.toFixed(2)}:1${focus.faint.length ? ` (under 3:1 on ${focus.faint.join(", ")})` : ""}; ${moving} kit elements still moving under reduced motion; in forced colors focus outlined on ${forced.reached - forced.lost.length} of ${forced.reached}${borderless.length ? `, controls without a drawn boundary ${borderless.join(", ")}` : ", every control keeps a drawn boundary"}; on a touch screen ${small.length ? `misses ${small.slice(0, 6).join(", ")}` : `every kit target at least 44 px with 16 px input text in ${Object.keys(measured).join(", ")}`}${unreached.length ? `; states not reached ${unreached.join(", ")}` : ""}`)
+    }
+  }
+  if (errors.length) {
+    ok = false
+    notes.push(`page errors ${errors.slice(0, 2).join(" | ")}`)
+  }
+  return [ok ? "pass" : "fail", `${notes.join("; ")}. Forced colors is Chromium's emulation; assistive technologies are not covered.`]
 })
 
 await browser.close()

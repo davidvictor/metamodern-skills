@@ -9,6 +9,7 @@ import { adapter } from "@/adapter"
 import { areaLabel, useStudio } from "@/store"
 import { VIEWS } from "./rail-panel"
 import { isMac } from "./stage-nav"
+import { Slot, WorkspaceNav } from "@/studio/workspace/slots"
 
 export function CommandMenu() {
   const s = useStudio()
@@ -23,7 +24,12 @@ export function CommandMenu() {
           <CommandEmpty>No match. Try an area, a state, or an action such as “reset”.</CommandEmpty>
           <CommandGroup heading="Scenarios">
             {adapter.scenarios.map((x) => (
-              <CommandItem key={x.id} value={`${areaLabel(x.area)} ${x.label} ${x.surface} ${x.id}`} onSelect={run(() => { s.selectScenario(x.id); if (s.view === "gallery") s.set({ view: "inspect" }) })}>
+              <CommandItem key={x.id} value={`${areaLabel(x.area)} ${x.label} ${x.surface} ${x.id}`} onSelect={run(() => {
+                // From a workspace module, the scenario and the view change together, after any question about unsaved changes.
+                if (s.module) return s.selectScenario(x.id, { view: "inspect" })
+                s.selectScenario(x.id)
+                if (s.view === "gallery") s.set({ view: "inspect" })
+              })}>
                 {x.status ? <TriangleAlertIcon className="text-warning" /> : <FileIcon />}
                 <span>{x.label}</span>
                 <span className="text-muted-foreground">{areaLabel(x.area)}</span>
@@ -40,6 +46,9 @@ export function CommandMenu() {
               </CommandItem>
             ))}
           </CommandGroup>
+          <Slot>
+            <WorkspaceNav part="commands" onDone={close} />
+          </Slot>
           <CommandSeparator />
           <CommandGroup heading="Actions">
             <CommandItem value="reset preview" onSelect={run(s.reset)}><RotateCcwIcon />Reset preview<CommandShortcut>R</CommandShortcut></CommandItem>
