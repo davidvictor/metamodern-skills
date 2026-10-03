@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { adapter } from "@/adapter"
-import { canSaveScenarios, optionsFor, useStudio } from "@/store"
+import { optionsFor, useStudio } from "@/store"
 import { normalizeScenarioInput } from "@/studio/input"
 import { propertiesFor } from "@/studio/properties"
 import { SCENARIOS_MAX_BYTES, savedId, validateScenarios, type SavedScenario } from "@/studio/scenarios"
@@ -26,6 +26,8 @@ import type { InputValue, ScenarioInput } from "@/studio/types"
 
 /** Coarse pointers: every row control reaches 44 px and text fields use 16 px text, so phones do not zoom. */
 const TOUCH = "pointer-coarse:min-h-11 pointer-coarse:text-base"
+/** Only the dev server can write scenarios.json (read here, not from the store, so this chunk stays the only importer of the saved-state file model). */
+const canSaveScenarios = import.meta.env.DEV
 const WHY = "Saving needs the local Studio (npm run dev). A published Studio offers Copy as JSON instead."
 
 /**
@@ -294,12 +296,14 @@ function NumberControl({ input: i, id, value, onChange }: { input: ScenarioInput
 function SaveActions() {
   const s = useStudio()
   const focusAfter = useFocusAfter()
+  // The JSON shown to select by hand when the browser has no clipboard or refuses it, for the state it was made from.
+  const [shown, setShown] = React.useState<{ id: string; json: string } | null>(null)
   const sc = s.scenarioObj
   const own = s.savedStates.find((x) => x.id === sc.id)
   const n = Object.keys(s.edits).length
   const ids = adapter.scenarios.map((x) => x.id)
   // A saved state keeps its saved values and takes the edits on top; it always names the generated scenario it came from.
-  const entry = (id: string, label: string): SavedScenario => ({ id, label, base: sc.savedFrom ?? sc.id, values: { ...own?.values, ...s.edits } })
+  const entry = (id: string, label: string, description?: string): SavedScenario => ({ id, label, base: sc.savedFrom ?? sc.id, values: { ...own?.values, ...s.edits }, ...(description !== undefined && { description }) })
   const persist = async (list: SavedScenario[]) => {
     const file = { schema: "studio-scenarios/1" as const, scenarios: list }
     const problems = validateScenarios(file, adapter.scenarios.filter((x) => !x.savedFrom).map((x) => x.id))
@@ -321,7 +325,7 @@ function SaveActions() {
     toast.success(`Saved ${label}`, { description: "In this Studio's scenarios.json. Commit it to share." })
   }
   const save = () =>
-    persist(s.savedStates.map((x) => (x.id === sc.id ? entry(x.id, x.label) : x)))
+    persist(s.savedStates.map((x) => (x.id === sc.id ? entry(x.id, x.label, x.description) : x)))
       .then(() => {
         s.resetProps()
         // Save is disabled once nothing is edited; focus moves to the heading rather than the page body.
@@ -330,11 +334,15 @@ function SaveActions() {
       })
       .catch(fail("Not saved"))
   const copy = async () => {
+    const json = JSON.stringify(entry(own?.id ?? savedId(`${sc.label} edited`, ids), own?.label ?? `${sc.label}, edited`, own?.description), null, 2)
     try {
-      await navigator.clipboard.writeText(JSON.stringify(entry(own?.id ?? savedId(`${sc.label} edited`, ids), own?.label ?? `${sc.label}, edited`), null, 2))
+      await navigator.clipboard.writeText(json)
+      setShown(null)
       toast("Copied as JSON", { description: "Add it to scenarios.json in the local Studio to make it a named state." })
     } catch {
-      toast.error("Couldn't copy", { description: "The browser refused the clipboard." })
+      // No clipboard (an insecure page) or a refusal: show the JSON to select and copy by hand.
+      setShown({ id: sc.id, json })
+      toast.error("Couldn't copy", { description: "Select the JSON below and copy it." })
     }
   }
   return (
@@ -387,6 +395,11 @@ function SaveActions() {
         )}
       </div>
       {!canSaveScenarios && <p className="text-[11px] text-muted-foreground">{WHY}</p>}
+      {shown?.id === sc.id && (
+        <pre data-copy-json tabIndex={0} aria-label="Saved state as JSON" className="max-h-48 overflow-auto rounded-md bg-muted p-2 text-[11px] whitespace-pre-wrap select-all">
+          {shown.json}
+        </pre>
+      )}
     </div>
   )
 }

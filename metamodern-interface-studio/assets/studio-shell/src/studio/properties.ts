@@ -7,7 +7,8 @@
  * as scenarios derived from the generated one they were saved from. Pure, no DOM.
  */
 import { normalizeScenarioInput, RESERVED_LINK_KEYS } from "./input"
-import { SAVED_PREFIX, type SavedScenario } from "./scenarios"
+import { isSavedValue, SAVED_ID } from "./saved"
+import type { SavedScenario } from "./scenarios"
 import type { InputValue, Scenario, ScenarioInput } from "./types"
 
 /** A viewer's property edits on one scenario, by input ID. */
@@ -94,15 +95,21 @@ export function axisValues(i: ScenarioInput) {
 }
 
 /**
- * The saved states a file may add: an ID with the saved. prefix, not repeated; a label; a generated base; and only
- * that base's own property values, normalized. A hand-edited file cannot add a nameless row or set any other input.
+ * The saved states a file may add, by the same per-entry rules studio-scenarios/1 validates, so one hand-edited
+ * entry is skipped rather than blocking every later save: a saved. ID that is not a generated one and not repeated;
+ * a label of 1 to 80 characters; a generated base; and only that base's own property values, each a valid saved
+ * value, normalized. A description over 400 characters is dropped. A file cannot add a nameless row or set any
+ * other input.
  */
 export function usableSaved(generated: Scenario[], saved: unknown, inputs: ScenarioInput[]) {
   const out: SavedScenario[] = []
   for (const x of Array.isArray(saved) ? (saved as Partial<SavedScenario>[]) : []) {
     const base = generated.find((g) => g.id === x?.base)
-    if (!base || typeof x.id !== "string" || !x.id.startsWith(SAVED_PREFIX) || out.some((o) => o.id === x.id) || typeof x.label !== "string" || !x.label.trim() || !x.values || typeof x.values !== "object" || Array.isArray(x.values)) continue
-    out.push({ id: x.id, label: x.label, base: base.id, values: keptEdits(inputs, base, x.values), ...(typeof x.description === "string" && { description: x.description }) })
+    const id = x?.id
+    if (!base || typeof id !== "string" || !SAVED_ID.test(id) || generated.some((g) => g.id === id) || out.some((o) => o.id === id)) continue
+    if (typeof x.label !== "string" || !x.label.trim() || x.label.length > 80 || !x.values || typeof x.values !== "object" || Array.isArray(x.values)) continue
+    const values = Object.fromEntries(Object.entries(x.values).filter(([, v]) => isSavedValue(v)))
+    out.push({ id, label: x.label, base: base.id, values: keptEdits(inputs, base, values), ...(typeof x.description === "string" && x.description.length <= 400 && { description: x.description }) })
   }
   return out
 }

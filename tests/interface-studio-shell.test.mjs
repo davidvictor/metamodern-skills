@@ -180,4 +180,11 @@ test('saved states share the layouts guards and stay pure', () => {
   assert.match(store, /joinSaved\(bundledScenarios\?\.scenarios\)/, 'the bundled file is checked');
   assert.match(store, /savedStates: joinSaved\(data\.scenarios\)/, 'the dev-server file is checked');
   assert.match(store, /setSavedStates: \(list\) => set\(\{ savedStates: joinSaved\(list\) \}\)/, 'every change is checked');
+  assert.match(store, /const generated = A\.scenarios\.filter\(\(x\) => !x\.savedFrom\)/, 'a re-run of the store never counts a saved state as generated');
+  assert.match(vite, /enforce: "post"/);
+  assert.match(vite, /hotUpdate\(\{ file: changed, modules \}\) \{\s*if \(path\.resolve\(changed\) !== file\) return\s*for \(const m of modules\) this\.environment\.moduleGraph\.invalidateModule\(m\)\s*return \[\]/, 'creating, changing or deleting a saved file never reloads the Studio; the next load reads it fresh');
+  assert.doesNotMatch(vite, /handleHotUpdate/);
+  const props = read('src/components/studio/properties.tsx');
+  assert.match(props, /validateScenarios\(file, adapter\.scenarios\.filter\(\(x\) => !x\.savedFrom\)\.map\(\(x\) => x\.id\)\)/, 'the client refuses generated IDs before it posts');
+  assert.doesNotMatch(read('src/studio/properties.ts'), /^import \{[^}]*\} from "\.\/scenarios"/m, 'the catalog model takes only types from scenarios.ts, so the validator stays in the lazy chunk');
 });

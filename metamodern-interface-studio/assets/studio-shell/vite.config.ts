@@ -1,4 +1,4 @@
-import { readFileSync, renameSync, writeFileSync } from "fs"
+import { readFileSync, renameSync, rmSync, writeFileSync } from "fs"
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
@@ -32,6 +32,8 @@ const savedFile = (o: SavedFile): Plugin => {
   return {
     name: `studio-${o.list}`,
     apply: "serve",
+    // Last, so its hotUpdate sees every module another plugin added (the import glob adds the store when the file is created).
+    enforce: "post",
     configureServer(server) {
       server.middlewares.use(o.route, (req, res) => {
         const send = (code: number, body: unknown) => {
@@ -78,15 +80,24 @@ const savedFile = (o: SavedFile): Plugin => {
           const problems = o.validate(data)
           if (problems.length) return send(422, { error: `Not a valid ${o.schema} file`, problems })
           const tmp = `${file}.${process.pid}.tmp`
-          writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`)
-          renameSync(tmp, file)
+          try {
+            writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`)
+            renameSync(tmp, file)
+          } catch (e) {
+            rmSync(tmp, { force: true })
+            return send(500, { error: `Could not write ${o.file}: ${e instanceof Error ? e.message : String(e)}` })
+          }
           send(200, { ok: true })
         })
       })
     },
-    // Saving must not reload the Studio.
-    handleHotUpdate({ file: changed }) {
-      if (path.resolve(changed) === file) return []
+    // Saving must not reload or re-run the Studio: not when the file changes, and not when the first save creates it
+    // (the bundled-file import glob would otherwise re-execute the store) or it is deleted. The affected modules are
+    // invalidated instead, so the next page load reads the file as it now is.
+    hotUpdate({ file: changed, modules }) {
+      if (path.resolve(changed) !== file) return
+      for (const m of modules) this.environment.moduleGraph.invalidateModule(m)
+      return []
     },
   }
 }

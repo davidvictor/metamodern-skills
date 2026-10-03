@@ -19,7 +19,7 @@ async function loadPure(names) {
   return Object.fromEntries(await Promise.all(names.map(async (name) => [name, await import(pathToFileURL(join(dir, `${name}.mjs`)).href)])));
 }
 
-const { input, properties, scenarios } = await loadPure(['input', 'properties', 'scenarios']);
+const { input, properties, scenarios } = await loadPure(['input', 'saved', 'properties', 'scenarios']);
 const { normalizeScenarioInput, RESERVED_LINK_KEYS } = input;
 
 const card = { id: 'card', label: 'Card', area: 'c', surface: 'Task card', description: '', fixture: { id: 'f', version: '1', provenance: 'p' }, source: 's', clock: 'c', designed: { done: false } };
@@ -216,6 +216,25 @@ test('a hand-edited scenarios.json adds only usable saved states, with only thei
   assert.equal(catalog.find((x) => x.id === 'saved.ok').designed.mode, undefined);
   assert.deepEqual(properties.usableSaved([card], undefined, all), []);
   assert.deepEqual(properties.usableSaved([card], { not: 'a list' }, all), []);
+});
+
+test('usableSaved applies the same per-entry limits as studio-scenarios/1, so a skipped entry never blocks a save', () => {
+  const ok = { id: 'saved.ok', label: 'Ok', base: 'card', values: { done: true } };
+  const keep = (entry) => properties.usableSaved([card], [entry], inputs).map((x) => x.id);
+  assert.deepEqual(keep(ok), ['saved.ok']);
+  assert.deepEqual(keep({ ...ok, id: 'saved.Bad ID' }), [], 'the ID pattern');
+  assert.deepEqual(keep({ ...ok, id: `saved.${'a'.repeat(65)}` }), [], 'the ID length');
+  assert.deepEqual(keep({ ...ok, id: 'saved.-x' }), [], 'the ID starts with a letter or digit');
+  assert.deepEqual(properties.usableSaved([card, { ...card, id: 'saved.ok' }], [ok], inputs), [], 'a generated ID is never taken over');
+  assert.deepEqual(keep({ ...ok, label: 'x'.repeat(81) }), [], 'a label over 80 characters');
+  assert.deepEqual(keep({ ...ok, label: 'x'.repeat(80) }), ['saved.ok']);
+  const [long] = properties.usableSaved([card], [{ ...ok, description: 'd'.repeat(401) }], inputs);
+  assert.equal(long.description, undefined, 'a description over 400 characters is dropped, the state kept');
+  assert.equal(properties.usableSaved([card], [{ ...ok, description: 'Why' }], inputs)[0].description, 'Why');
+  const [text] = properties.usableSaved([card], [{ ...ok, values: { note: 'n'.repeat(4001), done: true } }], inputs);
+  assert.deepEqual(text.values, { done: true }, 'text over 4,000 characters is dropped');
+  const usable = properties.usableSaved([card], [ok, { ...ok, id: 'saved.bad', label: '' }, { ...ok, id: 'saved.two', description: 'd'.repeat(500), values: { note: 'n'.repeat(4001) } }], inputs);
+  assert.deepEqual(scenarios.validateScenarios({ schema: 'studio-scenarios/1', scenarios: usable }, ['card']), [], 'what is kept always saves');
 });
 
 test('a saved-state ID never ends in a hyphen', () => {

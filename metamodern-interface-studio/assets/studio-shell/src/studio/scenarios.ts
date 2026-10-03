@@ -4,7 +4,10 @@
  * same origin, size and schema guards as layouts.json. Pure data, no DOM, so the dev server
  * validates saves with the same rules.
  */
+import { isSavedValue as isValue, SAVED_ID as ID, SAVED_PREFIX } from "./saved"
 import type { InputValue } from "./types"
+
+export { SAVED_PREFIX }
 
 export type SavedScenario = {
   /** Starts with "saved.", which generated scenario IDs never use, so a save cannot overwrite a generated scenario. */
@@ -20,8 +23,6 @@ export type SavedScenario = {
 export type ScenariosFile = { schema: "studio-scenarios/1"; scenarios: SavedScenario[] }
 
 export const SCENARIOS_MAX_BYTES = 256 * 1024
-export const SAVED_PREFIX = "saved."
-const ID = /^saved\.[a-z0-9][a-z0-9-]{0,63}$/
 
 /** A new saved-state ID from its label, unique among the IDs given. */
 export function savedId(label: string, taken: string[]) {
@@ -31,8 +32,6 @@ export function savedId(label: string, taken: string[]) {
   for (let n = 2; taken.includes(id); n++) id = `${SAVED_PREFIX}${stem}-${n}`
   return id
 }
-
-const isValue = (v: unknown) => typeof v === "boolean" || (typeof v === "number" && Number.isFinite(v)) || (typeof v === "string" && v.length <= 4000)
 
 /** Validate a studio-scenarios/1 document. Returns the problems; an empty list means it is valid. Pass the generated scenario IDs to refuse overwriting one. */
 export function validateScenarios(data: unknown, generated: string[] = []): string[] {

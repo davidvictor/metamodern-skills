@@ -80,8 +80,11 @@ const VIEWS: View[] = ["inspect", "compare", "responsive", "gallery", "present",
 /** Properties need a live frame. A Studio that declares none behaves exactly as before they existed. */
 export const hasProperties = !!A.frameEntry && A.axes.inputs.some(isProperty)
 export const propertyIds = new Set(A.axes.inputs.filter(isProperty).map((i) => i.id))
-/** The adapter's own scenarios; saved states from scenarios.json join them in the catalog. */
-const generated = A.scenarios
+/**
+ * The adapter's own scenarios; saved states from scenarios.json join them in the catalog. Filtered, so a re-run of
+ * this module (hot update) never treats an already joined saved state as generated.
+ */
+const generated = A.scenarios.filter((x) => !x.savedFrom)
 /** Puts a scenarios.json list in the catalog, keeping only usable entries, and returns them. */
 const joinSaved = (list: unknown) => {
   const usable = usableSaved(generated, list, A.axes.inputs)

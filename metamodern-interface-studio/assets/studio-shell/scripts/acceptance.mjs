@@ -2043,6 +2043,8 @@ await check("AC-58", async () => {
     await p.goto(`${url}#view=inspect&scenario=${CARD}`)
     await p.waitForSelector("[data-properties]")
     await wait(2000)
+    // The first save creates scenarios.json: the page must not reload or re-run the store (this marker survives).
+    await p.evaluate(() => (window.__ac58 = "kept"))
     await details(p).getByRole("switch", { name: "Done" }).click()
     await details(p).getByRole("button", { name: /Save as scenario/ }).click()
     await p.getByLabel("Name the new state").fill("Finished card")
@@ -2050,6 +2052,23 @@ await check("AC-58", async () => {
     await wait(1000)
     const written = JSON.parse(readFileSync(file, "utf8"))
     const selected = await p.evaluate(() => new URLSearchParams(location.hash.slice(1)).get("scenario"))
+    // In the same page: a duplicate, then deleting it, takes its row out of the catalog.
+    await details(p).getByRole("button", { name: "More saved state actions" }).click()
+    await p.getByRole("menuitem", { name: "Duplicate" }).click()
+    await wait(600)
+    const copyRow = await p.locator('[role="treeitem"][title="Finished card copy"]').count()
+    await details(p).getByRole("button", { name: "More saved state actions" }).click()
+    await p.getByRole("menuitem", { name: "Delete" }).click()
+    await wait(600)
+    const deletedRow = await p.locator('[role="treeitem"][title="Finished card copy"]').count()
+    const marker = await p.evaluate(() => window.__ac58)
+    await p.locator('[role="treeitem"][title="Finished card"]').click()
+    await wait(600)
+    // The client refuses a generated ID with the same rules as the endpoint (the save path passes the generated IDs).
+    const clientRefuses = await p.evaluate(async (card) => {
+      const { validateScenarios } = await import("/src/studio/scenarios.ts")
+      return validateScenarios({ schema: "studio-scenarios/1", scenarios: [{ id: "saved.taken", label: "Taken", base: card, values: {} }] }, ["saved.taken", card]).join(" ")
+    }, CARD)
     await p.reload()
     await p.waitForSelector("header")
     await wait(2500)
@@ -2075,15 +2094,24 @@ await check("AC-58", async () => {
     const huge = (await post(JSON.stringify({ schema: "studio-scenarios/1", pad: "x".repeat(300 * 1024), scenarios: [] }))).status
     // A built Studio: Save as scenario is disabled with the reason; Copy as JSON is offered.
     const b = await open("normal", { hash: `view=inspect&scenario=${CARD}` })
+    await b.context().grantPermissions(["clipboard-read", "clipboard-write"], { origin: new URL(b.url()).origin })
     await wait(800)
     await details(b).getByRole("switch", { name: "Done" }).click()
     const builtSave = await details(b).getByRole("button", { name: /Save as scenario/ }).isDisabled()
     const reason = await details(b).getByText(/Saving needs the local Studio/).count()
     const copy = await details(b).getByRole("button", { name: "Copy as JSON" }).count()
+    await details(b).getByRole("button", { name: "Copy as JSON" }).click()
+    await wait(400)
+    const copied = await b.evaluate(() => navigator.clipboard.readText().then((t) => JSON.parse(t)).catch(() => ({})))
+    // Without a clipboard the JSON is shown to select by hand.
+    await b.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }))
+    await details(b).getByRole("button", { name: "Copy as JSON" }).click()
+    await wait(400)
+    const shownJson = await details(b).locator("[data-copy-json]").innerText().then((t) => JSON.parse(t)).catch(() => ({}))
     await b.closeAll()
     const s0 = written.scenarios[0] ?? {}
-    const ok = written.schema === "studio-scenarios/1" && s0.id === "saved.finished-card" && s0.base === CARD && s0.label === "Finished card" && s0.values?.done === true && selected === s0.id && /Finished card/.test(row) && /Saved/.test(row) && /Finished card/.test(title) && mounted.scenario === CARD && mounted.values.done === true && two.join("|") === "Finished card, renamed|Finished card, renamed copy" && one.join("|") === "Finished card, renamed" && cross === 403 && invalid === 422 && generated === 422 && huge === 413 && builtSave && reason > 0 && copy === 1
-    return [ok ? "pass" : "fail", `Save as wrote ${written.scenarios.length} state ${s0.id} from ${s0.base} with ${JSON.stringify(s0.values)} and selected it (${selected}); after a reload the catalog row reads "${row.replace(/\s+/g, " ")}", Details "${title}", the frame mounted ${mounted.scenario} with done ${mounted.values.done}; rename and duplicate gave ${two.join(" and ")}, delete left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${generated} to a generated ID, ${huge} to an oversized one; a built Studio disables Save as scenario (${builtSave}), says why (${reason}) and offers Copy as JSON (${copy})`]
+    const ok = written.schema === "studio-scenarios/1" && s0.id === "saved.finished-card" && s0.base === CARD && s0.label === "Finished card" && s0.values?.done === true && selected === s0.id && /Finished card/.test(row) && /Saved/.test(row) && /Finished card/.test(title) && mounted.scenario === CARD && mounted.values.done === true && two.join("|") === "Finished card, renamed|Finished card, renamed copy" && one.join("|") === "Finished card, renamed" && cross === 403 && invalid === 422 && generated === 422 && huge === 413 && builtSave && reason > 0 && copy === 1 && marker === "kept" && copyRow === 1 && deletedRow === 0 && /cannot be overwritten/.test(clientRefuses) && copied.base === CARD && copied.values?.done === true && /^saved\./.test(copied.id ?? "") && shownJson.base === CARD && shownJson.values?.done === true
+    return [ok ? "pass" : "fail", `Save as wrote ${written.scenarios.length} state ${s0.id} from ${s0.base} with ${JSON.stringify(s0.values)} and selected it (${selected}); after a reload the catalog row reads "${row.replace(/\s+/g, " ")}", Details "${title}", the frame mounted ${mounted.scenario} with done ${mounted.values.done}; rename and duplicate gave ${two.join(" and ")}, delete left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${generated} to a generated ID, ${huge} to an oversized one; a built Studio disables Save as scenario (${builtSave}), says why (${reason}) and offers Copy as JSON (${copy}); in the page that created the file the marker was ${marker}, the duplicate's row showed (${copyRow}) and was gone after Delete (${deletedRow}); the client refuses a generated ID (${clientRefuses ? "yes" : "no"}); Copy as JSON gave ${copied.id} from ${copied.base} with ${JSON.stringify(copied.values)}, and without a clipboard showed ${shownJson.base} with ${JSON.stringify(shownJson.values)} to select`]
   } finally {
     dev.kill()
     if (backup) copyFileSync(backup, file), rmSync(backup)
