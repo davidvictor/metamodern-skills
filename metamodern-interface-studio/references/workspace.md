@@ -122,6 +122,6 @@ A build decides once whether to include the workspace layer: it loads the adapte
 
 ## Verify
 
-Shell acceptance WS-01 to WS-09, WS-05b and WS-06b in [shell](shell.md#acceptance-criteria) measure the layer with the starter's synthetic example workspace (`example/workspace/`), also served without its host; `VITE_STUDIO_ADAPTER=workspace npm run dev` runs it with its mock host. A product's own modules and host need the product's own checks: each operation's authorization and validation, conflicts against real data, and the kit floors on the module's pages.
+Shell acceptance WS-01 to WS-10, WS-05b and WS-06b in [shell](shell.md#acceptance-criteria) measure the layer with the starter's synthetic example workspace (`example/workspace/`), also served without its host; `VITE_STUDIO_ADAPTER=workspace npm run dev` runs it with its mock host. A product's own modules and host need the product's own checks: each operation's authorization and validation, conflicts against real data, and the kit floors on the module's pages.
 
 Out of scope: third-party plugins, module code loaded at runtime, a server inside the shell, and moving product UI out of preview frames.

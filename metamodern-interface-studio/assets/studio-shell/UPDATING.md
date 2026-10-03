@@ -112,3 +112,13 @@ Nothing to do by hand for a Studio that declares no workspace, apart from checki
 - Retry on a preview that did not start now mounts it again.
 - The update deletes the stray `src/drag2-after.png` and `src/drag2-mid.png`.
 - `src/hooks/use-mobile.ts` also exports `useMedia` and `useCoarse`.
+
+## 0.12.1
+
+Nothing to do by hand, unless a product's own checks pin the geometry below. Fixes to the core shell's touch and focus floors:
+
+- On a coarse pointer, stacked controls keep their own 44 px target. Gallery's area checkboxes and its flag switch, Present's Autoplay switch and each Responsive Sync switch sit in 44 px rows (Autoplay's whole row is now its label, so its switch keeps its target beside the panel's edge handle), and each Responsive frame row is 44 px tall, so its Remove button no longer overlaps the next. A Design range's marks move below the thumb's hit area. On every pointer, Present's Autoplay row is now a label without the old `field-label` wrapper, so a click anywhere in the row toggles the switch; otherwise fine pointers are unchanged.
+- Keyboard focus in the top bar's breadcrumb and on a tab panel is drawn inside the control, so a clipping ancestor or a scroller no longer cuts it to its corners. The scenario trigger gains 2 px of side padding for it. A slider, whose focus sits on the hidden range input inside its thumb, now draws a 2 px `--ring` outline 2 px outside the thumb (`Highlight` in forced colors); 0.12.0 drew no visible indicator there.
+- Studio kit (`studio-kit/1`, no API change): `SaveBar` gives its message its own line above the actions when fewer than 16rem would remain beside them, so on a phone a conflict's message, reason and current value no longer squeeze into a narrow column or run under Use current value. `DataTable` is now positioned, so its visually hidden sort announcement stays inside the module page's scroller; on a short phone a long table no longer scrolls the whole Studio and its top bar. Module code needs no change.
+- Acceptance adds AC-65 (each target's reachable area, probed with `elementFromPoint`), AC-66 (each focus stop's rendered change against its perimeter) and WS-10 (the SaveBar conflict and a long DataTable page on a phone). WS-01 now measures the initial chunk against 0.12.0.
+- The panel's edge handle and the frames' resize grips stay narrow; `shell.md` records them as equivalent-control allowances, with the top bar's panel toggle, the Size menu and the Responsive width list as their 44 px equivalents.

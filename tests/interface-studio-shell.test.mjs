@@ -320,3 +320,42 @@ test('acceptance script covers the workspace criteria', () => {
   assert.match(script, /STUDIO_CHUNK_BASELINE_GZ = \d+/);
   assert.match(script, /workspace: "workspace"/);
 });
+
+test('0.12.1 touch and focus floors: stacked controls keep their own targets and focus is drawn whole', () => {
+  const script = read('scripts/acceptance.mjs');
+  for (const id of ['AC-65', 'AC-66']) assert.match(script, new RegExp(`check\\("${id}"`), `${id} is not checked`);
+  // AC-65 measures where a finger lands with elementFromPoint; AC-66 compares rendered pixels, focused and unfocused.
+  assert.match(script, /document\.elementFromPoint\(x, y\)/);
+  assert.match(script, /a stop passes when the pixels changed by 3:1 or more cover at least its perimeter/);
+  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.12\.0"/);
+  const css = read('src/studio.css');
+  assert.match(css, /\[role="tabpanel"\], \[aria-label="Studio"\] button, \[data-slot="breadcrumb"\] :is\(button, a\[href\]\)\):focus-visible \{ outline-offset: -2px;/, 'the breadcrumb and tab panels draw focus inside');
+  const panel = read('src/components/studio/rail-panel.tsx');
+  assert.equal(panel.match(/pointer-coarse:min-h-11/g)?.length, 3, 'Gallery areas, the flag switch and Autoplay are 44 px rows');
+  assert.match(panel, /<Label className="flex items-center justify-between font-normal pointer-coarse:min-h-11">\s*Autoplay/);
+  const responsive = read('src/components/studio/responsive.tsx');
+  assert.match(responsive, /focus-visible:ring-ring pointer-coarse:h-11">/, 'frame rows are 44 px apart on coarse pointers');
+  assert.match(responsive, /<span className="flex shrink-0 items-center pointer-coarse:h-11">\s*<Switch id=\{`sync-/);
+  assert.match(read('src/components/studio/design.tsx'), /relative h-5 pointer-coarse:mt-4 pointer-coarse:h-11/);
+  const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');
+  for (const id of ['AC-65', 'AC-66']) assert.match(doc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
+  assert.match(doc, /AC-01 to AC-66/);
+  assert.match(doc, /equivalent/);
+  assert.match(read('UPDATING.md'), /^## 0\.12\.1$/m);
+});
+
+test('0.12.1 a focused slider outlines its thumb and AC-66 walks the Design sliders', () => {
+  assert.match(read('src/studio.css'), /\[data-slot="slider-thumb"\]:has\(input:focus-visible\) \{ outline: 2px solid var\(--ring\); outline-offset: 2px; \}/);
+  const script = read('scripts/acceptance.mjs');
+  assert.match(script, /const range = !!a\?\.matches\('input\[type="range"\]'\)/);
+  assert.match(script, /hash: "view=design&scenario=tasks\.list" \}\)\n\s*await d\.addStyleTag/);
+  assert.match(script, /no Design slider was reached/);
+});
+
+test('0.12.1 kit: the SaveBar message wraps above its actions and a DataTable keeps its announcement inside the page', () => {
+  assert.match(read('src/kit/save.tsx'), /role="status" aria-live="polite" className="grid min-w-0 flex-1 basis-64 gap-1 text-sm"/);
+  assert.match(read('src/kit/data.tsx'), /<div className="relative grid gap-2">/);
+  const script = read('scripts/acceptance.mjs');
+  assert.match(script, /check\("WS-10"/);
+  assert.match(script, /width: 390, height: 520, touch: true, hash: "module=site&section=general"/);
+});

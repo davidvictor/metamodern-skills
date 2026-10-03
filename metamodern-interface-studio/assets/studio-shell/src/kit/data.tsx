@@ -89,7 +89,8 @@ export function DataTable<T>({ label, rows, columns, filterable, initialSort, on
   const template = columns.map((c) => c.width ?? "minmax(0,1fr)").join(" ")
   const sorted = sort && columns.find((c) => c.id === sort.column)
   return (
-    <div className="grid gap-2">
+    // Positioned, so the visually hidden sort announcement stays inside the page's scroller instead of stretching the document.
+    <div className="relative grid gap-2">
       {filterable && (
         <Input
           aria-label={`Filter ${label}`}

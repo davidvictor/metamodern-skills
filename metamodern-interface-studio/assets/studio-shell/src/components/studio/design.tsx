@@ -69,7 +69,7 @@ function ScaleControl({ p }: { p: DesignParameter }) {
         aria-valuetext={readout(p, v)}
       />
       {!!p.stops?.length && (
-        <div className="relative h-5" aria-label={`${p.label} marks`}>
+        <div className="relative h-5 pointer-coarse:mt-4 pointer-coarse:h-11" aria-label={`${p.label} marks`}>
           {p.stops.map((st) => (
             <button
               key={st.label}
@@ -82,7 +82,7 @@ function ScaleControl({ p }: { p: DesignParameter }) {
               onClick={() => set(st.at)}
               aria-label={`${p.label} ${st.label}, ${readout(p, st.at)}`}
             >
-              <span aria-hidden className="absolute -top-1.5 left-1/2 h-1.5 w-px bg-current" />
+              <span aria-hidden className="absolute -top-1.5 left-1/2 h-1.5 w-px bg-current pointer-coarse:top-2" />
               {st.label}
             </button>
           ))}

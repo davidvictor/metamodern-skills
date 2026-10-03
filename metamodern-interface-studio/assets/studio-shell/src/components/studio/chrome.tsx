@@ -211,7 +211,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
                 <>
                   <BreadcrumbSeparator className="hidden sm:inline-flex" />
                   <BreadcrumbItem className="min-w-0">
-                    <button className="flex min-w-0 items-center gap-1 rounded-md px-1 py-0.5 text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.set({ commandOpen: true })}>
+                    <button className="flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.set({ commandOpen: true })}>
                       <BreadcrumbPage className="truncate">
                         {areaLabel(s.scenarioObj.area)}: {s.scenarioObj.label}
                       </BreadcrumbPage>

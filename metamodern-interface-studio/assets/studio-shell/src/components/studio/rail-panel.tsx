@@ -340,7 +340,7 @@ function GalleryPanel() {
         <div className="grid gap-2">
           <p className="text-xs font-medium text-muted-foreground">Areas</p>
           {adapter.areas.map((a) => (
-            <Label key={a.id} className="flex items-center gap-2 font-normal">
+            <Label key={a.id} className="flex items-center gap-2 font-normal pointer-coarse:min-h-11">
               <Checkbox checked={!g.hidden.includes(a.id)} onCheckedChange={(v) => setG({ hidden: v ? g.hidden.filter((x) => x !== a.id) : [...g.hidden, a.id] })} />
               <span className="flex-1 truncate">{a.label}</span>
               <span className="text-xs text-muted-foreground tabular-nums">{areaCount(a.id)}</span>
@@ -348,7 +348,7 @@ function GalleryPanel() {
           ))}
         </div>
         <Separator />
-        <Label className="flex items-center justify-between font-normal">
+        <Label className="flex items-center justify-between font-normal pointer-coarse:min-h-11">
           Only stale, unresolved or later
           <Switch size="sm" checked={g.onlyFlagged} onCheckedChange={(v) => setG({ onlyFlagged: v })} />
         </Label>
@@ -409,10 +409,11 @@ function PresentPanel() {
         }}
       </VirtualList>
       <SidebarFooter className="gap-3 border-t p-3">
-        <Field orientation="horizontal" className="justify-between">
-          <FieldLabel htmlFor="autoplay" className="font-normal">Autoplay</FieldLabel>
+        {/* The whole row is the label, so the switch keeps its target beside the panel's edge handle. */}
+        <Label className="flex items-center justify-between font-normal pointer-coarse:min-h-11">
+          Autoplay
           <Switch id="autoplay" size="sm" checked={s.present.playing} onCheckedChange={(v) => s.set({ present: { ...s.present, playing: v } })} />
-        </Field>
+        </Label>
         <Field orientation="horizontal" className="justify-between">
           <FieldLabel className="font-normal">Pace</FieldLabel>
           <ToggleGroup value={[String(s.present.speed)]} onValueChange={(v) => v[0] && s.set({ present: { ...s.present, speed: +v[0] } })} size="sm" variant="outline" spacing={0}>
