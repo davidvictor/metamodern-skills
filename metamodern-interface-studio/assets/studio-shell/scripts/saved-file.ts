@@ -7,8 +7,8 @@
  *
  * Revisions: GET and a successful POST answer x-studio-revision, a hash of the file as stored ("empty" when there
  * is none). A POST that sends x-studio-expected-revision is written only while the file still has that revision;
- * otherwise 409 with the current file and its revision, and nothing is written. Without the header a POST writes
- * unconditionally, as before revisions.
+ * otherwise 409 with the current file (null when it is not JSON) and its revision, and nothing is written. Without
+ * the header a POST writes unconditionally, as before revisions.
  */
 import { createHash } from "node:crypto"
 import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs"
@@ -20,21 +20,22 @@ export type SavedFileOptions = { file: string; schema: string; list: string; max
 export const EMPTY_REVISION = "empty"
 const hash = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex")
 
-/** The file's bytes and revision, and its contents (or the empty file when it is missing or unreadable). */
+/**
+ * The file's revision and contents: the empty file when it is missing, and parsed false when it is not JSON (for
+ * example a merge left conflict markers in it), so a conflict never presents an unreadable file as an empty list.
+ */
 function current(file: string, empty: () => unknown) {
   let bytes: Buffer
   try {
     bytes = readFileSync(file)
   } catch {
-    return { revision: EMPTY_REVISION, data: empty() }
+    return { revision: EMPTY_REVISION, data: empty(), parsed: true }
   }
-  let data: unknown
   try {
-    data = JSON.parse(bytes.toString("utf8"))
+    return { revision: hash(bytes), data: JSON.parse(bytes.toString("utf8")) as unknown, parsed: true }
   } catch {
-    data = empty()
+    return { revision: hash(bytes), data: null, parsed: false }
   }
-  return { revision: hash(bytes), data }
 }
 
 /**
@@ -53,8 +54,9 @@ export function savedFileMiddleware(o: SavedFileOptions) {
       res.end(JSON.stringify(body))
     }
     if (req.method === "GET") {
+      // An unreadable file reads as the empty file, as before revisions.
       const now = current(o.file, empty)
-      return send(200, now.data, now.revision)
+      return send(200, now.parsed ? now.data : empty(), now.revision)
     }
     if (req.method !== "POST") return send(405, { error: "Use GET or POST" })
     const origin = req.headers.origin
@@ -87,11 +89,11 @@ export function savedFileMiddleware(o: SavedFileOptions) {
       }
       const problems = o.validate(data)
       if (problems.length) return send(422, { error: `Not a valid ${o.schema} file`, problems })
-      // Read and written in one synchronous step, so no other save can land between the check and the write.
+      // Read and written in one synchronous step, so no other save through this server can land between the check and the write.
       if (typeof expected === "string") {
         const now = current(o.file, empty)
         if (now.revision !== expected) {
-          return send(409, { ok: false, error: { code: "conflict", reason: `${name} changed since you loaded it`, recoverable: true }, current: { data: now.data, revision: now.revision } }, now.revision)
+          return send(409, { ok: false, error: { code: "conflict", reason: `${name} changed since you loaded it`, recoverable: true }, current: { data: now.parsed ? now.data : null, revision: now.revision } }, now.revision)
         }
       }
       const text = `${JSON.stringify(data, null, 2)}\n`

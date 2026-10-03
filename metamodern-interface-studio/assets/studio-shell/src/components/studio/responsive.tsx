@@ -95,9 +95,11 @@ function useResponsive() {
     const res = await fetch("__studio/layouts", { method: "POST", headers: { "content-type": "application/json", ...(revision ? { "x-studio-expected-revision": revision } : {}) }, body: JSON.stringify({ schema: "studio-layouts/1", layouts: next }) })
     const body = res.ok ? null : await res.json().catch(() => ({}))
     if (res.status === 409) {
+      // data is null when layouts.json no longer reads as JSON (a merge conflict, say): the list stays as it is.
       const latest = body?.current
-      if (latest && typeof latest.revision === "string") s.set(validateLayouts(latest.data).length ? { layoutsRevision: latest.revision } : { saved: latest.data.layouts, layoutsRevision: latest.revision })
-      throw new Error("Saved layouts changed elsewhere. The latest is loaded; your change was not saved.")
+      const readable = !!latest && !validateLayouts(latest.data).length
+      if (latest && typeof latest.revision === "string") s.set(readable ? { saved: latest.data.layouts, layoutsRevision: latest.revision } : { layoutsRevision: latest.revision })
+      throw new Error(readable ? "Saved layouts changed elsewhere. The latest is loaded; your change was not saved." : "layouts.json changed elsewhere and is not a valid layouts file. Your change was not saved.")
     }
     if (!res.ok) throw new Error(body.error ?? `The Studio refused the save (${res.status})`)
     s.set({ saved: next, layoutsRevision: res.headers.get("x-studio-revision") })
@@ -164,13 +166,18 @@ export function LayoutActions() {
     s.set({ responsive: { ...r, layout: layout.id, name, dirty: false } })
     toast.success(`Saved ${name}`, { description: "In this Studio's layouts.json. Commit it to share." })
   }
+  // One save at a time: a second click would otherwise be refused against the first one's write.
+  const [saving, setSaving] = React.useState(false)
   const save = async () => {
+    setSaving(true)
     try {
       await persist(s.saved.map((l) => (l.id === r.layout ? toLayout(l.id, l.name) : l)))
       s.set({ responsive: { ...r, dirty: false } })
       toast.success(`Saved ${r.name}`)
     } catch (e) {
       toast.error("Not saved", { description: e instanceof Error ? e.message : String(e) })
+    } finally {
+      setSaving(false)
     }
   }
   const rename = async (name: string) => {
@@ -200,7 +207,7 @@ export function LayoutActions() {
       </div>
       <div className="flex flex-wrap gap-1.5">
         {isSaved && (
-          <Button size="sm" variant="outline" disabled={!canSaveLayouts || !r.dirty} title={why} onClick={save}>
+          <Button size="sm" variant="outline" disabled={!canSaveLayouts || !r.dirty || saving} title={why} onClick={save}>
             <SaveIcon /> Save
           </Button>
         )}

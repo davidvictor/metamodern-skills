@@ -353,9 +353,10 @@ function SaveActions() {
     if (new Blob([body]).size > SCENARIOS_MAX_BYTES) throw new Error("Saved scenarios are limited to 256 KB")
     const res = await fetch("__studio/scenarios", { method: "POST", headers: { "content-type": "application/json", ...(revision ? { "x-studio-expected-revision": revision } : {}) }, body })
     if (res.status === 409) {
+      // data is null when scenarios.json no longer reads as JSON (a merge conflict, say): the catalog stays as it is.
       const latest = (await res.json().catch(() => ({})))?.current?.data?.scenarios
       if (Array.isArray(latest)) s.setSavedStates(latest)
-      throw new Error("Saved states changed elsewhere. The latest is loaded; your change was not saved.")
+      throw new Error(Array.isArray(latest) ? "Saved states changed elsewhere. The latest is loaded; your change was not saved." : "scenarios.json changed elsewhere and is not a valid saved-states file. Your change was not saved.")
     }
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `The Studio refused the save (${res.status})`)
     s.setSavedStates(list)

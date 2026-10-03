@@ -1118,6 +1118,19 @@ await check("AC-23", async () => {
     await p.getByRole("button", { name: "Save", exact: true }).first().click()
     await wait(1000)
     const retried = JSON.parse(readFileSync(file, "utf8")).layouts.map((l) => `${l.name} ${l.frames.length}`)
+    // A merge leaves layouts.json unreadable: a save (here Rename) is refused, the list keeps its layouts and the file is untouched.
+    const merged = `<<<<<<< ours\n${readFileSync(file, "utf8")}=======\n{}\n>>>>>>> theirs\n`
+    writeFileSync(file, merged)
+    const listedBefore = await p.getByRole("button", { name: "From elsewhere" }).count()
+    await p.getByRole("button", { name: "More layout actions" }).click()
+    await p.getByRole("menuitem", { name: "Rename" }).click()
+    await wait(1000)
+    const unreadable = {
+      untouched: readFileSync(file, "utf8") === merged,
+      listed: await p.getByRole("button", { name: "From elsewhere" }).count(),
+      before: listedBefore,
+      told: await p.locator("[data-sonner-toast]").filter({ hasText: /not a valid layouts file/ }).innerText().catch(() => ""),
+    }
     await context.close()
     const post = (body, headers = {}) => fetch(`${url}__studio/layouts`, { method: "POST", headers: { "content-type": "application/json", origin: `http://localhost:${port}`, ...headers }, body })
     const cross = (await post(JSON.stringify(written), { origin: "https://evil.example" })).status
@@ -1140,8 +1153,8 @@ await check("AC-23", async () => {
     await wait(1200)
     const shared = await fresh.locator("[data-frame]").count()
     await fresh.closeAll()
-    const ok = presetSave === 0 && written.schema === "studio-layouts/1" && written.layouts[0]?.name === "Checkout sizes" && written.layouts[0].frames.length === 2 && restored.join() === "390 × 844,430 × 932" && two.join("|") === "Checkout sizes, renamed|Checkout sizes, renamed copy" && one.join("|") === "Checkout sizes, renamed" && cross === 403 && invalid === 422 && huge === 413 && builtSave && reason > 0 && kept === 2 && unsaved > 0 && shared === 2 && /frames=/.test(link) && otherStatus === 200 && conflict.kept && conflict.listed > 0 && conflict.frames === 1 && conflict.unsaved > 0 && /latest is loaded/.test(conflict.told) && retried.join("|") === "Checkout sizes, renamed 1|From elsewhere 2"
-    return [ok ? "pass" : "fail", `a preset offers no Save (${presetSave}); Save as wrote ${written.layouts.length} layout "${written.layouts[0]?.name}" with ${written.layouts[0]?.frames.length} frames, restored after a reload as ${restored.join(", ")}; rename and duplicate gave ${two.join(" and ")} (the copy opens), and deleting the copy left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${huge} to an oversized one; a built Studio disables Save as (${builtSave}) and says why, kept ${kept} unsaved frames across a reload marked Unsaved, and its link opened ${shared} frames in a fresh browser; after another browser saved (${otherStatus}) a stale Save left the file as that browser wrote it (${conflict.kept}), listed its layout (${conflict.listed}), kept ${conflict.frames} unsaved frame (Unsaved ${conflict.unsaved > 0}) and said "${conflict.told.replace(/\s+/g, " ")}"; saving again wrote ${retried.join(", ")}`]
+    const ok = presetSave === 0 && written.schema === "studio-layouts/1" && written.layouts[0]?.name === "Checkout sizes" && written.layouts[0].frames.length === 2 && restored.join() === "390 × 844,430 × 932" && two.join("|") === "Checkout sizes, renamed|Checkout sizes, renamed copy" && one.join("|") === "Checkout sizes, renamed" && cross === 403 && invalid === 422 && huge === 413 && builtSave && reason > 0 && kept === 2 && unsaved > 0 && shared === 2 && /frames=/.test(link) && otherStatus === 200 && conflict.kept && conflict.listed > 0 && conflict.frames === 1 && conflict.unsaved > 0 && /latest is loaded/.test(conflict.told) && retried.join("|") === "Checkout sizes, renamed 1|From elsewhere 2" && unreadable.untouched && unreadable.before > 0 && unreadable.listed === unreadable.before && /not a valid layouts file/.test(unreadable.told)
+    return [ok ? "pass" : "fail", `a preset offers no Save (${presetSave}); Save as wrote ${written.layouts.length} layout "${written.layouts[0]?.name}" with ${written.layouts[0]?.frames.length} frames, restored after a reload as ${restored.join(", ")}; rename and duplicate gave ${two.join(" and ")} (the copy opens), and deleting the copy left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${huge} to an oversized one; a built Studio disables Save as (${builtSave}) and says why, kept ${kept} unsaved frames across a reload marked Unsaved, and its link opened ${shared} frames in a fresh browser; after another browser saved (${otherStatus}) a stale Save left the file as that browser wrote it (${conflict.kept}), listed its layout (${conflict.listed}), kept ${conflict.frames} unsaved frame (Unsaved ${conflict.unsaved > 0}) and said "${conflict.told.replace(/\s+/g, " ")}"; saving again wrote ${retried.join(", ")}; with layouts.json left unreadable by a merge, a save left it untouched (${unreadable.untouched}), the list kept From elsewhere (${unreadable.before} then ${unreadable.listed}) and said "${unreadable.told.replace(/\s+/g, " ")}"`]
   } finally {
     dev.kill()
     if (backup) copyFileSync(backup, file), rmSync(backup)

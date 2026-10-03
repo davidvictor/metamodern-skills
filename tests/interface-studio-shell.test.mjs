@@ -262,7 +262,14 @@ test('saved files carry a revision: a stale save gets 409 with the current file 
   const broken = await get();
   assert.equal(broken.revision, sha('not json'));
   assert.deepEqual(broken.body, { schema: 'studio-layouts/1', layouts: [] });
-  assert.equal((await post(one, { 'x-studio-expected-revision': first.revision })).status, 409);
+  const unreadable = await post(one, { 'x-studio-expected-revision': first.revision });
+  assert.equal(unreadable.status, 409);
+  assert.deepEqual(unreadable.body.current, { data: null, revision: broken.revision }, 'an unreadable file is never presented as an empty list');
+  assert.equal(readFileSync(file, 'utf8'), 'not json');
+  // The 0.11 guards still answer as before.
+  const raw = async (body, contentType) => (await fetch(`${base}/__studio/layouts`, { method: 'POST', headers: { 'content-type': contentType, origin: base }, body })).status;
+  assert.equal(await raw('{}', 'text/plain'), 415);
+  assert.equal(await raw('{not json', 'application/json'), 400);
   assert.equal(readFileSync(file, 'utf8'), 'not json');
   // The dev server mounts this one middleware for both saved files, and the clients send the revision they read.
   const vite = read('vite.config.ts');
