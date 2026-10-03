@@ -252,3 +252,50 @@ test('WM-10 the kit is one versioned barrel with the floors built in', () => {
   assert.match(css, /forced-colors: active/);
   assert.match(css, /\[data-kit\], \[data-kit\] \* \{ animation: none !important; transition: none !important; \}/);
 });
+
+test('WM-11 workspace files import only the kit, the workspace API, React and their own files', async () => {
+  const { workspaceImportProblem, workspaceBoundary } = await import(new URL('scripts/workspace-boundary.mjs', shell).href);
+  const cwd = '/studio';
+  const file = '/studio/src/workspace/env/page.tsx';
+  for (const ok of ['react', 'react/jsx-runtime', '@studio/kit', '@studio/workspace', './fields', '../index', '../shared/table', '@/workspace/env/fields', '@/workspace']) {
+    assert.equal(workspaceImportProblem(file, ok, cwd), null, ok);
+  }
+  for (const bad of ['@/components/ui/button', '@/store', '../../studio/types', '../../components/ui/button', 'lucide-react', 'react-dom', '@studio/kit/field', 'node:fs', '@/workspace/../store', '@/workspace/../components/ui/button', '@/workspace/env/../../lib/utils']) {
+    assert.match(workspaceImportProblem(file, bad, cwd), /is outside the workspace boundary/, bad);
+  }
+  assert.match(workspaceImportProblem(file, '@/store', cwd), /under src\/workspace\//);
+  const example = '/studio/example/workspace/site.tsx';
+  assert.equal(workspaceImportProblem(example, './mock-host.mjs', cwd), null);
+  assert.match(workspaceImportProblem(example, '@/workspace', cwd), /under example\/workspace\//);
+  assert.match(workspaceImportProblem(example, '../main', cwd), /outside the workspace boundary/);
+
+  // The lint rule checks every import form, and reports a dynamic import whose target it cannot read.
+  const lint = (node) => {
+    const reports = [];
+    const visitors = workspaceBoundary.rules.imports.create({ filename: file, cwd, report: (r) => reports.push(r.message) });
+    visitors[node.type](node);
+    return reports;
+  };
+  const literal = (value) => ({ type: 'Literal', value });
+  assert.deepEqual(lint({ type: 'ImportDeclaration', source: literal('@studio/kit') }), []);
+  assert.match(lint({ type: 'ImportDeclaration', source: literal('@/store') })[0], /@\/store is outside the workspace boundary/);
+  assert.match(lint({ type: 'ExportAllDeclaration', source: literal('@/store') })[0], /outside the workspace boundary/);
+  assert.match(lint({ type: 'ExportNamedDeclaration', source: literal('@/workspace/../store') })[0], /outside the workspace boundary/);
+  assert.deepEqual(lint({ type: 'ExportNamedDeclaration', source: null }), []);
+  assert.match(lint({ type: 'ImportExpression', source: literal('../../store') })[0], /outside the workspace boundary/);
+  assert.deepEqual(lint({ type: 'ImportExpression', source: { type: 'TemplateLiteral', expressions: [], quasis: [{ value: { cooked: './fields' } }] } }), []);
+  assert.match(lint({ type: 'ImportExpression', source: { type: 'TemplateLiteral', expressions: [{ type: 'Identifier', name: 'x' }], quasis: [{ value: { cooked: '../' } }, { value: { cooked: '' } }] } })[0], /import\(\) whose target is not a string literal/);
+  assert.match(lint({ type: 'ImportExpression', source: { type: 'Identifier', name: 'target' } })[0], /import\(\) whose target is not a string literal/);
+});
+
+test('WM-12 the product seed is empty and the workspace API is the published surface', () => {
+  assert.equal(read('src/workspace/index.ts').match(/^(?!\s*\*|\/\*).+$/gm).join('\n'), 'import { defineWorkspace } from "@studio/workspace"\nexport default defineWorkspace({})');
+  const api = read('src/studio/workspace/api.ts');
+  for (const name of ['defineWorkspace', 'useModule', 'useOperation', 'useDirtyGuard', 'useModuleState']) assert.match(api, new RegExp(`export function ${name}\\b`));
+  const eslint = read('eslint.config.js');
+  assert.match(eslint, /'studio\/imports': 'error'/);
+  assert.match(eslint, /src\/workspace\/\*\*\/\*\.\{ts,tsx\}/);
+  const vite = read('vite.config.ts');
+  assert.match(vite, /@studio\\\/workspace/);
+  assert.match(vite, /which the adapter does not declare in workspace\.modules/);
+});

@@ -4,6 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import { workspaceBoundary } from './scripts/workspace-boundary.mjs'
 
 export default defineConfig([
   globalIgnores(['dist']),
@@ -25,8 +26,15 @@ export default defineConfig([
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {
-    // The kit co-locates small helpers with components.
-    files: ['src/kit/**/*.{ts,tsx}'],
+    // The kit and the workspace layer co-locate small helpers with components.
+    files: ['src/kit/**/*.{ts,tsx}', 'src/studio/workspace/**/*.{ts,tsx}', 'example/workspace/**/*.{ts,tsx}'],
     rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
+    // Workspace modules import only @studio/kit, @studio/workspace, React and their own files (references/workspace.md).
+    files: ['src/workspace/**/*.{ts,tsx}', 'example/workspace/**/*.{ts,tsx}'],
+    ignores: ['example/workspace/adapter.ts'],
+    plugins: { studio: workspaceBoundary },
+    rules: { 'studio/imports': 'error' },
   },
 ])

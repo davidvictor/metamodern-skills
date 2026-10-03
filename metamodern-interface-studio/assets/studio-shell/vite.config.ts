@@ -2,12 +2,14 @@ import { readFileSync, renameSync, rmSync, writeFileSync } from "fs"
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
-import { defineConfig, type Plugin } from "vite"
+import { defineConfig, parseAst, runnerImport, type Plugin } from "vite"
 
 import config from "./studio.config"
 import type { StudioConfig } from "./src/studio/config"
 import { LAYOUTS_MAX_BYTES, validateLayouts } from "./src/studio/layouts"
 import { SCENARIOS_MAX_BYTES, validateScenarios } from "./src/studio/scenarios"
+import type { StudioAdapter } from "./src/studio/types"
+import { undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
 
 // Shell owned: product settings come from studio.config.ts, so an update can
 // replace this file. The Studio (index.html) builds with any extra pages the
@@ -109,12 +111,73 @@ const scenarios = () => savedFile({ file: "scenarios.json", route: "/__studio/sc
 const acceptance = process.env.VITE_STUDIO_ADAPTER ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, process.env.VITE_STUDIO_ADAPTER === "example" ? "src/adapters/example.ts" : "src/adapters/synthetic.ts") }] : []
 
 // The surfaces workspace modules import (references/workspace.md); everything else under src/ is shell internals.
-const studioAliases = [{ find: /^@studio\/kit$/, replacement: path.resolve(root, "src/kit/index.ts") }]
+const studioAliases = [
+  { find: /^@studio\/kit$/, replacement: path.resolve(root, "src/kit/index.ts") },
+  { find: /^@studio\/workspace$/, replacement: path.resolve(root, "src/studio/workspace/api.ts") },
+]
 const aliases = [...acceptance, ...studioAliases, { find: "@", replacement: path.resolve(root, "./src") }]
+
+/** The module IDs a workspace file passes to defineWorkspace, or why they cannot be read. */
+function definedModules(source: string, file: string): string[] | string {
+  const found: { ids: string[] | null; problem: string | null } = { ids: null, problem: null }
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object" || found.problem) return
+    if (Array.isArray(node)) return node.forEach(visit)
+    const n = node as { type?: string; callee?: { type?: string; name?: string }; arguments?: unknown[] }
+    if (n.type === "CallExpression" && n.callee?.type === "Identifier" && n.callee.name === "defineWorkspace") {
+      const arg = n.arguments?.[0] as { type?: string; properties?: { type?: string; computed?: boolean; key?: { type?: string; name?: string; value?: unknown } }[] } | undefined
+      if (arg?.type !== "ObjectExpression") {
+        found.problem = "defineWorkspace takes an object literal of module IDs"
+        return
+      }
+      found.ids = []
+      for (const p of arg.properties ?? []) {
+        if (p.type !== "Property" || p.computed || !p.key) {
+          found.problem = "defineWorkspace keys must be plain module IDs, without spreads or computed keys"
+          return
+        }
+        found.ids.push(p.key.type === "Identifier" ? String(p.key.name) : String(p.key.value))
+      }
+    }
+    for (const value of Object.values(node)) if (value && typeof value === "object") visit(value)
+  }
+  visit(parseAst(source, { lang: file.endsWith(".tsx") ? "tsx" : "ts" }))
+  return found.problem ?? found.ids ?? "the file does not call defineWorkspace"
+}
+
+// A module file that defines a module the adapter does not declare fails the build with its name, as
+// does an invalid declaration (references/workspace.md). Skipped when the file defines no modules.
+// When Vite cannot load the adapter (for example it imports CSS) the check only warns; the Studio then
+// reports the undeclared module at runtime.
+const workspaceCheck = (): Plugin => ({
+  name: "studio-workspace-check",
+  apply: "build",
+  async buildStart() {
+    const file = (await this.resolve("@/workspace"))?.id
+    if (!file) return
+    const rel = path.relative(root, file)
+    const defined = definedModules(readFileSync(file, "utf8"), file)
+    if (typeof defined === "string") return this.error(`${rel}: ${defined}`)
+    if (!defined.length) return
+    const adapterFile = (await this.resolve("@/adapter"))?.id
+    if (!adapterFile) return
+    let adapter: StudioAdapter
+    try {
+      adapter = (await runnerImport<{ adapter: StudioAdapter }>(adapterFile, { configFile: false, root, logLevel: "error", resolve: { alias: aliases } })).module.adapter
+    } catch (e) {
+      this.warn(`Could not load the adapter to check ${rel}: ${e instanceof Error ? e.message : String(e)}`)
+      return
+    }
+    const problems = workspaceProblems(adapter.workspace)
+    if (problems.length) return this.error(`The adapter's workspace declaration is invalid:\n  ${problems.join("\n  ")}`)
+    const orphans = undeclaredDefinitions(adapter.workspace, defined)
+    if (orphans.length) this.error(`${rel} defines ${orphans.map((id) => `"${id}"`).join(", ")}, which the adapter does not declare in workspace.modules. Declare it there or remove it.`)
+  },
+})
 
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss(), title(), layouts(), scenarios()],
+  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceCheck()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
     emptyOutDir: true,
