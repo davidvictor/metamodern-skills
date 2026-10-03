@@ -20,6 +20,8 @@ Select the requested operation; compose operations only within the authorized sc
 | **Prepare** | Create or revise audience-specific collections, comparisons, narration, and walkthroughs using [presentation](references/presentation.md). Preserve product facts and report missing or stale story steps. |
 | **Publish** | Only on a request naming a destination: follow [verification](references/verification.md#publication), build the Studio, deploy to that destination, and verify the hosted result. A missing destination blocks deployment, not local preparation. |
 
+When a product asks for its own workspace tools in its Studio, such as environment configuration, a schema explorer, email previews or translations, also read [workspace](references/workspace.md). No other request needs it; Inspect, Build and Update are otherwise unchanged.
+
 ## Non-negotiable boundaries
 
 - Preserve the fixed product identity and existing kit. Do not invent a new brand direction or redesign the application as a side effect. Keep the shell and the product apart: product tokens never style the shell, shell tokens never reach a preview, and product needs go in the adapter rather than in shell components. Follow the project's accepted design authority where available; missing authority is an evidence gap, not permission to claim approval.
