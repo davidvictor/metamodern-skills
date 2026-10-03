@@ -72,7 +72,7 @@ test('a range still snaps to its last in-range step when the range is not a whol
 test('a property whose ID is a reserved link key is rejected with a clear error', (t) => {
   const errors = [];
   t.mock.method(console, 'error', (...args) => errors.push(args.join(' ')));
-  for (const key of ['view', 'scenario', 'theme', 'profile', 'size', 'tab', 'design', 'layout', 'frames', 'height', 'arrange', 'vp', 'sync', 'edited']) {
+  for (const key of ['view', 'scenario', 'theme', 'profile', 'size', 'tab', 'design', 'layout', 'frames', 'height', 'arrange', 'vp', 'sync', 'edited', 'module', 'section']) {
     assert.ok(RESERVED_LINK_KEYS.includes(key), key);
   }
   const size = props({ id: 'size', label: 'Size', control: 'number' });

@@ -23,7 +23,7 @@ Read this when connecting a product to the [shell](shell.md), or when a preview 
 
 Selection is stored in the URL hash as stable IDs only: view, scenario, theme and profile, plus dock choices, the Design tab and Design values (`design=density:0.9;body-font:Inter`), and for Responsive the layout ID with any unsaved frames (`frames=390x844:phone,834x1112:tablet@480.0`), `height=full`, `arrange=canvas`, the canvas viewport (`vp=x_y_zoom`) and the sync channels when not all are on. Component property values travel under their input's ID too, except text not declared `shareable`, which stays in the viewer's browser and adds `edited=local`. Never put fixture values in it.
 
-The Studio's own keys are reserved: `view`, `scenario`, `theme`, `profile`, `size`, `tab`, `design`, `layout`, `frames`, `height`, `arrange`, `vp`, `sync` and `edited` (`RESERVED_LINK_KEYS` in `src/studio/input.ts`). A property whose ID is one of them is rejected: it gets no row in Details, input normalization refuses every value for it, so it never reaches a link or a frame, and the console names it once. Give it another ID.
+The Studio's own keys are reserved: `view`, `scenario`, `theme`, `profile`, `size`, `tab`, `design`, `layout`, `frames`, `height`, `arrange`, `vp`, `sync`, `edited`, `module` and `section` (`RESERVED_LINK_KEYS` in `src/studio/input.ts`). A property whose ID is one of them is rejected: it gets no row in Details, input normalization refuses every value for it, so it never reaches a link or a frame, and the console names it once. Give it another ID.
 
 ## studio-preview/1
 

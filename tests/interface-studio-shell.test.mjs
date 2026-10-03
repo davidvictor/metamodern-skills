@@ -135,6 +135,11 @@ test('every key the Studio writes to or reads from its links is reserved against
   assert.ok(ctor, 'the link writer starts from a URLSearchParams object');
   for (const m of ctor[1].matchAll(/(\w+):/g)) keys.add(m[1]);
   assert.ok(keys.has('edited') && keys.has('view') && keys.has('size'), `found ${[...keys].join(', ')}`);
+  // Workspace places (module=, section=) are read by the workspace link module before any workspace code loads.
+  const link = read('src/studio/workspace/link.ts');
+  const linkKeys = [...link.matchAll(/\bq\.(?:get|set)\("([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(linkKeys.includes('module') && linkKeys.includes('section'), `found ${linkKeys.join(', ')} in link.ts`);
+  for (const key of linkKeys) keys.add(key);
   const input = read('src/studio/input.ts');
   const reserved = JSON.parse(/RESERVED_LINK_KEYS: readonly string\[\] = (\[[^\]]*\])/.exec(input)[1]);
   for (const key of keys) assert.ok(reserved.includes(key), `link key "${key}" is not in RESERVED_LINK_KEYS`);
