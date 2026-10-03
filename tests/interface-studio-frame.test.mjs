@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 
 const root = new URL('../metamodern-interface-studio/assets/studio-shell/', import.meta.url);
@@ -40,4 +40,22 @@ test('a failing diagnostics handler reports none and never blocks the ready repl
   assert.equal(await readDiagnostics({ diagnostics: async () => { throw new Error('measure failed'); } }, inputs), undefined);
   assert.deepEqual(await readDiagnostics({ diagnostics: async (i) => [{ id: i.scenario }] }, inputs), [{ id: 's' }]);
   assert.match(readFileSync(new URL('src/studio/frame-client.ts', root), 'utf8'), /diagnostics: await readDiagnostics\(handlers, m\.inputs\)/, 'the ready reply reads diagnostics through the fail-soft path');
+});
+
+test('preview frames carry the adapter frame isolation, and nothing when it is undeclared', () => {
+  const live = readFileSync(new URL('src/studio/live-preview.tsx', root), 'utf8');
+  const preview = readFileSync(new URL('src/components/studio/preview.tsx', root), 'utf8');
+  const types = readFileSync(new URL('src/studio/types.ts', root), 'utf8');
+  assert.match(types, /frameIsolation\?: \{ credentialless\?: boolean; sandbox\?: string \}/);
+  // The only iframe in the shell, so every view's preview gets the same isolation.
+  const srcDir = new URL('src/', root);
+  const iframes = readdirSync(srcDir, { recursive: true }).filter((f) => /\.tsx?$/.test(f)).filter((f) => readFileSync(new URL(f, srcDir), 'utf8').match(/<iframe|createElement\(\s*["'`]iframe["'`]/));
+  assert.deepEqual(iframes, ['studio/live-preview.tsx']);
+  const frame = live.slice(live.indexOf('<iframe'), live.indexOf('/>', live.indexOf('<iframe')));
+  // undefined drops the attribute, and credentialless is spread only when declared true.
+  assert.match(frame, /sandbox=\{isolation\?\.sandbox\}/);
+  assert.match(frame, /\{\.\.\.\(isolation\?\.credentialless === true \? \{ credentialless: true \} : \{\}\)\}/);
+  assert.equal((preview.match(/<LivePreview\b/g) ?? []).length, 1);
+  assert.match(preview, /isolation=\{adapter\.frameIsolation\}/);
+  assert.doesNotMatch(readFileSync(new URL('src/adapters/example.ts', root), 'utf8'), /frameIsolation/, 'the example keeps acceptance identical');
 });

@@ -89,7 +89,8 @@ test('range inputs and diagnostics are carried by the stable shell contracts', (
   assert.match(types, /format\?: "time"/);
   assert.match(types, /export type FrameDiagnostic/);
   assert.match(read('src/store.tsx'), /i\.control === "range"/, 'a declared range must remain choosable when it has no categorical options');
-  assert.match(read('src/store.tsx'), /input\.presets \?\? \[\]\)\.map\(\(p\) => \(\{ id: String\(p\.value\), label: p\.label \}\)\)/, 'range comparisons use declared preset values rather than an empty categorical list');
+  assert.match(read('src/store.tsx'), /input\?\.control === "range" \|\| input\?\.control === "number"\) return axisValues\(input\)/, 'range comparisons use declared preset values rather than an empty categorical list');
+  assert.match(read('src/studio/properties.ts'), /i\.control === "range" \|\| i\.control === "number"\) return \(i\.presets \?\? \[\]\)\.map\(\(p\) => \(\{ id: String\(p\.value\), label: p\.label \}\)\)/, 'axisValues offers a range its presets');
 
   const protocol = read('src/studio/protocol.ts');
   assert.match(protocol, /design\?: Record<string, string \| number>/);
@@ -172,4 +173,38 @@ test('a snapped range value never passes the declared maximum', async () => {
   assert.equal(normalizeScenarioInput({ ...uneven, step: 3 }, undefined, 10), 9);
   assert.equal(normalizeScenarioInput({ id: 'h', label: 'H', control: 'range', min: 0, max: 24, step: 1 / 12 }, undefined, 24), 24, 'an exact maximum on a decimal grid stays');
   assert.equal(normalizeScenarioInput({ id: 'o', label: 'O', control: 'range', min: 1, max: 10, step: 4 }, undefined, 10), 9);
+});
+
+test('a generic font family stays unquoted in tokens and CSS', async () => {
+  const { designDraft, fontFamilyValue } = await designModel();
+  const adapter = {
+    ...baseAdapter,
+    tokens: { columns: ['light'], tokens: [{ name: '--font-sans', family: 'typography', values: { light: 'Inter, sans-serif' } }] },
+    design: {
+      parameters: [{ id: 'face', label: 'Face', kind: 'font', default: 'Inter', apply: { set: ['--font-sans'], css: 'body { font-family: $value; }' } }],
+    },
+  };
+  const generic = designDraft(adapter, { face: 'system-ui' }, 'light');
+  assert.equal(generic.tokens['--font-sans'], 'system-ui, Inter, sans-serif');
+  assert.match(generic.css, /font-family: system-ui;/);
+  const named = designDraft(adapter, { face: 'Georgia' }, 'light');
+  assert.equal(named.tokens['--font-sans'], '"Georgia", Inter, sans-serif');
+  assert.match(named.css, /font-family: "Georgia";/);
+  assert.equal(fontFamilyValue('UI-Monospace'), 'UI-Monospace');
+  assert.equal(fontFamilyValue('serif'), 'serif');
+  assert.equal(fontFamilyValue('Times New Roman'), '"Times New Roman"');
+});
+
+test('a generic font family requests no web font stylesheet', async () => {
+  const { designDraft, fontStylesheet } = await designModel();
+  assert.equal(fontStylesheet('serif'), null);
+  assert.equal(fontStylesheet(' Monospace '), null);
+  assert.equal(fontStylesheet('ui-rounded'), null);
+  assert.match(fontStylesheet('Space Grotesk'), /family=Space\+Grotesk&display=swap$/);
+  const adapter = {
+    ...baseAdapter,
+    tokens: { columns: ['light'], tokens: [{ name: '--font-sans', family: 'typography', values: { light: 'Inter, sans-serif' } }] },
+    design: { parameters: [{ id: 'face', label: 'Face', kind: 'font', default: 'Inter', apply: { set: ['--font-sans'] } }] },
+  };
+  assert.deepEqual(designDraft(adapter, { face: 'serif' }, 'light').stylesheets, []);
 });

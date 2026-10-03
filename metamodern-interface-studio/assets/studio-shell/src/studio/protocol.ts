@@ -4,7 +4,7 @@
  * and their answers, a requestId. Receivers validate the origin and the
  * sending window before reading anything else.
  */
-import type { FrameDiagnostic } from "./types"
+import type { FrameDiagnostic, InputValue } from "./types"
 export type { FrameDiagnostic } from "./types"
 
 export const PROTOCOL = "studio-preview/1" as const
@@ -14,7 +14,7 @@ export type MountInputs = {
   scenario: string
   theme: string
   profile: string
-  values: Record<string, string | number>
+  values: Record<string, InputValue>
   /** Design controls that require the product to rebuild markup or graphics. */
   design?: Record<string, string | number>
   /** Commands replayed in order before the frame reports ready. */
@@ -28,7 +28,7 @@ export type MountInputs = {
 }
 
 /** What a frame client can do beyond the base protocol, announced in `hello`. */
-export type FrameCapability = "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation" | "stage-gestures"
+export type FrameCapability = "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation" | "stage-gestures" | "live-values" | "code"
 
 /**
  * Stage navigation that starts over a frame, for the Studio to apply to its stage. Wheel positions are in the
@@ -118,6 +118,10 @@ export type ShellBody =
   | { type: "sync"; requestId: string; channels: SyncChannelsMessage }
   /** Repeat another frame's interaction here. The reply says when the target could not be found. */
   | { type: "replay"; requestId: string; event: SyncEvent }
+  /** Every resolved value, after a property changed (capability live-values). The frame applies them without rebuilding. */
+  | { type: "values"; requestId: string; values: Record<string, InputValue> }
+  /** Ask for the code that renders the current state (capability code). */
+  | { type: "code-request"; requestId: string }
 
 /** frame to shell */
 export type FrameBody =
@@ -145,6 +149,8 @@ export type FrameBody =
   | { type: "interaction"; event: SyncEvent }
   /** Navigation of the Studio's stage that began over this frame (capability stage-gestures). */
   | { type: "gesture"; gesture: StageGesture }
+  /** The answer to code-request: the code for the current values, listing only props that differ from their defaults. */
+  | { type: "code"; requestId: string; language: string; text: string }
 
 export type ShellMessage = Envelope & ShellBody
 export type FrameMessage = Envelope & FrameBody

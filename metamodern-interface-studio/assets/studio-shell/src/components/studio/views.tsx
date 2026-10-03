@@ -33,7 +33,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { adapter } from "@/adapter"
-import { areaLabel, axisOptions, captureFor, compareAxes, isColor, NO_DRAFT, useStudio, withoutLenses } from "@/store"
+import { areaLabel, axisOptions, captureFor, compareAxes, isColor, NO_DRAFT, propertyIds, useStudio, withoutLenses } from "@/store"
 import { normalizeScenarioInput } from "@/studio/input"
 import type { LiveStatus } from "@/studio/live-preview"
 import type { Step } from "@/studio/types"
@@ -89,7 +89,7 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
   const nav = useStageNav(box, scale)
   const onStatus = React.useCallback(
     (st: LiveStatus | null) => {
-      if (st) set({ preview: { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous, diagnostics: st.diagnostics } })
+      if (st) set({ preview: { status: st.status, modified: st.modified, canGoBack: st.canGoBack, location: st.location, fingerprint: st.fingerprint, reason: st.reason, previous: st.previous, diagnostics: st.diagnostics, capabilities: st.capabilities } })
       else set({ preview: { status: captureFor(sc, s.theme, s.profile) ? "static" : "empty", modified: false, canGoBack: false } })
     },
     [set, sc, s.theme, s.profile]
@@ -102,6 +102,7 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
       profile={s.profile}
       size={resizable ? s.size : null}
       values={s.values}
+      props={s.edits}
       draft={s.viewDraft(s.theme)}
       resetNonce={s.resetNonce}
       scale={scale}
@@ -153,8 +154,12 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const pick = (k: "a" | "b") => (k === "a" ? a : b)
   const sideProfile = (k: "a" | "b") => profileOf(axis === "profile" ? pick(k) : s.profile)
   const sideTheme = (k: "a" | "b") => (axis === "theme" ? pick(k) : s.theme)
-  const axisValue = (value: string) => adapter.axes.inputs.find((input) => input.id === axis)?.control === "range" ? Number(value) : value
-  const sideValues = (k: "a" | "b") => (axis !== "theme" && axis !== "profile" && axis !== "design" ? { ...s.values, [axis]: axisValue(pick(k)) } : s.values)
+  const input = axis !== "theme" && axis !== "profile" && axis !== "design" ? adapter.axes.inputs.find((i) => i.id === axis) : undefined
+  const axisValue = (value: string) => (input?.control === "range" || input?.control === "number" ? Number(value) : input?.control === "switch" ? value === "true" : value)
+  // Every side carries the viewer's property edits. A property axis reaches each side as that side's own property
+  // value, any other input as its value; nothing a side shows is written back to the edits.
+  const sideInputs = (value: string) =>
+    !input ? { values: s.values, props: s.edits } : propertyIds.has(axis) ? { values: s.values, props: { ...s.edits, [axis]: axisValue(value) } } : { values: { ...s.values, [axis]: axisValue(value) }, props: s.edits }
   const pa = sideProfile("a")
   const pb = sideProfile("b")
   const box = React.useRef<HTMLDivElement>(null)
@@ -177,8 +182,8 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const changeAxis = (next: string) => {
     if (next === axis) return
     const opts = axisOptions(next, sc)
-    const current = next === "design" ? "built" : next === "theme" ? s.theme : next === "profile" ? s.profile : (s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
-    const at = Math.max(0, opts.findIndex((o) => o.id === current))
+    const current = next === "design" ? "built" : next === "theme" ? s.theme : next === "profile" ? s.profile : (s.edits[next] ?? s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
+    const at = Math.max(0, opts.findIndex((o) => o.id === String(current)))
     // The requested count stays; the new axis shows as many of those sides as it has values.
     const values = Array.from({ length: Math.max(2, Math.min(comparisonCount(s.compare.count), opts.length)) }, (_, index) => opts[(at + index) % opts.length]?.id ?? "")
     setC({ axis: next, a: values[0], b: values[1], values })
@@ -214,7 +219,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
         scenario={sc.id}
         theme={sideTheme(k)}
         profile={sideProfile(k).id}
-        values={sideValues(k)}
+        {...sideInputs(pick(k))}
         draft={axis === "design" ? (pick(k) === "draft" ? s.draftFor(sideTheme(k)) : NO_DRAFT) : s.viewDraft(sideTheme(k))}
         resetNonce={x.nonce}
         scale={scale}
@@ -228,13 +233,12 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
     const x = index === 2 ? C : D
     const profile = axis === "profile" ? profileOf(value) : profileOf(s.profile)
     const theme = axis === "theme" ? value : s.theme
-    const values = axis !== "theme" && axis !== "profile" && axis !== "design" ? { ...s.values, [axis]: axisValue(value) } : s.values
     return (
       <ScenarioPreview
         scenario={sc.id}
         theme={theme}
         profile={profile.id}
-        values={values}
+        {...sideInputs(value)}
         draft={axis === "design" ? (value === "draft" ? s.draftFor(theme) : NO_DRAFT) : s.viewDraft(theme)}
         resetNonce={x.nonce}
         scale={scale}
@@ -632,7 +636,8 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
             </div>
           ) : (
             <ScenarioPreview
-              key={`${tour.id}:${i}:${nonce}`}
+              // Each step, and each edit of a step, mounts a fresh runtime: steps on one scenario that differ only in property values never carry product state over.
+              key={`${i}:${stepKey}`}
               scenario={step.scenario}
               theme={theme}
               profile={profile}

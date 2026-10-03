@@ -45,6 +45,8 @@ steps[23] = { scenario: scenarios.find((x) => x.status === "later")!.id, narrati
 
 export const syntheticAdapter: StudioAdapter = {
   ...exampleAdapter,
+  // The stress Studio declares no properties, so it also measures a Studio exactly as it was before them (AC-53).
+  axes: { ...exampleAdapter.axes, inputs: exampleAdapter.axes.inputs.filter((i) => i.section !== "properties") },
   id: "synthetic-stress",
   product: { ...exampleAdapter.product, name: "Stress Studio", revision: "generated" },
   areas,

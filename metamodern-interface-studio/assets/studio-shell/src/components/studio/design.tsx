@@ -16,7 +16,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { adapter } from "@/adapter"
 import { NO_DRAFT, useStudio } from "@/store"
-import { allowedStylesheet, baseValue, download, encodeDesign, isDefault, parameterAvailable, parameterDefault, tokenDiff, toPx, valuesForTheme, variantFile } from "@/studio/design"
+import { allowedStylesheet, baseValue, download, encodeDesign, fontFamilyValue, isDefault, parameterAvailable, parameterDefault, tokenDiff, toPx, valuesForTheme, variantFile } from "@/studio/design"
 import { toast } from "sonner"
 import { Switch } from "@/components/ui/switch"
 import type { DesignParameter } from "@/studio/types"
@@ -114,7 +114,7 @@ function FontControl({ p }: { p: DesignParameter }) {
         <SelectContent>
           {choices.map((c) => (
             <SelectItem key={c} value={c}>
-              <span style={{ fontFamily: `"${c}"` }}>{c}</span>
+              <span style={{ fontFamily: fontFamilyValue(c) }}>{c}</span>
             </SelectItem>
           ))}
         </SelectContent>
@@ -362,7 +362,7 @@ function Specimen() {
             <span className="text-[11px] text-muted-foreground">
               {p.label} · {name}
             </span>
-            <p className="text-lg leading-snug" style={{ fontFamily: `"${name}", system-ui` }}>
+            <p className="text-lg leading-snug" style={{ fontFamily: `${fontFamilyValue(name)}, system-ui` }}>
               Pack my box with five dozen liquor jugs
             </p>
           </div>
@@ -383,7 +383,7 @@ function Specimen() {
                     className="truncate leading-tight"
                     style={{
                       fontSize: Math.min(px, 40),
-                      fontFamily: family ? `"${family}", system-ui` : undefined,
+                      fontFamily: family ? `${fontFamilyValue(family)}, system-ui` : undefined,
                     }}
                   >
                     Aa Quarterly plan

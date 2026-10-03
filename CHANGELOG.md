@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.14.0 — 2026-10-02
+
+- Interface Studio 0.11.0: component properties. A scenario input with `section: "properties"` edits the selected named state from Details > Scenario > Properties without a remount: `switch`, `text` (`multiline`, `maxLength`, `shareable`), `number` and `choice` controls, `surfaces`, `curated` rows first with the rest under a collapsed All properties, `optional` rows with Set and Clear, and `readonly` rows with a note. A changed row shows Back to designed. Edits show as Edited · n properties, separate from Modified; R keeps them and Reset (n) in Properties clears them. A property ID that is one of the Studio's own link keys (`view`, `scenario`, `size` and the like) gets no row and is named in the console. A Studio that declares no properties is unchanged.
+- `studio-preview/1` values may be booleans. Frames gain two optional capabilities: `live-values` (an `update` handler applies `values` in place; older frames, and frames whose update fails, are remounted) and `code` (`code-request` answered by `code`, shown with Copy in a Code tab beside a properties-bearing scenario in Inspect).
+- Links carry property values under their input ID; free text travels only when `shareable`, otherwise the link says `edited=local`. Save as scenario writes named states to `scenarios.json` (`studio-scenarios/1`) through the dev server's guarded endpoint; saved states join the catalog marked Saved and can be saved again, renamed, duplicated and deleted, and a built Studio offers Copy as JSON. A switch, select, choice, or number or range with presets can be the Compare axis; Responsive frames carry the edits. Acceptance adds AC-53 to AC-60.
+- Adapters can declare `frameIsolation` (`sandbox`, `credentialless`) for every preview frame, and a Design font set to a generic family (`system-ui`, `serif` and the like) is no longer quoted and requests no web font.
+- For every Studio, an empty range value in a link (such as `?clock=`) now reads as unset rather than 0. The frame client applies value updates in order and only the newest. Saving a state rewrites only the entries it changes and keeps every other entry in `scenarios.json` as stored. Present mounts each step afresh.
+
 ## 1.13.1 — 2026-10-02
 
 - Interface Studio 0.10.2 fixes review findings in 0.10.1. Design values follow each theme's own default: a shared value travels in a link whenever it differs from any theme's default, so the link shows the same design in every theme, and the type specimen and per-theme drafts no longer treat a theme's as-built value as a change. Saved values equal to the plain default are kept after a reload.

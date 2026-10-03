@@ -3,10 +3,12 @@ import * as React from "react"
 import { toast } from "sonner"
 
 import { adapter } from "@/adapter"
-import type { FrameDiagnostic, Scenario, ScenarioInput, Token } from "@/studio/types"
+import type { FrameDiagnostic, InputValue, Scenario, ScenarioInput, Token } from "@/studio/types"
 import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
 import { normalizeScenarioInput } from "@/studio/input"
+import { appliesTo, axisValues, comparable, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, unsettable, usableSaved, withSaved, type Edits, type LinkHold } from "@/studio/properties"
+import type { SavedScenario, ScenariosFile } from "@/studio/scenarios"
 import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import { applyPresenterOverlay, isPresenterOverlay, type PresenterOverlay, type PresenterWalkthrough, updateOverlay } from "@/studio/presenter-overlay"
@@ -19,7 +21,7 @@ export type View = "inspect" | "compare" | "responsive" | "gallery" | "present" 
 export type CompareMode = "side" | "split" | "toggle"
 /** draftEverywhere: show the design draft in Inspect, Gallery and Compare too. Off by default; Present never shows it. */
 export type Options = { controls: "dock" | "toolbar"; details: "docked" | "floating"; railLabels: boolean; draftEverywhere: boolean; map: boolean }
-export type PreviewStatus = { status: "loading" | "ready" | "error" | "static" | "empty"; modified: boolean; canGoBack: boolean; location?: string; fingerprint?: string; reason?: string; previous?: boolean; diagnostics?: FrameDiagnostic[] }
+export type PreviewStatus = { status: "loading" | "ready" | "error" | "static" | "empty"; modified: boolean; canGoBack: boolean; location?: string; fingerprint?: string; reason?: string; previous?: boolean; diagnostics?: FrameDiagnostic[]; capabilities?: FrameCapability[] }
 
 export type State = {
   view: View
@@ -30,7 +32,15 @@ export type State = {
   profile: string
   /** A dragged Inspect size on top of the profile. The profile still decides input context; this only sets the frame's pixels. */
   size: { w: number; h: number } | null
-  values: Record<string, string | number>
+  values: Record<string, InputValue>
+  /** The viewer's property edits, by scenario ID. Kept in this browser; those that travel are also in the link. */
+  props: Record<string, Edits>
+  /** The scenario whose link said the sender had local text edits this browser does not hold. */
+  propsNote: string | null
+  /** The scenario a link set edits for, with what this browser had stored for it: kept in storage until the person edits it here. */
+  propsHold: LinkHold | null
+  /** Saved states from scenarios.json (studio-scenarios/1). */
+  savedStates: SavedScenario[]
   zoom: "fit" | number
   /** The scale Inspect is showing the frame at, for the dock's Zoom control to state. */
   scale: number
@@ -65,7 +75,26 @@ const PRESENTER_KEY = `studio.${A.id}.presenter-overlay.v1`
 const PRESENT_PREFS_KEY = `studio.${A.id}.presenter-preferences.v1`
 /** Written only after the viewer flips the switch, so a changed default reaches everyone who never chose. */
 const RAIL_KEY = `studio.${A.id}.rail-labels`
+const PROPS_KEY = `studio.${A.id}.property-edits.v1`
 const VIEWS: View[] = ["inspect", "compare", "responsive", "gallery", "present", "design"]
+/** Properties need a live frame. A Studio that declares none behaves exactly as before they existed. */
+export const hasProperties = !!A.frameEntry && A.axes.inputs.some(isProperty)
+export const propertyIds = new Set(A.axes.inputs.filter(isProperty).map((i) => i.id))
+/**
+ * The adapter's own scenarios; saved states from scenarios.json join them in the catalog. Filtered, so a re-run of
+ * this module (hot update) never treats an already joined saved state as generated.
+ */
+const generated = A.scenarios.filter((x) => !x.savedFrom)
+/** Puts a scenarios.json list in the catalog, keeping only usable entries, and returns them. */
+const joinSaved = (list: unknown) => {
+  const usable = usableSaved(generated, list, A.axes.inputs)
+  A.scenarios = withSaved(generated, usable)
+  return usable
+}
+/** Saved states bundled into a built Studio; the dev server serves the live file instead. Joined before the link is read, so a link to one resolves. */
+const bundledScenarios = Object.values(import.meta.glob("/scenarios.json", { eager: true, import: "default" }))[0] as ScenariosFile | undefined
+const bundledSaved = hasProperties ? joinSaved(bundledScenarios?.scenarios) : []
+export const canSaveScenarios = import.meta.env.DEV
 /** Design shows the Adjust tab when the adapter declares parameters and the Tokens tab when it has a token source. */
 export const hasAdjust = !!A.design?.parameters.length
 export const hasDesign = hasAdjust || !!A.tokens
@@ -110,8 +139,8 @@ function parseViewport(text: string | null) {
 /** A link that names a scenario this Studio does not have. It is said out loud, never replaced silently. */
 let unresolvedLink: string | null = null
 
-/** Selection lives in the URL as stable IDs only, never fixture values. */
-function readHash(): Partial<State> {
+/** Selection lives in the URL as stable IDs only, never fixture values. Property values travel under their input's ID. */
+function readHash(stored: Record<string, Edits>): Partial<State> {
   const q = new URLSearchParams(location.hash.slice(1))
   const out: Partial<State> = {}
   const view = q.get("view")
@@ -131,12 +160,19 @@ function readHash(): Partial<State> {
   const sc = q.get("scenario")
   if (sc && A.scenarios.some((x) => x.id === sc)) out.scenario = sc
   else if (sc) unresolvedLink = sc
+  // A link that names a scenario sets its property edits: see editsFromLink.
+  if (hasProperties && out.scenario) {
+    const { edits, missing } = editsFromLink(A.axes.inputs, A.scenarios.find((x) => x.id === out.scenario), (id) => q.get(id), stored[out.scenario], q.get("edited") === "local")
+    out.props = { ...stored, [out.scenario]: edits }
+    out.propsHold = { scenario: out.scenario, stored: stored[out.scenario] }
+    if (missing) out.propsNote = out.scenario
+  }
   const th = q.get("theme")
   if (th && A.axes.themes.some((x) => x.id === th)) out.theme = th
   const pr = q.get("profile")
   if (pr && A.axes.profiles.some((x) => x.id === pr)) out.profile = pr
   // Dock choices travel in the link under the input's own ID.
-  const lenses = Object.fromEntries(A.axes.inputs.filter((i) => i.placement === "dock").flatMap((i) => {
+  const lenses = Object.fromEntries(A.axes.inputs.filter((i) => i.placement === "dock" && !isProperty(i)).flatMap((i) => {
     const v = q.get(i.id)
     const normalized = v === null ? undefined : normalizeScenarioInput(i, A.scenarios.find((x) => x.id === out.scenario), v)
     return normalized === undefined ? [] : [[i.id, normalized]]
@@ -171,47 +207,59 @@ function readHash(): Partial<State> {
   return out
 }
 
-/** The scenario inputs a scenario uses: every unscoped input, and a scoped one only when the scenario designs a value for it. */
-export const inputsFor = (sc: Scenario | undefined) => A.axes.inputs.filter((i) => !i.scoped || sc?.designed?.[i.id] !== undefined)
+/** The scenario inputs a scenario uses: every unscoped input on its surfaces, and a scoped one only when the scenario designs a value for it. */
+export const inputsFor = (sc: Scenario | undefined) => A.axes.inputs.filter((i) => (!i.scoped || sc?.designed?.[i.id] !== undefined) && appliesTo(i, sc))
 /** The options of an input a scenario supports (`Scenario.supports`); every option when it declares none. */
 export const optionsFor = (input: ScenarioInput, sc: Scenario | undefined) => {
-  if (input.control === "range") return []
+  if (input.control === "range" || input.control === "switch") return []
   const only = sc?.supports?.[input.id]
   const options = input.options ?? []
   return only ? options.filter((o) => only.includes(o.id)) : options
 }
-/** Inputs a viewer can change on this scenario: those with at least two options it supports. The rest are still sent, at their designed value. */
+/**
+ * Scenario inputs a viewer can change on this scenario: those with at least two options it supports. The rest are still
+ * sent, at their designed value. Properties are never among them: they have their own section and Compare axis.
+ */
 export const choosableFor = (sc: Scenario | undefined) =>
   inputsFor(sc).filter((i) =>
-    i.control === "range"
-      ? Number.isFinite(i.min) && Number.isFinite(i.max) && (i.max ?? 0) > (i.min ?? 0)
-      : optionsFor(i, sc).length > 1
+    i.readonly || isProperty(i)
+      ? false
+      : i.control === "range"
+        ? Number.isFinite(i.min) && Number.isFinite(i.max) && (i.max ?? 0) > (i.min ?? 0)
+        : optionsFor(i, sc).length > 1
   )
 /** Whether a scenario can render an option of an input. */
-export const supports = (sc: Scenario | undefined, input: string, option: string | number) => {
+export const supports = (sc: Scenario | undefined, input: string, option: InputValue) => {
   const descriptor = A.axes.inputs.find((candidate) => candidate.id === input)
   return !!descriptor && normalizeScenarioInput(descriptor, sc, option) !== undefined
 }
-/** The viewer's choice when this scenario supports it, else the scenario's designed value, else the input's default. Inputs the scenario does not use are left out. */
-export function resolveValues(sc: Scenario | undefined, values: Record<string, string | number>) {
-  const out: Record<string, string | number> = {}
+/**
+ * The viewer's property edit or choice when this scenario supports it, else the scenario's designed value, else the
+ * input's default (an optional property sends nothing until set). Inputs the scenario does not use are left out.
+ */
+export function resolveValues(sc: Scenario | undefined, values: Record<string, InputValue>, props?: Edits) {
+  const out: Record<string, InputValue> = {}
   for (const i of inputsFor(sc)) {
-    const chosen = values[i.id] === undefined ? undefined : normalizeScenarioInput(i, sc, values[i.id])
-    const candidate = chosen ?? sc?.designed?.[i.id] ?? i.default
+    // An unset optional property sends nothing, as when it was never set.
+    if (props?.[i.id] === null) continue
+    const pick = props?.[i.id] ?? values[i.id]
+    const chosen = pick === undefined ? undefined : normalizeScenarioInput(i, sc, pick)
+    const candidate = chosen ?? sc?.designed?.[i.id] ?? (i.optional ? undefined : i.default)
     const v = candidate === undefined ? undefined : normalizeScenarioInput(i, sc, candidate)
     if (v !== undefined) out[i.id] = v
   }
   return out
 }
 /** The same values with the viewer's dock choices removed, for playing a walkthrough exactly as designed. */
-export const withoutLenses = (values: Record<string, string | number>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
-/** The axes Compare can change for a scenario: theme, profile and every scenario input it uses. */
+export const withoutLenses = (values: Record<string, InputValue>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
+/**
+ * The axes Compare can change for a scenario: theme, profile, every input it uses with named values, then its
+ * properties with named values (a switch, options, or a number with presets; text never).
+ */
 export const compareAxes = (sc?: Scenario, draft = false) => [
   { id: "theme", label: A.axes.themeLabel },
   { id: "profile", label: "Profile" },
-  ...choosableFor(sc)
-    .filter((i) => i.control !== "range" || !!i.presets?.length)
-    .map((i) => ({ id: i.id, label: i.label })),
+  ...[...choosableFor(sc), ...(hasProperties ? propertiesFor(A.axes.inputs, sc) : [])].filter(comparable).map((i) => ({ id: i.id, label: i.label })),
   ...(draft ? [{ id: "design", label: "Design" }] : []),
 ]
 export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: string }[] => {
@@ -219,12 +267,12 @@ export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: s
   if (axis === "profile") return A.axes.profiles.map((p) => ({ id: p.id, label: p.label }))
   if (axis === "design") return [{ id: "built", label: "As built" }, { id: "draft", label: "Draft" }]
   const input = A.axes.inputs.find((i) => i.id === axis)
-  if (input?.control === "range") return (input.presets ?? []).map((p) => ({ id: String(p.value), label: p.label }))
+  if (input?.control === "switch" || input?.control === "range" || input?.control === "number") return axisValues(input)
   return input ? optionsFor(input, sc) : []
 }
 
 // Only inputs with a default start with a value; a designed input is left unset until the viewer chooses.
-export const defaultValues = (): Record<string, string | number> => Object.fromEntries(A.axes.inputs.flatMap((i) => (i.default !== undefined && i.placement !== "dock" ? [[i.id, i.default]] : [])))
+export const defaultValues = (): Record<string, InputValue> => Object.fromEntries(A.axes.inputs.flatMap((i) => (i.default !== undefined && i.placement !== "dock" && !isProperty(i) ? [[i.id, i.default]] : [])))
 
 const initialDesign: State["design"] = { tab: hasAdjust ? "adjust" : "tokens", values: {}, valuesByTheme: {}, show: "draft" }
 const firstComparison = A.comparisons?.[0]
@@ -240,6 +288,10 @@ const initial: State = {
   profile: A.axes.profiles.find((p) => p.id === A.axes.defaultProfile)?.id ?? A.axes.profiles[0].id,
   size: null,
   values: defaultValues(),
+  props: {},
+  propsNote: null,
+  propsHold: null,
+  savedStates: bundledSaved,
   zoom: "fit",
   scale: 1,
   resetNonce: 0,
@@ -269,7 +321,15 @@ type Ctx = State & {
   /** A dragged or typed Inspect size; null returns to the profile's own size. Nothing is remounted. */
   setSize: (size: { w: number; h: number } | null) => void
   /** null returns the input to the scenario's designed value (or its default). */
-  setValue: (id: string, value: string | number | null) => void
+  setValue: (id: string, value: InputValue | null) => void
+  /** The viewer's property edits on this scenario. */
+  edits: Edits
+  /** Edits a property of this scenario without a remount; null (or the designed value) returns it to designed (an optional one the scenario does not design is unset); undefined unsets an optional property the scenario designs. */
+  setProp: (id: string, value: InputValue | null | undefined) => void
+  /** Clears every property edit on this scenario. R does not; this does. */
+  resetProps: () => void
+  /** Replaces the saved states, and the catalog entries made from them. */
+  setSavedStates: (list: SavedScenario[]) => void
   walkthroughs: PresenterWalkthrough[]
   updatePresenter: (tourId: string, patch: Partial<PresenterOverlay["tours"][string]>) => void
   setView: (v: View) => void
@@ -321,7 +381,14 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const presentationPrefs = readJSON<{ speed?: number; focus?: boolean }>(PRESENT_PREFS_KEY)
     const savedDesign = readJSON<{ version: number; values: DesignValues; valuesByTheme: DesignValuesByTheme }>(DESIGN_KEY)
     const railLabels = readJSON<boolean>(RAIL_KEY)
-    const fromLink = readHash()
+    const storedRaw = hasProperties ? readJSON<Record<string, unknown>>(PROPS_KEY) : null
+    // Stored edits pass the same normalization as a link: a scenario or property that is gone, or a stale value, is dropped.
+    const storedProps: Record<string, Edits> = {}
+    for (const sc of storedRaw && typeof storedRaw === "object" ? A.scenarios : []) {
+      const edits = keptEdits(A.axes.inputs, sc, storedRaw?.[sc.id])
+      if (Object.keys(edits).length) storedProps[sc.id] = edits
+    }
+    const fromLink = readHash(storedProps)
     const kept = readJSON<Partial<State["responsive"]>>(RESPONSIVE_KEY)
     const responsive = fromLink.responsive ?? (kept?.frames?.length ? { ...initialResponsive(), ...kept, resetNonce: 0 } : initialResponsive())
     // Saved values pass the same validation as a link, but every value is kept: shared values serve
@@ -337,7 +404,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       speed: presentationPrefs?.speed && [0.75, 1, 1.4].includes(presentationPrefs.speed) ? presentationPrefs.speed : initial.present.speed,
       focus: presentationPrefs?.focus === true,
     }
-    return { ...initial, ...fromLink, present, design, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} }, presenter: isPresenterOverlay(presenter) ? presenter : initial.presenter }
+    return { ...initial, ...fromLink, props: fromLink.props ?? storedProps, present, design, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} }, presenter: isPresenterOverlay(presenter) ? presenter : initial.presenter }
   })
   const set = React.useCallback((patch: Partial<State> | ((s: State) => Partial<State>)) => {
     setState((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) }))
@@ -355,13 +422,22 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     if (railChosen.current) writeJSON(RAIL_KEY, railLabels)
   }, [state.options])
   React.useEffect(() => writeJSON(DRAFTS_KEY, state.tokens.drafts), [state.tokens.drafts])
+  React.useEffect(() => {
+    if (hasProperties) writeJSON(PROPS_KEY, storedEdits(state.props, state.propsHold))
+  }, [state.props, state.propsHold])
   React.useEffect(() => writeJSON(PRESENTER_KEY, state.presenter), [state.presenter])
   React.useEffect(() => writeJSON(PRESENT_PREFS_KEY, { speed: state.present.speed, focus: state.present.focus }), [state.present.speed, state.present.focus])
   React.useEffect(() => writeJSON(DESIGN_KEY, { version: 1, values: state.design.values, valuesByTheme: state.design.valuesByTheme }), [state.design.values, state.design.valuesByTheme])
   React.useEffect(() => {
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })
     if (state.size) q.set("size", `${state.size.w}x${state.size.h}`)
-    for (const i of A.axes.inputs) if (i.placement === "dock" && state.values[i.id] !== undefined) q.set(i.id, String(state.values[i.id]))
+    for (const i of A.axes.inputs) if (i.placement === "dock" && !isProperty(i) && state.values[i.id] !== undefined) q.set(i.id, String(state.values[i.id]))
+    // Property edits are written only through linkEdits, which leaves out readonly and reserved-key properties.
+    if (hasProperties) {
+      const { params, local } = linkEdits(A.axes.inputs, A.scenarios.find((x) => x.id === state.scenario), state.props[state.scenario])
+      for (const [k, v] of params) q.set(k, v)
+      if (local) q.set("edited", "local")
+    }
     if (state.view === "design" && hasAdjust && A.tokens) q.set("tab", state.design.tab)
     if (state.view === "responsive") {
       const r = state.responsive
@@ -376,13 +452,23 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme), state.theme)
     if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive])
   // Unsaved Responsive edits stay in this browser until saved or reverted.
   React.useEffect(() => {
     const { resetNonce: _, ...keep } = state.responsive
     void _
     writeJSON(RESPONSIVE_KEY, keep)
   }, [state.responsive])
+  // In the dev server the live scenarios.json is read too, so a saved state shows after a reload.
+  React.useEffect(() => {
+    if (!canSaveScenarios || !hasProperties) return
+    fetch("__studio/scenarios")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: ScenariosFile | null) => {
+        if (data) set({ savedStates: joinSaved(data.scenarios) })
+      })
+      .catch(() => undefined)
+  }, [set])
   // In the dev server the live layouts.json is read, so a save shows after a reload too.
   React.useEffect(() => {
     if (!canSaveLayouts) return
@@ -419,6 +505,22 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
         else values[id] = v
         return { values, preview: { ...s.preview, status: "loading", modified: false } }
       }),
+    edits: state.props[state.scenario] ?? {},
+    setProp: (id, v) =>
+      set((s) => {
+        // The scenario as of this update, and only its own editable properties: any other ID changes nothing.
+        const sc = A.scenarios.find((x) => x.id === s.scenario)
+        const input = propertiesFor(A.axes.inputs, sc).find((i) => i.id === id && !i.readonly)
+        if (!input) return {}
+        const designed = sc?.designed?.[id] ?? (input.optional ? undefined : input.default)
+        const edits = { ...s.props[s.scenario] }
+        if (v === null || v === designed) delete edits[id]
+        else if (v !== undefined) edits[id] = v
+        else if (unsettable(input, sc)) edits[id] = null
+        return { props: { ...s.props, [s.scenario]: edits }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold }
+      }),
+    resetProps: () => set((s) => ({ props: { ...s.props, [s.scenario]: {} }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold })),
+    setSavedStates: (list) => set({ savedStates: joinSaved(list) }),
     setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v ? !s.panelOpen : true })),
     reset: () => {
       set((s) => ({ resetNonce: s.resetNonce + 1, preview: { ...s.preview, status: "loading", modified: false, canGoBack: false } }))

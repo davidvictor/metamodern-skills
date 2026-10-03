@@ -1,4 +1,4 @@
-import { readFileSync, renameSync, writeFileSync } from "fs"
+import { readFileSync, renameSync, rmSync, writeFileSync } from "fs"
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
@@ -7,6 +7,7 @@ import { defineConfig, type Plugin } from "vite"
 import config from "./studio.config"
 import type { StudioConfig } from "./src/studio/config"
 import { LAYOUTS_MAX_BYTES, validateLayouts } from "./src/studio/layouts"
+import { SCENARIOS_MAX_BYTES, validateScenarios } from "./src/studio/scenarios"
 
 // Shell owned: product settings come from studio.config.ts, so an update can
 // replace this file. The Studio (index.html) builds with any extra pages the
@@ -20,70 +21,88 @@ const title = (): Plugin => ({
   transformIndexHtml: (page, ctx) => (path.resolve(ctx.filename) === path.resolve(root, "index.html") ? page.replace(/<title>[^<]*<\/title>/, `<title>${html(studio.title)}</title>`) : page),
 })
 
-// Saved Responsive layouts live in layouts.json at the Studio root, a product file. Only the dev
-// server can write it: same-origin JSON, schema-checked, 256 KB at most, written atomically.
-// A built Studio bundles the file and cannot save.
-const layoutsFile = path.resolve(root, "layouts.json")
-const layouts = (): Plugin => ({
-  name: "studio-layouts",
-  apply: "serve",
-  configureServer(server) {
-    server.middlewares.use("/__studio/layouts", (req, res) => {
-      const send = (code: number, body: unknown) => {
-        if (res.writableEnded) return
-        res.statusCode = code
-        res.setHeader("content-type", "application/json")
-        res.end(JSON.stringify(body))
-      }
-      if (req.method === "GET") {
-        try {
-          return send(200, JSON.parse(readFileSync(layoutsFile, "utf8")))
-        } catch {
-          return send(200, { schema: "studio-layouts/1", layouts: [] })
+// Saved Responsive layouts (layouts.json) and saved states (scenarios.json) live at the Studio root, product
+// files. Only the dev server can write them: same-origin JSON, schema-checked, 256 KB at most, written
+// atomically. A built Studio bundles them and cannot save. The contract (GET the file, POST the whole file;
+// 403 another origin, 415 not JSON, 413 too large, 400 unreadable, 422 invalid) is in the skill's shell.md,
+// so a host other than Vite can implement it.
+type SavedFile = { file: string; route: string; schema: string; maxBytes: number; validate: (data: unknown) => string[]; list: string; forbidden: string; tooBig: string }
+const savedFile = (o: SavedFile): Plugin => {
+  const file = path.resolve(root, o.file)
+  return {
+    name: `studio-${o.list}`,
+    apply: "serve",
+    // Last, so its hotUpdate sees every module another plugin added (the import glob adds the store when the file is created).
+    enforce: "post",
+    configureServer(server) {
+      server.middlewares.use(o.route, (req, res) => {
+        const send = (code: number, body: unknown) => {
+          if (res.writableEnded) return
+          res.statusCode = code
+          res.setHeader("content-type", "application/json")
+          res.end(JSON.stringify(body))
         }
-      }
-      if (req.method !== "POST") return send(405, { error: "Use GET or POST" })
-      const origin = req.headers.origin
-      const sameOrigin = (() => {
-        try {
-          return !!origin && new URL(origin).host === req.headers.host
-        } catch {
-          return false
+        if (req.method === "GET") {
+          try {
+            return send(200, JSON.parse(readFileSync(file, "utf8")))
+          } catch {
+            return send(200, { schema: o.schema, [o.list]: [] })
+          }
         }
-      })()
-      if (!sameOrigin) return send(403, { error: "Only this Studio can save its layouts" })
-      if (!/^application\/json\b/.test(req.headers["content-type"] ?? "")) return send(415, { error: "Send JSON" })
-      const chunks: Buffer[] = []
-      let size = 0
-      req.on("data", (chunk: Buffer) => {
-        size += chunk.length
-        if (size > LAYOUTS_MAX_BYTES) {
-          send(413, { error: "Layouts are limited to 256 KB" })
-          req.destroy()
-        } else chunks.push(chunk)
+        if (req.method !== "POST") return send(405, { error: "Use GET or POST" })
+        const origin = req.headers.origin
+        const sameOrigin = (() => {
+          try {
+            return !!origin && new URL(origin).host === req.headers.host
+          } catch {
+            return false
+          }
+        })()
+        if (!sameOrigin) return send(403, { error: o.forbidden })
+        if (!/^application\/json\b/.test(req.headers["content-type"] ?? "")) return send(415, { error: "Send JSON" })
+        const chunks: Buffer[] = []
+        let size = 0
+        req.on("data", (chunk: Buffer) => {
+          size += chunk.length
+          if (size > o.maxBytes) {
+            send(413, { error: o.tooBig })
+            req.destroy()
+          } else chunks.push(chunk)
+        })
+        req.on("end", () => {
+          if (res.writableEnded) return
+          let data: unknown
+          try {
+            data = JSON.parse(Buffer.concat(chunks).toString("utf8"))
+          } catch {
+            return send(400, { error: "Not valid JSON" })
+          }
+          const problems = o.validate(data)
+          if (problems.length) return send(422, { error: `Not a valid ${o.schema} file`, problems })
+          const tmp = `${file}.${process.pid}.tmp`
+          try {
+            writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`)
+            renameSync(tmp, file)
+          } catch (e) {
+            rmSync(tmp, { force: true })
+            return send(500, { error: `Could not write ${o.file}: ${e instanceof Error ? e.message : String(e)}` })
+          }
+          send(200, { ok: true })
+        })
       })
-      req.on("end", () => {
-        if (res.writableEnded) return
-        let data: unknown
-        try {
-          data = JSON.parse(Buffer.concat(chunks).toString("utf8"))
-        } catch {
-          return send(400, { error: "Not valid JSON" })
-        }
-        const problems = validateLayouts(data)
-        if (problems.length) return send(422, { error: "Not a valid studio-layouts/1 file", problems })
-        const tmp = `${layoutsFile}.${process.pid}.tmp`
-        writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`)
-        renameSync(tmp, layoutsFile)
-        send(200, { ok: true })
-      })
-    })
-  },
-  // Saving must not reload the Studio.
-  handleHotUpdate({ file }) {
-    if (path.resolve(file) === layoutsFile) return []
-  },
-})
+    },
+    // Saving must not reload or re-run the Studio: not when the file changes, and not when the first save creates it
+    // (the bundled-file import glob would otherwise re-execute the store) or it is deleted. The affected modules are
+    // invalidated instead, so the next page load reads the file as it now is.
+    hotUpdate({ file: changed, modules }) {
+      if (path.resolve(changed) !== file) return
+      for (const m of modules) this.environment.moduleGraph.invalidateModule(m)
+      return []
+    },
+  }
+}
+const layouts = () => savedFile({ file: "layouts.json", route: "/__studio/layouts", schema: "studio-layouts/1", maxBytes: LAYOUTS_MAX_BYTES, validate: validateLayouts, list: "layouts", forbidden: "Only this Studio can save its layouts", tooBig: "Layouts are limited to 256 KB" })
+const scenarios = () => savedFile({ file: "scenarios.json", route: "/__studio/scenarios", schema: "studio-scenarios/1", maxBytes: SCENARIOS_MAX_BYTES, validate: (data) => validateScenarios(data), list: "scenarios", forbidden: "Only this Studio can save its scenarios", tooBig: "Saved scenarios are limited to 256 KB" })
 
 // npm run acceptance builds the stress and capture-only adapters by pointing
 // "@/adapter" at the acceptance module; a normal build never includes them.
@@ -91,7 +110,7 @@ const acceptance = process.env.VITE_STUDIO_ADAPTER ? [{ find: /^@\/adapter$/, re
 
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss(), title(), layouts()],
+  plugins: [react(), tailwindcss(), title(), layouts(), scenarios()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
     emptyOutDir: true,

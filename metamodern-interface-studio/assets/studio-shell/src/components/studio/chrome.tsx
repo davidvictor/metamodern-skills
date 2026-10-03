@@ -48,8 +48,9 @@ import { useTheme } from "@/components/theme-provider"
 import { download, encodeDesign, variantFile } from "@/studio/design"
 import { formatClock } from "@/studio/format"
 import { adapter } from "@/adapter"
-import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
-import type { CapabilityDimension } from "@/studio/types"
+import { areaLabel, captureFor, choosableFor, designTab, draftIsValid, hasProperties, isColor, optionsFor, resolveValues, supports, useStudio } from "@/store"
+import { isProperty, propertiesFor } from "@/studio/properties"
+import type { CapabilityDimension, InputValue } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
 import { navigationHint, stepZoom, zoomTarget, type ZoomApi } from "./stage-nav"
@@ -97,6 +98,41 @@ export function StatusNow() {
   if (p.status === "static") return <StatusBadge kind="ready">Capture</StatusBadge>
   return <StatusBadge kind="ready">Ready</StatusBadge>
 }
+
+/**
+ * Property edits are their own status, separate from Modified: R keeps them, Reset properties clears them.
+ * `spaced` puts a space before it in running text; with no edits it renders nothing at all.
+ */
+export function EditedNow({ spaced }: { spaced?: boolean }) {
+  const n = Object.keys(useStudio().edits).length
+  return n ? (
+    <>
+      {spaced && " "}
+      <StatusBadge kind="draft">
+        Edited · {n} {n === 1 ? "property" : "properties"}
+      </StatusBadge>
+    </>
+  ) : null
+}
+
+// The state picker, the Properties section and the Code tab load only when a scenario has properties.
+const Lazy = React.lazy(() => import("./properties"))
+// A chunk that fails to load (a deploy replaced it, the network dropped) leaves the rest of the Studio working.
+class PartBoundary extends React.Component<{ part: string; children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError = () => ({ failed: true })
+  render() {
+    if (!this.state.failed) return this.props.children
+    return this.props.part === "section" ? <p className="text-xs text-muted-foreground">Properties could not load. Reload the Studio.</p> : null
+  }
+}
+const Part = (p: { part: "picker" | "section" | "code" }) => (
+  <PartBoundary part={p.part}>
+    <React.Suspense fallback={null}>
+      <Lazy {...p} />
+    </React.Suspense>
+  </PartBoundary>
+)
 
 /**
  * On a phone the header actions fold behind one trigger and slide out to its left, so the title keeps
@@ -164,6 +200,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
       </Breadcrumb>
       <div className="ml-1 hidden sm:block" aria-live="polite">
         {s.view === "inspect" && <StatusNow />}
+        {s.view === "inspect" && <EditedNow spaced />}
       </div>
       {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
       {s.view === "inspect" && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
@@ -509,7 +546,7 @@ function useInputChoice(id: string) {
   const chosen = s.values[id] !== undefined && supports(s.scenarioObj, id, s.values[id]) ? s.values[id] : undefined
   const current = chosen ?? designed
   const overridden = chosen !== undefined && chosen !== designed
-  const labelOf = (v?: string | number) => {
+  const labelOf = (v?: InputValue) => {
     const numeric = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : Number.NaN
     return inp.options?.find((o) => o.id === v)?.label ?? (inp.format && Number.isFinite(numeric) ? formatClock(numeric, inp.format) : v === undefined ? undefined : String(v))
   }
@@ -773,7 +810,7 @@ export function StageControls({ variant, compact, lookOnly, noZoom, canvasZoom }
   // A live renderer can show any declared combination; a capture-only Studio can show only what was recorded.
   const available = (theme: string, profile: string) => live || !!captureFor(s.scenarioObj, theme, profile)
   const paired = contrastPairs()
-  const lenses = choosableFor(s.scenarioObj).filter((i) => i.placement === "dock")
+  const lenses = choosableFor(s.scenarioObj).filter((i) => i.placement === "dock" && !isProperty(i))
   const designInputs = lenses.filter((i) => i.group === "design").map((i) => i.id)
   const base = baseTheme(s.theme)
   // With pairs, the buttons are the standard themes; choosing one keeps high contrast when that theme has it.
@@ -856,6 +893,9 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
   const list = adapter.scenarios
   const i = list.findIndex((x) => x.id === sc.id)
   const st = sc.statuses ?? {}
+  const props = hasProperties ? propertiesFor(adapter.axes.inputs, sc) : []
+  // Code lists the props that differ from their defaults: only where a scenario has properties and the Inspect frame offers code.
+  const showCode = props.length > 0 && s.view === "inspect" && !!s.preview.capabilities?.includes("code")
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="grid gap-2 border-b p-4">
@@ -890,6 +930,7 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
         <div className="flex flex-wrap gap-1.5">
           <FidelityBadge mode={lookOf(adapter.target.fidelity)}>{adapter.target.label}</FidelityBadge>
           <StatusNow />
+          <EditedNow />
           {sc.status === "stale" && <StatusBadge kind="stale">Stale evidence</StatusBadge>}
         </div>
       </div>
@@ -904,6 +945,11 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
           <TabsTrigger value="evidence" className="flex-none">
             Evidence
           </TabsTrigger>
+          {showCode && (
+            <TabsTrigger value="code" className="flex-none">
+              Code
+            </TabsTrigger>
+          )}
         </TabsList>
         <ScrollArea className="min-h-0 flex-1">
           <TabsContent value="scenario" className="grid gap-5 p-4">
@@ -932,13 +978,14 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
                 </>
               )}
             </dl>
-            {choosableFor(sc).some((i) => i.placement !== "dock") && (
+            {props.length > 0 && <Part part="picker" />}
+            {choosableFor(sc).some((i) => i.placement !== "dock" && !isProperty(i)) && (
               <FieldSet>
                 <FieldLegend variant="label">Scenario inputs</FieldLegend>
                 <FieldDescription className="text-xs">Declared by the {adapter.product.name} adapter. A change rebuilds the preview from the scenario.</FieldDescription>
                 <FieldGroup className="gap-4">
                   {choosableFor(sc)
-                    .filter((i) => i.placement !== "dock")
+                    .filter((i) => i.placement !== "dock" && !isProperty(i))
                     .map((inp) =>
                       inp.control === "range" ? (
                         <Field key={inp.id}>
@@ -982,6 +1029,7 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
                 </FieldGroup>
               </FieldSet>
             )}
+            {props.length > 0 && <Part part="section" />}
           </TabsContent>
           <TabsContent value="fidelity" className="grid gap-4 p-4">
             <ItemGroup className="gap-1">
@@ -1032,6 +1080,11 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
               <RefreshCwIcon /> Re-check this scenario
             </Button>
           </TabsContent>
+          {showCode && (
+            <TabsContent value="code" className="grid gap-3 p-4">
+              <Part part="code" />
+            </TabsContent>
+          )}
         </ScrollArea>
       </Tabs>
     </div>
