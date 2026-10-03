@@ -2169,9 +2169,10 @@ await check("AC-59", async () => {
   await wait(1500)
   const inspectDone = await details(p).getByRole("switch", { name: "Done" }).getAttribute("aria-checked")
   const edited = await p.getByText(/Edited ·/).count()
+  const backHash = await p.evaluate(() => location.hash)
   await p.closeAll()
-  const ok = inspectDone === "false" && edited === 0 && axes.includes("Done") && axes.includes("Assignee") && axes.includes("Estimate (hours)") && !axes.includes("Title") && !axes.includes("Note") && !axes.includes("On open") && done.join() === "false,true" && new Set(who).size === 2
-  return [ok ? "pass" : "fail", `axes offered ${axes.join(", ")}; Done sides ${sides.map((x) => x.replace(/\s+/g, " ").trim()).join(" | ")} rendered done ${done.join(" and ")}; Assignee sides showed ${who.join(" and ")}; back in Inspect Done is ${inspectDone === "true" ? "on" : "off"} and Edited shows ${edited} time(s)`]
+  const ok = /(^#|&)view=inspect(&|$)/.test(backHash) && inspectDone === "false" && edited === 0 && axes.includes("Done") && axes.includes("Assignee") && axes.includes("Estimate (hours)") && !axes.includes("Title") && !axes.includes("Note") && !axes.includes("On open") && done.join() === "false,true" && new Set(who).size === 2
+  return [ok ? "pass" : "fail", `axes offered ${axes.join(", ")}; Done sides ${sides.map((x) => x.replace(/\s+/g, " ").trim()).join(" | ")} rendered done ${done.join(" and ")}; Assignee sides showed ${who.join(" and ")}; back in Inspect (${backHash.includes("view=inspect") ? "view=inspect in the link" : "link lacks view=inspect"}) Done is ${inspectDone === "true" ? "on" : "off"} and Edited shows ${edited} time(s)`]
 })
 
 // AC-60 The Code tab appears only with the code capability and copies the snippet

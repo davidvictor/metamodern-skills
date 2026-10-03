@@ -113,6 +113,8 @@ export function mergeDesignValues(adapter: StudioAdapter, shared: DesignValues, 
 /** A Google Fonts stylesheet for a family, or nothing for a font the browser already has. */
 export function fontStylesheet(name: string) {
   if (LOCAL_FONTS.some((f) => f.toLowerCase() === name.toLowerCase())) return null
+  // A generic family (serif, monospace and the like) is never a Google Fonts family.
+  if (GENERIC_FAMILIES.includes(name.trim().toLowerCase())) return null
   return `${FONT_HOST}?family=${encodeURIComponent(name).replace(/%20/g, "+")}&display=swap`
 }
 const GENERIC_FAMILIES = ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded", "math", "emoji", "fangsong"]

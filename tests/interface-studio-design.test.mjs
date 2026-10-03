@@ -194,3 +194,17 @@ test('a generic font family stays unquoted in tokens and CSS', async () => {
   assert.equal(fontFamilyValue('serif'), 'serif');
   assert.equal(fontFamilyValue('Times New Roman'), '"Times New Roman"');
 });
+
+test('a generic font family requests no web font stylesheet', async () => {
+  const { designDraft, fontStylesheet } = await designModel();
+  assert.equal(fontStylesheet('serif'), null);
+  assert.equal(fontStylesheet(' Monospace '), null);
+  assert.equal(fontStylesheet('ui-rounded'), null);
+  assert.match(fontStylesheet('Space Grotesk'), /family=Space\+Grotesk&display=swap$/);
+  const adapter = {
+    ...baseAdapter,
+    tokens: { columns: ['light'], tokens: [{ name: '--font-sans', family: 'typography', values: { light: 'Inter, sans-serif' } }] },
+    design: { parameters: [{ id: 'face', label: 'Face', kind: 'font', default: 'Inter', apply: { set: ['--font-sans'] } }] },
+  };
+  assert.deepEqual(designDraft(adapter, { face: 'serif' }, 'light').stylesheets, []);
+});

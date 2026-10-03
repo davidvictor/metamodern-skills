@@ -49,7 +49,7 @@ test('preview frames carry the adapter frame isolation, and nothing when it is u
   assert.match(types, /frameIsolation\?: \{ credentialless\?: boolean; sandbox\?: string \}/);
   // The only iframe in the shell, so every view's preview gets the same isolation.
   const srcDir = new URL('src/', root);
-  const iframes = readdirSync(srcDir, { recursive: true }).filter((f) => /\.tsx?$/.test(f)).filter((f) => readFileSync(new URL(f, srcDir), 'utf8').includes('<iframe'));
+  const iframes = readdirSync(srcDir, { recursive: true }).filter((f) => /\.tsx?$/.test(f)).filter((f) => readFileSync(new URL(f, srcDir), 'utf8').match(/<iframe|createElement\(\s*["'`]iframe["'`]/));
   assert.deepEqual(iframes, ['studio/live-preview.tsx']);
   const frame = live.slice(live.indexOf('<iframe'), live.indexOf('/>', live.indexOf('<iframe')));
   // undefined drops the attribute, and credentialless is spread only when declared true.
