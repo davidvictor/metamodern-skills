@@ -16,7 +16,7 @@ import { ConfirmDialog, EmptyState, ModulePage } from "@/kit"
 import type { ModuleDefinition } from "./api"
 import { ModuleContext, type ModuleInfo } from "./context"
 import { resolveModules, undeclaredDefinitions } from "./declaration"
-import { guards, hostStatus } from "./stores"
+import { answered, guards, hostStatus } from "./stores"
 
 const defined = Object.keys(workspace.modules)
 const modules = resolveModules(adapter.workspace, defined)
@@ -40,11 +40,14 @@ export function WorkspacePage(props: PageProps) {
 function useOpenModule(): { info: ModuleInfo | null; reason: string | null; hostDown: boolean; def: ModuleDefinition | undefined } {
   const { module, section, set } = useStudio()
   const host = React.useSyncExternalStore(hostStatus.subscribe, hostStatus.get)
+  const started = React.useSyncExternalStore(answered.subscribe, answered.get)
   const m = modules.find((x) => x.id === module)
   // `uses` is the declaration's own array, so operation clients built from it keep their identity across renders.
   const info = React.useMemo<ModuleInfo | null>(() => (m ? { id: m.id, label: m.label, sections: m.sections, section, go: (next) => set({ section: next }), uses: m.uses, operations: adapter.workspace?.operations } : null), [m, section, set])
-  const reason = m?.unavailable ?? host.down
-  return { info, reason, hostDown: !m?.unavailable && !!host.down, def: m ? workspace.modules[m.id] : undefined }
+  // A missing host stops a module only before the host has answered it; afterwards each operation reports it (stores.ts).
+  const down = m && !started[m.id] ? host.down : null
+  const reason = m?.unavailable ?? down
+  return { info, reason, hostDown: !m?.unavailable && !!down, def: m ? workspace.modules[m.id] : undefined }
 }
 
 /** A module that throws shows its reason instead of taking the Studio down. */

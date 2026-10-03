@@ -460,3 +460,11 @@ test('WM-15 the workspace reference documents the contract and SKILL.md routes t
   assert.match(shellDoc, /x-studio-expected-revision/);
   assert.match(read('README.md'), /src\/workspace\//);
 });
+
+test('WM-17 a missing host stops a module only before the host has answered it', () => {
+  const api = read('src/studio/workspace/api.ts');
+  assert.match(api, /if \(!answered\.get\(\)\[moduleId\]\) hostStatus\.set\(\{ down: result\.error\.reason \}\)/);
+  assert.match(api, /result\.ok \|\| !SHELL_CODES\.has\(result\.error\.code\)/, 'only an answer from the host starts a module');
+  const page = read('src/studio/workspace/workspace-page.tsx');
+  assert.match(page, /const down = m && !started\[m\.id\] \? host\.down : null/);
+});

@@ -26,6 +26,11 @@ export function createStore<T>(initial: T): Store<T> {
 
 /** Set when an operation found no host; every module then shows the reason until Try again. */
 export const hostStatus = createStore<{ down: string | null }>({ down: null })
+/**
+ * Modules whose operations the host has answered in this Studio session. Before that a missing host makes the module
+ * unavailable; after it, a missing host is only the failing operation's result, so an open page and its edits stay.
+ */
+export const answered = createStore<Record<string, true>>({})
 /** Values a module shares between its Page, Panel and Details, keyed `module:key`, kept until the Studio reloads. */
 export const moduleValues = createStore<Record<string, unknown>>({})
 

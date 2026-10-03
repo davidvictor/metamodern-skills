@@ -302,6 +302,7 @@ test('acceptance script covers the workspace criteria', () => {
   const script = read('scripts/acceptance.mjs');
   for (let i = 1; i <= 9; i++) assert.match(script, new RegExp(`"WS-0${i}"`), `WS-0${i} is not checked`);
   assert.match(script, /"WS-06b"/, 'WS-06b is not checked');
+  assert.match(script, /"WS-05b"/, 'WS-05b is not checked');
   assert.match(script, /STUDIO_CHUNK_BASELINE_GZ = \d+/);
   assert.match(script, /workspace: "workspace"/);
 });

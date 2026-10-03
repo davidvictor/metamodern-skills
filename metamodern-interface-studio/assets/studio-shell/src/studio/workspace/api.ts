@@ -5,8 +5,11 @@
  */
 import * as React from "react"
 import { ModuleContext, type ModuleInfo } from "./context"
-import { createOperationClient, HOST_UNAVAILABLE, type OperationResult } from "./operations"
-import { guards, hostStatus, moduleValues } from "./stores"
+import { createOperationClient, HOST_UNAVAILABLE, REFUSED, type OperationResult } from "./operations"
+import { answered, guards, hostStatus, moduleValues } from "./stores"
+
+/** Codes the shell answers itself; such a result says nothing about the host. */
+const SHELL_CODES = new Set<string>(Object.values(REFUSED))
 
 export type { ModuleInfo } from "./context"
 export type { OperationError, OperationKind, OperationResult } from "./operations"
@@ -37,7 +40,7 @@ type OperationState<T> = { status: "idle" | "running" | "done"; result: Operatio
 
 /** One declared operation: `read(input)` or `write(input, { expectedRevision })`, with its status and last result. */
 export function useOperation<T = unknown>(name: string) {
-  const { operations, uses } = useModule()
+  const { id: moduleId, operations, uses } = useModule()
   const [state, setState] = React.useState<OperationState<T>>({ status: "idle", result: null })
   const live = React.useRef(true)
   // Only the latest call sets status and result, so an earlier, slower answer cannot replace it.
@@ -54,11 +57,15 @@ export function useOperation<T = unknown>(name: string) {
       const id = ++seq.current
       setState((s) => ({ status: "running", result: s.result }))
       const result = (await call(name, kind, input, { expectedRevision })) as OperationResult<T>
-      if (!result.ok && result.error.code === HOST_UNAVAILABLE) hostStatus.set({ down: result.error.reason })
+      // Until the host has answered this module, no host means the module cannot start. After that the failure is
+      // this operation's own result, so the page stays and shows it (SaveBar's error with Retry keeps the edit).
+      if (!result.ok && result.error.code === HOST_UNAVAILABLE) {
+        if (!answered.get()[moduleId]) hostStatus.set({ down: result.error.reason })
+      } else if ((result.ok || !SHELL_CODES.has(result.error.code)) && !answered.get()[moduleId]) answered.set({ ...answered.get(), [moduleId]: true })
       if (live.current && id === seq.current) setState({ status: "done", result })
       return result
     },
-    [call, name]
+    [call, name, moduleId]
   )
   const read = React.useCallback((input?: unknown) => run("read", input), [run])
   const write = React.useCallback((input: unknown, options: { expectedRevision?: string } = {}) => run("write", input, options.expectedRevision), [run])
