@@ -7,6 +7,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { StageGestureContext } from "./stage-gestures"
+import type { StudioAdapter } from "./types"
 import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type FrameDiagnostic, type FrameMessage, type MountInputs, type ShellBody, type SyncChannelsMessage, type SyncEvent } from "./protocol"
 
 export const READY_TIMEOUT_MS = 20000
@@ -75,6 +76,8 @@ const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(3
 type Props = {
   src: string
   origin?: string
+  /** The adapter's frame isolation: sandbox tokens and credentialless loading. Omitted, frames carry neither attribute. */
+  isolation?: StudioAdapter["frameIsolation"]
   inputs: Omit<MountInputs, "tokens" | "css" | "stylesheets">
   /** Changing the key mounts a fresh runtime (Reset bumps it). Drafts never remount, nor do property values in a frame with live-values. */
   mountKey: string
@@ -88,7 +91,7 @@ type Props = {
   sync?: PreviewSync
 }
 
-export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, inputs, mountKey, draft, w, h, scale, label, interactive = true, onStatus, sync }, ref) {
+export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, isolation, inputs, mountKey, draft, w, h, scale, label, interactive = true, onStatus, sync }, ref) {
   const [runtimes, setRuntimes] = React.useState<Runtime[]>([])
   const frames = React.useRef(new Map<string, HTMLIFrameElement>())
   const gesture = React.useContext(StageGestureContext)
@@ -350,6 +353,9 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
           }}
           name={r.instance}
           src={src}
+          sandbox={isolation?.sandbox}
+          // React 19 treats credentialless as a boolean attribute: true writes it, and "" would drop it.
+          {...(isolation?.credentialless === true ? { credentialless: true } : {})}
           title={label}
           tabIndex={interactive ? undefined : -1}
           aria-hidden={r !== current || !interactive || undefined}

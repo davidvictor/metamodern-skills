@@ -336,6 +336,13 @@ export type StudioAdapter = {
   frameEntry?: string
   /** Allowed origin of the frame entry; defaults to this Studio's origin. */
   frameOrigin?: string
+  /**
+   * Isolation for every preview frame the Studio creates (Inspect, Compare, Responsive, Gallery, Present, Design).
+   * `sandbox` is the iframe sandbox token list, such as "allow-scripts allow-same-origin allow-forms"; omitted, frames
+   * get no sandbox attribute. `credentialless: true` loads frames without the viewer's cookies where the browser
+   * supports it (Chromium; others ignore it, so do not rely on it alone).
+   */
+  frameIsolation?: { credentialless?: boolean; sandbox?: string }
   axes: {
     themeLabel: string
     themes: Theme[]

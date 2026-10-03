@@ -1891,10 +1891,12 @@ await check("AC-53", async () => {
   // A built Studio never requests __studio/scenarios (dev builds only), so only the properties- chunk half of this can catch a regression here.
   const loaded = await p.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name).filter((n) => /properties-|__studio\/scenarios/.test(n)))
   const stored = await p.evaluate(() => Object.keys(localStorage).filter((k) => k.includes("property-edits")))
+  // Without frameIsolation the frames carry no sandbox or credentialless attribute, as in 0.10.x.
+  const isolated = await p.locator("iframe[sandbox], iframe[credentialless]").count()
   await p.closeAll()
-  const same = tabs.join() === "Scenario,Fidelity,Evidence" && section === 0 && picker === 0 && edited === 0 && keys === "view,scenario,theme,profile" && values === "density" && loaded.length === 0 && stored.length === 0
+  const same = isolated === 0 && tabs.join() === "Scenario,Fidelity,Evidence" && section === 0 && picker === 0 && edited === 0 && keys === "view,scenario,theme,profile" && values === "density" && loaded.length === 0 && stored.length === 0
   const ok = same && layout === "canvas,example,properties,protocol,studio" && grew <= BUDGET
-  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against 0.10.2 (budget ${BUDGET})`]
+  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against 0.10.2 (budget ${BUDGET})`]
 })
 
 // AC-54 Switch, text, number and choice change the live frame without a remount; booleans arrive as booleans; a choice sends only its ID;
