@@ -129,6 +129,25 @@ const studioAliases = [
 ]
 const aliases = [...exampleWorkspace, ...acceptance, ...studioAliases, { find: "@", replacement: path.resolve(root, "./src") }]
 
+// The adapter as a build sees it, loaded once with Vite's module runner, or why it could not be loaded (for example it imports CSS).
+let builtAdapter: Promise<{ adapter: StudioAdapter } | { error: string }> | undefined
+const loadAdapter = () =>
+  (builtAdapter ??= runnerImport<{ adapter: StudioAdapter }>("@/adapter", { configFile: false, root, logLevel: "error", resolve: { alias: aliases } }).then(
+    (r) => ({ adapter: r.module.adapter }),
+    (e: unknown) => ({ error: e instanceof Error ? e.message : String(e) })
+  ))
+
+// A build of a Studio whose adapter declares no workspace leaves the workspace layer out entirely
+// (__STUDIO_WORKSPACE__ false), so its chunks are exactly those of a Studio before workspaces. The dev
+// server, and a build whose adapter cannot be loaded, keep it and decide at runtime.
+const workspaceFlag = (): Plugin => ({
+  name: "studio-workspace-flag",
+  async config(_, env) {
+    const loaded = env.command === "build" ? await loadAdapter() : null
+    return { define: { __STUDIO_WORKSPACE__: JSON.stringify(!loaded || "error" in loaded || !!loaded.adapter.workspace) } }
+  },
+})
+
 // A module file that defines a module the adapter does not declare fails the build with its name, as
 // does an invalid declaration (references/workspace.md). Skipped when the file defines no modules.
 // When Vite cannot load the adapter (for example it imports CSS) the check only warns; the Studio then
@@ -143,15 +162,9 @@ const workspaceCheck = (): Plugin => ({
     const defined = definedModules(parseAst(readFileSync(file, "utf8"), { lang: file.endsWith(".tsx") ? "tsx" : "ts" }))
     if (typeof defined === "string") return this.error(`${rel}: ${defined}`)
     if (!defined.length) return
-    const adapterFile = (await this.resolve("@/adapter"))?.id
-    if (!adapterFile) return
-    let adapter: StudioAdapter
-    try {
-      adapter = (await runnerImport<{ adapter: StudioAdapter }>(adapterFile, { configFile: false, root, logLevel: "error", resolve: { alias: aliases } })).module.adapter
-    } catch (e) {
-      this.warn(`Could not load the adapter to check ${rel}: ${e instanceof Error ? e.message : String(e)}`)
-      return
-    }
+    const loaded = await loadAdapter()
+    if ("error" in loaded) return this.warn(`Could not load the adapter to check ${rel}: ${loaded.error}`)
+    const { adapter } = loaded
     const problems = workspaceProblems(adapter.workspace)
     if (problems.length) return this.error(`The adapter's workspace declaration is invalid:\n  ${problems.join("\n  ")}`)
     const orphans = undeclaredDefinitions(adapter.workspace, defined)
@@ -177,7 +190,7 @@ const workspaceMock = (): Plugin => ({
 
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceCheck(), workspaceMock()],
+  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceFlag(), workspaceCheck(), workspaceMock()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
     emptyOutDir: true,

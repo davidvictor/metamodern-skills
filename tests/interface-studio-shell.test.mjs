@@ -135,6 +135,9 @@ test('every key the Studio writes to or reads from its links is reserved against
   assert.ok(ctor, 'the link writer starts from a URLSearchParams object');
   for (const m of ctor[1].matchAll(/(\w+):/g)) keys.add(m[1]);
   assert.ok(keys.has('edited') && keys.has('view') && keys.has('size'), `found ${[...keys].join(', ')}`);
+  // An open workspace module's link is written by the store too, with q.set, so the scan above sees its keys.
+  assert.ok(keys.has('module') && keys.has('section'), `the store's module link writer uses q.set("module") and q.set("section"); found ${[...keys].join(', ')}`);
+  assert.doesNotMatch(store, /new URLSearchParams\([^)]*\?\s*\{/, 'no link is written from a conditional object literal the scan cannot read');
   // Workspace places (module=, section=) are read by the workspace link module before any workspace code loads.
   const link = read('src/studio/workspace/link.ts');
   const linkKeys = [...link.matchAll(/\bq\.(?:get|set)\("([^"]+)"/g)].map((m) => m[1]);
@@ -145,7 +148,8 @@ test('every key the Studio writes to or reads from its links is reserved against
   for (const key of keys) assert.ok(reserved.includes(key), `link key "${key}" is not in RESERVED_LINK_KEYS`);
   // Property values reach the link only through linkEdits, which leaves out readonly and reserved-key properties.
   assert.match(store, /linkEdits\(A\.axes\.inputs/);
-  assert.match(store, /i\.placement === "dock" && !isProperty\(i\) && state\.values\[i\.id\] !== undefined\) q\.set/, 'the dock writer never writes a property');
+  assert.match(store, /i\.placement === "dock" && !isProperty\(i\) && !RESERVED_LINK_KEYS\.includes\(i\.id\) && state\.values\[i\.id\] !== undefined\) q\.set/, 'the dock writer never writes a property or a reserved key');
+  assert.match(store, /i\.placement === "dock" && !isProperty\(i\) && !RESERVED_LINK_KEYS\.includes\(i\.id\)\)\.flatMap/, 'the dock reader never reads a reserved key');
 });
 
 test('properties stay out of scenario inputs and the dock, reach Compare only with named values, and edit without a remount', () => {

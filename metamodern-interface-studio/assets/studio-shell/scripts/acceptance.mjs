@@ -1871,17 +1871,16 @@ const flagged = async (flag, hash) => {
   return page
 }
 
-// AC-53 A Studio with no property inputs renders exactly as 0.10.2 (an empty range link value now reads as unset), and the initial chunk grows by at most 3 KB gzipped
+// AC-53 A Studio with no property inputs renders exactly as 0.10.2 (an empty range link value now reads as unset), and its build keeps
+// the 0.11.0 chunks. Since 0.12.0 the initial chunk's size budget is per release and is checked by WS-01; this reports the growth only.
 await check("AC-53", async () => {
-  // The 0.10.2 studio chunk of the normal build, gzipped as AC-28 measures it (287.0 KB).
-  const BASELINE = 293900
-  const BUDGET = 3072
   const dir = join(root, ".acceptance", "normal", "assets")
   const scripts = readdirSync(dir).filter((f) => f.endsWith(".js"))
-  // A split would make the studio chunk look smaller while the initial load grows: expect exactly these chunks.
+  // A split would make the studio chunk look smaller while the initial load grows: expect exactly these chunks. The normal
+  // build declares no workspace, so it has no workspace chunk either.
   const layout = scripts.map((f) => f.split("-")[0]).sort().join(",")
   const main = scripts.find((f) => /^studio-.*\.js$/.test(f))
-  const grew = gzipSync(readFileSync(join(dir, main))).length - BASELINE
+  const grew = gzipSync(readFileSync(join(dir, main))).length - STUDIO_CHUNK_BASELINE_GZ
   // The stress Studio declares no properties.
   const p = await open("stress", { hash: "view=inspect&scenario=syn.tasks.2" })
   await wait(800)
@@ -1898,8 +1897,8 @@ await check("AC-53", async () => {
   const isolated = await p.locator("iframe[sandbox], iframe[credentialless]").count()
   await p.closeAll()
   const same = isolated === 0 && tabs.join() === "Scenario,Fidelity,Evidence" && section === 0 && picker === 0 && edited === 0 && keys === "view,scenario,theme,profile" && values === "density" && loaded.length === 0 && stored.length === 0
-  const ok = same && layout === "canvas,example,properties,protocol,studio" && grew <= BUDGET
-  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against 0.10.2 (budget ${BUDGET})`]
+  const ok = same && layout === "canvas,example,properties,protocol,studio"
+  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against 0.11.0 (${STUDIO_CHUNK_BASELINE_GZ}; budget checked by WS-01)`]
 })
 
 // AC-54 Switch, text, number and choice change the live frame without a remount; booleans arrive as booleans; a choice sends only its ID;

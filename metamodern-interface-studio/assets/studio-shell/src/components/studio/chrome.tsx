@@ -54,6 +54,7 @@ import type { CapabilityDimension, InputValue } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
 import { navigationHint, stepZoom, zoomTarget, type ZoomApi } from "./stage-nav"
+import { Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
 
 async function copyLink() {
   try {
@@ -182,33 +183,46 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
         <BreadcrumbList className="flex-nowrap">
           <BreadcrumbItem className="hidden lg:inline-flex">{adapter.product.name}</BreadcrumbItem>
           <BreadcrumbSeparator className="hidden lg:inline-flex" />
-          <BreadcrumbItem className="hidden sm:inline-flex">{viewLabel}</BreadcrumbItem>
-          {(s.view === "inspect" || s.view === "compare") && (
+          {s.module ? (
+            <Slot>
+              <WorkspaceNav part="crumbs" />
+            </Slot>
+          ) : (
             <>
-              <BreadcrumbSeparator className="hidden sm:inline-flex" />
-              <BreadcrumbItem className="min-w-0">
-                <button className="flex min-w-0 items-center gap-1 rounded-md px-1 py-0.5 text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.set({ commandOpen: true })}>
-                  <BreadcrumbPage className="truncate">
-                    {areaLabel(s.scenarioObj.area)}: {s.scenarioObj.label}
-                  </BreadcrumbPage>
-                  <ChevronDownIcon className="size-3.5 opacity-60" />
-                </button>
-              </BreadcrumbItem>
+              <BreadcrumbItem className="hidden sm:inline-flex">{viewLabel}</BreadcrumbItem>
+              {(s.view === "inspect" || s.view === "compare") && (
+                <>
+                  <BreadcrumbSeparator className="hidden sm:inline-flex" />
+                  <BreadcrumbItem className="min-w-0">
+                    <button className="flex min-w-0 items-center gap-1 rounded-md px-1 py-0.5 text-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" onClick={() => s.set({ commandOpen: true })}>
+                      <BreadcrumbPage className="truncate">
+                        {areaLabel(s.scenarioObj.area)}: {s.scenarioObj.label}
+                      </BreadcrumbPage>
+                      <ChevronDownIcon className="size-3.5 opacity-60" />
+                    </button>
+                  </BreadcrumbItem>
+                </>
+              )}
             </>
           )}
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-1 hidden sm:block" aria-live="polite">
-        {s.view === "inspect" && <StatusNow />}
-        {s.view === "inspect" && <EditedNow spaced />}
+        {s.view === "inspect" && !s.module && <StatusNow />}
+        {s.view === "inspect" && !s.module && <EditedNow spaced />}
       </div>
       {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
-      {s.view === "inspect" && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
+      {s.view === "inspect" && !s.module && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
         <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden sm:inline-flex">
           {adapter.target.label}
         </FidelityBadge>
       )}
       <div className="ml-auto flex shrink-0 items-center gap-1">
+        {mobile && (
+          <Slot>
+            <WorkspaceNav part="details-button" />
+          </Slot>
+        )}
         {!mobile && (
           <Button variant="outline" size="sm" className="hidden w-52 justify-start gap-2 text-muted-foreground xl:inline-flex" onClick={() => s.set({ commandOpen: true })}>
             <SearchIcon />
@@ -273,7 +287,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
             </Button>
           </Tip>
         </MobileFold>
-        {!mobile && (
+        {!mobile && !(s.module && !s.moduleDetails) && (
           <Tip label="Toggle details" keys={["⌘", "."]}>
             <Button variant="ghost" size="icon-sm" aria-pressed={s.detailsOpen} className="aria-pressed:bg-muted" onClick={() => s.set({ detailsOpen: !s.detailsOpen })} aria-label="Toggle details">
               <PanelRightIcon />
@@ -888,6 +902,12 @@ const DIMENSIONS: [CapabilityDimension, string][] = [
 /** Details: the summary is always visible; Scenario, Fidelity and Evidence as line tabs. */
 export function DetailsContent({ onClose }: { onClose?: () => void }) {
   const s = useStudio()
+  if (s.module)
+    return (
+      <Slot>
+        <WorkspacePage part="details" onClose={onClose} />
+      </Slot>
+    )
   if (s.view === "design" && designTab(s.design.tab) === "tokens") return <TokenEditor />
   const sc = s.scenarioObj
   const list = adapter.scenarios

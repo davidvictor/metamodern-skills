@@ -6,12 +6,13 @@ import { adapter } from "@/adapter"
 import type { FrameDiagnostic, InputValue, Scenario, ScenarioInput, Token } from "@/studio/types"
 import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
-import { normalizeScenarioInput } from "@/studio/input"
+import { normalizeScenarioInput, RESERVED_LINK_KEYS } from "@/studio/input"
 import { appliesTo, axisValues, comparable, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, unsettable, usableSaved, withSaved, type Edits, type LinkHold } from "@/studio/properties"
 import type { SavedScenario, ScenariosFile } from "@/studio/scenarios"
 import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import { applyPresenterOverlay, isPresenterOverlay, type PresenterOverlay, type PresenterWalkthrough, updateOverlay } from "@/studio/presenter-overlay"
+import { parseModuleLink } from "@/studio/workspace/link"
 
 /** One draft layer, as a preview receives it. */
 export type Draft = { tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>> }
@@ -64,7 +65,12 @@ export type State = {
   options: Options
   commandOpen: boolean
   shortcutsOpen: boolean
-  mobilePanel: null | "panel" | "details"
+  /** The open workspace module and its section; null shows the view. */
+  module: string | null
+  section: string | null
+  /** Whether the open module has a Details slot, reported by the workspace layer once the module loads. */
+  moduleDetails: boolean
+  mobilePanel: null | "panel" | "details" | "workspace"
 }
 
 const A = adapter
@@ -143,6 +149,8 @@ let unresolvedLink: string | null = null
 function readHash(stored: Record<string, Edits>): Partial<State> {
   const q = new URLSearchParams(location.hash.slice(1))
   const out: Partial<State> = {}
+  const link = parseModuleLink(location.hash, A.workspace)
+  if (link.module) Object.assign(out, { module: link.module, section: link.section })
   const view = q.get("view")
   if (view && VIEWS.includes(view as View)) out.view = view as View
   // The Design view grew out of Tokens; old links land on its Tokens tab.
@@ -172,7 +180,7 @@ function readHash(stored: Record<string, Edits>): Partial<State> {
   const pr = q.get("profile")
   if (pr && A.axes.profiles.some((x) => x.id === pr)) out.profile = pr
   // Dock choices travel in the link under the input's own ID.
-  const lenses = Object.fromEntries(A.axes.inputs.filter((i) => i.placement === "dock" && !isProperty(i)).flatMap((i) => {
+  const lenses = Object.fromEntries(A.axes.inputs.filter((i) => i.placement === "dock" && !isProperty(i) && !RESERVED_LINK_KEYS.includes(i.id)).flatMap((i) => {
     const v = q.get(i.id)
     const normalized = v === null ? undefined : normalizeScenarioInput(i, A.scenarios.find((x) => x.id === out.scenario), v)
     return normalized === undefined ? [] : [[i.id, normalized]]
@@ -309,13 +317,17 @@ const initial: State = {
   commandOpen: false,
   shortcutsOpen: false,
   mobilePanel: null,
+  module: null,
+  section: null,
+  moduleDetails: false,
 }
 
 type Ctx = State & {
   set: (patch: Partial<State> | ((s: State) => Partial<State>)) => void
   scenarioObj: Scenario
   hasCaptures: boolean
-  selectScenario: (id: string) => void
+  /** `also` joins the same change, for example a view to show it in. */
+  selectScenario: (id: string, also?: Partial<State>) => void
   setTheme: (id: string) => void
   setProfile: (id: string) => void
   /** A dragged or typed Inspect size; null returns to the profile's own size. Nothing is remounted. */
@@ -350,6 +362,13 @@ type Ctx = State & {
 }
 
 const StudioContext = React.createContext<Ctx | null>(null)
+
+/**
+ * Set by the workspace layer while a module has unsaved changes. Leaving the module (another module or a view)
+ * calls it instead of moving; it asks, and calls `proceed` only when the person leaves. Moving between the
+ * module's sections never asks: its Page stays mounted, so nothing is lost.
+ */
+export const leaveGuard: { ask: ((proceed: () => void) => void) | null } = { ask: null }
 
 export function useStudio() {
   const ctx = React.useContext(StudioContext)
@@ -406,8 +425,23 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     }
     return { ...initial, ...fromLink, props: fromLink.props ?? storedProps, present, design, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} }, presenter: isPresenterOverlay(presenter) ? presenter : initial.presenter }
   })
-  const set = React.useCallback((patch: Partial<State> | ((s: State) => Partial<State>)) => {
-    setState((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) }))
+  // The state as last rendered, to tell whether a change leaves an open workspace module.
+  const current = React.useRef(state)
+  React.useLayoutEffect(() => {
+    current.current = state
+  })
+  const set: Ctx["set"] = React.useCallback((patch) => {
+    // Applied as an update, so patches queued in one tick each see the state before them. Choosing a view closes an open module.
+    const apply = (x: State) => {
+      const p = typeof patch === "function" ? patch(x) : patch
+      return { ...x, ...p, ...("view" in p ? { module: null, section: null } : {}) }
+    }
+    const s = current.current
+    if (!s.module || !leaveGuard.ask) return setState(apply)
+    // Choosing a view, or another module, leaves the open module; with unsaved changes the workspace layer asks first.
+    const p = typeof patch === "function" ? patch(s) : patch
+    if ("view" in p || ("module" in p && p.module !== s.module)) return leaveGuard.ask(() => setState(apply))
+    setState(apply)
   }, [])
   React.useEffect(() => {
     if (unresolvedLink) toast.warning("That link names a scenario this Studio does not have", { description: `${unresolvedLink} is not in the catalog. Showing the first scenario instead.`, duration: 12000 })
@@ -429,9 +463,16 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => writeJSON(PRESENT_PREFS_KEY, { speed: state.present.speed, focus: state.present.focus }), [state.present.speed, state.present.focus])
   React.useEffect(() => writeJSON(DESIGN_KEY, { version: 1, values: state.design.values, valuesByTheme: state.design.valuesByTheme }), [state.design.values, state.design.valuesByTheme])
   React.useEffect(() => {
+    // An open workspace module's link names only the module and its section.
+    if (state.module) {
+      const q = new URLSearchParams()
+      q.set("module", state.module)
+      if (state.section) q.set("section", state.section)
+      return history.replaceState(null, "", `#${q}`)
+    }
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })
     if (state.size) q.set("size", `${state.size.w}x${state.size.h}`)
-    for (const i of A.axes.inputs) if (i.placement === "dock" && !isProperty(i) && state.values[i.id] !== undefined) q.set(i.id, String(state.values[i.id]))
+    for (const i of A.axes.inputs) if (i.placement === "dock" && !isProperty(i) && !RESERVED_LINK_KEYS.includes(i.id) && state.values[i.id] !== undefined) q.set(i.id, String(state.values[i.id]))
     // Property edits are written only through linkEdits, which leaves out readonly and reserved-key properties.
     if (hasProperties) {
       const { params, local } = linkEdits(A.axes.inputs, A.scenarios.find((x) => x.id === state.scenario), state.props[state.scenario])
@@ -452,7 +493,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme), state.theme)
     if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive, state.module, state.section])
   // Unsaved Responsive edits stay in this browser until saved or reverted.
   React.useEffect(() => {
     const { resetNonce: _, ...keep } = state.responsive
@@ -490,7 +531,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     set,
     scenarioObj,
     hasCaptures,
-    selectScenario: (id) => restage({ scenario: id, mobilePanel: null }),
+    selectScenario: (id, also) => restage({ scenario: id, mobilePanel: null, ...also }),
     setTheme: (id) =>
       set((s) => ({
         theme: id,
@@ -521,7 +562,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       }),
     resetProps: () => set((s) => ({ props: { ...s.props, [s.scenario]: {} }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold })),
     setSavedStates: (list) => set({ savedStates: joinSaved(list) }),
-    setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v ? !s.panelOpen : true })),
+    setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v && !s.module ? !s.panelOpen : true })),
     reset: () => {
       set((s) => ({ resetNonce: s.resetNonce + 1, preview: { ...s.preview, status: "loading", modified: false, canGoBack: false } }))
       toast.success("Preview reset", { description: "Product state and navigation restored to the scenario." })

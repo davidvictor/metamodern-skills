@@ -421,3 +421,22 @@ test('WM-13c the dev server middleware applies the endpoint guard, keeps empty w
   for (let i = 0; i < 30; i++) assert.equal((await post('site.write', JSON.stringify({ input: { siteName: `Name ${i}`, region: i % 2 ? 'us' : 'eu' } }))).body.ok, true);
   assert.equal((await post('site.read', '{}')).body.data.history.length, 50);
 });
+
+test('WM-14 the core shell reaches the workspace only through lazy slots', () => {
+  const slots = read('src/studio/workspace/slots.tsx');
+  assert.match(slots, /import\("\.\/workspace-nav"\)/);
+  assert.match(slots, /import\("\.\/workspace-page"\)/);
+  // A build whose adapter declares no workspace drops both imports, so it has exactly the chunks it had before workspaces.
+  assert.match(slots, /!__STUDIO_WORKSPACE__ \? never\(\) : import\("\.\/workspace-nav"\)/);
+  assert.match(slots, /!__STUDIO_WORKSPACE__ \? never\(\) : import\("\.\/workspace-page"\)/);
+  assert.match(slots, /hasWorkspace = __STUDIO_WORKSPACE__ && !!adapter\.workspace/);
+  assert.match(read('vite.config.ts'), /__STUDIO_WORKSPACE__: JSON\.stringify\(!loaded \|\| "error" in loaded \|\| !!loaded\.adapter\.workspace\)/);
+  for (const file of ['src/App.tsx', 'src/store.tsx', 'src/components/studio/rail-panel.tsx', 'src/components/studio/chrome.tsx', 'src/components/studio/command.tsx']) {
+    const text = read(file);
+    assert.doesNotMatch(text, /from "@\/studio\/workspace\/(workspace-nav|workspace-page|api|declaration|operations|stores)"/, `${file} imports workspace code eagerly`);
+    assert.doesNotMatch(text, /from "@\/kit/, `${file} imports the kit eagerly`);
+  }
+  assert.match(read('src/store.tsx'), /from "@\/studio\/workspace\/link"/);
+  assert.match(read('src/store.tsx'), /export const leaveGuard/);
+  assert.match(read('src/studio/workspace/workspace-page.tsx'), /from "@\/workspace"/);
+});
