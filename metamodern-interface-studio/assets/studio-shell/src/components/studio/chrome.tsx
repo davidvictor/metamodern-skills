@@ -117,10 +117,21 @@ export function EditedNow({ spaced }: { spaced?: boolean }) {
 
 // The state picker, the Properties section and the Code tab load only when a scenario has properties.
 const Lazy = React.lazy(() => import("./properties"))
+// A chunk that fails to load (a deploy replaced it, the network dropped) leaves the rest of the Studio working.
+class PartBoundary extends React.Component<{ part: string; children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError = () => ({ failed: true })
+  render() {
+    if (!this.state.failed) return this.props.children
+    return this.props.part === "section" ? <p className="text-xs text-muted-foreground">Properties could not load. Reload the Studio.</p> : null
+  }
+}
 const Part = (p: { part: "picker" | "section" | "code" }) => (
-  <React.Suspense fallback={null}>
-    <Lazy {...p} />
-  </React.Suspense>
+  <PartBoundary part={p.part}>
+    <React.Suspense fallback={null}>
+      <Lazy {...p} />
+    </React.Suspense>
+  </PartBoundary>
 )
 
 /**

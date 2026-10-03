@@ -167,7 +167,8 @@ function PropertyRow({ input: i }: { input: ScenarioInput }) {
   const focusAfter = useFocusAfter()
   const designed = s.scenarioObj.designed?.[i.id] ?? (i.optional ? undefined : i.default)
   const edited = s.edits[i.id]
-  const value = edited ?? designed
+  // null: an optional property this state designs, unset by the viewer.
+  const value = edited === null ? undefined : (edited ?? designed)
   const id = `property-${i.id}`
   if (i.readonly)
     return (
@@ -198,6 +199,21 @@ function PropertyRow({ input: i }: { input: ScenarioInput }) {
               {designed === undefined ? "Clear" : "Back to designed"}
             </Button>
           </>
+        )}
+        {/* A saved state can return an optional property it sets to unset; a generated scenario's own value cannot be unset in a saved state. */}
+        {i.optional && value !== undefined && designed !== undefined && s.scenarioObj.savedFrom && adapter.scenarios.find((x) => x.id === s.scenarioObj.savedFrom)?.designed?.[i.id] === undefined && (
+          <Button
+            size="xs"
+            variant="ghost"
+            className={TOUCH}
+            aria-label={`Clear ${i.label}`}
+            onClick={() => {
+              s.setProp(i.id, undefined)
+              focusAfter(`${id}-set`)
+            }}
+          >
+            Clear
+          </Button>
         )}
       </div>
       {i.optional && value === undefined ? (
@@ -303,12 +319,32 @@ function SaveActions() {
   const sc = s.scenarioObj
   const own = s.savedStates.find((x) => x.id === sc.id)
   const n = Object.keys(s.edits).length
-  const ids = adapter.scenarios.map((x) => x.id)
-  // A saved state keeps its saved values and takes the edits on top; it always names the generated scenario it came from.
-  const entry = (id: string, label: string, description?: string): SavedScenario => ({ id, label, base: sc.savedFrom ?? sc.id, values: { ...own?.values, ...s.edits }, ...(description !== undefined && { description }) })
-  const persist = async (list: SavedScenario[]) => {
+  const generated = adapter.scenarios.filter((x) => !x.savedFrom)
+  const ids = [...generated, ...s.savedStates].map((x) => x.id)
+  const base = generated.find((x) => x.id === (sc.savedFrom ?? sc.id))
+  // The state as it now resolves, kept where it differs from the generated scenario it names; an unset optional property is left out.
+  const values = () => {
+    const out: SavedScenario["values"] = {}
+    for (const i of propertiesFor(adapter.axes.inputs, sc)) {
+      const e = s.edits[i.id]
+      const v = e === null ? undefined : (e ?? sc.designed?.[i.id])
+      if (!i.readonly && v !== undefined && v !== (base?.designed?.[i.id] ?? (i.optional ? undefined : i.default))) out[i.id] = v
+    }
+    return out
+  }
+  const entry = (id: string, label: string, description?: string): SavedScenario => ({ id, label, base: base?.id ?? sc.id, values: values(), ...(description !== undefined && { description }) })
+  /*
+   * Every write starts from the file as it is on disk: entries this Studio skipped (an unknown base, a hand edit)
+   * and the stored values of entries the change does not touch are written back exactly as they were. Only the
+   * dev server's checks (schema, 500 entries, 256 KB) can refuse the file; nothing is dropped silently.
+   */
+  const persist = async (change: (raw: SavedScenario[]) => SavedScenario[]) => {
+    const read = await fetch("__studio/scenarios")
+    if (!read.ok) throw new Error(`The Studio could not read scenarios.json (${read.status})`)
+    const current = (await read.json())?.scenarios
+    const list = change(Array.isArray(current) ? current : [])
     const file = { schema: "studio-scenarios/1" as const, scenarios: list }
-    const problems = validateScenarios(file, adapter.scenarios.filter((x) => !x.savedFrom).map((x) => x.id))
+    const problems = validateScenarios(file, generated.map((x) => x.id))
     if (problems.length) throw new Error(problems[0])
     const body = JSON.stringify(file)
     if (new Blob([body]).size > SCENARIOS_MAX_BYTES) throw new Error("Saved scenarios are limited to 256 KB")
@@ -320,14 +356,19 @@ function SaveActions() {
     toast.error(what, { description: e instanceof Error ? e.message : String(e) })
   }
   const saveAs = async (label: string) => {
-    const next = entry(savedId(label, ids), label)
-    await persist([...s.savedStates, next])
+    let next: SavedScenario | undefined
+    await persist((raw) => {
+      // IDs on disk count too, so a new state never takes the ID of an entry this Studio skipped.
+      next = entry(savedId(label, [...ids, ...raw.map((x) => x?.id)]), label)
+      return [...raw, next]
+    })
     s.resetProps()
-    s.selectScenario(next.id)
+    if (next) s.selectScenario(next.id)
     toast.success(`Saved ${label}`, { description: "In this Studio's scenarios.json. Commit it to share." })
   }
   const save = () =>
-    persist(s.savedStates.map((x) => (x.id === sc.id ? entry(x.id, x.label, x.description) : x)))
+    // A state the file no longer holds (removed by hand since the page loaded) is written back.
+    persist((raw) => (raw.some((x) => x?.id === sc.id) ? raw.map((x) => (x?.id === sc.id ? entry(sc.id, x.label, x.description) : x)) : [...raw, entry(sc.id, sc.label, own?.description)]))
       .then(() => {
         s.resetProps()
         // Save is disabled once nothing is edited; focus moves to the heading rather than the page body.
@@ -370,7 +411,7 @@ function SaveActions() {
               <DropdownMenuItem
                 onClick={() => {
                   const label = window.prompt("Rename the saved state", own.label)?.trim()
-                  if (label) persist(s.savedStates.map((x) => (x.id === own.id ? { ...x, label } : x))).catch(fail("Not renamed"))
+                  if (label) persist((raw) => raw.map((x) => (x?.id === own.id ? { ...x, label } : x))).catch(fail("Not renamed"))
                 }}
               >
                 Rename
@@ -381,7 +422,7 @@ function SaveActions() {
                 variant="destructive"
                 onClick={() => {
                   if (!window.confirm(`Delete the saved state ${own.label}? This changes scenarios.json.`)) return
-                  persist(s.savedStates.filter((x) => x.id !== own.id))
+                  persist((raw) => raw.filter((x) => x?.id !== own.id))
                     .then(() => {
                       s.selectScenario(own.base)
                       // The menu's trigger leaves with the saved state.

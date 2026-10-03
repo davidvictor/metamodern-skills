@@ -115,7 +115,7 @@ test('property values and code cross the frame boundary only as announced capabi
   assert.match(client, /handlers\.update \? \(\["live-values"\] as const\)/);
   assert.match(client, /handlers\.code \? \(\["code"\] as const\)/);
   // A Studio change never marks the runtime modified: the values branch disarms before it updates.
-  assert.match(client, /m\.type === "values"\) \{[\s\S]{0,400}?armedAt = 0[\s\S]{0,200}?await handlers\.update\(current\)/, 'a Studio change never marks the runtime modified');
+  assert.match(client, /m\.type === "values"\) \{[\s\S]{0,600}?armedAt = 0[\s\S]{0,200}?await update\(current\)/, 'a Studio change never marks the runtime modified');
   const host = read('src/studio/live-preview.tsx');
   assert.match(host, /includes\("live-values"\)/);
   assert.match(host, /type: "code-request"/);
@@ -188,6 +188,25 @@ test('saved states share the layouts guards and stay pure', () => {
   assert.match(vite, /hotUpdate\(\{ file: changed, modules \}\) \{\s*if \(path\.resolve\(changed\) !== file\) return\s*for \(const m of modules\) this\.environment\.moduleGraph\.invalidateModule\(m\)\s*return \[\]/, 'creating, changing or deleting a saved file never reloads the Studio; the next load reads it fresh');
   assert.doesNotMatch(vite, /handleHotUpdate/);
   const props = read('src/components/studio/properties.tsx');
-  assert.match(props, /validateScenarios\(file, adapter\.scenarios\.filter\(\(x\) => !x\.savedFrom\)\.map\(\(x\) => x\.id\)\)/, 'the client refuses generated IDs before it posts');
+  assert.match(props, /const generated = adapter\.scenarios\.filter\(\(x\) => !x\.savedFrom\)[\s\S]*validateScenarios\(file, generated\.map\(\(x\) => x\.id\)\)/, 'the client refuses generated IDs before it posts');
   assert.doesNotMatch(read('src/studio/properties.ts'), /^import \{[^}]*\} from "\.\/scenarios"/m, 'the catalog model takes only types from scenarios.ts, so the validator stays in the lazy chunk');
+});
+
+test('final fix wave: ordered value updates, file-preserving saves, a lazy-chunk boundary and a fresh runtime per Present step', () => {
+  const client = read('src/studio/frame-client.ts');
+  // Only the newest values message may affect the runtime: updates chain, a superseded one is skipped or ignored.
+  assert.match(client, /const seq = \+\+valuesSeq/);
+  assert.match(client, /updating\.then\(async \(\) => \{\s*if \(seq !== valuesSeq/);
+  assert.match(client, /if \(seq === valuesSeq\) throw err/);
+  assert.match(client, /if \(newest\) post\(\{ type: "navigated"/);
+  assert.match(client, /await updating\s*\n\s*if \(!handlers\.code/);
+  const props = read('src/components/studio/properties.tsx');
+  // Every write starts from the file on disk, and changes only the entries the action concerns.
+  assert.match(props, /const persist = async \(change: \(raw: SavedScenario\[\]\) => SavedScenario\[\]\) => \{\s*const read = await fetch\("__studio\/scenarios"\)/);
+  assert.doesNotMatch(props, /persist\(s\.savedStates/);
+  assert.doesNotMatch(props, /own\?\.values/, 'Save builds values from the state as it shows, not by merging the stored ones');
+  const chrome = read('src/components/studio/chrome.tsx');
+  assert.match(chrome, /Properties could not load\. Reload the Studio\./);
+  assert.match(chrome, /<PartBoundary part=\{p\.part\}>\s*<React\.Suspense/);
+  assert.match(read('src/components/studio/views.tsx'), /<ScenarioPreview\s*\n\s*\/\/[^\n]*\n\s*key=\{`\$\{i\}:\$\{stepKey\}`\}/);
 });

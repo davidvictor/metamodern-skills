@@ -1868,7 +1868,7 @@ const flagged = async (flag, hash) => {
   return page
 }
 
-// AC-53 A Studio with no property inputs renders exactly as 0.10.2, and the initial chunk grows by at most 3 KB gzipped
+// AC-53 A Studio with no property inputs renders exactly as 0.10.2 (an empty range link value now reads as unset), and the initial chunk grows by at most 3 KB gzipped
 await check("AC-53", async () => {
   // The 0.10.2 studio chunk of the normal build, gzipped as AC-28 measures it (287.0 KB).
   const BASELINE = 293900
@@ -1948,8 +1948,17 @@ await check("AC-54", async () => {
   const good = await frameState(await liveFrame(b))
   const goodStatus = await badges(b)
   await b.closeAll()
+  // A slow update overtaken by a newer one: updates run in order and the newest values are what the card shows.
+  const o = await flagged("__studioSlowFirstUpdate", `view=inspect&scenario=${CARD}`)
+  await details(o).getByRole("switch", { name: "Done" }).click()
+  await wait(150)
+  await details(o).getByRole("switch", { name: "Done" }).click()
+  await wait(2000)
+  const overtaken = await frameState(await liveFrame(o))
+  await o.closeAll()
+  const ordered = overtaken.mounts === 1 && overtaken.updated?.done === false && !/done/.test(overtaken.card)
   const retried = /Showing previous/.test(bad.status) && /Draft the quarterly plan/.test(bad.text) && /Ready/.test(goodStatus) && good.mounted.values.title === "A title it can show" && /A title it can show/.test(good.text)
-  return [live && fallback && recovered && retried ? "pass" : "fail", `one document mounted ${after.mounts} time(s) across four edits, ${iframes} frame; the frame received done ${JSON.stringify(u.done)} (${typeof u.done}), title "${u.title}", assignee ${JSON.stringify(u.assignee)}, estimate ${JSON.stringify(u.estimate)}; it shows "${after.text}"; without live-values the change remounted with done ${legacy.mounted.values.done} ("${legacyStatus}"); when update threw, a new document (${replaced}) mounted with done ${thrown.mounted.values.done} ("${thrownStatus}"); a title the product rejects gave "${bad.status}" over "${bad.text}", then a good one mounted "${good.mounted.values.title}" ("${goodStatus}")`]
+  return [live && fallback && recovered && retried && ordered ? "pass" : "fail", `one document mounted ${after.mounts} time(s) across four edits, ${iframes} frame; the frame received done ${JSON.stringify(u.done)} (${typeof u.done}), title "${u.title}", assignee ${JSON.stringify(u.assignee)}, estimate ${JSON.stringify(u.estimate)}; it shows "${after.text}"; without live-values the change remounted with done ${legacy.mounted.values.done} ("${legacyStatus}"); when update threw, a new document (${replaced}) mounted with done ${thrown.mounted.values.done} ("${thrownStatus}"); a title the product rejects gave "${bad.status}" over "${bad.text}", then a good one mounted "${good.mounted.values.title}" ("${goodStatus}"); a slow update overtaken by a newer one left done ${JSON.stringify(overtaken.updated?.done)} on screen (card ${/done/.test(overtaken.card) ? "done" : "open"}, mounts ${overtaken.mounts})`]
 })
 
 // AC-55 Properties show only on their surfaces; curated rows first; All properties starts collapsed; optional rows show Set until used
@@ -2117,6 +2126,31 @@ await check("AC-58", async () => {
     await p.getByRole("menuitem", { name: "Delete" }).click()
     await wait(600)
     const one = JSON.parse(readFileSync(file, "utf8")).scenarios.map((x) => x.label)
+    // A save rewrites only its own entry: one the Studio skips (its base is not generated) and one holding a value the
+    // Studio drops (not a property) are written back exactly as stored. Clearing an optional property a saved state
+    // sets, then Save, leaves that property out of the file.
+    const orphan = { id: "saved.orphan", label: "Orphan", base: "gone.scenario", values: { done: true } }
+    const extra = { id: "saved.extra", label: "Extra", base: CARD, values: { done: true, ghost: "kept as written" } }
+    const noted = { id: "saved.noted", label: "Noted", base: CARD, values: { note: "Saved note" } }
+    const seeded = JSON.parse(readFileSync(file, "utf8"))
+    writeFileSync(file, `${JSON.stringify({ ...seeded, scenarios: [...seeded.scenarios, orphan, extra, noted] }, null, 2)}\n`)
+    await p.goto(`${url}#view=inspect&scenario=saved.noted`)
+    await p.reload()
+    await p.waitForSelector("[data-properties]")
+    await wait(2500)
+    const notedMounted = (await frameState(await liveFrame(p))).mounted.values.note
+    const more = details(p).getByRole("button", { name: /All properties/ })
+    if ((await more.getAttribute("aria-expanded")) === "false") await more.click()
+    await details(p).getByRole("button", { name: "Clear Note" }).click()
+    await wait(800)
+    const clearedFrame = (await frameState(await liveFrame(p))).updated ?? {}
+    await details(p).getByRole("button", { name: "Save", exact: true }).click()
+    await wait(1000)
+    const rewritten = JSON.parse(readFileSync(file, "utf8")).scenarios
+    const same = (want) => JSON.stringify(rewritten.find((x) => x.id === want.id)) === JSON.stringify(want)
+    const kept = same(orphan) && same(extra)
+    const notedSaved = rewritten.find((x) => x.id === "saved.noted")
+    const unset = notedMounted === "Saved note" && !("note" in clearedFrame) && !!notedSaved && !("note" in notedSaved.values) && rewritten.length === 4
     await context.close()
     const post = (body, headers = {}) => fetch(`${url}__studio/scenarios`, { method: "POST", headers: { "content-type": "application/json", origin: `http://localhost:${port}`, ...headers }, body })
     const cross = (await post(JSON.stringify(written), { origin: "https://evil.example" })).status
@@ -2141,8 +2175,8 @@ await check("AC-58", async () => {
     const shownJson = await details(b).locator("[data-copy-json]").innerText().then((t) => JSON.parse(t)).catch(() => ({}))
     await b.closeAll()
     const s0 = written.scenarios[0] ?? {}
-    const ok = written.schema === "studio-scenarios/1" && s0.id === "saved.finished-card" && s0.base === CARD && s0.label === "Finished card" && s0.values?.done === true && selected === s0.id && /Finished card/.test(row) && /Saved/.test(row) && /Finished card/.test(title) && mounted.scenario === CARD && mounted.values.done === true && two.join("|") === "Finished card, renamed|Finished card, renamed copy" && one.join("|") === "Finished card, renamed" && cross === 403 && invalid === 422 && generated === 422 && huge === 413 && builtSave && reason > 0 && copy === 1 && marker === "kept" && copyRow === 1 && deletedRow === 0 && /cannot be overwritten/.test(clientRefuses) && copied.base === CARD && copied.values?.done === true && /^saved\./.test(copied.id ?? "") && shownJson.base === CARD && shownJson.values?.done === true
-    return [ok ? "pass" : "fail", `Save as wrote ${written.scenarios.length} state ${s0.id} from ${s0.base} with ${JSON.stringify(s0.values)} and selected it (${selected}); after a reload the catalog row reads "${row.replace(/\s+/g, " ")}", Details "${title}", the frame mounted ${mounted.scenario} with done ${mounted.values.done}; rename and duplicate gave ${two.join(" and ")}, delete left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${generated} to a generated ID, ${huge} to an oversized one; a built Studio disables Save as scenario (${builtSave}), says why (${reason}) and offers Copy as JSON (${copy}); in the page that created the file the marker was ${marker}, the duplicate's row showed (${copyRow}) and was gone after Delete (${deletedRow}); the client refuses a generated ID (${clientRefuses ? "yes" : "no"}); Copy as JSON gave ${copied.id} from ${copied.base} with ${JSON.stringify(copied.values)}, and without a clipboard showed ${shownJson.base} with ${JSON.stringify(shownJson.values)} to select`]
+    const ok = written.schema === "studio-scenarios/1" && s0.id === "saved.finished-card" && s0.base === CARD && s0.label === "Finished card" && s0.values?.done === true && selected === s0.id && /Finished card/.test(row) && /Saved/.test(row) && /Finished card/.test(title) && mounted.scenario === CARD && mounted.values.done === true && two.join("|") === "Finished card, renamed|Finished card, renamed copy" && one.join("|") === "Finished card, renamed" && cross === 403 && invalid === 422 && generated === 422 && huge === 413 && builtSave && reason > 0 && copy === 1 && marker === "kept" && copyRow === 1 && deletedRow === 0 && /cannot be overwritten/.test(clientRefuses) && copied.base === CARD && copied.values?.done === true && /^saved\./.test(copied.id ?? "") && shownJson.base === CARD && shownJson.values?.done === true && kept && unset
+    return [ok ? "pass" : "fail", `Save as wrote ${written.scenarios.length} state ${s0.id} from ${s0.base} with ${JSON.stringify(s0.values)} and selected it (${selected}); after a reload the catalog row reads "${row.replace(/\s+/g, " ")}", Details "${title}", the frame mounted ${mounted.scenario} with done ${mounted.values.done}; rename and duplicate gave ${two.join(" and ")}, delete left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${generated} to a generated ID, ${huge} to an oversized one; a built Studio disables Save as scenario (${builtSave}), says why (${reason}) and offers Copy as JSON (${copy}); in the page that created the file the marker was ${marker}, the duplicate's row showed (${copyRow}) and was gone after Delete (${deletedRow}); the client refuses a generated ID (${clientRefuses ? "yes" : "no"}); Copy as JSON gave ${copied.id} from ${copied.base} with ${JSON.stringify(copied.values)}, and without a clipboard showed ${shownJson.base} with ${JSON.stringify(shownJson.values)} to select; saving another state kept the skipped entry and the unknown value as written (${kept}); a saved state mounted with note ${JSON.stringify(notedMounted)}, Clear sent values without it (${!("note" in clearedFrame)}) and Save wrote ${JSON.stringify(notedSaved?.values)} among ${rewritten.length} entries`]
   } finally {
     dev.kill()
     if (backup) copyFileSync(backup, file), rmSync(backup)

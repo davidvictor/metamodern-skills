@@ -7,7 +7,7 @@ import type { FrameDiagnostic, InputValue, Scenario, ScenarioInput, Token } from
 import type { FrameCapability } from "@/studio/protocol"
 import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAvailable, valuesForTheme, type DesignDraft, type DesignValues, type DesignValuesByTheme } from "@/studio/design"
 import { normalizeScenarioInput } from "@/studio/input"
-import { appliesTo, axisValues, comparable, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, usableSaved, withSaved, type Edits, type LinkHold } from "@/studio/properties"
+import { appliesTo, axisValues, comparable, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, unsettable, usableSaved, withSaved, type Edits, type LinkHold } from "@/studio/properties"
 import type { SavedScenario, ScenariosFile } from "@/studio/scenarios"
 import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
@@ -240,6 +240,8 @@ export const supports = (sc: Scenario | undefined, input: string, option: InputV
 export function resolveValues(sc: Scenario | undefined, values: Record<string, InputValue>, props?: Edits) {
   const out: Record<string, InputValue> = {}
   for (const i of inputsFor(sc)) {
+    // An unset optional property sends nothing, as when it was never set.
+    if (props?.[i.id] === null) continue
     const pick = props?.[i.id] ?? values[i.id]
     const chosen = pick === undefined ? undefined : normalizeScenarioInput(i, sc, pick)
     const candidate = chosen ?? sc?.designed?.[i.id] ?? (i.optional ? undefined : i.default)
@@ -322,8 +324,8 @@ type Ctx = State & {
   setValue: (id: string, value: InputValue | null) => void
   /** The viewer's property edits on this scenario. */
   edits: Edits
-  /** Edits a property of this scenario without a remount; null (or the designed value) returns it to designed, or unsets an optional one. */
-  setProp: (id: string, value: InputValue | null) => void
+  /** Edits a property of this scenario without a remount; null (or the designed value) returns it to designed (an optional one the scenario does not design is unset); undefined unsets an optional property the scenario designs. */
+  setProp: (id: string, value: InputValue | null | undefined) => void
   /** Clears every property edit on this scenario. R does not; this does. */
   resetProps: () => void
   /** Replaces the saved states, and the catalog entries made from them. */
@@ -513,7 +515,8 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
         const designed = sc?.designed?.[id] ?? (input.optional ? undefined : input.default)
         const edits = { ...s.props[s.scenario] }
         if (v === null || v === designed) delete edits[id]
-        else edits[id] = v
+        else if (v !== undefined) edits[id] = v
+        else if (unsettable(input, sc)) edits[id] = null
         return { props: { ...s.props, [s.scenario]: edits }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold }
       }),
     resetProps: () => set((s) => ({ props: { ...s.props, [s.scenario]: {} }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold })),

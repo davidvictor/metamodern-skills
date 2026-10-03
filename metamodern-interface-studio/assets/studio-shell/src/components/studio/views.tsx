@@ -636,7 +636,8 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
             </div>
           ) : (
             <ScenarioPreview
-              key={`${tour.id}:${i}:${nonce}`}
+              // Each step, and each edit of a step, mounts a fresh runtime: steps on one scenario that differ only in property values never carry product state over.
+              key={`${i}:${stepKey}`}
               scenario={step.scenario}
               theme={theme}
               profile={profile}

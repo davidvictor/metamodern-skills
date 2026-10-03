@@ -300,6 +300,8 @@ const testing = window as unknown as {
   __studioNoCode?: boolean
   /** An update that always throws, so the Studio mounts the values instead. */
   __studioUpdateThrows?: boolean
+  /** The first live update takes 800 ms, so a newer one arrives while it runs. */
+  __studioSlowFirstUpdate?: boolean
   /** A card that cannot show the title "Reject this title", in place or when mounted. */
   __studioStrictTitle?: boolean
   /** How many times this document mounted a scenario, and the values a live update last applied. */
@@ -328,7 +330,11 @@ const frame = connectStudioFrame(
     // Properties change in place: product state and navigation stay. Only the card reads them.
     update: testing.__studioNoLive
       ? undefined
-      : (inputs) => {
+      : async (inputs) => {
+          if (testing.__studioSlowFirstUpdate) {
+            testing.__studioSlowFirstUpdate = false
+            await new Promise((done) => setTimeout(done, 800))
+          }
           if (testing.__studioUpdateThrows) throw new Error("This card cannot change in place")
           rejectTitle(inputs.values)
           s.card = cardFrom(inputs.values)

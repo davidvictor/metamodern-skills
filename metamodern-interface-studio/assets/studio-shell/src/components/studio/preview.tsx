@@ -7,6 +7,7 @@ import { adapter } from "@/adapter"
 import { captureFor, NO_DRAFT, propertyIds, resolveValues, useStudio, type Draft } from "@/store"
 import { frameDesignValues, valuesForTheme } from "@/studio/design"
 import { LivePreview, type LivePreviewHandle, type LiveStatus, type PreviewSync } from "@/studio/live-preview"
+import type { Edits } from "@/studio/properties"
 import type { InputValue } from "@/studio/types"
 import { CaptureImage, PreviewFrame, type EmptyState } from "./bits"
 
@@ -49,7 +50,7 @@ type Props = {
   size?: { w: number; h: number } | null
   values: Record<string, InputValue>
   /** The viewer's property edits for this preview. They reach a live frame without a remount. */
-  props?: Record<string, InputValue>
+  props?: Edits
   commands?: string[]
   /** The draft this preview shows; none by default. Present never passes one. */
   draft?: Draft

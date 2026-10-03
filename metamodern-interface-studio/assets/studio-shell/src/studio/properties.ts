@@ -11,8 +11,8 @@ import { isSavedValue, SAVED_ID } from "./saved"
 import type { SavedScenario } from "./scenarios"
 import type { InputValue, Scenario, ScenarioInput } from "./types"
 
-/** A viewer's property edits on one scenario, by input ID. */
-export type Edits = Record<string, InputValue>
+/** A viewer's property edits on one scenario, by input ID. `null` unsets an optional property the scenario designs a value for. */
+export type Edits = Record<string, InputValue | null>
 
 export const isProperty = (i: ScenarioInput) => i.section === "properties"
 /** Whether an input applies to a scenario: inputs without `surfaces` apply everywhere. */
@@ -24,6 +24,8 @@ export function propertiesFor(inputs: ScenarioInput[], sc: Scenario | undefined)
   const own = inputs.filter((i) => isProperty(i) && appliesTo(i, sc) && !isReservedProperty(i))
   return [...own.filter((i) => i.curated), ...own.filter((i) => !i.curated)]
 }
+/** An optional property the scenario designs a value for can be unset (an edit of null). */
+export const unsettable = (i: ScenarioInput, sc: Scenario | undefined) => !!i.optional && sc?.designed?.[i.id] !== undefined
 /** Properties that may appear in or be read from links: not readonly (propertiesFor already leaves out reserved link keys). */
 const linkable = (inputs: ScenarioInput[], sc: Scenario | undefined) => propertiesFor(inputs, sc).filter((i) => !i.readonly)
 
@@ -32,7 +34,10 @@ export function linkEdits(inputs: ScenarioInput[], sc: Scenario | undefined, edi
   const params: [string, string][] = []
   let local = false
   for (const i of linkable(inputs, sc)) {
-    const v = edits[i.id] === undefined ? undefined : normalizeScenarioInput(i, sc, edits[i.id])
+    const e = edits[i.id]
+    const v = e === undefined || e === null ? undefined : normalizeScenarioInput(i, sc, e)
+    // An unset has no link value: it stays in this browser like local text.
+    if (e === null && unsettable(i, sc)) local = true
     if (v === undefined) continue
     if (travels(i)) params.push([i.id, String(v)])
     else local = true
@@ -49,6 +54,11 @@ export function editsFromLink(inputs: ScenarioInput[], sc: Scenario | undefined,
   const edits: Edits = {}
   let kept = false
   for (const i of linkable(inputs, sc)) {
+    if (local && stored[i.id] === null && unsettable(i, sc)) {
+      edits[i.id] = null
+      kept = true
+      continue
+    }
     // Stored local text passes the same normalization as a link value, so stale or corrupt storage is dropped.
     const raw = travels(i) ? get(i.id) : local ? stored[i.id] : null
     const v = raw === null || raw === undefined ? undefined : normalizeScenarioInput(i, sc, raw)
@@ -65,6 +75,7 @@ export function keptEdits(inputs: ScenarioInput[], sc: Scenario | undefined, edi
   if (!edits || typeof edits !== "object" || Array.isArray(edits)) return out
   for (const i of propertiesFor(inputs, sc)) {
     const raw = (edits as Record<string, unknown>)[i.id]
+    if (raw === null && unsettable(i, sc)) out[i.id] = null
     const v = typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean" ? normalizeScenarioInput(i, sc, raw) : undefined
     if (v !== undefined) out[i.id] = v
   }
@@ -109,7 +120,8 @@ export function usableSaved(generated: Scenario[], saved: unknown, inputs: Scena
     if (!base || typeof id !== "string" || !SAVED_ID.test(id) || generated.some((g) => g.id === id) || out.some((o) => o.id === id)) continue
     if (typeof x.label !== "string" || !x.label.trim() || x.label.length > 80 || !x.values || typeof x.values !== "object" || Array.isArray(x.values)) continue
     const values = Object.fromEntries(Object.entries(x.values).filter(([, v]) => isSavedValue(v)))
-    out.push({ id, label: x.label, base: base.id, values: keptEdits(inputs, base, values), ...(typeof x.description === "string" && x.description.length <= 400 && { description: x.description }) })
+    // isSavedValue already left out null, so keptEdits returns values only.
+    out.push({ id, label: x.label, base: base.id, values: keptEdits(inputs, base, values) as SavedScenario["values"], ...(typeof x.description === "string" && x.description.length <= 400 && { description: x.description }) })
   }
   return out
 }

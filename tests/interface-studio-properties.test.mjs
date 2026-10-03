@@ -266,3 +266,17 @@ test('studio-scenarios/1 accepts saved states and refuses what it should', () =>
   assert.match(scenarios.validateScenarios({ schema: 'studio-scenarios/1', scenarios: [{ ...ok.scenarios[0], base: 'saved.big' }] }).join(), /base/);
   assert.equal(scenarios.savedId('Big card!', ['saved.big-card']), 'saved.big-card-2');
 });
+
+test('an optional property a state designs can be unset: stored, kept out of links as local, restored only with edited=local', () => {
+  const est = props({ id: 'est', label: 'Est', control: 'number', optional: true });
+  const designed = { ...card, designed: { done: false, est: 3 } };
+  const only = [est];
+  assert.equal(properties.unsettable(est, designed), true);
+  assert.equal(properties.unsettable(est, card), false, 'nothing to unset when the state designs no value');
+  assert.equal(properties.unsettable(byId('done'), designed), false, 'a required property is never unset');
+  assert.deepEqual(properties.keptEdits(only, designed, { est: null }), { est: null });
+  assert.deepEqual(properties.keptEdits(only, card, { est: null }), {});
+  assert.deepEqual(properties.linkEdits(only, designed, { est: null }), { params: [], local: true });
+  assert.deepEqual(properties.editsFromLink(only, designed, () => null, { est: null }, true), { edits: { est: null }, missing: false });
+  assert.deepEqual(properties.editsFromLink(only, designed, () => null, { est: null }, false).edits, {});
+});

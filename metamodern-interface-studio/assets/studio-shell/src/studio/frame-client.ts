@@ -169,6 +169,10 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
 
   // The inputs this runtime was mounted with, and any property values applied since.
   let current: MountInputs | null = null
+  // Values updates run one at a time, in arrival order, and only the newest is applied: an update that a newer
+  // values message superseded is skipped, or its result ignored, so a slow handler never leaves stale props.
+  let valuesSeq = 0
+  let updating: Promise<unknown> = Promise.resolve()
   const onMessage = async (e: MessageEvent) => {
     if (e.source !== window.parent || !allowed.includes(e.origin) || !isShellMessage(e.data) || e.data.instance !== instance) return
     const m = e.data
@@ -223,15 +227,31 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
         await nextFrame()
         post({ type: "reply", requestId: m.requestId, ...result })
       } else if (m.type === "values") {
-        if (!handlers.update || !current) throw new Error("This preview cannot change values in place")
-        current = { ...current, values: m.values }
-        // A Studio change, not a person's: it must not mark the runtime modified.
-        armedAt = 0
-        await handlers.update(current)
-        await settle()
+        const update = handlers.update
+        if (!update || !current) throw new Error("This preview cannot change values in place")
+        const seq = ++valuesSeq
+        const run = updating.then(async () => {
+          if (seq !== valuesSeq || !current) return false
+          current = { ...current, values: m.values }
+          // A Studio change, not a person's: it must not mark the runtime modified.
+          armedAt = 0
+          try {
+            await update(current)
+          } catch (err) {
+            // A superseded update's failure does not matter: the newest values are applied next.
+            if (seq === valuesSeq) throw err
+          }
+          await settle()
+          return seq === valuesSeq
+        })
+        updating = run.catch(() => undefined)
+        // The reply only settles this request; a superseded one reports nothing about the runtime.
+        const newest = await run
         post({ type: "reply", requestId: m.requestId, ok: true })
-        post({ type: "navigated", ...state() })
+        if (newest) post({ type: "navigated", ...state() })
       } else if (m.type === "code-request") {
+        // After any values update in flight, so the code describes the newest values.
+        await updating
         if (!handlers.code || !current) throw new Error("This preview has no code to show")
         const { language, text } = await handlers.code(current)
         post({ type: "code", requestId: m.requestId, language: String(language), text: String(text) })
