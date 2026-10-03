@@ -163,6 +163,8 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
   React.useLayoutEffect(() => {
     const el = bar.current
     if (!el || mobile) return
+    // Measure before the first paint, so a narrow bar never shows its actions unfolded.
+    setNarrowBar(el.clientWidth < 576)
     const ro = new ResizeObserver(() => setNarrowBar(el.clientWidth < 576))
     ro.observe(el)
     return () => ro.disconnect()
@@ -233,7 +235,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
       </div>
       {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
       {s.view === "inspect" && !s.module && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
-        <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden shrink-0 @3xl/header:inline-flex">
+        <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden shrink-0 @xl/header:inline-flex">
           {adapter.target.label}
         </FidelityBadge>
       )}

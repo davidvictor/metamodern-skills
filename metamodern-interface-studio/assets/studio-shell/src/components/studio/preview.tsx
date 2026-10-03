@@ -119,6 +119,8 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
         label: "Retry",
         onClick: () => {
           setStatus(null)
+          // The top bar and Details say Loading until the new runtime reports.
+          onStatusRef.current?.({ ...status, status: "loading", reason: undefined })
           setRetry((n) => n + 1)
         },
       },
@@ -137,6 +139,13 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   // design experiments then stay out of those product states just like token drafts.
   const design = draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)
   const mountKey = JSON.stringify([scenario, theme, profile, fixed, design, commands, resetNonce, retry])
+  const frameKey = JSON.stringify([scenario, theme, profile, fixed, design, commands, resetNonce])
+  // A failure belongs to the frame that reported it: another scenario, theme, profile or input mounts afresh.
+  const [shownKey, setShownKey] = React.useState(frameKey)
+  if (shownKey !== frameKey) {
+    setShownKey(frameKey)
+    if (status?.status === "error" && !status.previous) setStatus(null)
+  }
 
   return (
     <PreviewFrame w={w} h={h} scale={scale} profile={pr} appearance={status?.appearance ?? th.appearance} anchor={rect} empty={empty} loading={live && (!status || status.status === "loading")} label={label} className={className}>

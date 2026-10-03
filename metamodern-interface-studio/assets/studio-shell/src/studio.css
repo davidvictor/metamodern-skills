@@ -125,10 +125,11 @@
 
 /*
  * Coarse pointers, at any width (a tablet is not a phone): every Studio target reaches 44 px and text fields use
- * 16 px text so a touch screen does not zoom. A switch, checkbox or radio keeps its drawing and grows its hit area.
+ * 16 px text so a touch screen does not zoom. A switch, checkbox or radio keeps its drawing and grows its hit area. The panel's
+ * edge handle stays narrow so it never covers the panel or the stage; the top bar's Hide panel is its target.
  */
 @media (pointer: coarse) {
-  :where(button, a[href], summary, select, textarea, [role="button"], [role="tab"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="combobox"], [data-slot="input"], [data-slot="input-group"], [data-slot="input-group-control"], input[type="color"]):not([role="switch"], [role="checkbox"], [role="radio"]) { min-height: 44px; min-width: 44px; }
+  :where(button, a[href], summary, select, textarea, [role="button"], [role="tab"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="combobox"], [data-slot="input"], [data-slot="input-group"], [data-slot="input-group-control"], input[type="color"]):not([role="switch"], [role="checkbox"], [role="radio"], [data-sidebar="rail"]) { min-height: 44px; min-width: 44px; }
   input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="hidden"], [type="file"]), textarea, select { font-size: 16px; }
   :is([role="switch"], [role="checkbox"], [role="radio"])::after { inset-block: min(-0.5rem, calc(50% - 22px)); inset-inline: min(-0.75rem, calc(50% - 22px)); }
   [data-slot="slider-thumb"]::after { content: ""; position: absolute; inset: calc(50% - 22px); }
@@ -143,12 +144,12 @@
 }
 
 /*
- * Keyboard focus in the core shell, as in the kit: a 2 px outline in --ring (3:1 or more on the Studio's grounds in both
- * appearances). Rows, options, menu items, tabs and the rail draw it inside, where a clipping list would cut it. Text fields keep
- * their border and ring.
+ * Keyboard focus in the core shell: one indicator, a 2 px outline in --ring (3:1 or more on the Studio's grounds in both
+ * appearances) that replaces the controls' faint rings and sits against their border. Rows, options, menu items, tabs and the
+ * rail draw it inside, where a clipping list would cut it, in place of their inset ring. Text fields keep their border and ring.
  */
-:where(button, a[href], summary, [tabindex="0"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"], [role="row"], [role="option"], [role^="menuitem"]):focus-visible:not(input, textarea, select, iframe) { outline: 2px solid var(--ring); outline-offset: 2px; }
-:is([role="row"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="tab"], [aria-label="Studio"] button):focus-visible { outline-offset: -2px; }
+:where(button, a[href], summary, [tabindex="0"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"], [role="row"], [role="option"], [role^="menuitem"]):focus-visible:not(input, textarea, select, iframe) { outline: 2px solid var(--ring); outline-offset: 0; --tw-ring-shadow: 0 0 #0000; }
+:is([role="row"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="tab"], [aria-label="Studio"] button):focus-visible { outline-offset: -2px; --tw-shadow: 0 0 #0000; }
 @media (forced-colors: active) {
   :focus-visible { outline-color: Highlight; }
 }

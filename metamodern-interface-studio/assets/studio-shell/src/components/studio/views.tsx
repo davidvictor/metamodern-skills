@@ -698,7 +698,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
             )}
             {step.hidden && <p className="text-xs text-muted-foreground">This step is hidden from autoplay. It remains available here for review.</p>}
           </div>
-          <div role="group" aria-label="Walkthrough controls" className="flex flex-wrap items-center gap-1 @xl:col-span-2 @4xl:col-span-1">
+          <div role="group" aria-label="Walkthrough controls" className={cn("flex flex-wrap items-center gap-1", !narrow && "@xl:col-span-2 @4xl:col-span-1")}>
             <Button variant="outline" size="icon" aria-label="Previous step" disabled={i === 0} onClick={() => go(-1)}><ChevronLeftIcon /></Button>
             <Button size="icon" aria-label={s.present.playing ? "Pause" : "Play"} onClick={() => s.set({ present: { ...s.present, playing: !s.present.playing } })} disabled={!!problem}>
               {s.present.playing ? <PauseIcon /> : <PlayIcon />}

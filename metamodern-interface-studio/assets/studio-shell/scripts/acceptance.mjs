@@ -62,9 +62,10 @@ const record = (id, status, detail) => {
   console.log(`${status.toUpperCase().padEnd(12)} ${id}  ${detail}`)
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
-async function open(name, { width = 1440, height = 900, touch = false, hash = "", appearance } = {}) {
+async function open(name, { width = 1440, height = 900, touch = false, hash = "", appearance, brand } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, hasTouch: touch, isMobile: touch, colorScheme: appearance ?? "light" })
   if (appearance) await context.addInitScript((a) => localStorage.setItem("studio.appearance", a), appearance)
+  if (brand) await context.addInitScript((b) => localStorage.setItem("studio.example-tasks.brand", b), brand)
   const page = await context.newPage()
   const errors = []
   page.on("pageerror", (e) => errors.push(String(e)))
@@ -2357,8 +2358,27 @@ await check("AC-61", async () => {
   const left = await retry.count()
   const shown = left ? "" : ((await frameState(await liveFrame(p))).text ?? "")
   await q.close()
-  const ok = offered > 0 && /Did not start/.test(failed) && /Ready/.test(ready) && left === 0 && /Reject this title/.test(shown)
-  return [ok ? "pass" : "fail", `a frame that failed to mount showed Retry (${offered > 0}) with "${/Did not start/.test(failed) ? "Did not start" : failed.replace(/\s+/g, " ").slice(0, 40)}" in the top bar; after the cause was removed, Retry mounted the frame (${left === 0 ? "Retry gone" : "Retry still shown"}), the top bar read ${/Ready/.test(ready) ? "Ready" : JSON.stringify(ready.replace(/\s+/g, " ").slice(0, 40))} and the card shows "${shown.slice(0, 40)}"`]
+  // A failure belongs to its frame: with the cause gone, choosing another theme mounts afresh without Retry.
+  const r = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const t = await r.newPage()
+  await t.addInitScript(() => {
+    if (window === window.top) return
+    try {
+      if (!window.top.__causeGone) window.__studioStrictTitle = true
+    } catch {
+      window.__studioStrictTitle = true
+    }
+  })
+  await t.goto(servers.normal.url + `#view=inspect&scenario=${CARD}&title=${encodeURIComponent("Reject this title")}`)
+  await t.waitForSelector("header")
+  const failedAgain = await until(() => t.locator(".preview-frame").getByRole("button", { name: "Retry" }).count(), (n) => n > 0, 8000)
+  await t.evaluate(() => (window.__causeGone = true))
+  await t.locator('[role="toolbar"] [aria-label="Dark"]').click()
+  const moved = await until(() => t.locator("header").innerText(), (x) => /Ready/.test(x), 8000)
+  const stuck = await t.locator(".preview-frame").getByRole("button", { name: "Retry" }).count()
+  await r.close()
+  const ok = offered > 0 && /Did not start/.test(failed) && /Ready/.test(ready) && left === 0 && /Reject this title/.test(shown) && failedAgain > 0 && /Ready/.test(moved) && stuck === 0
+  return [ok ? "pass" : "fail", `a frame that failed to mount showed Retry (${offered > 0}) with "${/Did not start/.test(failed) ? "Did not start" : failed.replace(/\s+/g, " ").slice(0, 40)}" in the top bar; after the cause was removed, Retry mounted the frame (${left === 0 ? "Retry gone" : "Retry still shown"}), the top bar read ${/Ready/.test(ready) ? "Ready" : JSON.stringify(ready.replace(/\s+/g, " ").slice(0, 40))} and the card shows "${shown.slice(0, 40)}"; a second failure was cleared by choosing the Dark theme (${stuck === 0 ? "frame mounted" : "failure kept"}, top bar ${/Ready/.test(moved) ? "Ready" : JSON.stringify(moved.replace(/\s+/g, " ").slice(0, 40))})`]
 })
 
 /** Page helpers for AC-62 to AC-64: painted colors, contrast, the backdrop behind an element and a target's hit box. */
@@ -2441,9 +2461,10 @@ await check("AC-62", async () => {
         const box = sec.getBoundingClientRect()
         const overlap = a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1
         const spill = [...sec.querySelectorAll("*")].filter((e) => e.getClientRects().length && (e.getBoundingClientRect().right > box.right + 1 || e.getBoundingClientRect().left < box.left - 1)).length
-        return { overlap, spill, words: text.scrollWidth > text.clientWidth + 1, buttons: ctl.querySelectorAll("button").length }
+        return { overlap, spill, words: text.scrollWidth > text.clientWidth + 1, buttons: ctl.querySelectorAll("button").length, columns: getComputedStyle(text.parentElement).gridTemplateColumns.split(" ").length }
       })
-      if (m.overlap || m.spill || m.words || !m.buttons) bad.push(`${appearance} Present@${width}: ${JSON.stringify(m)}`)
+      // A phone (under 768 px) keeps one column.
+      if (m.overlap || m.spill || m.words || !m.buttons || (width < 768 && m.columns !== 1)) bad.push(`${appearance} Present@${width}: ${JSON.stringify(m)}`)
       await p.closeAll()
     }
     // 2. Top bar at 768 with the panel open, a status and an Edited badge: nothing overlaps, every action is on screen.
@@ -2530,7 +2551,7 @@ await check("AC-63", async () => {
   const measure = (p) =>
     p.evaluate(() => {
       const f = window.__floors
-      const targets = [...document.querySelectorAll('button, a[href], summary, select, textarea, input:not([type="hidden"]), [role="button"], [role="tab"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="combobox"], [role="switch"], [role="checkbox"], [role="radio"]')].filter((e) => f.shown(e) && !e.closest(".react-flow__viewport"))
+      const targets = [...document.querySelectorAll('button, a[href], summary, select, textarea, input:not([type="hidden"]), [role="button"], [role="tab"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="combobox"], [role="switch"], [role="checkbox"], [role="radio"]')].filter((e) => f.shown(e) && !e.closest(".react-flow__viewport") && !e.matches('[data-sidebar="rail"]'))
       const small = targets.map((e) => ({ n: f.name(e), ...f.hit(e) })).filter((m) => m.w < 44 || m.h < 44)
       const text = targets.filter((e) => e.matches('textarea, select, input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"])')).map((e) => ({ n: f.name(e), px: parseFloat(getComputedStyle(e).fontSize) })).filter((m) => m.px < 16)
       return { count: targets.length, small: small.map((m) => `${m.n} ${m.w}×${m.h}`), text: text.map((m) => `${m.n} ${m.px}px`) }
@@ -2560,8 +2581,10 @@ await check("AC-63", async () => {
         await p.keyboard.press("Escape")
         await wait(300)
         // The folded top bar's actions and Studio settings.
-        await p.getByRole("button", { name: "More actions" }).click()
-        await wait(500)
+        if (await p.getByRole("button", { name: "More actions" }).count()) {
+          await p.getByRole("button", { name: "More actions" }).click()
+          await wait(500)
+        }
         await p.getByRole("button", { name: "Studio settings" }).click()
         await wait(600)
         const settings = await measure(p)
@@ -2589,68 +2612,94 @@ await check("AC-63", async () => {
   return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 8).join("; ") : `${states} states on a 768 px tablet and a 390 px phone with touch, light and dark (every view with its panel, Details, the Size menu, the Panel and Details drawers): ${measured} targets, every one at least 44 px (a switch, checkbox or radio by its hit area) and every text field at 16 px. Real devices are not covered.`]
 })
 
-// AC-64 Keyboard focus in the core shell (rail, top bar, panel, dock) adds an indicator at 3:1 or more, and the active rail label
-// reaches 4.5:1, in both appearances
+// AC-64 Keyboard focus in the core shell (rail, top bar, panel, dock; on a phone the top bar, control strip, bottom bar and drawers)
+// adds exactly one indicator at 3:1 or more, and the active view label reaches 4.5:1, in both appearances and with a pale brand color
 await check("AC-64", async () => {
   const bad = []
   const notes = []
-  for (const appearance of ["light", "dark"]) {
-    for (const [width, touch] of [[1440, false], [768, true]]) {
-      const p = await openFloors("normal", { appearance, width, height: width === 1440 ? 900 : 1024, touch, hash: "view=inspect&scenario=tasks.list" })
-      // Every ring utility leaves a computed box-shadow even unfocused: record each element unfocused, then count only what focus adds.
-      await p.mouse.move(0, 0)
-      await p.evaluate(() => {
-        const before = new WeakMap()
-        for (const e of document.querySelectorAll("body *")) {
-          const s = getComputedStyle(e)
-          before.set(e, { outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}`, shadow: s.boxShadow })
-        }
-        window.__unfocused = before
-      })
-      const rail = await p.evaluate(() => {
-        const b = document.querySelector('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]')
-        const label = b.querySelector("span") ?? b
-        return { text: label.textContent, ratio: window.__floors.on(getComputedStyle(label).color, b), size: parseFloat(getComputedStyle(label).fontSize) }
-      })
-      if (rail.ratio < 4.5) bad.push(`${appearance} ${width}: active rail label "${rail.text}" ${rail.ratio.toFixed(2)}:1`)
-      const regions = { rail: [], header: [], panel: [], dock: [] }
-      const faint = []
-      for (let i = 0; i < 70; i++) {
-        await p.keyboard.press("Tab")
-        // Controls transition their ring in: read once the running transitions end.
-        await p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => null))))
-        const f = await p.evaluate(() => {
-          const e = document.activeElement
-          if (!e || e === document.body || e.tagName === "IFRAME") return null
-          const region = e.closest('[aria-label="Studio"]') ? "rail" : e.closest("header") ? "header" : e.closest('[role="toolbar"]') ? "dock" : e.closest('[data-sidebar="sidebar"]') ? "panel" : null
-          if (!region || e.matches("input, textarea, select")) return null
-          const F = window.__floors
-          const s = getComputedStyle(e)
-          const was = window.__unfocused.get(e) ?? { outline: "none", shadow: "none" }
-          const split = (v) => (v === "none" ? [] : v.split(/,(?![^(]*\))/).map((x) => x.trim()))
-          const marks = []
-          if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 2 && `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}` !== was.outline && F.paint([s.outlineColor])[3] > 0) marks.push({ color: s.outlineColor, inside: parseFloat(s.outlineOffset) < 0 })
-          for (const layer of split(s.boxShadow)) {
-            if (split(was.shadow).includes(layer)) continue
-            const color = /^(rgba?|oklch|oklab|lab|lch|color|hsla?)\([^)]*\)/.exec(layer)?.[0]
-            const lengths = layer.replace(color ?? "", "").match(/-?[\d.]+px/g)?.map(parseFloat) ?? []
-            if (color && F.paint([color])[3] > 0 && ((lengths[3] ?? 0) >= 2 || (lengths[2] ?? 0) >= 2)) marks.push({ color, inside: /\binset\b/.test(layer) })
-          }
-          const best = Math.max(0, ...marks.map((m) => F.on(m.color, m.inside ? e : e.parentElement)))
-          return { region, n: F.name(e), ratio: best }
-        })
-        if (!f) continue
-        regions[f.region].push(f.ratio)
-        if (f.ratio < 3) faint.push(`${f.region} "${f.n}" ${f.ratio.toFixed(2)}`)
+  // Every ring utility leaves a computed box-shadow even unfocused: record each element unfocused, then count only what focus adds.
+  const record = (p) =>
+    p.evaluate(() => {
+      const before = new WeakMap()
+      for (const e of document.querySelectorAll("body *")) {
+        const s = getComputedStyle(e)
+        before.set(e, { outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}`, shadow: s.boxShadow })
       }
-      const missing = Object.entries(regions).filter(([, r]) => !r.length).map(([k]) => k)
-      if (faint.length || missing.length) bad.push(`${appearance} ${width}: ${faint.length ? `under 3:1 ${faint.slice(0, 6).join(", ")}` : ""}${missing.length ? ` not reached ${missing.join(", ")}` : ""}`)
-      const low = Object.entries(regions).filter(([, r]) => r.length).map(([k, r]) => `${k} ${Math.min(...r).toFixed(1)}`)
-      notes.push(`${appearance} ${width}: active rail label ${rail.ratio.toFixed(1)}:1 at ${rail.size} px, lowest focus indicator by region ${low.join(", ")}`)
-      await p.closeAll()
+      window.__unfocused = before
+    })
+  const walk = async (p, stops, regions, faint, doubled) => {
+    for (let i = 0; i < stops; i++) {
+      await p.keyboard.press("Tab")
+      // Controls transition their ring in: read once the running transitions end.
+      await p.evaluate(async () => {
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+        await Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => null)))
+      })
+      const f = await p.evaluate(() => {
+        const e = document.activeElement
+        if (!e || e === document.body || e.tagName === "IFRAME") return null
+        const region = e.closest('[role="dialog"]') ? "drawer" : e.closest('[aria-label="Studio"]') ? "rail" : e.closest("header") ? "header" : e.closest('[role="toolbar"]') ? "dock" : e.closest('nav[aria-label="Views"]') ? "bar" : e.closest('[data-sidebar="sidebar"]') ? "panel" : null
+        if (!region || e.matches("input, textarea, select")) return null
+        const F = window.__floors
+        const s = getComputedStyle(e)
+        const was = window.__unfocused.get(e) ?? { outline: "none", shadow: "none" }
+        const split = (v) => (v === "none" ? [] : v.split(/,(?![^(]*\))/).map((x) => x.trim()))
+        const marks = []
+        if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 1 && `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}` !== was.outline && F.paint([s.outlineColor])[3] > 0) marks.push({ color: s.outlineColor, inside: parseFloat(s.outlineOffset) < 0, width: parseFloat(s.outlineWidth) })
+        for (const layer of split(s.boxShadow)) {
+          if (split(was.shadow).includes(layer)) continue
+          const color = /^(rgba?|oklch|oklab|lab|lch|color|hsla?)\([^)]*\)/.exec(layer)?.[0]
+          const lengths = layer.replace(color ?? "", "").match(/-?[\d.]+px/g)?.map(parseFloat) ?? []
+          const width = Math.max(lengths[3] ?? 0, lengths[2] ?? 0)
+          if (color && F.paint([color])[3] > 0 && width > 0) marks.push({ color, inside: /\binset\b/.test(layer), width })
+        }
+        const strong = marks.filter((m) => m.width >= 2).map((m) => F.on(m.color, m.inside ? e : e.parentElement))
+        return { region, n: F.name(e), ratio: Math.max(0, ...strong), marks: marks.length }
+      })
+      if (!f) continue
+      regions[f.region]?.push(f.ratio)
+      if (f.ratio < 3) faint.push(`${f.region} "${f.n}" ${f.ratio.toFixed(2)}`)
+      if (f.marks > 1) doubled.push(`${f.region} "${f.n}"`)
     }
   }
-  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `${notes.join("; ")} (Tab through the rail, top bar, panel and dock; an indicator counts only where focus adds it)`]
+  const runs = []
+  for (const appearance of ["light", "dark"]) for (const width of [1440, 768, 390]) runs.push({ appearance, width })
+  // A pale brand color: the light ring and the active rail label are lowered from it.
+  for (const width of [1440, 768]) runs.push({ appearance: "light", width, brand: "#fde68a" })
+  for (const { appearance, width, brand } of runs) {
+    const phone = width < 768
+    const p = await openFloors("normal", { appearance, width, height: width === 1440 ? 900 : phone ? 844 : 1024, touch: width < 1440, hash: "view=inspect&scenario=tasks.list", brand })
+    const label = `${appearance}${brand ? ` brand ${brand}` : ""} ${width}`
+    await p.mouse.move(0, 0)
+    await record(p)
+    const active = await p.evaluate((phone) => {
+      const b = phone ? document.querySelector('nav[aria-label="Views"] button[aria-current="page"]') : document.querySelector('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]')
+      const text = b.querySelector("span") ?? b
+      return { text: text.textContent, ratio: window.__floors.on(getComputedStyle(text).color, b), size: parseFloat(getComputedStyle(text).fontSize) }
+    }, phone)
+    if (active.ratio < 4.5) bad.push(`${label}: active view label "${active.text}" ${active.ratio.toFixed(2)}:1`)
+    const regions = phone ? { header: [], dock: [], bar: [], drawer: [] } : { rail: [], header: [], panel: [], dock: [] }
+    const faint = []
+    const doubled = []
+    await walk(p, phone ? 40 : 70, regions, faint, doubled)
+    if (phone) {
+      // The Panel and Details drawers.
+      for (const name of ["Panel", "Details"]) {
+        await p.getByRole("button", { name, exact: true }).click()
+        await wait(800)
+        await record(p)
+        await walk(p, 12, regions, faint, doubled)
+        await p.keyboard.press("Escape")
+        await wait(600)
+      }
+    }
+    const missing = Object.entries(regions).filter(([, r]) => !r.length).map(([k]) => k)
+    if (faint.length || missing.length || doubled.length) bad.push(`${label}:${faint.length ? ` under 3:1 ${faint.slice(0, 6).join(", ")}` : ""}${doubled.length ? ` two indicators on ${doubled.slice(0, 6).join(", ")}` : ""}${missing.length ? ` not reached ${missing.join(", ")}` : ""}`)
+    const low = Object.entries(regions).filter(([, r]) => r.length).map(([k, r]) => `${k} ${Math.min(...r).toFixed(1)}`)
+    notes.push(`${label}: active label ${active.ratio.toFixed(1)}:1 at ${active.size} px, lowest indicator ${low.join(", ")}`)
+    await p.closeAll()
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `${notes.join("; ")} (Tab walks; an indicator counts only where focus adds it, and every stop has exactly one)`]
 })
 
 // ---------- Workspace modules (WS-01 to WS-09, references/workspace.md) ----------
@@ -2792,7 +2841,11 @@ await check("WS-02", async () => {
   const viewMarker = await marker(p.locator('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]'))
   await railView(p, "Design").focus()
   await p.keyboard.press("Tab")
-  const focused = await p.evaluate(() => ({ text: document.activeElement?.textContent?.trim(), ring: getComputedStyle(document.activeElement).boxShadow }))
+  // The views' focus indicator, drawn inside the rail item: an inset outline (0.12) or an inset ring.
+  const focused = await p.evaluate(() => {
+    const s = getComputedStyle(document.activeElement)
+    return { text: document.activeElement?.textContent?.trim(), ring: s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 2 && parseFloat(s.outlineOffset) < 0 ? `inset outline ${s.outlineWidth} ${s.outlineColor}` : s.boxShadow }
+  })
   await p.keyboard.press("Enter")
   await poll(hash, (h) => /module=site/.test(h))
   await wait(600)
