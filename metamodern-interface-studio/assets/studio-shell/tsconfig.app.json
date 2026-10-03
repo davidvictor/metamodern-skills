@@ -23,7 +23,8 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@studio/kit": ["./src/kit/index.ts"]
     }
   },
   "include": ["src", "example"]

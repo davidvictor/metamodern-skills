@@ -207,3 +207,36 @@ test('WM-08 the workspace model files stay pure', () => {
   assert.match(types, /workspace\?: WorkspaceDeclaration/);
   assert.match(types, /operations\?: string/);
 });
+
+test('WM-09 tables filter on every column, sort stably both ways and toggle direction', async () => {
+  const { filterRows, sortRows, nextSort } = await loadPure('src/kit/table-model.ts');
+  const columns = [{ id: 'name', value: (r) => r.name }, { id: 'size', value: (r) => r.size }];
+  const rows = [{ name: 'beta', size: 10 }, { name: 'Alpha', size: 2 }, { name: 'gamma', size: 2 }, { name: 'item 10', size: 1 }, { name: 'item 9', size: 1 }];
+  assert.deepEqual(filterRows(rows, columns, '  ').map((r) => r.name), rows.map((r) => r.name));
+  assert.deepEqual(filterRows(rows, columns, 'ALP').map((r) => r.name), ['Alpha']);
+  assert.deepEqual(filterRows(rows, columns, '10').map((r) => r.name), ['beta', 'item 10']);
+  assert.deepEqual(sortRows(rows, columns, null), rows);
+  assert.deepEqual(sortRows(rows, columns, { column: 'name', direction: 'asc' }).map((r) => r.name), ['Alpha', 'beta', 'gamma', 'item 9', 'item 10']);
+  assert.deepEqual(sortRows(rows, columns, { column: 'size', direction: 'desc' }).map((r) => r.name), ['beta', 'Alpha', 'gamma', 'item 10', 'item 9']);
+  assert.deepEqual(sortRows(rows, columns, { column: 'missing', direction: 'asc' }), rows);
+  assert.deepEqual(nextSort(null, 'name'), { column: 'name', direction: 'asc' });
+  assert.deepEqual(nextSort({ column: 'name', direction: 'asc' }, 'name'), { column: 'name', direction: 'desc' });
+  assert.deepEqual(nextSort({ column: 'name', direction: 'desc' }, 'size'), { column: 'size', direction: 'asc' });
+});
+
+test('WM-10 the kit is one versioned barrel with the floors built in', () => {
+  const index = read('src/kit/index.ts');
+  assert.match(index, /export const KIT_VERSION = "studio-kit\/1"/);
+  for (const name of ['ModulePage', 'Section', 'Toolbar', 'Button', 'Field', 'PropertyList', 'DataTable', 'StatusTile', 'StatusBadge', 'SaveBar', 'ConfirmDialog', 'EmptyState', 'PreviewFrame', 'Icon', 'tokens']) {
+    assert.match(index, new RegExp(`\\b${name}\\b`), `${name} is not exported from @studio/kit`);
+  }
+  assert.doesNotMatch(read('src/kit/table-model.ts'), /^import (?!type )/m, 'the table model stays pure');
+  assert.match(read('src/kit/layout.tsx'), /pointer-coarse:min-h-11 pointer-coarse:min-w-11/);
+  assert.match(read('src/kit/layout.tsx'), /pointer-coarse:text-base!/);
+  assert.match(read('src/kit/data.tsx'), /<VirtualList/);
+  assert.match(read('src/kit/preview-frame.tsx'), /sandbox=""/);
+  const css = read('src/studio.css');
+  assert.match(css, /\[data-kit\] :focus-visible \{ outline: 2px solid transparent/);
+  assert.match(css, /forced-colors: active/);
+  assert.match(css, /\[data-kit\], \[data-kit\] \* \{ animation: none !important; transition: none !important; \}/);
+});

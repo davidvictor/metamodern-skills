@@ -108,6 +108,10 @@ const scenarios = () => savedFile({ file: "scenarios.json", route: "/__studio/sc
 // "@/adapter" at the acceptance module; a normal build never includes them.
 const acceptance = process.env.VITE_STUDIO_ADAPTER ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, process.env.VITE_STUDIO_ADAPTER === "example" ? "src/adapters/example.ts" : "src/adapters/synthetic.ts") }] : []
 
+// The surfaces workspace modules import (references/workspace.md); everything else under src/ is shell internals.
+const studioAliases = [{ find: /^@studio\/kit$/, replacement: path.resolve(root, "src/kit/index.ts") }]
+const aliases = [...acceptance, ...studioAliases, { find: "@", replacement: path.resolve(root, "./src") }]
+
 export default defineConfig({
   base: "./",
   plugins: [react(), tailwindcss(), title(), layouts(), scenarios()],
@@ -124,6 +128,6 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: [...acceptance, { find: "@", replacement: path.resolve(root, "./src") }],
+    alias: aliases,
   },
 })

@@ -6,7 +6,8 @@
   ],
   "compilerOptions": {
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@studio/kit": ["./src/kit/index.ts"]
     }
   }
 }
