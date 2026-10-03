@@ -10,6 +10,8 @@ type Settings = { siteName: string; region: string; maintenance: boolean; apiKey
 type Change = { at: string; field: string; by: string }
 type SiteData = { settings: Settings; history: Change[] }
 type Loaded = { data: SiteData; revision?: string }
+/** Unsaved edits and the load they started from; writes send that revision, so a change made elsewhere since is a conflict, never overwritten. */
+type Draft = { values: Partial<Settings>; base: Loaded | null }
 type Phase = { kind: "idle" } | { kind: "saving" } | { kind: "saved" } | { kind: "conflict"; reason: string; theirs: Loaded } | { kind: "error"; reason: string; recoverable: boolean }
 
 const REGIONS = [
@@ -18,8 +20,8 @@ const REGIONS = [
   { id: "ap", label: "Asia Pacific" },
 ]
 const LABELS: Record<keyof Settings, string> = { siteName: "Site name", region: "Region", maintenance: "Maintenance mode", apiKey: "API key" }
-const shown = (key: keyof Settings, value: Settings[keyof Settings]) =>
-  key === "apiKey" ? "Changed (hidden)" : key === "maintenance" ? (value ? "On" : "Off") : key === "region" ? (REGIONS.find((r) => r.id === value)?.label ?? String(value)) : String(value)
+const shown = (key: keyof Settings, value: Settings[keyof Settings], before?: Settings[keyof Settings]) =>
+  key === "apiKey" ? (value === before ? "Hidden" : "Changed (hidden)") : key === "maintenance" ? (value ? "On" : "Off") : key === "region" ? (REGIONS.find((r) => r.id === value)?.label ?? String(value)) : String(value)
 const HISTORY: Column<Change>[] = [
   { id: "at", label: "When", value: (c) => c.at, render: (c) => new Date(c.at).toLocaleString(), width: "minmax(0,1.4fr)" },
   { id: "field", label: "Setting", value: (c) => LABELS[c.field as keyof Settings] ?? c.field },
@@ -31,6 +33,15 @@ function useLoaded() {
   const read = useOperation<SiteData>("site.read")
   const [loaded, setLoaded] = useModuleState<Loaded | null>("loaded", null)
   const run = read.read
+  /** Reads the settings again and keeps them when the read succeeds (Try again, Reload). */
+  const load = React.useCallback(
+    () =>
+      run().then((r) => {
+        if (r.ok) setLoaded({ data: r.data, revision: r.revision })
+        return r
+      }),
+    [run, setLoaded]
+  )
   React.useEffect(() => {
     let live = true
     void run().then((r) => {
@@ -40,37 +51,44 @@ function useLoaded() {
       live = false
     }
   }, [run, setLoaded])
-  return { loaded, setLoaded, read }
+  return { loaded, setLoaded, read, load }
 }
 
 export function SitePage() {
   const m = useModule()
-  const { loaded, setLoaded, read } = useLoaded()
+  const { loaded, setLoaded, read, load } = useLoaded()
   const write = useOperation<SiteData>("site.write")
-  const [draft, setDraft] = React.useState<Partial<Settings>>({})
+  const [draft, setDraft] = React.useState<Draft>({ values: {}, base: null })
   const [phase, setPhase] = React.useState<Phase>({ kind: "idle" })
   const [showHistory] = useModuleState("show-history", true)
-  const dirty = Object.keys(draft).length > 0
+  const dirty = Object.keys(draft.values).length > 0
   useDirtyGuard(dirty)
   if (!loaded) {
     const failed = read.result && !read.result.ok ? read.result.error : null
     return (
       <ModulePage title={m.label} busy={!failed}>
-        {failed && <EmptyState tone="danger" title="Settings did not load" description={failed.reason} action={{ label: "Try again", onClick: () => void read.read() }} />}
+        {failed && <EmptyState tone="danger" title="Settings did not load" description={failed.reason} action={{ label: "Try again", onClick: () => void load() }} />}
       </ModulePage>
     )
   }
-  const value: Settings = { ...loaded.data.settings, ...draft }
+  const value: Settings = { ...loaded.data.settings, ...draft.values }
   const edit = (patch: Partial<Settings>) => {
-    setDraft((d) => ({ ...d, ...patch }))
+    // The first edit records the load it started from; a Reload later does not move it.
+    setDraft((d) => ({ values: { ...d.values, ...patch }, base: d.base ?? loaded }))
     if (phase.kind === "saved" || phase.kind === "error") setPhase({ kind: "idle" })
   }
-  const save = async (revision: string | undefined) => {
+  const save = async (base: Loaded | null) => {
+    const sent = draft.values
     setPhase({ kind: "saving" })
-    const r = await write.write(draft, { expectedRevision: revision })
+    const r = await write.write(sent, { expectedRevision: base?.revision })
     if (r.ok) {
-      setLoaded({ data: r.data, revision: r.revision })
-      setDraft({})
+      const next = { data: r.data, revision: r.revision }
+      setLoaded(next)
+      // Only what was sent is saved; an edit typed while saving stays unsaved, now based on this save.
+      setDraft((d) => {
+        const values = Object.fromEntries(Object.entries(d.values).filter(([k, v]) => sent[k as keyof Settings] !== v)) as Partial<Settings>
+        return { values, base: Object.keys(values).length ? next : null }
+      })
       setPhase({ kind: "saved" })
     } else if (r.error.code === "conflict" && r.current) setPhase({ kind: "conflict", reason: r.error.reason, theirs: { data: r.current.data, revision: r.current.revision } })
     else setPhase({ kind: "error", reason: r.error.reason, recoverable: r.error.recoverable })
@@ -79,7 +97,7 @@ export function SitePage() {
     phase.kind === "saving"
       ? { kind: "saving" }
       : phase.kind === "conflict"
-        ? { kind: "conflict", reason: phase.reason, current: <PropertyList items={(Object.keys(draft) as (keyof Settings)[]).map((k) => ({ label: LABELS[k], value: shown(k, phase.theirs.data.settings[k]) }))} /> }
+        ? { kind: "conflict", reason: phase.reason, current: <PropertyList items={(Object.keys(draft.values) as (keyof Settings)[]).map((k) => ({ label: LABELS[k], value: shown(k, phase.theirs.data.settings[k], draft.base?.data.settings[k]) }))} /> }
         : phase.kind === "error"
           ? { kind: "error", reason: phase.reason, recoverable: phase.recoverable }
           : dirty
@@ -89,13 +107,17 @@ export function SitePage() {
               : { kind: "clean" }
   const discard = () => {
     if (phase.kind === "conflict") setLoaded(phase.theirs)
-    setDraft({})
+    setDraft({ values: {}, base: null })
     setPhase({ kind: "idle" })
   }
-  const reload = () =>
-    void read.read().then((r) => {
-      if (r.ok) setLoaded({ data: r.data, revision: r.revision })
-    })
+  const retry = () => {
+    if (phase.kind !== "conflict") return void save(draft.base)
+    // "Save mine again": the person chose to replace what is stored now, so the edit is rebased on it.
+    const theirs = phase.theirs
+    setDraft((d) => ({ ...d, base: theirs }))
+    void save(theirs)
+  }
+  const reload = () => void load()
   return (
     <ModulePage
       title={m.label}
@@ -107,7 +129,7 @@ export function SitePage() {
           </Button>
         </Toolbar>
       }
-      footer={<SaveBar state={bar} onSave={() => void save(loaded.revision)} onDiscard={discard} onRetry={() => void save(phase.kind === "conflict" ? phase.theirs.revision : loaded.revision)} />}
+      footer={<SaveBar state={bar} onSave={() => void save(draft.base ?? loaded)} onDiscard={discard} onRetry={retry} />}
     >
       {(m.section ?? "general") === "general" ? (
         <>

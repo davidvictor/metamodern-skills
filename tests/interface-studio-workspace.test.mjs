@@ -381,3 +381,43 @@ test('WM-13b the example host reads, writes with compare-and-set, and refuses wh
   assert.equal((await call('site.read', { input: null }, { origin: 'https://elsewhere.example' })).status, 403);
   assert.equal((await call('nothing.here', { input: null })).body.error.code, 'unknown-operation');
 });
+
+test('WM-13c the dev server middleware applies the endpoint guard, keeps empty writes and caps history', async (t) => {
+  const { createMockMiddleware, operationName } = await import(new URL('example/workspace/mock-host.mjs', shell).href);
+  const middleware = createMockMiddleware();
+  // Mounted as vite.config.ts mounts it: the connect mount strips /__studio/ops from req.url.
+  const server = createServer((req, res) => {
+    req.url = req.url.slice('/__studio/ops'.length) || '/';
+    middleware(req, res);
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const post = async (name, body, headers = {}) => {
+    const res = await fetch(`${base}/__studio/ops/${name}`, { method: 'POST', headers: { 'content-type': 'application/json', origin: base, 'x-studio-operation-kind': name.endsWith('.write') ? 'write' : 'read', ...headers }, body });
+    return { status: res.status, body: await res.json() };
+  };
+  const get = await fetch(`${base}/__studio/ops/site.read`);
+  assert.equal(get.status, 405);
+  assert.equal((await get.json()).error.code, 'method');
+  const text = await post('site.read', '{}', { 'content-type': 'text/plain' });
+  assert.equal(text.status, 415);
+  assert.equal(text.body.error.code, 'content-type');
+  const big = await post('site.read', JSON.stringify({ input: 'a'.repeat(70 * 1024) }));
+  assert.equal(big.status, 413);
+  assert.equal(big.body.error.code, 'too-large');
+  const nothing = await post('site.read', 'null');
+  assert.equal(nothing.status, 400);
+  assert.equal(nothing.body.ok, false);
+  const malformed = await post('%E0%A4%A', '{}');
+  assert.equal(malformed.status, 404);
+  assert.equal(malformed.body.error.code, 'unknown-operation');
+  assert.equal(operationName('/site.read?x=1'), 'site.read');
+  assert.equal((await post('site.read', '{}')).body.ok, true, 'the mounted name reaches the host');
+  const before = (await post('site.read', '{}')).body;
+  const empty = await post('site.write', JSON.stringify({ input: {}, expectedRevision: before.revision }));
+  assert.equal(empty.body.ok, true);
+  assert.equal(empty.body.revision, before.revision, 'an empty write changes nothing');
+  for (let i = 0; i < 30; i++) assert.equal((await post('site.write', JSON.stringify({ input: { siteName: `Name ${i}`, region: i % 2 ? 'us' : 'eu' } }))).body.ok, true);
+  assert.equal((await post('site.read', '{}')).body.data.history.length, 50);
+});

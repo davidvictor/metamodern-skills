@@ -6,6 +6,7 @@
  */
 const MAX_BYTES = 64 * 1024
 const REGIONS = ["eu", "us", "ap"]
+const HISTORY_LIMIT = 50
 
 /** A fresh host with its own state; returns the handler for one operation request. */
 export function createMockHost() {
@@ -69,8 +70,11 @@ export function createMockHost() {
         if (body.expectedRevision !== undefined && body.expectedRevision !== String(revision)) return fail(409, "conflict", `Revision ${revision} is current; this edit started from revision ${body.expectedRevision}.`, true, { current: { data: data(), revision: String(revision) } })
         const reason = problem(body.input)
         if (reason) return fail(422, "invalid", reason)
+        // Nothing to change: answer with what is stored, without a new revision.
+        if (!Object.keys(body.input).length) return send(200, { ok: true, data: data(), revision: String(revision) })
         const by = typeof req.headers["x-example-actor"] === "string" ? req.headers["x-example-actor"] : "Studio"
         for (const field of Object.keys(body.input)) history.unshift({ at: new Date().toISOString(), field, by })
+        history.splice(HISTORY_LIMIT)
         settings = { ...settings, ...body.input }
         revision++
         return send(200, { ok: true, data: data(), revision: String(revision) })
@@ -78,4 +82,19 @@ export function createMockHost() {
       return fail(404, "unknown-operation", `This host has no operation named ${name}`)
     })
   }
+}
+
+/** The operation name from a request URL below the mount point (`/site.read?x` is `site.read`); a malformed escape names nothing. */
+export function operationName(url = "") {
+  try {
+    return decodeURIComponent(url.replace(/^\//, "").split("?")[0])
+  } catch {
+    return ""
+  }
+}
+
+/** Connect-style middleware for a fresh host, mounted at `/__studio/ops` (the mount strips that prefix from `req.url`). */
+export function createMockMiddleware() {
+  const handle = createMockHost()
+  return (req, res) => handle(req, res, operationName(req.url))
 }

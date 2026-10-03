@@ -161,24 +161,17 @@ const workspaceCheck = (): Plugin => ({
 
 // The example workspace's operations, served by the dev server only while it runs that example. A real
 // Studio's operations live in the product's host (references/workspace.md); none ships in a build. The
-// mock applies the same guard as the endpoints above: same-origin JSON POSTs of 64 KB at most.
+// mock applies the same guard as the endpoints above: same-origin JSON POSTs of 64 KB at most. It is loaded
+// once when the server starts, so an edit to mock-host.mjs needs a full restart of the dev server process.
 const mockHostFile = path.resolve(root, "example/workspace/mock-host.mjs")
-type MockHandler = (req: IncomingMessage, res: ServerResponse, name: string) => void
+type MockMiddleware = (req: IncomingMessage, res: ServerResponse) => void
 const workspaceMock = (): Plugin => ({
   name: "studio-workspace-mock",
   apply: "serve",
   async configureServer(server) {
     if (variant !== "workspace" || !existsSync(mockHostFile)) return
-    const { createMockHost } = (await import(pathToFileURL(mockHostFile).href)) as { createMockHost: () => MockHandler }
-    const handle = createMockHost()
-    const operation = (url = "") => {
-      try {
-        return decodeURIComponent(url.replace(/^\//, "").split("?")[0])
-      } catch {
-        return ""
-      }
-    }
-    server.middlewares.use("/__studio/ops", (req, res) => handle(req, res, operation(req.url)))
+    const { createMockMiddleware } = (await import(pathToFileURL(mockHostFile).href)) as { createMockMiddleware: () => MockMiddleware }
+    server.middlewares.use("/__studio/ops", createMockMiddleware())
   },
 })
 
