@@ -24,6 +24,9 @@ try {
 }
 
 const builds = { normal: "example", stress: "synthetic", captures: "captures" }
+// WS-01: the initial Studio chunk of the 0.11.0 shell, gzipped, built with the example product. A Studio that
+// declares no workspace may grow by at most 3 KB over it. Change it only with a release that accepts the growth.
+const STUDIO_CHUNK_BASELINE_GZ = 296543
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 for (const [name, variant] of Object.entries(builds)) {
