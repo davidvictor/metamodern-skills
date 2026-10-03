@@ -174,3 +174,23 @@ test('a snapped range value never passes the declared maximum', async () => {
   assert.equal(normalizeScenarioInput({ id: 'h', label: 'H', control: 'range', min: 0, max: 24, step: 1 / 12 }, undefined, 24), 24, 'an exact maximum on a decimal grid stays');
   assert.equal(normalizeScenarioInput({ id: 'o', label: 'O', control: 'range', min: 1, max: 10, step: 4 }, undefined, 10), 9);
 });
+
+test('a generic font family stays unquoted in tokens and CSS', async () => {
+  const { designDraft, fontFamilyValue } = await designModel();
+  const adapter = {
+    ...baseAdapter,
+    tokens: { columns: ['light'], tokens: [{ name: '--font-sans', family: 'typography', values: { light: 'Inter, sans-serif' } }] },
+    design: {
+      parameters: [{ id: 'face', label: 'Face', kind: 'font', default: 'Inter', apply: { set: ['--font-sans'], css: 'body { font-family: $value; }' } }],
+    },
+  };
+  const generic = designDraft(adapter, { face: 'system-ui' }, 'light');
+  assert.equal(generic.tokens['--font-sans'], 'system-ui, Inter, sans-serif');
+  assert.match(generic.css, /font-family: system-ui;/);
+  const named = designDraft(adapter, { face: 'Georgia' }, 'light');
+  assert.equal(named.tokens['--font-sans'], '"Georgia", Inter, sans-serif');
+  assert.match(named.css, /font-family: "Georgia";/);
+  assert.equal(fontFamilyValue('UI-Monospace'), 'UI-Monospace');
+  assert.equal(fontFamilyValue('serif'), 'serif');
+  assert.equal(fontFamilyValue('Times New Roman'), '"Times New Roman"');
+});

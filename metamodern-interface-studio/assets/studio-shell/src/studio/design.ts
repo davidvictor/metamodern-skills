@@ -115,6 +115,12 @@ export function fontStylesheet(name: string) {
   if (LOCAL_FONTS.some((f) => f.toLowerCase() === name.toLowerCase())) return null
   return `${FONT_HOST}?family=${encodeURIComponent(name).replace(/%20/g, "+")}&display=swap`
 }
+const GENERIC_FAMILIES = ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded", "math", "emoji", "fangsong"]
+/** A family as CSS reads it: a generic keyword stays bare (quoted it names a missing font), any other name is quoted. */
+export function fontFamilyValue(name: string) {
+  const bare = name.trim()
+  return GENERIC_FAMILIES.includes(bare.toLowerCase()) ? bare : `"${name.replace(/"/g, "")}"`
+}
 export const allowedStylesheet = (url: string) => url.startsWith(`${FONT_HOST}?`)
 
 /** Relative luminance contrast between two CSS colors, read through a canvas so any color syntax works. */
@@ -237,7 +243,7 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
       }
     } else if (p.kind === "font") {
       const name = String(v).trim()
-      const family = `"${name.replace(/"/g, "")}"`
+      const family = fontFamilyValue(name)
       for (const token of p.apply.set ?? []) {
         const base = baseValue(adapter, token, theme)
         put(token, base ? `${family}, ${base}` : `${family}, sans-serif`)
@@ -280,7 +286,7 @@ export function designDraft(adapter: StudioAdapter, values: DesignValues, theme:
 
     for (const name of p.wontFollow ?? []) if (!out.literal.includes(name)) out.literal.push(name)
     if (p.apply.css) {
-      const value = p.kind === "font" ? `"${String(v).replace(/"/g, "")}"` : String(v)
+      const value = p.kind === "font" ? fontFamilyValue(String(v)) : String(v)
       css.push(p.apply.css.replaceAll("$value", value))
       change.css = true
     }
