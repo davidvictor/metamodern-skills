@@ -95,7 +95,7 @@ Nothing to do by hand, except for a preview entry that copied `frame-client.ts` 
 
 Nothing to do by hand for a Studio that declares no workspace, apart from checking the visible changes below. Workspace modules are new and optional.
 
-- A product can add its own tools beside the views, declared under `workspace` in the adapter and built in `src/workspace/` from `@studio/kit` (`studio-kit/1`) and `@studio/workspace` (see `references/workspace.md` in the skill). A Studio whose adapter declares no `workspace` builds without any workspace code.
+- A product can add its own tools beside the views, declared under `workspace` in the adapter and built in `src/workspace/` from `@studio/kit` (`studio-kit/1`) and `@studio/workspace` (see `references/workspace.md` in the skill). A Studio whose adapter declares no `workspace` builds without any workspace code, provided Vite can load the adapter at build time; otherwise the build warns and keeps the layer (see `references/workspace.md`).
 - The updater creates `src/workspace/index.ts`, an empty `defineWorkspace({})`, when it is missing. That file and everything in `src/workspace/` belong to the product; updates never compare or change them. `npm run lint` keeps files there to `@studio/kit`, `@studio/workspace`, React and their own imports.
 - A later major kit version is reported as Breaking, and `--apply` writes nothing until `--accept-kit <version>` names it.
 - `module` and `section` are now reserved link keys. A component property with either ID is rejected, as for the other link keys; a dock input with either ID keeps working but no longer travels in links, and the console says so. Rename it.
@@ -105,9 +105,9 @@ Nothing to do by hand for a Studio that declares no workspace, apart from checki
   - On a coarse pointer, at any width, targets are at least 44 px and text fields use 16 px text.
   - The dock wraps onto another row instead of scrolling, so every control stays on screen.
   - On a touch screen whose top bar is narrower than 576 px, the top bar's actions fold behind one trigger, as on a phone. The breadcrumb truncates instead of being overlapped.
-  - The fidelity badge (static captures and recreations) and Edited leave top bars narrower than 576 px; both remain in Details.
   - Present's narration bar lays out by its own width, and Tokens stacks the stage under the table below 1024 px, with values on up to two lines.
   - The phone bottom bar's entries grow with their labels.
+- The fidelity badge (static captures and recreations) and Edited leave any top bar narrower than 576 px, touch or not; both remain in Details.
 - Keyboard focus draws a 2 px outline in `--ring` on buttons, links, tabs, rows, options, menu items and switches, on desktop too. The light `--ring` and `--sidebar-ring` move from OKLCH lightness 0.708 to 0.556, and a light brand color is lowered to at most 0.5 for the ring and the active rail label. The dark active rail label uses the new `--rail-active` token. A product stylesheet that relied on the old light ring, or that styled the dock's scroll, should be checked.
 - Retry on a preview that did not start now mounts it again.
 - The update deletes the stray `src/drag2-after.png` and `src/drag2-mid.png`.

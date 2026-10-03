@@ -447,7 +447,7 @@ test('WM-14 the core shell reaches the workspace only through lazy slots', () =>
 test('WM-15 the workspace reference documents the contract and SKILL.md routes to it only for workspace tools', () => {
   const doc = readFileSync(new URL('references/workspace.md', skill), 'utf8');
   for (const term of ['studio-kit/1', '@studio/workspace', 'defineWorkspace', 'expectedRevision', 'x-studio-operation-kind', '"current"', 'undeclared', 'kind-mismatch', 'cross-origin', 'No operations host answered', '--accept-kit', 'WS-01', 'import.meta.glob', 'useModuleState']) assert.ok(doc.includes(term), `workspace.md lacks ${term}`);
-  assert.doesNotMatch(doc, /[–—]/);
+  assert.doesNotMatch(doc, /[\u2013\u2014]/);
   const skillDoc = readFileSync(new URL('SKILL.md', skill), 'utf8');
   assert.equal(skillDoc.match(/references\/workspace\.md/g)?.length, 1);
   assert.match(skillDoc, /workspace tools/);
@@ -456,7 +456,7 @@ test('WM-15 the workspace reference documents the contract and SKILL.md routes t
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /## Product output in workspace modules/);
   const shellDoc = readFileSync(new URL('references/shell.md', skill), 'utf8');
   assert.match(shellDoc, /WS-01 to WS-09/);
-  for (const id of ['WS-01', 'WS-02', 'WS-03', 'WS-04', 'WS-05', 'WS-06', 'WS-06b', 'WS-07', 'WS-08', 'WS-09', 'AC-61', 'AC-62', 'AC-63', 'AC-64']) assert.match(shellDoc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
+  for (const id of ['WS-01', 'WS-02', 'WS-03', 'WS-04', 'WS-05', 'WS-05b', 'WS-06', 'WS-06b', 'WS-07', 'WS-08', 'WS-09', 'AC-61', 'AC-62', 'AC-63', 'AC-64']) assert.match(shellDoc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
   assert.match(shellDoc, /x-studio-expected-revision/);
   assert.match(read('README.md'), /src\/workspace\//);
 });
