@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "fs"
+import { existsSync, readFileSync } from "fs"
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
@@ -11,6 +11,7 @@ import { SCENARIOS_MAX_BYTES, validateScenarios } from "./src/studio/scenarios"
 import type { IncomingMessage, ServerResponse } from "http"
 import { pathToFileURL } from "url"
 import type { StudioAdapter } from "./src/studio/types"
+import { savedFileMiddleware } from "./scripts/saved-file"
 import { definedModules, undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
 
 // Shell owned: product settings come from studio.config.ts, so an update can
@@ -26,10 +27,9 @@ const title = (): Plugin => ({
 })
 
 // Saved Responsive layouts (layouts.json) and saved states (scenarios.json) live at the Studio root, product
-// files. Only the dev server can write them: same-origin JSON, schema-checked, 256 KB at most, written
-// atomically. A built Studio bundles them and cannot save. The contract (GET the file, POST the whole file;
-// 403 another origin, 415 not JSON, 413 too large, 400 unreadable, 422 invalid) is in the skill's shell.md,
-// so a host other than Vite can implement it.
+// files. Only the dev server can write them, through scripts/saved-file.ts: same-origin JSON, schema-checked,
+// 256 KB at most, written atomically, with a revision so a save never overwrites a change made elsewhere. A built
+// Studio bundles them and cannot save. The contract is in the skill's shell.md, so a host other than Vite can implement it.
 type SavedFile = { file: string; route: string; schema: string; maxBytes: number; validate: (data: unknown) => string[]; list: string; forbidden: string; tooBig: string }
 const savedFile = (o: SavedFile): Plugin => {
   const file = path.resolve(root, o.file)
@@ -39,61 +39,7 @@ const savedFile = (o: SavedFile): Plugin => {
     // Last, so its hotUpdate sees every module another plugin added (the import glob adds the store when the file is created).
     enforce: "post",
     configureServer(server) {
-      server.middlewares.use(o.route, (req, res) => {
-        const send = (code: number, body: unknown) => {
-          if (res.writableEnded) return
-          res.statusCode = code
-          res.setHeader("content-type", "application/json")
-          res.end(JSON.stringify(body))
-        }
-        if (req.method === "GET") {
-          try {
-            return send(200, JSON.parse(readFileSync(file, "utf8")))
-          } catch {
-            return send(200, { schema: o.schema, [o.list]: [] })
-          }
-        }
-        if (req.method !== "POST") return send(405, { error: "Use GET or POST" })
-        const origin = req.headers.origin
-        const sameOrigin = (() => {
-          try {
-            return !!origin && new URL(origin).host === req.headers.host
-          } catch {
-            return false
-          }
-        })()
-        if (!sameOrigin) return send(403, { error: o.forbidden })
-        if (!/^application\/json\b/.test(req.headers["content-type"] ?? "")) return send(415, { error: "Send JSON" })
-        const chunks: Buffer[] = []
-        let size = 0
-        req.on("data", (chunk: Buffer) => {
-          size += chunk.length
-          if (size > o.maxBytes) {
-            send(413, { error: o.tooBig })
-            req.destroy()
-          } else chunks.push(chunk)
-        })
-        req.on("end", () => {
-          if (res.writableEnded) return
-          let data: unknown
-          try {
-            data = JSON.parse(Buffer.concat(chunks).toString("utf8"))
-          } catch {
-            return send(400, { error: "Not valid JSON" })
-          }
-          const problems = o.validate(data)
-          if (problems.length) return send(422, { error: `Not a valid ${o.schema} file`, problems })
-          const tmp = `${file}.${process.pid}.tmp`
-          try {
-            writeFileSync(tmp, `${JSON.stringify(data, null, 2)}\n`)
-            renameSync(tmp, file)
-          } catch (e) {
-            rmSync(tmp, { force: true })
-            return send(500, { error: `Could not write ${o.file}: ${e instanceof Error ? e.message : String(e)}` })
-          }
-          send(200, { ok: true })
-        })
-      })
+      server.middlewares.use(o.route, savedFileMiddleware({ ...o, file }))
     },
     // Saving must not reload or re-run the Studio: not when the file changes, and not when the first save creates it
     // (the bundled-file import glob would otherwise re-execute the store) or it is deleted. The affected modules are

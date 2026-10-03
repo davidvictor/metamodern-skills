@@ -1092,6 +1092,32 @@ await check("AC-23", async () => {
     await p.getByRole("menuitem", { name: "Delete" }).click()
     await wait(600)
     const one = JSON.parse(readFileSync(file, "utf8")).layouts.map((l) => l.name)
+    // A save after layouts.json changed elsewhere (another browser) is refused with 409: nothing is overwritten, the list
+    // shows the latest file, the working layout keeps its unsaved edit, and saving again then writes it.
+    await p.getByRole("button", { name: "Checkout sizes, renamed" }).first().click()
+    await wait(800)
+    await p.getByRole("button", { name: "Remove 430 by 932" }).click()
+    await wait(300)
+    const theirs = JSON.parse(readFileSync(file, "utf8"))
+    theirs.layouts.push({ ...theirs.layouts[0], id: "from-elsewhere", name: "From elsewhere" })
+    const other = await browser.newContext()
+    const q = await other.newPage()
+    await q.goto(url)
+    const otherStatus = await q.evaluate((body) => fetch("__studio/layouts", { method: "POST", headers: { "content-type": "application/json" }, body }).then((r) => r.status), JSON.stringify(theirs))
+    await other.close()
+    const onDisk = readFileSync(file, "utf8")
+    await p.getByRole("button", { name: "Save", exact: true }).first().click()
+    await wait(1000)
+    const conflict = {
+      kept: readFileSync(file, "utf8") === onDisk,
+      listed: await p.getByRole("button", { name: "From elsewhere" }).count(),
+      frames: await p.locator("[data-frame]").count(),
+      unsaved: await p.getByText("Unsaved", { exact: true }).count(),
+      told: await p.locator("[data-sonner-toast]").filter({ hasText: /changed elsewhere/ }).innerText().catch(() => ""),
+    }
+    await p.getByRole("button", { name: "Save", exact: true }).first().click()
+    await wait(1000)
+    const retried = JSON.parse(readFileSync(file, "utf8")).layouts.map((l) => `${l.name} ${l.frames.length}`)
     await context.close()
     const post = (body, headers = {}) => fetch(`${url}__studio/layouts`, { method: "POST", headers: { "content-type": "application/json", origin: `http://localhost:${port}`, ...headers }, body })
     const cross = (await post(JSON.stringify(written), { origin: "https://evil.example" })).status
@@ -1114,8 +1140,8 @@ await check("AC-23", async () => {
     await wait(1200)
     const shared = await fresh.locator("[data-frame]").count()
     await fresh.closeAll()
-    const ok = presetSave === 0 && written.schema === "studio-layouts/1" && written.layouts[0]?.name === "Checkout sizes" && written.layouts[0].frames.length === 2 && restored.join() === "390 × 844,430 × 932" && two.join("|") === "Checkout sizes, renamed|Checkout sizes, renamed copy" && one.join("|") === "Checkout sizes, renamed" && cross === 403 && invalid === 422 && huge === 413 && builtSave && reason > 0 && kept === 2 && unsaved > 0 && shared === 2 && /frames=/.test(link)
-    return [ok ? "pass" : "fail", `a preset offers no Save (${presetSave}); Save as wrote ${written.layouts.length} layout "${written.layouts[0]?.name}" with ${written.layouts[0]?.frames.length} frames, restored after a reload as ${restored.join(", ")}; rename and duplicate gave ${two.join(" and ")} (the copy opens), and deleting the copy left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${huge} to an oversized one; a built Studio disables Save as (${builtSave}) and says why, kept ${kept} unsaved frames across a reload marked Unsaved, and its link opened ${shared} frames in a fresh browser`]
+    const ok = presetSave === 0 && written.schema === "studio-layouts/1" && written.layouts[0]?.name === "Checkout sizes" && written.layouts[0].frames.length === 2 && restored.join() === "390 × 844,430 × 932" && two.join("|") === "Checkout sizes, renamed|Checkout sizes, renamed copy" && one.join("|") === "Checkout sizes, renamed" && cross === 403 && invalid === 422 && huge === 413 && builtSave && reason > 0 && kept === 2 && unsaved > 0 && shared === 2 && /frames=/.test(link) && otherStatus === 200 && conflict.kept && conflict.listed > 0 && conflict.frames === 1 && conflict.unsaved > 0 && /latest is loaded/.test(conflict.told) && retried.join("|") === "Checkout sizes, renamed 1|From elsewhere 2"
+    return [ok ? "pass" : "fail", `a preset offers no Save (${presetSave}); Save as wrote ${written.layouts.length} layout "${written.layouts[0]?.name}" with ${written.layouts[0]?.frames.length} frames, restored after a reload as ${restored.join(", ")}; rename and duplicate gave ${two.join(" and ")} (the copy opens), and deleting the copy left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${huge} to an oversized one; a built Studio disables Save as (${builtSave}) and says why, kept ${kept} unsaved frames across a reload marked Unsaved, and its link opened ${shared} frames in a fresh browser; after another browser saved (${otherStatus}) a stale Save left the file as that browser wrote it (${conflict.kept}), listed its layout (${conflict.listed}), kept ${conflict.frames} unsaved frame (Unsaved ${conflict.unsaved > 0}) and said "${conflict.told.replace(/\s+/g, " ")}"; saving again wrote ${retried.join(", ")}`]
   } finally {
     dev.kill()
     if (backup) copyFileSync(backup, file), rmSync(backup)
@@ -2166,6 +2192,37 @@ await check("AC-58", async () => {
     const kept = same(orphan) && same(extra)
     const notedSaved = rewritten.find((x) => x.id === "saved.noted")
     const unset = notedMounted === "Saved note" && !("note" in clearedFrame) && !!notedSaved && !("note" in notedSaved.values) && rewritten.length === 4
+    // Another browser saves between this page reading scenarios.json and writing it: the write is refused with 409,
+    // nothing is overwritten, the catalog shows the other state, the edit stays unsaved, and saving again writes it.
+    await details(p).getByRole("switch", { name: "Done" }).click()
+    await wait(600)
+    const other = await browser.newContext()
+    const q = await other.newPage()
+    await q.goto(url)
+    let otherStatus = 0
+    await p.route("**/__studio/scenarios", async (route) => {
+      if (route.request().method() === "POST" && !otherStatus) {
+        const theirs = JSON.parse(readFileSync(file, "utf8"))
+        theirs.scenarios.push({ id: "saved.from-elsewhere", label: "From elsewhere", base: CARD, values: { done: true } })
+        otherStatus = await q.evaluate((body) => fetch("__studio/scenarios", { method: "POST", headers: { "content-type": "application/json" }, body }).then((r) => r.status), JSON.stringify(theirs))
+      }
+      await route.continue()
+    })
+    await details(p).getByRole("button", { name: "Save", exact: true }).click()
+    await wait(1000)
+    await p.unroute("**/__studio/scenarios")
+    await other.close()
+    const onDisk = JSON.parse(readFileSync(file, "utf8")).scenarios
+    const conflict = {
+      kept: onDisk.some((x) => x.id === "saved.from-elsewhere") && !("done" in (onDisk.find((x) => x.id === "saved.noted")?.values ?? {})),
+      listed: await p.locator('[role="treeitem"][title="From elsewhere"]').count(),
+      edited: await details(p).getByRole("switch", { name: "Done" }).getAttribute("aria-checked"),
+      told: await p.locator("[data-sonner-toast]").filter({ hasText: /changed elsewhere/ }).innerText().catch(() => ""),
+    }
+    await details(p).getByRole("button", { name: "Save", exact: true }).click()
+    await wait(1000)
+    const retried = JSON.parse(readFileSync(file, "utf8")).scenarios
+    const retriedOk = retried.find((x) => x.id === "saved.noted")?.values?.done === true && retried.some((x) => x.id === "saved.from-elsewhere")
     await context.close()
     const post = (body, headers = {}) => fetch(`${url}__studio/scenarios`, { method: "POST", headers: { "content-type": "application/json", origin: `http://localhost:${port}`, ...headers }, body })
     const cross = (await post(JSON.stringify(written), { origin: "https://evil.example" })).status
@@ -2190,8 +2247,8 @@ await check("AC-58", async () => {
     const shownJson = await details(b).locator("[data-copy-json]").innerText().then((t) => JSON.parse(t)).catch(() => ({}))
     await b.closeAll()
     const s0 = written.scenarios[0] ?? {}
-    const ok = written.schema === "studio-scenarios/1" && s0.id === "saved.finished-card" && s0.base === CARD && s0.label === "Finished card" && s0.values?.done === true && selected === s0.id && /Finished card/.test(row) && /Saved/.test(row) && /Finished card/.test(title) && mounted.scenario === CARD && mounted.values.done === true && two.join("|") === "Finished card, renamed|Finished card, renamed copy" && one.join("|") === "Finished card, renamed" && cross === 403 && invalid === 422 && generated === 422 && huge === 413 && builtSave && reason > 0 && copy === 1 && marker === "kept" && copyRow === 1 && deletedRow === 0 && /cannot be overwritten/.test(clientRefuses) && copied.base === CARD && copied.values?.done === true && /^saved\./.test(copied.id ?? "") && shownJson.base === CARD && shownJson.values?.done === true && kept && unset
-    return [ok ? "pass" : "fail", `Save as wrote ${written.scenarios.length} state ${s0.id} from ${s0.base} with ${JSON.stringify(s0.values)} and selected it (${selected}); after a reload the catalog row reads "${row.replace(/\s+/g, " ")}", Details "${title}", the frame mounted ${mounted.scenario} with done ${mounted.values.done}; rename and duplicate gave ${two.join(" and ")}, delete left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${generated} to a generated ID, ${huge} to an oversized one; a built Studio disables Save as scenario (${builtSave}), says why (${reason}) and offers Copy as JSON (${copy}); in the page that created the file the marker was ${marker}, the duplicate's row showed (${copyRow}) and was gone after Delete (${deletedRow}); the client refuses a generated ID (${clientRefuses ? "yes" : "no"}); Copy as JSON gave ${copied.id} from ${copied.base} with ${JSON.stringify(copied.values)}, and without a clipboard showed ${shownJson.base} with ${JSON.stringify(shownJson.values)} to select; saving another state kept the skipped entry and the unknown value as written (${kept}); a saved state mounted with note ${JSON.stringify(notedMounted)}, Clear sent values without it (${!("note" in clearedFrame)}) and Save wrote ${JSON.stringify(notedSaved?.values)} among ${rewritten.length} entries`]
+    const ok = written.schema === "studio-scenarios/1" && s0.id === "saved.finished-card" && s0.base === CARD && s0.label === "Finished card" && s0.values?.done === true && selected === s0.id && /Finished card/.test(row) && /Saved/.test(row) && /Finished card/.test(title) && mounted.scenario === CARD && mounted.values.done === true && two.join("|") === "Finished card, renamed|Finished card, renamed copy" && one.join("|") === "Finished card, renamed" && cross === 403 && invalid === 422 && generated === 422 && huge === 413 && builtSave && reason > 0 && copy === 1 && marker === "kept" && copyRow === 1 && deletedRow === 0 && /cannot be overwritten/.test(clientRefuses) && copied.base === CARD && copied.values?.done === true && /^saved\./.test(copied.id ?? "") && shownJson.base === CARD && shownJson.values?.done === true && kept && unset && otherStatus === 200 && conflict.kept && conflict.listed === 1 && conflict.edited === "true" && /latest is loaded/.test(conflict.told) && retriedOk
+    return [ok ? "pass" : "fail", `Save as wrote ${written.scenarios.length} state ${s0.id} from ${s0.base} with ${JSON.stringify(s0.values)} and selected it (${selected}); after a reload the catalog row reads "${row.replace(/\s+/g, " ")}", Details "${title}", the frame mounted ${mounted.scenario} with done ${mounted.values.done}; rename and duplicate gave ${two.join(" and ")}, delete left ${one.join(", ")}; the endpoint answered ${cross} to another origin, ${invalid} to an invalid file, ${generated} to a generated ID, ${huge} to an oversized one; a built Studio disables Save as scenario (${builtSave}), says why (${reason}) and offers Copy as JSON (${copy}); in the page that created the file the marker was ${marker}, the duplicate's row showed (${copyRow}) and was gone after Delete (${deletedRow}); the client refuses a generated ID (${clientRefuses ? "yes" : "no"}); Copy as JSON gave ${copied.id} from ${copied.base} with ${JSON.stringify(copied.values)}, and without a clipboard showed ${shownJson.base} with ${JSON.stringify(shownJson.values)} to select; saving another state kept the skipped entry and the unknown value as written (${kept}); a saved state mounted with note ${JSON.stringify(notedMounted)}, Clear sent values without it (${!("note" in clearedFrame)}) and Save wrote ${JSON.stringify(notedSaved?.values)} among ${rewritten.length} entries; when another browser saved (${otherStatus}) between this page's read and write, the file kept its state and nothing of this edit (${conflict.kept}), the catalog listed it (${conflict.listed}), Done stayed edited (${conflict.edited}) and the page said "${conflict.told.replace(/\s+/g, " ")}"; saving again wrote the edit beside it (${retriedOk})`]
   } finally {
     dev.kill()
     if (backup) copyFileSync(backup, file), rmSync(backup)

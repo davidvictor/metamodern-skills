@@ -57,6 +57,8 @@ export type State = {
   responsive: { layout: string; name: string; frames: ResponsiveFrame[]; arrangement: ResponsiveLayout["arrangement"]; height: ResponsiveLayout["height"]; viewport?: ResponsiveLayout["viewport"]; sync: SyncChannels; dirty: boolean; resetNonce: number }
   /** Layouts saved in this Studio's layouts.json. */
   saved: ResponsiveLayout[]
+  /** The dev server's revision of layouts.json as last read or written, sent with a save so it never overwrites a change made elsewhere. */
+  layoutsRevision: string | null
   /** What the Responsive frames' clients can do, for the sync switches. */
   frameCaps: FrameCapability[]
   /** The Design view: which tab, the Adjust values, and whether the stage shows the draft, the product as built, or both. */
@@ -316,6 +318,7 @@ const initial: State = {
   frameCaps: [],
   responsive: initialResponsive(),
   saved: bundledLayouts && !validateLayouts(bundledLayouts).length ? bundledLayouts.layouts : [],
+  layoutsRevision: null,
   gallery: { size: 240, source: hasCaptures || !A.frameEntry ? "captures" : "live", query: "", hidden: [], onlyFlagged: false },
   options: { controls: "dock", details: "docked", railLabels: true, draftEverywhere: false, map: false },
   commandOpen: false,
@@ -518,9 +521,9 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!canSaveLayouts) return
     fetch("__studio/layouts")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data && !validateLayouts(data).length) set({ saved: (data as LayoutsFile).layouts })
+      .then((r) => (r.ok ? r.json().then((data) => [data, r.headers.get("x-studio-revision")] as const) : null))
+      .then((got) => {
+        if (got && !validateLayouts(got[0]).length) set({ saved: (got[0] as LayoutsFile).layouts, layoutsRevision: got[1] })
       })
       .catch(() => undefined)
   }, [set])

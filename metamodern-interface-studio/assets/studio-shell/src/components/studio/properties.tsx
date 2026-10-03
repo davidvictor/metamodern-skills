@@ -336,11 +336,14 @@ function SaveActions() {
   /*
    * Every write starts from the file as it is on disk: entries this Studio skipped (an unknown base, a hand edit)
    * and the stored values of entries the change does not touch are written back exactly as they were. Only the
-   * dev server's checks (schema, 500 entries, 256 KB) can refuse the file; nothing is dropped silently.
+   * dev server's checks (schema, 500 entries, 256 KB) can refuse the file; nothing is dropped silently. The write
+   * names the revision it read, so a change made elsewhere in between is never overwritten: the catalog shows the
+   * file as it now is and the person's edits stay unsaved.
    */
   const persist = async (change: (raw: SavedScenario[]) => SavedScenario[]) => {
     const read = await fetch("__studio/scenarios")
     if (!read.ok) throw new Error(`The Studio could not read scenarios.json (${read.status})`)
+    const revision = read.headers.get("x-studio-revision")
     const current = (await read.json())?.scenarios
     const list = change(Array.isArray(current) ? current : [])
     const file = { schema: "studio-scenarios/1" as const, scenarios: list }
@@ -348,7 +351,12 @@ function SaveActions() {
     if (problems.length) throw new Error(problems[0])
     const body = JSON.stringify(file)
     if (new Blob([body]).size > SCENARIOS_MAX_BYTES) throw new Error("Saved scenarios are limited to 256 KB")
-    const res = await fetch("__studio/scenarios", { method: "POST", headers: { "content-type": "application/json" }, body })
+    const res = await fetch("__studio/scenarios", { method: "POST", headers: { "content-type": "application/json", ...(revision ? { "x-studio-expected-revision": revision } : {}) }, body })
+    if (res.status === 409) {
+      const latest = (await res.json().catch(() => ({})))?.current?.data?.scenarios
+      if (Array.isArray(latest)) s.setSavedStates(latest)
+      throw new Error("Saved states changed elsewhere. The latest is loaded; your change was not saved.")
+    }
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error ?? `The Studio refused the save (${res.status})`)
     s.setSavedStates(list)
   }

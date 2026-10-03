@@ -32,7 +32,7 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field"
 import { adapter } from "@/adapter"
 import { canSaveLayouts, captureFor, PRESETS, useStudio, type State } from "@/store"
-import { FULL_PAGE_MAX, frameId, MAX_FRAMES, nearestProfile, SHELL_DEVICES, slug, type PresetFrame, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
+import { FULL_PAGE_MAX, frameId, MAX_FRAMES, nearestProfile, SHELL_DEVICES, slug, validateLayouts, type PresetFrame, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import type { LivePreviewHandle, LiveStatus } from "@/studio/live-preview"
 import type { SyncEvent } from "@/studio/protocol"
 import { Switch } from "@/components/ui/switch"
@@ -85,13 +85,22 @@ function useResponsive() {
   const all = [...PRESETS, ...s.saved]
   const isSaved = s.saved.some((l) => l.id === r.layout)
   const toLayout = (id: string, name: string): ResponsiveLayout => ({ id, name, frames: r.frames, arrangement: r.arrangement, height: r.height, ...(r.viewport ? { viewport: r.viewport } : {}), sync: r.sync })
+  /*
+   * Sent with the revision of layouts.json this page last read or wrote. When the file changed elsewhere since, the
+   * dev server writes nothing and answers the file as it now is: the list shows that, the working layout keeps its
+   * unsaved edits, and the person is told.
+   */
   const persist = async (next: ResponsiveLayout[]) => {
-    const res = await fetch("__studio/layouts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ schema: "studio-layouts/1", layouts: next }) })
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      throw new Error(body.error ?? `The Studio refused the save (${res.status})`)
+    const revision = s.layoutsRevision
+    const res = await fetch("__studio/layouts", { method: "POST", headers: { "content-type": "application/json", ...(revision ? { "x-studio-expected-revision": revision } : {}) }, body: JSON.stringify({ schema: "studio-layouts/1", layouts: next }) })
+    const body = res.ok ? null : await res.json().catch(() => ({}))
+    if (res.status === 409) {
+      const latest = body?.current
+      if (latest && typeof latest.revision === "string") s.set(validateLayouts(latest.data).length ? { layoutsRevision: latest.revision } : { saved: latest.data.layouts, layoutsRevision: latest.revision })
+      throw new Error("Saved layouts changed elsewhere. The latest is loaded; your change was not saved.")
     }
-    s.set({ saved: next })
+    if (!res.ok) throw new Error(body.error ?? `The Studio refused the save (${res.status})`)
+    s.set({ saved: next, layoutsRevision: res.headers.get("x-studio-revision") })
   }
   const open = (layout: ResponsiveLayout) => {
     const before = r
@@ -207,8 +216,8 @@ export function LayoutActions() {
               <EllipsisIcon />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem disabled={!canSaveLayouts} onClick={() => { const name = window.prompt("Rename the layout", r.name)?.trim(); if (name) rename(name).catch((e) => toast.error("Not renamed", { description: String(e) })) }}>Rename</DropdownMenuItem>
-              <DropdownMenuItem disabled={!canSaveLayouts} onClick={() => saveAs(`${r.name} copy`).catch((e) => toast.error("Not duplicated", { description: String(e) }))}>Duplicate</DropdownMenuItem>
+              <DropdownMenuItem disabled={!canSaveLayouts} onClick={() => { const name = window.prompt("Rename the layout", r.name)?.trim(); if (name) rename(name).catch((e) => toast.error("Not renamed", { description: e instanceof Error ? e.message : String(e) })) }}>Rename</DropdownMenuItem>
+              <DropdownMenuItem disabled={!canSaveLayouts} onClick={() => saveAs(`${r.name} copy`).catch((e) => toast.error("Not duplicated", { description: e instanceof Error ? e.message : String(e) }))}>Duplicate</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" disabled={!canSaveLayouts} onClick={remove}>Delete</DropdownMenuItem>
             </DropdownMenuContent>
