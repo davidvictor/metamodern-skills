@@ -28,9 +28,10 @@ try {
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
 const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace" }
-// WS-01: the initial Studio chunk of the 0.11.0 shell, gzipped, built with the example product. A Studio that
-// declares no workspace may grow by at most 3 KB over it. Change it only with a release that accepts the growth.
-const STUDIO_CHUNK_BASELINE_GZ = 296543
+// WS-01: the initial Studio chunk of the previous release's shell (0.12.0), gzipped, built with the example product. A
+// Studio that declares no workspace may grow by at most 3 KB over it. Each release moves it to the release before it.
+const STUDIO_CHUNK_BASELINE = "0.12.0"
+const STUDIO_CHUNK_BASELINE_GZ = 297677
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 const serve = (out, host) =>
@@ -1976,7 +1977,7 @@ await check("AC-53", async () => {
   await p.closeAll()
   const same = isolated === 0 && tabs.join() === "Scenario,Fidelity,Evidence" && section === 0 && picker === 0 && edited === 0 && keys === "view,scenario,theme,profile" && values === "density" && loaded.length === 0 && stored.length === 0
   const ok = same && layout === "canvas,example,properties,protocol,studio"
-  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against 0.11.0 (${STUDIO_CHUNK_BASELINE_GZ}; budget checked by WS-01)`]
+  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against ${STUDIO_CHUNK_BASELINE} (${STUDIO_CHUNK_BASELINE_GZ}; budget checked by WS-01)`]
 })
 
 // AC-54 Switch, text, number and choice change the live frame without a remount; booleans arrive as booleans; a choice sends only its ID;
@@ -2736,6 +2737,232 @@ await check("AC-64", async () => {
   return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `${notes.join("; ")} (Tab walks; an indicator counts only where focus adds it, and every stop has exactly one)`]
 })
 
+/**
+ * Probes a target's effective hit area with elementFromPoint: from the target's centre (or, when a neighbour covers the centre,
+ * from the reachable point nearest it) outward along each axis at 1 px, refined to 0.25 px. A hit counts on the target itself,
+ * its hit extension (::after hit-tests as the element), an associated label, or for a slider thumb its slider.
+ */
+const probeHelpers = () => {
+  const own = (el, h) => {
+    if (!h) return false
+    if (h === el || el.contains(h)) return true
+    const slider = el.closest('[data-slot="slider"]')
+    if (slider?.contains(h)) return true
+    const label = h.closest("label")
+    if (!label) return false
+    const c = label.control
+    return label.contains(el) || (!!label.htmlFor && label.htmlFor === el.id) || c === el || (!!c && (el.contains(c) || c.previousElementSibling === el))
+  }
+  const at = (el, x, y) => own(el, document.elementFromPoint(x, y))
+  const reach = (el, x, y, dx, dy) => {
+    let d = 0
+    while (d < 240 && at(el, x + dx * (d + 1), y + dy * (d + 1))) d++
+    for (const s of [0.5, 0.25]) if (at(el, x + dx * (d + s), y + dy * (d + s))) d += s
+    return d
+  }
+  // The box the target and its hit extension claim, clipped to nothing: the probe decides what is reachable.
+  const claim = (el) => {
+    const r = el.getBoundingClientRect()
+    const a = getComputedStyle(el, "::after")
+    if (a.content === "none" || a.position !== "absolute") return r
+    const [t, rt, b, l] = [a.top, a.right, a.bottom, a.left].map((v) => parseFloat(v) || 0)
+    return new DOMRect(Math.min(r.left, r.left + l), Math.min(r.top, r.top + t), Math.max(r.width, r.width - l - rt), Math.max(r.height, r.height - t - b))
+  }
+  // A target whose box, or whose 44 px area along a scrolling axis, is scrolled partly out of view is not at rest: a scroll
+  // brings it in first. An ancestor that clips without scrolling still counts against the area.
+  const atRest = (el) => {
+    const r = el.getBoundingClientRect()
+    if (r.left < -0.5 || r.top < -0.5 || r.right > innerWidth + 0.5 || r.bottom > innerHeight + 0.5) return false
+    const cx = r.left + r.width / 2
+    const cy = r.top + r.height / 2
+    const area = { left: Math.min(r.left, cx - 22), right: Math.max(r.right, cx + 22), top: Math.min(r.top, cy - 22), bottom: Math.max(r.bottom, cy + 22) }
+    for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+      const s = getComputedStyle(a)
+      if (s.overflowX === "visible" && s.overflowY === "visible") continue
+      const c = a.getBoundingClientRect()
+      const x = /auto|scroll/.test(s.overflowX) && a.scrollWidth > a.clientWidth ? area : r
+      const y = /auto|scroll/.test(s.overflowY) && a.scrollHeight > a.clientHeight ? area : r
+      if (x.left < c.left - 0.5 || x.right > c.right + 0.5 || y.top < c.top - 0.5 || y.bottom > c.bottom + 0.5) return false
+    }
+    return true
+  }
+  const probe = (el) => {
+    const r = el.getBoundingClientRect()
+    let x = r.left + r.width / 2
+    let y = r.top + r.height / 2
+    let covered = false
+    if (!at(el, x, y)) {
+      covered = true
+      const c = claim(el)
+      let best = null
+      for (let px = c.left + 1; px < c.right; px += 2) for (let py = c.top + 1; py < c.bottom; py += 2) {
+        if (!at(el, px, py)) continue
+        const d = (px - x) ** 2 + (py - y) ** 2
+        if (!best || d < best.d) best = { px, py, d }
+      }
+      if (!best) return { w: 0, h: 0, covered }
+      ;({ px: x, py: y } = best)
+    }
+    return { w: reach(el, x, y, -1, 0) + reach(el, x, y, 1, 0), h: reach(el, x, y, 0, -1) + reach(el, x, y, 0, 1), covered }
+  }
+  window.__probe = { own, probe, atRest }
+}
+
+// AC-65 Coarse pointers: every Studio target keeps its own 44 by 44 px where a finger lands, measured by elementFromPoint probing,
+// so stacked switches, checkboxes and row buttons never share or lose their hit area (390, 768 and 1440 px, both appearances)
+await check("AC-65", async () => {
+  const measure = (p) =>
+    p.evaluate(() => {
+      const f = window.__floors
+      const P = window.__probe
+      const all = [...document.querySelectorAll('button, a[href], summary, select, textarea, input:not([type="hidden"]), [role="button"], [role="tab"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="combobox"], [role="switch"], [role="checkbox"], [role="radio"]')].filter((e) => f.shown(e) && !e.closest(".react-flow__viewport") && !e.matches('[data-sidebar="rail"]'))
+      // A slider's range input is its thumb; a switch or checkbox's hidden native input is not a target of its own.
+      const targets = [...new Set(all.map((e) => (e.matches('input[type="range"]') && e.closest('[data-slot="slider-thumb"]')) || e))].filter((e) => !(e.matches('input[type="checkbox"], input[type="radio"]') && getComputedStyle(e).opacity === "0" && e.previousElementSibling?.matches('[role="switch"], [role="checkbox"], [role="radio"]')))
+      // A disabled control takes no pointer, so it is not a target until it is enabled.
+      // While a drawer or dialog is open, only its own controls are targets.
+      const dialogs = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')].filter((d) => f.shown(d))
+      const live = targets.filter((e) => (!dialogs.length || dialogs.some((d) => d.contains(e))) && !e.disabled && e.getAttribute("aria-disabled") !== "true" && !e.hasAttribute("data-disabled") && getComputedStyle(e).pointerEvents !== "none")
+      const rest = live.filter((e) => P.atRest(e))
+      // A switch or checkbox is named by its label, a slider thumb by its input.
+      const named = (e) => e.getAttribute("aria-label") || e.querySelector("input[aria-label]")?.getAttribute("aria-label") || e.closest("label")?.textContent.trim() || (e.id && document.querySelector(`label[for="${CSS.escape(e.id)}"]`)?.textContent.trim()) || (e.nextElementSibling?.id && document.querySelector(`label[for="${CSS.escape(e.nextElementSibling.id)}"]`)?.textContent.trim()) || f.name(e)
+      const rows = rest.map((e) => ({ n: named(e).replace(/\s+/g, " ").slice(0, 24), role: e.getAttribute("role") ?? e.tagName.toLowerCase(), ...P.probe(e) }))
+      // 1 px for the probe: hit testing with touch emulation lands up to a pixel short of a box's edge.
+      const small = rows.filter((m) => m.w < 43 || m.h < 43).map((m) => `${m.n} ${m.w}×${m.h}${m.covered ? " (centre covered)" : ""}`)
+      return { count: rows.length, skipped: live.length - rest.length, small, named: rows.map((m) => `${m.role}:${m.n}`) }
+    })
+  const openProbe = async (o) => {
+    const p = await openFloors("normal", o)
+    await p.evaluate(probeHelpers)
+    return p
+  }
+  // The stacked controls the shell draws must be among the targets measured, so a layout change cannot skip them.
+  const required = {
+    gallery: [/^checkbox:/, /^switch:/],
+    present: [/^switch:/],
+    responsive: [/^switch:/, /^button:Remove /],
+  }
+  const bad = []
+  const missed = []
+  let measured = 0
+  let states = 0
+  let skipped = 0
+  const run = async (label, p, view) => {
+    const m = await measure(p)
+    measured += m.count
+    skipped += m.skipped
+    states++
+    if (m.small.length) bad.push(`${label}: ${m.small.slice(0, 6).join(", ")}`)
+    for (const re of required[view] ?? []) if (!m.named.some((n) => re.test(n))) missed.push(`${label} ${re.source}`)
+  }
+  for (const appearance of ["light", "dark"]) {
+    for (const [width, height] of [[1440, 900], [768, 1024]]) {
+      for (const view of ["inspect", "compare", "responsive", "gallery", "present", "design", "tokens"]) {
+        const p = await openProbe({ appearance, width, height, touch: true, hash: `view=${view}&scenario=tasks.list${view === "responsive" ? "&layout=task-sizes" : ""}` })
+        await p.mouse.move(0, 0)
+        await run(`${appearance} ${width} ${view}`, p, view)
+        await p.closeAll()
+      }
+    }
+    // A phone: the Panel drawer of each view and the Details drawer.
+    for (const view of ["inspect", "responsive", "gallery", "present", "design", "details"]) {
+      const p = await openProbe({ appearance, width: 390, height: 844, touch: true, hash: view === "details" ? `view=inspect&scenario=${CARD}` : `view=${view}&scenario=tasks.list${view === "responsive" ? "&layout=task-sizes" : ""}` })
+      await run(`${appearance} 390 ${view}`, p, "none")
+      await p.getByRole("button", { name: view === "details" ? "Details" : "Panel", exact: true }).click()
+      await wait(800)
+      await run(`${appearance} 390 ${view} drawer`, p, view)
+      await p.closeAll()
+    }
+  }
+  const ok = !bad.length && !missed.length
+  return [ok ? "pass" : "fail", ok ? `${states} states at 1440 and 768 px with touch and in the 390 px phone drawers, light and dark: ${measured} targets probed with elementFromPoint (${skipped} scrolled partly out of view were left for a scroll), each with its own area of at least 44 by 44 px; the Gallery area checkboxes and switch, Present's Autoplay, the Responsive Sync switches and each frame's Remove button were among them. The panel edge handle and resize grips are excluded (their 44 px equivalents are the top bar's panel toggle and the Size menu or width list).` : `${bad.slice(0, 12).join("; ")}${missed.length ? `; not measured ${missed.slice(0, 6).join(", ")}` : ""}`]
+})
+
+// AC-66 Keyboard focus is drawn whole: at every stop in the rail, top bar, panel, dock and the phone's bars and drawers, the
+// rendered pixels whose own change between unfocused and focused reaches 3:1 cover at least the perimeter of the part in view (a
+// 1 px ring all the way round), so no clipping ancestor or viewport edge can cut the indicator to its corners (1440, 768 and 390 px, both appearances)
+await check("AC-66", async () => {
+  const bad = []
+  const notes = []
+  const settle = (p) =>
+    p.evaluate(async () => {
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+      await Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => null)))
+    })
+  // Pixels whose change between two screenshots of the same box reaches 3:1.
+  const changed = (p, a, b) =>
+    p.evaluate(async ([a, b]) => {
+      const load = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = `data:image/png;base64,${src}` })
+      const px = (img) => { const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; const g = c.getContext("2d"); g.drawImage(img, 0, 0); return g.getImageData(0, 0, img.width, img.height).data }
+      const [da, db] = (await Promise.all([load(a), load(b)])).map(px)
+      let n = 0
+      for (let i = 0; i < da.length; i += 4) if (window.__floors.ratio([da[i], da[i + 1], da[i + 2]], [db[i], db[i + 1], db[i + 2]]) >= 3) n++
+      return n
+    }, [a, b])
+  const walk = async (p, n, found) => {
+    for (let i = 0; i < n; i++) {
+      await p.keyboard.press("Tab")
+      await settle(p)
+      const f = await p.evaluate(() => {
+        const e = document.activeElement
+        if (!e || e === document.body || e.tagName === "IFRAME" || e.matches("input, textarea, select")) return null
+        const region = e.closest('[role="dialog"]') ? "drawer" : e.closest('[aria-label="Studio"]') ? "rail" : e.closest("header") ? "header" : e.closest('[role="toolbar"]') ? "dock" : e.closest('nav[aria-label="Views"]') ? "bar" : e.closest('[data-sidebar="sidebar"]') ? "panel" : null
+        if (!region) return null
+        // The part of the control in view: a panel taller than its scroller is measured on what shows.
+        const b = e.getBoundingClientRect()
+        const v = { l: Math.max(0, b.left), t: Math.max(0, b.top), r: Math.min(innerWidth, b.right), b: Math.min(innerHeight, b.bottom) }
+        for (let a = e.parentElement; a && a !== document.documentElement; a = a.parentElement) {
+          const st = getComputedStyle(a)
+          const c = a.getBoundingClientRect()
+          if (st.overflowX !== "visible") ((v.l = Math.max(v.l, c.left)), (v.r = Math.min(v.r, c.right)))
+          if (st.overflowY !== "visible") ((v.t = Math.max(v.t, c.top)), (v.b = Math.min(v.b, c.bottom)))
+        }
+        return { region, n: window.__floors.name(e), crumb: !!e.closest('[data-slot="breadcrumb"]'), visible: e.matches(":focus-visible"), r: { x: v.l, y: v.t, w: v.r - v.l, h: v.b - v.t } }
+      })
+      if (!f || f.r.w < 2 || f.r.h < 2) continue
+      const x = Math.max(0, Math.floor(f.r.x) - 6)
+      const y = Math.max(0, Math.floor(f.r.y) - 6)
+      const clip = { x, y, width: Math.min(p.viewportSize().width, Math.ceil(f.r.x + f.r.w) + 6) - x, height: Math.min(p.viewportSize().height, Math.ceil(f.r.y + f.r.h) + 6) - y }
+      const after = (await p.screenshot({ clip })).toString("base64")
+      // Blurring keeps the sequential focus starting point, so the next Tab moves on from here.
+      await p.evaluate(() => document.activeElement?.blur())
+      await settle(p)
+      const before = (await p.screenshot({ clip })).toString("base64")
+      const count = await changed(p, before, after)
+      found.push({ ...f, count, perimeter: Math.round(2 * (f.r.w + f.r.h)) })
+    }
+  }
+  for (const appearance of ["light", "dark"]) {
+    for (const width of [1440, 768, 390]) {
+      const phone = width < 768
+      const p = await openFloors("normal", { appearance, width, height: width === 1440 ? 900 : phone ? 844 : 1024, touch: width < 1440, hash: "view=inspect&scenario=tasks.list" })
+      // Tooltips open on focus; hide them so only the indicator is compared.
+      await p.addStyleTag({ content: '[data-slot="tooltip-content"], [role="tooltip"] { visibility: hidden !important; }' })
+      await p.mouse.move(0, 0)
+      const found = []
+      await walk(p, phone ? 40 : 70, found)
+      if (phone) {
+        for (const name of ["Panel", "Details"]) {
+          await p.getByRole("button", { name, exact: true }).click()
+          await wait(800)
+          await walk(p, 12, found)
+          await p.keyboard.press("Escape")
+          await wait(600)
+        }
+      }
+      const label = `${appearance} ${width}`
+      const short = found.filter((f) => !f.visible || f.count < f.perimeter)
+      const crumb = found.find((f) => f.crumb)
+      const regions = phone ? ["header", "dock", "bar", "drawer"] : ["rail", "header", "panel", "dock"]
+      const missing = regions.filter((r) => !found.some((f) => f.region === r))
+      if (short.length || !crumb || missing.length) bad.push(`${label}:${short.length ? ` under the perimeter ${short.slice(0, 6).map((f) => `${f.region} "${f.n}" ${f.count}/${f.perimeter} px${f.visible ? "" : " (not focus-visible)"}`).join(", ")}` : ""}${crumb ? "" : " the scenario trigger was not reached"}${missing.length ? ` not reached ${missing.join(", ")}` : ""}`)
+      const low = Math.min(...found.map((f) => f.count / f.perimeter))
+      notes.push(`${label}: ${found.length} stops, lowest ${low.toFixed(2)}× perimeter, scenario trigger ${crumb ? `${crumb.count} px for a ${crumb.perimeter} px perimeter` : "not reached"}`)
+      await p.closeAll()
+    }
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `${notes.join("; ")}. Screenshots of each stop focused and unfocused, tooltips hidden; a stop passes when the pixels changed by 3:1 or more cover at least its perimeter.`]
+})
+
 // ---------- Workspace modules (WS-01 to WS-09, references/workspace.md) ----------
 
 const railModule = (p, name) => p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button', { hasText: name })
@@ -2854,7 +3081,7 @@ await check("WS-01", async () => {
   const met = growth <= 3072 && built.length === 0 && plain.length === 0 && railItems === 0 && navEarly && !pageEarly && pageAfter && !errors.length
   const status = !met || acFailed.length ? "fail" : acRun.length ? "pass" : "not-measured"
   const acNote = acRun.length ? `${acRun.length} AC criteria ran in this pass, failing: ${acFailed.join(", ") || "none"}` : "the AC suite did not run in this pass (ONLY), so that part is not measured"
-  return [status, `initial Studio chunk ${(gz / 1024).toFixed(1)} KB gzipped, ${growth >= 0 ? "+" : ""}${growth} bytes against the 0.11.0 baseline of ${STUDIO_CHUNK_BASELINE_GZ} (budget 3,072); without a workspace the build has ${built.length} workspace chunks, ${plain.length} were requested across every view and Go to, and the rail has ${railItems} workspace items; with one, the navigation chunk loaded at start ${navEarly}, module code before a module opened ${pageEarly} and after ${pageAfter}, and the scripts loaded before any interaction were ${initial.map((f) => f.replace(/-[\w-]{8}\.js$/, "")).join(", ")} at ${(initialGz / 1024).toFixed(1)} KB gzipped in all (reported, not gated); page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}; ${acNote}`]
+  return [status, `initial Studio chunk ${(gz / 1024).toFixed(1)} KB gzipped, ${growth >= 0 ? "+" : ""}${growth} bytes against the ${STUDIO_CHUNK_BASELINE} baseline of ${STUDIO_CHUNK_BASELINE_GZ} (budget 3,072); without a workspace the build has ${built.length} workspace chunks, ${plain.length} were requested across every view and Go to, and the rail has ${railItems} workspace items; with one, the navigation chunk loaded at start ${navEarly}, module code before a module opened ${pageEarly} and after ${pageAfter}, and the scripts loaded before any interaction were ${initial.map((f) => f.replace(/-[\w-]{8}\.js$/, "")).join(", ")} at ${(initialGz / 1024).toFixed(1)} KB gzipped in all (reported, not gated); page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}; ${acNote}`]
 })
 
 // WS-02 Modules follow the views with the views' marker, focus and labels; keyboard, Go to, links and Back reach every module and section

@@ -320,3 +320,26 @@ test('acceptance script covers the workspace criteria', () => {
   assert.match(script, /STUDIO_CHUNK_BASELINE_GZ = \d+/);
   assert.match(script, /workspace: "workspace"/);
 });
+
+test('0.12.1 touch and focus floors: stacked controls keep their own targets and focus is drawn whole', () => {
+  const script = read('scripts/acceptance.mjs');
+  for (const id of ['AC-65', 'AC-66']) assert.match(script, new RegExp(`check\\("${id}"`), `${id} is not checked`);
+  // AC-65 measures where a finger lands with elementFromPoint; AC-66 compares rendered pixels, focused and unfocused.
+  assert.match(script, /document\.elementFromPoint\(x, y\)/);
+  assert.match(script, /a stop passes when the pixels changed by 3:1 or more cover at least its perimeter/);
+  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.12\.0"/);
+  const css = read('src/studio.css');
+  assert.match(css, /\[role="tabpanel"\], \[aria-label="Studio"\] button, \[data-slot="breadcrumb"\] :is\(button, a\[href\]\)\):focus-visible \{ outline-offset: -2px;/, 'the breadcrumb and tab panels draw focus inside');
+  const panel = read('src/components/studio/rail-panel.tsx');
+  assert.equal(panel.match(/pointer-coarse:min-h-11/g)?.length, 3, 'Gallery areas, the flag switch and Autoplay are 44 px rows');
+  assert.match(panel, /<Label className="flex items-center justify-between font-normal pointer-coarse:min-h-11">\s*Autoplay/);
+  const responsive = read('src/components/studio/responsive.tsx');
+  assert.match(responsive, /focus-visible:ring-ring pointer-coarse:h-11">/, 'frame rows are 44 px apart on coarse pointers');
+  assert.match(responsive, /<span className="flex shrink-0 items-center pointer-coarse:h-11">\s*<Switch id=\{`sync-/);
+  assert.match(read('src/components/studio/design.tsx'), /relative h-5 pointer-coarse:mt-4 pointer-coarse:h-11/);
+  const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');
+  for (const id of ['AC-65', 'AC-66']) assert.match(doc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
+  assert.match(doc, /AC-01 to AC-66/);
+  assert.match(doc, /equivalent/);
+  assert.match(read('UPDATING.md'), /^## 0\.12\.1$/m);
+});

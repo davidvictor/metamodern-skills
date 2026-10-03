@@ -297,7 +297,7 @@ export function ResponsivePanel() {
               tabIndex={0}
               aria-label={`${f.w} by ${f.h}, ${profileOf(f.profile).label}, position ${i + 1} of ${r.frames.length}. Alt and an arrow key move it.`}
               onKeyDown={(e) => { if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) { e.preventDefault(); move(f.id, e.key === "ArrowUp" ? -1 : 1) } }}
-              className="flex h-9 items-center gap-1.5 rounded-md px-1.5 text-xs outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring">
+              className="flex h-9 items-center gap-1.5 rounded-md px-1.5 text-xs outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:h-11">
               <GripVerticalIcon className="size-3.5 shrink-0 cursor-grab text-muted-foreground" onPointerDown={(e) => { e.preventDefault(); drag.current = { id: f.id, y: e.clientY } }} aria-hidden />
               <span className="tabular-nums">{f.w} × {f.h}</span>
               <span className="min-w-0 truncate text-muted-foreground">{f.label ?? profileOf(f.profile).label}</span>
@@ -346,8 +346,10 @@ function SyncSwitches() {
   const all = r.sync.scroll || r.sync.interaction || r.sync.navigation
   const row = (key: keyof SyncChannels, label: string, note?: string) => (
     <Field orientation="horizontal" className="items-start">
-      <Switch id={`sync-${key}`} checked={r.sync[key]} onCheckedChange={(v) => set({ sync: { ...r.sync, [key]: v } })} />
-      <div className="grid gap-0.5">
+      <span className="flex shrink-0 items-center pointer-coarse:h-11">
+        <Switch id={`sync-${key}`} checked={r.sync[key]} onCheckedChange={(v) => set({ sync: { ...r.sync, [key]: v } })} />
+      </span>
+      <div className="grid gap-0.5 pointer-coarse:pt-3.5">
         <FieldLabel htmlFor={`sync-${key}`} className="text-xs font-normal">{label}</FieldLabel>
         {note && <span className="text-[11px] text-muted-foreground">{note}</span>}
       </div>

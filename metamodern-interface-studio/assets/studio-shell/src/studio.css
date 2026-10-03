@@ -125,8 +125,9 @@
 
 /*
  * Coarse pointers, at any width (a tablet is not a phone): every Studio target reaches 44 px and text fields use
- * 16 px text so a touch screen does not zoom. A switch, checkbox or radio keeps its drawing and grows its hit area. The panel's
- * edge handle stays narrow so it never covers the panel or the stage; the top bar's Hide panel is its target.
+ * 16 px text so a touch screen does not zoom. A switch, checkbox or radio keeps its drawing and grows its hit area; stacked rows
+ * of them are 44 px apart or are whole labels, so no hit area overlaps the next one. The panel's edge handle and the frames'
+ * resize grips stay narrow; the top bar's Hide panel and the Size menu or Responsive width list are their 44 px equivalents.
  */
 @media (pointer: coarse) {
   :where(button, a[href], summary, select, textarea, [role="button"], [role="tab"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="combobox"], [data-slot="input"], [data-slot="input-group"], [data-slot="input-group-control"], input[type="color"]):not([role="switch"], [role="checkbox"], [role="radio"], [data-sidebar="rail"]) { min-height: 44px; min-width: 44px; }
@@ -149,7 +150,8 @@
  * rail draw it inside, where a clipping list would cut it, in place of their inset ring. Text fields keep their border and ring.
  */
 :where(button, a[href], summary, [tabindex="0"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"], [role="row"], [role="option"], [role^="menuitem"]):focus-visible:not(input, textarea, select, iframe) { outline: 2px solid var(--ring); outline-offset: 0; --tw-ring-shadow: 0 0 #0000; }
-:is([role="row"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="tab"], [aria-label="Studio"] button):focus-visible { outline-offset: -2px; --tw-shadow: 0 0 #0000; }
+/* The breadcrumb clips to the top bar's height and a tab panel is taller than its scroller, so they draw it inside too. */
+:is([role="row"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="tab"], [role="tabpanel"], [aria-label="Studio"] button, [data-slot="breadcrumb"] :is(button, a[href])):focus-visible { outline-offset: -2px; --tw-shadow: 0 0 #0000; }
 @media (forced-colors: active) {
   :focus-visible { outline-color: Highlight; }
 }
