@@ -3,10 +3,10 @@
  * review; properties edit the selected state without a remount and show as differences from it.
  * Values travel in links under the input's ID, except free text not declared shareable, which stays
  * in the viewer's browser and leaves an edited=local marker. A property whose ID is a reserved link
- * key never travels (input normalization rejects it). Saved states (scenarios.json) join the catalog
+ * key never travels and gets no row (input normalization rejects it). Saved states (scenarios.json) join the catalog
  * as scenarios derived from the generated one they were saved from. Pure, no DOM.
  */
-import { normalizeScenarioInput, RESERVED_LINK_KEYS } from "./input"
+import { isReservedProperty, normalizeScenarioInput } from "./input"
 import { isSavedValue, SAVED_ID } from "./saved"
 import type { SavedScenario } from "./scenarios"
 import type { InputValue, Scenario, ScenarioInput } from "./types"
@@ -19,13 +19,13 @@ export const isProperty = (i: ScenarioInput) => i.section === "properties"
 export const appliesTo = (i: ScenarioInput, sc: Scenario | undefined) => !i.surfaces || (!!sc && i.surfaces.includes(sc.surface))
 /** Free text stays in the viewer's browser unless the input declares it shareable. */
 export const travels = (i: ScenarioInput) => i.control !== "text" || !!i.shareable
-/** The properties a scenario shows: curated first, then the rest, each in declaration order. */
+/** The properties a scenario shows: curated first, then the rest, each in declaration order. A property on a reserved link key is inert and left out. */
 export function propertiesFor(inputs: ScenarioInput[], sc: Scenario | undefined) {
-  const own = inputs.filter((i) => isProperty(i) && appliesTo(i, sc))
+  const own = inputs.filter((i) => isProperty(i) && appliesTo(i, sc) && !isReservedProperty(i))
   return [...own.filter((i) => i.curated), ...own.filter((i) => !i.curated)]
 }
-/** Properties that may appear in or be read from links: not readonly, and not on a key the Studio's own links use. */
-const linkable = (inputs: ScenarioInput[], sc: Scenario | undefined) => propertiesFor(inputs, sc).filter((i) => !i.readonly && !RESERVED_LINK_KEYS.includes(i.id))
+/** Properties that may appear in or be read from links: not readonly (propertiesFor already leaves out reserved link keys). */
+const linkable = (inputs: ScenarioInput[], sc: Scenario | undefined) => propertiesFor(inputs, sc).filter((i) => !i.readonly)
 
 /** A scenario's edits as link parameters, and whether text that stays local was edited (the edited=local marker). */
 export function linkEdits(inputs: ScenarioInput[], sc: Scenario | undefined, edits: Edits = {}) {

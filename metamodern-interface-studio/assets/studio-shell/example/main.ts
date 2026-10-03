@@ -28,8 +28,8 @@ const cardFrom = (v: MountInputs["values"]): Card => ({
 /** The JSX for the current card, listing only props that differ from the component's defaults. */
 function cardCode(c: Card) {
   const props = [
-    c.title !== CARD.title && `title=${JSON.stringify(c.title)}`,
-    c.note !== undefined && `note=${JSON.stringify(c.note)}`,
+    c.title !== CARD.title && `title={${JSON.stringify(c.title)}}`,
+    c.note !== undefined && `note={${JSON.stringify(c.note)}}`,
     c.done && "done",
     c.assignee !== CARD.assignee && `assignee={people.${c.assignee}}`,
     c.estimate !== undefined && `estimate={${c.estimate}}`,

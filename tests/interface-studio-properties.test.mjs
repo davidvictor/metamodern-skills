@@ -124,6 +124,16 @@ test('a property with a reserved link key never travels in links, in either dire
   assert.equal(back.missing, true);
 });
 
+test('a property with a reserved link key gets no row and is named once in the console', (t) => {
+  const errors = [];
+  t.mock.method(console, 'error', (...args) => errors.push(args.join(' ')));
+  const reserved = [...inputs, props({ id: 'vp', label: 'Viewport', control: 'switch' })];
+  assert.deepEqual(properties.propertiesFor(reserved, card).map((i) => i.id), ['title', 'done', 'note', 'who', 'hours', 'points', 'onOpen']);
+  properties.propertiesFor(reserved, card);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /"vp".*reserved link key/);
+});
+
 test('stored local text passes the same normalization as a link: stale, corrupt or readonly values are dropped', () => {
   const stored = { note: 'two\nlines ok', onOpen: 'stored', title: 'Kept?' };
   const out = properties.editsFromLink(inputs, card, () => null, stored, true);

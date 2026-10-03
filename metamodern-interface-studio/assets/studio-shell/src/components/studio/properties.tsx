@@ -446,8 +446,10 @@ function SaveAs({ disabled, initial, onSave }: { disabled: boolean; initial: str
 }
 
 /**
- * The frame's code for the current values, asked again whenever they change, with a copy button. The request waits a
- * moment so the values reach the frame first, and typing asks once. Docs and usage stay in the summary.
+ * The frame's code for the current values, asked again whenever they change, with a copy button. Asking waits 150 ms
+ * as a debounce, so typing asks once; ordering needs no delay, since postMessage is FIFO and the frame updates its
+ * current values synchronously before it answers. While the preview is not ready the snippet would be stale, so it
+ * is replaced by a waiting line and Copy is disabled. Docs and usage stay in the summary.
  */
 function CodePanel() {
   const s = useStudio()
@@ -463,7 +465,8 @@ function CodePanel() {
       window.clearTimeout(timer)
     }
   }, [key, ready])
-  if (!code) return <p className="text-xs text-muted-foreground">{ready ? "The preview did not return code." : "Waiting for the preview."}</p>
+  const waiting = <p className="text-xs text-muted-foreground">Waiting for the preview.</p>
+  if (!code) return ready ? <p className="text-xs text-muted-foreground">The preview did not return code.</p> : waiting
   const copy = () =>
     navigator.clipboard.writeText(code.text).then(
       () => toast("Code copied"),
@@ -473,13 +476,17 @@ function CodePanel() {
     <>
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted-foreground">{code.language}</span>
-        <Button size="sm" variant="outline" className={TOUCH} onClick={copy}>
+        <Button size="sm" variant="outline" className={TOUCH} onClick={copy} disabled={!ready}>
           <CopyIcon /> Copy
         </Button>
       </div>
-      <pre data-code className="max-h-96 overflow-auto rounded-lg border bg-muted/40 p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap">
-        {code.text}
-      </pre>
+      {ready ? (
+        <pre data-code tabIndex={0} aria-label="Code" className="max-h-96 overflow-auto rounded-lg border bg-muted/40 p-3 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap">
+          {code.text}
+        </pre>
+      ) : (
+        waiting
+      )}
     </>
   )
 }

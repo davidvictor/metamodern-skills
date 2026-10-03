@@ -7,6 +7,15 @@ import type { InputValue, Scenario, ScenarioInput } from "./types"
 export const RESERVED_LINK_KEYS: readonly string[] = ["view", "scenario", "theme", "profile", "size", "tab", "design", "layout", "frames", "height", "arrange", "vp", "sync", "edited"]
 
 const reported = new Set<string>()
+/** A property on a reserved link key: inert everywhere (no row, no value), named once in the console. */
+export function isReservedProperty(input: ScenarioInput) {
+  if (input.section !== "properties" || !RESERVED_LINK_KEYS.includes(input.id)) return false
+  if (!reported.has(input.id)) {
+    reported.add(input.id)
+    console.error(`Interface Studio: property "${input.id}" uses a reserved link key and is ignored. Rename it; reserved keys are ${RESERVED_LINK_KEYS.join(", ")}.`)
+  }
+  return true
+}
 
 /**
  * Validates and normalizes a value before it enters a scenario runtime. Range values travel as numbers and
@@ -14,13 +23,7 @@ const reported = new Set<string>()
  * and lines; a readonly property never takes a value. Link text ("true", "4.5") reads back as what it stands for.
  */
 export function normalizeScenarioInput(input: ScenarioInput, scenario: Scenario | undefined, value: InputValue): InputValue | undefined {
-  if (input.section === "properties" && RESERVED_LINK_KEYS.includes(input.id)) {
-    if (!reported.has(input.id)) {
-      reported.add(input.id)
-      console.error(`Interface Studio: property "${input.id}" uses a reserved link key and is ignored. Rename it; reserved keys are ${RESERVED_LINK_KEYS.join(", ")}.`)
-    }
-    return undefined
-  }
+  if (isReservedProperty(input)) return undefined
   if (input.readonly) return undefined
   if (input.control === "switch") return value === true || value === "true" ? true : value === false || value === "false" ? false : undefined
   if (input.control === "text") return typeof value === "string" && value.length <= (input.maxLength ?? Infinity) && (!!input.multiline || !/[\r\n]/.test(value)) ? value : undefined

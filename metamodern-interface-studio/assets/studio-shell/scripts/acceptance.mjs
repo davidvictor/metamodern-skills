@@ -2164,9 +2164,14 @@ await check("AC-59", async () => {
   await p.getByRole("option", { name: "Assignee", exact: true }).click()
   await wait(2500)
   const who = await Promise.all((await p.locator(".preview-frame iframe.opacity-100").all()).map(async (e) => (await (await e.elementHandle()).contentFrame()).evaluate(() => document.querySelector(".task-card .who")?.textContent)))
+  // Compare sides never write into the Inspect edits: back in Inspect, Done is as designed and nothing is Edited.
+  await p.getByRole("button", { name: "Inspect" }).first().click()
+  await wait(1500)
+  const inspectDone = await details(p).getByRole("switch", { name: "Done" }).getAttribute("aria-checked")
+  const edited = await p.getByText(/Edited ·/).count()
   await p.closeAll()
-  const ok = axes.includes("Done") && axes.includes("Assignee") && axes.includes("Estimate (hours)") && !axes.includes("Title") && !axes.includes("Note") && !axes.includes("On open") && done.join() === "false,true" && new Set(who).size === 2
-  return [ok ? "pass" : "fail", `axes offered ${axes.join(", ")}; Done sides ${sides.map((x) => x.replace(/\s+/g, " ").trim()).join(" | ")} rendered done ${done.join(" and ")}; Assignee sides showed ${who.join(" and ")}`]
+  const ok = inspectDone === "false" && edited === 0 && axes.includes("Done") && axes.includes("Assignee") && axes.includes("Estimate (hours)") && !axes.includes("Title") && !axes.includes("Note") && !axes.includes("On open") && done.join() === "false,true" && new Set(who).size === 2
+  return [ok ? "pass" : "fail", `axes offered ${axes.join(", ")}; Done sides ${sides.map((x) => x.replace(/\s+/g, " ").trim()).join(" | ")} rendered done ${done.join(" and ")}; Assignee sides showed ${who.join(" and ")}; back in Inspect Done is ${inspectDone === "true" ? "on" : "off"} and Edited shows ${edited} time(s)`]
 })
 
 // AC-60 The Code tab appears only with the code capability and copies the snippet
@@ -2195,7 +2200,7 @@ await check("AC-60", async () => {
   await wait(1500)
   const without = await details(page).getByRole("tab").allInnerTexts()
   await q.close()
-  const ok = /<TaskCard/.test(shown) && /title="Ship it"/.test(shown) && /\bdone\b/.test(shown) && !/assignee/.test(shown) && copied === shown && !without.includes("Code")
+  const ok = /<TaskCard/.test(shown) && /title=\{"Ship it"\}/.test(shown) && /\bdone\b/.test(shown) && !/assignee/.test(shown) && copied === shown && !without.includes("Code")
   return [ok ? "pass" : "fail", `with the capability the Code tab showed ${JSON.stringify(shown)} (only changed props) and Copy put the same text on the clipboard (${copied === shown}); a frame without it shows tabs ${without.join(", ")}`]
 })
 

@@ -257,7 +257,7 @@ export const withoutLenses = (values: Record<string, InputValue>) => Object.from
 export const compareAxes = (sc?: Scenario, draft = false) => [
   { id: "theme", label: A.axes.themeLabel },
   { id: "profile", label: "Profile" },
-  ...[...choosableFor(sc), ...propertiesFor(A.axes.inputs, sc)].filter(comparable).map((i) => ({ id: i.id, label: i.label })),
+  ...[...choosableFor(sc), ...(hasProperties ? propertiesFor(A.axes.inputs, sc) : [])].filter(comparable).map((i) => ({ id: i.id, label: i.label })),
   ...(draft ? [{ id: "design", label: "Design" }] : []),
 ]
 export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: string }[] => {
