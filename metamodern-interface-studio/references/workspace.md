@@ -103,7 +103,7 @@ A module reaches the product only through operations served by the product's hos
 - Response: `{ "ok": true, "data": <value>, "revision": "<optional>" }`, or `{ "ok": false, "error": { "code": "<code>", "reason": "<safe to show>", "recoverable": <boolean> } }`. The shell reads only the envelope, never the HTTP status, so a host may answer an error with 4xx or 200 alike. JSON that is not the envelope is reported as `bad-envelope`.
 - Compare-and-set: when `expectedRevision` is not the current revision, change nothing and answer `{ "ok": false, "error": { "code": "conflict", "reason": "<safe to show>", "recoverable": true }, "current": { "data": <current value>, "revision": "<current>" } }`. The module renders `current.data` into the `current` of SaveBar's `conflict` state, which shows it beside the person's edit; only their choice writes again.
 - The shell refuses, without a request: a name the module did not declare, or one outside the name pattern (`undeclared`); a write to an operation declared as a read, or a read of one declared as a write (`kind-mismatch`); and an endpoint on another origin, another scheme or a base with a query or fragment (`cross-origin`). Without an `operations` base it answers `no-host`.
-- An answer that is not JSON, or no answer, means no host. When a module's read finds no host before the host has answered that module in this session, and nothing in it is unsaved, the module shows "No operations host answered at <base>" with Try again. Otherwise, including any write, the failure is only that operation's result (`host-unavailable`, recoverable): the open page and its unsaved edits stay, and the module shows the error, for example SaveBar's error with Retry.
+- An answer that is not JSON, or no answer, means no host. When a module's read finds no host before the host has answered that module in this session, and nothing in it is unsaved, that module (and only that one) shows "No operations host answered at <base>" with Try again. Otherwise, including any write, the failure is only that operation's result (`host-unavailable`, recoverable): the open page and its unsaved edits stay, and the module shows the error, for example SaveBar's error with Retry.
 
 ## The host's obligations
 
@@ -118,7 +118,7 @@ The shell holds no credentials and runs no privileged code. Everything that prot
 
 ## Build and bundle
 
-A build decides once whether to include the workspace layer: it loads the adapter with Vite's module runner and defines `__STUDIO_WORKSPACE__`. Without a declaration the build has no workspace chunk and the Studio's chunks are those of a Studio before workspaces. With one, the navigation chunk loads with the Studio and each module's page code only when a module opens. The dev server, and a build whose adapter Vite cannot load, keep the layer and decide at runtime. A Studio built while its adapter declared no workspace and then run with one that does logs a console error: rebuild it.
+A build decides once whether to include the workspace layer: it loads the adapter with Vite's module runner and defines `__STUDIO_WORKSPACE__`. Without a declaration the build has no workspace chunk and the Studio's chunks are those of a Studio before workspaces. With one, the navigation chunk loads with the Studio and module code loads when the first module opens. The dev server, and a build whose adapter Vite cannot load, keep the layer and decide at runtime. A Studio built while its adapter declared no workspace and then run with one that does logs a console error: rebuild it.
 
 ## Verify
 

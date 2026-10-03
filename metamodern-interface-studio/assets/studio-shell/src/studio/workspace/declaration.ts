@@ -43,6 +43,13 @@ export function undeclaredDefinitions(decl: WorkspaceDeclaration | undefined, de
 type AstNode = { type?: string; [key: string]: unknown }
 type AstProperty = { type?: string; computed?: boolean; key?: { type?: string; name?: string; value?: unknown } }
 
+/** The parser language for a workspace module map by its extension: TSX, TypeScript, or JavaScript with JSX. */
+export function astLang(file: string): "tsx" | "ts" | "jsx" {
+  if (/\.tsx$/i.test(file)) return "tsx"
+  if (/\.[mc]?ts$/i.test(file)) return "ts"
+  return "jsx"
+}
+
 /**
  * The module IDs src/workspace/index.ts passes to defineWorkspace, read from its parsed ESTree program
  * (vite.config.ts parses it with parseAst), or why they cannot be read. The build fails on a reason.

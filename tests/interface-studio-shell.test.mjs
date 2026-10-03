@@ -221,7 +221,7 @@ test('saved files carry a revision: a stale save gets 409 with the current file 
   const base = `http://127.0.0.1:${server.address().port}`;
   const get = async () => {
     const res = await fetch(`${base}/__studio/layouts`);
-    return { status: res.status, revision: res.headers.get('x-studio-revision'), body: await res.json() };
+    return { status: res.status, revision: res.headers.get('x-studio-revision'), unreadable: res.headers.get('x-studio-unreadable'), body: await res.json() };
   };
   const post = async (data, headers = {}) => {
     const res = await fetch(`${base}/__studio/layouts`, { method: 'POST', headers: { 'content-type': 'application/json', origin: base, ...headers }, body: JSON.stringify(data) });
@@ -235,6 +235,7 @@ test('saved files carry a revision: a stale save gets 409 with the current file 
   assert.equal(missing.revision, EMPTY_REVISION, 'a missing file has the fixed empty revision');
   assert.equal(EMPTY_REVISION, 'empty');
   assert.deepEqual(missing.body, { schema: 'studio-layouts/1', layouts: [] });
+  assert.equal(missing.unreadable, null, 'a missing file is an empty list, not an unreadable one');
   const first = await post(one, { 'x-studio-expected-revision': missing.revision });
   assert.equal(first.status, 200);
   assert.deepEqual(first.body, { ok: true });
@@ -242,6 +243,7 @@ test('saved files carry a revision: a stale save gets 409 with the current file 
   const loaded = await get();
   assert.equal(loaded.revision, first.revision, 'GET answers the same revision for the same bytes');
   assert.deepEqual(loaded.body, one);
+  assert.equal(loaded.unreadable, null);
   // Someone else saves; the page still holds the revision it loaded.
   const elsewhere = await post(two);
   assert.equal(elsewhere.status, 200, 'a save without the header is unconditional, as before revisions');
@@ -262,6 +264,7 @@ test('saved files carry a revision: a stale save gets 409 with the current file 
   const broken = await get();
   assert.equal(broken.revision, sha('not json'));
   assert.deepEqual(broken.body, { schema: 'studio-layouts/1', layouts: [] });
+  assert.equal(broken.unreadable, '1', 'GET says the file is unreadable, so a Studio refuses to save over it');
   const unreadable = await post(one, { 'x-studio-expected-revision': first.revision });
   assert.equal(unreadable.status, 409);
   assert.deepEqual(unreadable.body.current, { data: null, revision: broken.revision }, 'an unreadable file is never presented as an empty list');
@@ -271,12 +274,23 @@ test('saved files carry a revision: a stale save gets 409 with the current file 
   assert.equal(await raw('{}', 'text/plain'), 415);
   assert.equal(await raw('{not json', 'application/json'), 400);
   assert.equal(readFileSync(file, 'utf8'), 'not json');
+  // Writes go through a uniquely named temporary file, none of which is left behind.
+  assert.match(read('scripts/saved-file.ts'), /const tmp = `\$\{o\.file\}\.\$\{process\.pid\}\.\$\{randomUUID\(\)\}\.tmp`/);
+  assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith('.tmp')), []);
   // The dev server mounts this one middleware for both saved files, and the clients send the revision they read.
   const vite = read('vite.config.ts');
   assert.match(vite, /server\.middlewares\.use\(o\.route, savedFileMiddleware\(\{ \.\.\.o, file \}\)\)/);
   assert.match(read('src/components/studio/responsive.tsx'), /"x-studio-expected-revision": revision/);
   assert.match(read('src/components/studio/properties.tsx'), /const revision = read\.headers\.get\("x-studio-revision"\)[\s\S]*"x-studio-expected-revision": revision/);
-  assert.match(read('src/store.tsx'), /layoutsRevision: got\[1\]/, 'the page keeps the revision of the layouts it loaded');
+  const store = read('src/store.tsx');
+  assert.match(store, /set\(\{ saved: \(data as LayoutsFile\)\.layouts, layoutsRevision, layoutsLoad: "ready" \}\)/, 'the page keeps the revision of the layouts it loaded');
+  assert.match(store, /x-studio-unreadable"\) === "1" \|\| validateLayouts\(data\)\.length\) return set\(\{ layoutsRevision, layoutsLoad: "unreadable" \}\)/, 'an unreadable layouts.json is never taken as an empty list to save over');
+  assert.match(store, /layoutsLoad: "loading",/, 'the page starts without a revision and says so');
+  const responsive = read('src/components/studio/responsive.tsx');
+  assert.match(responsive, /if \(blocked\) throw new Error\(blocked\)/, 'no layouts save before layouts.json has been read');
+  assert.match(responsive, /loading: "Loading layouts…"/);
+  assert.equal((responsive.match(/disabled=\{!!why/g) ?? []).length, 5, 'Save, Save as, Rename, Duplicate and Delete wait for the revision');
+  assert.match(read('src/components/studio/properties.tsx'), /read\.headers\.get\("x-studio-unreadable"\) === "1" \|\| !Array\.isArray\(current\)\) throw/, 'a scenarios save never replaces an unreadable file');
 });
 
 test('final fix wave: ordered value updates, file-preserving saves, a lazy-chunk boundary and a fresh runtime per Present step', () => {

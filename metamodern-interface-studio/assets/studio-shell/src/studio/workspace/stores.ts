@@ -25,10 +25,17 @@ export function createStore<T>(initial: T): Store<T> {
 }
 
 /**
- * Set when a module's read found no host before the host had answered that module and while nothing was unsaved: such a
- * module cannot start, so it shows the reason until Try again. Writes and later reads report a missing host as their own result.
+ * Per module ID: set when that module's read found no host before the host had answered it and while nothing was
+ * unsaved, so that module cannot start and shows the reason until Try again. Other modules are not affected; writes and
+ * later reads report a missing host as their own result.
  */
-export const hostStatus = createStore<{ down: string | null }>({ down: null })
+export const hostStatus = createStore<Record<string, string>>({})
+/** Try again on one module: forget that its read found no host. */
+export function retryHost(moduleId: string) {
+  const next = { ...hostStatus.get() }
+  delete next[moduleId]
+  hostStatus.set(next)
+}
 /**
  * Modules whose operations the host has answered in this Studio session. Before that a missing host makes the module
  * unavailable; after it, a missing host is only the failing operation's result, so an open page and its edits stay.

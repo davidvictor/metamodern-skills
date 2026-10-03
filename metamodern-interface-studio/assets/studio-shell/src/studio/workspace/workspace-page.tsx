@@ -16,7 +16,7 @@ import { ConfirmDialog, EmptyState, ModulePage } from "@/kit"
 import type { ModuleDefinition } from "./api"
 import { ModuleContext, type ModuleInfo } from "./context"
 import { resolveModules, undeclaredDefinitions } from "./declaration"
-import { answered, guards, hostStatus } from "./stores"
+import { answered, guards, hostStatus, retryHost } from "./stores"
 
 const defined = Object.keys(workspace.modules)
 const modules = resolveModules(adapter.workspace, defined)
@@ -47,7 +47,7 @@ function useOpenModule(): { info: ModuleInfo | null; reason: string | null; host
   const info = React.useMemo<ModuleInfo | null>(() => (m ? { id: m.id, label: m.label, sections: m.sections, section, go: (next) => set({ section: next }), uses: m.uses, operations: adapter.workspace?.operations } : null), [m, section, set])
   // A missing host stops a module only before the host has answered it, and never while it has unsaved changes:
   // the page is not swapped out under an edit. Otherwise each operation reports it (stores.ts).
-  const down = m && !started[m.id] && !unsaved ? host.down : null
+  const down = m && !started[m.id] && !unsaved ? (host[m.id] ?? null) : null
   const reason = m?.unavailable ?? down
   return { info, reason, hostDown: !m?.unavailable && !!down, def: m ? workspace.modules[m.id] : undefined }
 }
@@ -78,7 +78,7 @@ function ModuleStage() {
       <ModuleContext.Provider value={info}>
         {reason || !Page ? (
           <ModulePage title={info.label}>
-            <EmptyState title={`${info.label} is unavailable`} description={reason ?? ""} action={hostDown ? { label: "Try again", onClick: () => hostStatus.set({ down: null }) } : undefined} />
+            <EmptyState title={`${info.label} is unavailable`} description={reason ?? ""} action={hostDown ? { label: "Try again", onClick: () => retryHost(info.id) } : undefined} />
           </ModulePage>
         ) : (
           <ModuleBoundary key={info.id} label={info.label}>

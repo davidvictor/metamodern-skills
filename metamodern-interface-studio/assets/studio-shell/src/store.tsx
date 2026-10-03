@@ -59,6 +59,11 @@ export type State = {
   saved: ResponsiveLayout[]
   /** The dev server's revision of layouts.json as last read or written, sent with a save so it never overwrites a change made elsewhere. */
   layoutsRevision: string | null
+  /**
+   * Whether the dev server's layouts.json has been read: a save waits for it ("loading"), and is refused while the
+   * file is not a valid layouts file ("unreadable", such as a merge conflict) or could not be read ("failed").
+   */
+  layoutsLoad: "loading" | "ready" | "unreadable" | "failed"
   /** What the Responsive frames' clients can do, for the sync switches. */
   frameCaps: FrameCapability[]
   /** The Design view: which tab, the Adjust values, and whether the stage shows the draft, the product as built, or both. */
@@ -319,6 +324,7 @@ const initial: State = {
   responsive: initialResponsive(),
   saved: bundledLayouts && !validateLayouts(bundledLayouts).length ? bundledLayouts.layouts : [],
   layoutsRevision: null,
+  layoutsLoad: "loading",
   gallery: { size: 240, source: hasCaptures || !A.frameEntry ? "captures" : "live", query: "", hidden: [], onlyFlagged: false },
   options: { controls: "dock", details: "docked", railLabels: true, draftEverywhere: false, map: false },
   commandOpen: false,
@@ -521,11 +527,14 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!canSaveLayouts) return
     fetch("__studio/layouts")
-      .then((r) => (r.ok ? r.json().then((data) => [data, r.headers.get("x-studio-revision")] as const) : null))
-      .then((got) => {
-        if (got && !validateLayouts(got[0]).length) set({ saved: (got[0] as LayoutsFile).layouts, layoutsRevision: got[1] })
+      .then(async (r) => {
+        if (!r.ok) return set({ layoutsLoad: "failed" })
+        const layoutsRevision = r.headers.get("x-studio-revision")
+        const data: unknown = await r.json().catch(() => null)
+        if (r.headers.get("x-studio-unreadable") === "1" || validateLayouts(data).length) return set({ layoutsRevision, layoutsLoad: "unreadable" })
+        set({ saved: (data as LayoutsFile).layouts, layoutsRevision, layoutsLoad: "ready" })
       })
-      .catch(() => undefined)
+      .catch(() => set({ layoutsLoad: "failed" }))
   }, [set])
 
   const scenarioObj = A.scenarios.find((x) => x.id === state.scenario) ?? firstScenario

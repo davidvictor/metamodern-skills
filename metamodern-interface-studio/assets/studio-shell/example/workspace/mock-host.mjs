@@ -7,6 +7,7 @@
 const MAX_BYTES = 64 * 1024
 const REGIONS = ["eu", "us", "ap"]
 const HISTORY_LIMIT = 50
+const ACTOR_LIMIT = 80
 
 /** A fresh host with its own state; returns the handler for one operation request. */
 export function createMockHost() {
@@ -72,7 +73,8 @@ export function createMockHost() {
         if (reason) return fail(422, "invalid", reason)
         // Nothing to change: answer with what is stored, without a new revision.
         if (!Object.keys(body.input).length) return send(200, { ok: true, data: data(), revision: String(revision) })
-        const by = typeof req.headers["x-example-actor"] === "string" ? req.headers["x-example-actor"] : "Studio"
+        // Who made the change, as the request says: trimmed, at most 80 characters, "Studio" when blank.
+        const by = (typeof req.headers["x-example-actor"] === "string" ? req.headers["x-example-actor"].trim().slice(0, ACTOR_LIMIT) : "") || "Studio"
         for (const field of Object.keys(body.input)) history.unshift({ at: new Date().toISOString(), field, by })
         history.splice(HISTORY_LIMIT)
         settings = { ...settings, ...body.input }

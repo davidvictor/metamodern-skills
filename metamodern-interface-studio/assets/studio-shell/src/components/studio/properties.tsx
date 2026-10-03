@@ -344,8 +344,10 @@ function SaveActions() {
     const read = await fetch("__studio/scenarios")
     if (!read.ok) throw new Error(`The Studio could not read scenarios.json (${read.status})`)
     const revision = read.headers.get("x-studio-revision")
-    const current = (await read.json())?.scenarios
-    const list = change(Array.isArray(current) ? current : [])
+    const current = (await read.json().catch(() => null))?.scenarios
+    // A file that is not a saved-states file (a merge conflict, say) is never replaced by a save from here.
+    if (read.headers.get("x-studio-unreadable") === "1" || !Array.isArray(current)) throw new Error("scenarios.json is not a valid saved-states file (a merge conflict, say). Fix or remove it, then save again.")
+    const list = change(current)
     const file = { schema: "studio-scenarios/1" as const, scenarios: list }
     const problems = validateScenarios(file, generated.map((x) => x.id))
     if (problems.length) throw new Error(problems[0])

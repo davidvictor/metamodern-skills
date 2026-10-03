@@ -316,7 +316,12 @@ test('WM-11 workspace files import only the kit, the workspace API, React and th
 });
 
 test('WM-13 the build reads the module IDs a workspace file defines, or says why it cannot', async () => {
-  const { definedModules } = await loadPure('src/studio/workspace/declaration.ts');
+  const { astLang, definedModules } = await loadPure('src/studio/workspace/declaration.ts');
+  // The module map may be TypeScript or JavaScript (the lint rule allows both); each is parsed in its own language.
+  for (const [file, lang] of [['src/workspace/index.tsx', 'tsx'], ['src/workspace/index.ts', 'ts'], ['src/workspace/index.mts', 'ts'], ['src/workspace/index.cts', 'ts'], ['src/workspace/index.js', 'jsx'], ['src/workspace/index.jsx', 'jsx'], ['src/workspace/index.mjs', 'jsx']]) {
+    assert.equal(astLang(file), lang, file);
+  }
+  assert.match(read('vite.config.ts'), /parseAst\(readFileSync\(file, "utf8"\), \{ lang: astLang\(file\) \}\)/, 'the build parses the module map by its extension');
   const key = (name) => ({ type: 'Property', computed: false, key: { type: 'Identifier', name }, value: { type: 'ObjectExpression', properties: [] } });
   const define = (arg) => ({ type: 'CallExpression', callee: { type: 'Identifier', name: 'defineWorkspace' }, arguments: arg ? [arg] : [] });
   const object = (...properties) => ({ type: 'ObjectExpression', properties });
@@ -383,6 +388,15 @@ test('WM-13b the example host reads, writes with compare-and-set, and refuses wh
   assert.equal((await call('site.write', { input: { region: 'us' } }, { 'x-studio-operation-kind': 'read' })).status, 400);
   assert.equal((await call('site.read', { input: null }, { origin: 'https://elsewhere.example' })).status, 403);
   assert.equal((await call('nothing.here', { input: null })).body.error.code, 'unknown-operation');
+  // The change history names the actor the request gives, trimmed and capped at 80 characters, or Studio when blank.
+  const by = async (actor) => {
+    const before = (await call('site.read', { input: null })).body.revision;
+    await call('site.write', { input: { region: actor.length % 2 ? 'us' : 'eu' }, expectedRevision: before }, { 'x-example-actor': actor });
+    return (await call('site.read', { input: null })).body.data.history[0].by;
+  };
+  assert.equal(await by('x'.repeat(200)), 'x'.repeat(80));
+  assert.equal(await by('   '), 'Studio');
+  assert.equal(await by('  Dana  '), 'Dana');
 });
 
 test('WM-13c the dev server middleware applies the endpoint guard, keeps empty writes and caps history', async (t) => {
@@ -464,13 +478,27 @@ test('WM-15 the workspace reference documents the contract and SKILL.md routes t
 test('WM-17 a missing host stops a module only on a read before the host answered it, never under unsaved changes', () => {
   const api = read('src/studio/workspace/api.ts');
   // Only a read, before the host has answered the module and with nothing unsaved, makes it unavailable; a write never does.
-  assert.match(api, /if \(kind === "read" && !answered\.get\(\)\[moduleId\] && !guards\.active\(\)\) hostStatus\.set\(\{ down: result\.error\.reason \}\)/);
+  assert.match(api, /if \(kind === "read" && !answered\.get\(\)\[moduleId\] && !guards\.active\(\)\) hostStatus\.set\(\{ \.\.\.hostStatus\.get\(\), \[moduleId\]: result\.error\.reason \}\)/, 'the host is marked down for the module whose read found none');
   assert.equal((api.match(/hostStatus\.set\(/g) ?? []).length, 1, 'no other path marks the host down');
   assert.match(api, /result\.ok \|\| !SHELL_CODES\.has\(result\.error\.code\)/, 'only an answer from the host starts a module');
   const page = read('src/studio/workspace/workspace-page.tsx');
   // The page is never swapped out while it has unsaved changes.
   assert.match(page, /const unsaved = React\.useSyncExternalStore\(guards\.subscribe, guards\.active\)/);
-  assert.match(page, /const down = m && !started\[m\.id\] && !unsaved \? host\.down : null/);
+  assert.match(page, /const down = m && !started\[m\.id\] && !unsaved \? \(host\[m\.id\] \?\? null\) : null/, 'a module is stopped only by its own read');
+  assert.match(page, /onClick: \(\) => retryHost\(info\.id\)/, 'Try again clears only that module');
+});
+
+test('WM-17b a missing host is recorded per module, so another module is never stopped by it', async () => {
+  const { hostStatus, retryHost } = await loadPure('src/studio/workspace/stores.ts');
+  assert.deepEqual(hostStatus.get(), {});
+  // Module A's read got an HTML 404; module B has not been answered and must not look unavailable.
+  hostStatus.set({ ...hostStatus.get(), a: 'No operations host answered at ./__studio/ops' });
+  assert.equal(hostStatus.get().b, undefined);
+  hostStatus.set({ ...hostStatus.get(), b: 'No operations host answered at ./__studio/ops' });
+  retryHost('a');
+  assert.deepEqual(Object.keys(hostStatus.get()), ['b'], 'Try again on A leaves B as it is');
+  retryHost('b');
+  assert.deepEqual(hostStatus.get(), {});
 });
 
 test('WM-16 the workspace files ship with the starter', () => {

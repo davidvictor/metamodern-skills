@@ -10,6 +10,6 @@
     "validate": "npm run validate:collection && npm run validate:packages"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.13"
   }
 }

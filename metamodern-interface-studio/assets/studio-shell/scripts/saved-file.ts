@@ -8,9 +8,10 @@
  * Revisions: GET and a successful POST answer x-studio-revision, a hash of the file as stored ("empty" when there
  * is none). A POST that sends x-studio-expected-revision is written only while the file still has that revision;
  * otherwise 409 with the current file (null when it is not JSON) and its revision, and nothing is written. Without
- * the header a POST writes unconditionally, as before revisions.
+ * the header a POST writes unconditionally, as before revisions. A GET of a file that is not JSON answers the empty
+ * file, as before, with x-studio-unreadable: 1, so a Studio refuses to save over it.
  */
-import { createHash } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto"
 import { readFileSync, renameSync, rmSync, writeFileSync } from "node:fs"
 import type { IncomingMessage, ServerResponse } from "node:http"
 import path from "node:path"
@@ -46,17 +47,18 @@ export function savedFileMiddleware(o: SavedFileOptions) {
   const name = path.basename(o.file)
   const empty = () => ({ schema: o.schema, [o.list]: [] })
   return (req: IncomingMessage, res: ServerResponse) => {
-    const send = (code: number, body: unknown, revision?: string) => {
+    const send = (code: number, body: unknown, revision?: string, unreadable = false) => {
       if (res.writableEnded) return
       res.statusCode = code
       res.setHeader("content-type", "application/json")
       if (revision) res.setHeader("x-studio-revision", revision)
+      if (unreadable) res.setHeader("x-studio-unreadable", "1")
       res.end(JSON.stringify(body))
     }
     if (req.method === "GET") {
-      // An unreadable file reads as the empty file, as before revisions.
+      // An unreadable file reads as the empty file, as before revisions, and says so in a header.
       const now = current(o.file, empty)
-      return send(200, now.parsed ? now.data : empty(), now.revision)
+      return send(200, now.parsed ? now.data : empty(), now.revision, !now.parsed)
     }
     if (req.method !== "POST") return send(405, { error: "Use GET or POST" })
     const origin = req.headers.origin
@@ -97,7 +99,7 @@ export function savedFileMiddleware(o: SavedFileOptions) {
         }
       }
       const text = `${JSON.stringify(data, null, 2)}\n`
-      const tmp = `${o.file}.${process.pid}.tmp`
+      const tmp = `${o.file}.${process.pid}.${randomUUID()}.tmp`
       try {
         writeFileSync(tmp, text)
         renameSync(tmp, o.file)

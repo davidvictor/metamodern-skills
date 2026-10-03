@@ -61,7 +61,7 @@ export function useOperation<T = unknown>(name: string) {
       // Any other failure (a write, a later read) is this operation's own result: the page, its edit and its guard
       // stay, and the module shows it (SaveBar's error with Retry).
       if (!result.ok && result.error.code === HOST_UNAVAILABLE) {
-        if (kind === "read" && !answered.get()[moduleId] && !guards.active()) hostStatus.set({ down: result.error.reason })
+        if (kind === "read" && !answered.get()[moduleId] && !guards.active()) hostStatus.set({ ...hostStatus.get(), [moduleId]: result.error.reason })
       } else if ((result.ok || !SHELL_CODES.has(result.error.code)) && !answered.get()[moduleId]) answered.set({ ...answered.get(), [moduleId]: true })
       if (live.current && id === seq.current) setState({ status: "done", result })
       return result

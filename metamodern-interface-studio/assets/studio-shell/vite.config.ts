@@ -12,7 +12,7 @@ import type { IncomingMessage, ServerResponse } from "http"
 import { pathToFileURL } from "url"
 import type { StudioAdapter } from "./src/studio/types"
 import { savedFileMiddleware } from "./scripts/saved-file"
-import { definedModules, undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
+import { astLang, definedModules, undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
 
 // Shell owned: product settings come from studio.config.ts, so an update can
 // replace this file. The Studio (index.html) builds with any extra pages the
@@ -106,7 +106,7 @@ const workspaceCheck = (): Plugin => ({
     const file = (await this.resolve("@/workspace"))?.id
     if (!file) return
     const rel = path.relative(root, file)
-    const defined = definedModules(parseAst(readFileSync(file, "utf8"), { lang: file.endsWith(".tsx") ? "tsx" : "ts" }))
+    const defined = definedModules(parseAst(readFileSync(file, "utf8"), { lang: astLang(file) }))
     if (typeof defined === "string") return this.error(`${rel}: ${defined}`)
     if (!defined.length) return
     const loaded = await loadAdapter()
