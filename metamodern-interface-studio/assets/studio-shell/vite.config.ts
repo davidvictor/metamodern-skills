@@ -1,4 +1,4 @@
-import { readFileSync, renameSync, rmSync, writeFileSync } from "fs"
+import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "fs"
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
@@ -8,6 +8,8 @@ import config from "./studio.config"
 import type { StudioConfig } from "./src/studio/config"
 import { LAYOUTS_MAX_BYTES, validateLayouts } from "./src/studio/layouts"
 import { SCENARIOS_MAX_BYTES, validateScenarios } from "./src/studio/scenarios"
+import type { IncomingMessage, ServerResponse } from "http"
+import { pathToFileURL } from "url"
 import type { StudioAdapter } from "./src/studio/types"
 import { definedModules, undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
 
@@ -108,14 +110,24 @@ const scenarios = () => savedFile({ file: "scenarios.json", route: "/__studio/sc
 
 // npm run acceptance builds the stress and capture-only adapters by pointing
 // "@/adapter" at the acceptance module; a normal build never includes them.
-const acceptance = process.env.VITE_STUDIO_ADAPTER ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, process.env.VITE_STUDIO_ADAPTER === "example" ? "src/adapters/example.ts" : "src/adapters/synthetic.ts") }] : []
+const variant = process.env.VITE_STUDIO_ADAPTER
+const acceptance = variant && variant !== "workspace" ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, variant === "example" ? "src/adapters/example.ts" : "src/adapters/synthetic.ts") }] : []
+// The starter's example workspace (VITE_STUDIO_ADAPTER=workspace): its adapter and module map, or with
+// VITE_STUDIO_WORKSPACE=orphan a map that defines an undeclared module, which must fail the build.
+const exampleWorkspace =
+  variant === "workspace"
+    ? [
+        { find: /^@\/adapter$/, replacement: path.resolve(root, "example/workspace/adapter.ts") },
+        { find: /^@\/workspace$/, replacement: path.resolve(root, process.env.VITE_STUDIO_WORKSPACE === "orphan" ? "example/workspace/orphan.ts" : "example/workspace/index.ts") },
+      ]
+    : []
 
 // The surfaces workspace modules import (references/workspace.md); everything else under src/ is shell internals.
 const studioAliases = [
   { find: /^@studio\/kit$/, replacement: path.resolve(root, "src/kit/index.ts") },
   { find: /^@studio\/workspace$/, replacement: path.resolve(root, "src/studio/workspace/api.ts") },
 ]
-const aliases = [...acceptance, ...studioAliases, { find: "@", replacement: path.resolve(root, "./src") }]
+const aliases = [...exampleWorkspace, ...acceptance, ...studioAliases, { find: "@", replacement: path.resolve(root, "./src") }]
 
 // A module file that defines a module the adapter does not declare fails the build with its name, as
 // does an invalid declaration (references/workspace.md). Skipped when the file defines no modules.
@@ -147,9 +159,32 @@ const workspaceCheck = (): Plugin => ({
   },
 })
 
+// The example workspace's operations, served by the dev server only while it runs that example. A real
+// Studio's operations live in the product's host (references/workspace.md); none ships in a build. The
+// mock applies the same guard as the endpoints above: same-origin JSON POSTs of 64 KB at most.
+const mockHostFile = path.resolve(root, "example/workspace/mock-host.mjs")
+type MockHandler = (req: IncomingMessage, res: ServerResponse, name: string) => void
+const workspaceMock = (): Plugin => ({
+  name: "studio-workspace-mock",
+  apply: "serve",
+  async configureServer(server) {
+    if (variant !== "workspace" || !existsSync(mockHostFile)) return
+    const { createMockHost } = (await import(pathToFileURL(mockHostFile).href)) as { createMockHost: () => MockHandler }
+    const handle = createMockHost()
+    const operation = (url = "") => {
+      try {
+        return decodeURIComponent(url.replace(/^\//, "").split("?")[0])
+      } catch {
+        return ""
+      }
+    }
+    server.middlewares.use("/__studio/ops", (req, res) => handle(req, res, operation(req.url)))
+  },
+})
+
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceCheck()],
+  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceCheck(), workspaceMock()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
     emptyOutDir: true,

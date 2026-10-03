@@ -348,3 +348,36 @@ test('WM-12 the product seed is empty and the workspace API is the published sur
   assert.match(vite, /@studio\\\/workspace/);
   assert.match(vite, /which the adapter does not declare in workspace\.modules/);
 });
+
+test('WM-13b the example host reads, writes with compare-and-set, and refuses what the contract refuses', async (t) => {
+  const { createMockHost } = await import(new URL('example/workspace/mock-host.mjs', shell).href);
+  const handle = createMockHost();
+  const server = createServer((req, res) => handle(req, res, decodeURIComponent(new URL(req.url, 'http://x').pathname.slice('/__studio/ops/'.length))));
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const call = async (name, body, headers = {}) => {
+    const res = await fetch(`${base}/__studio/ops/${name}`, { method: 'POST', headers: { 'content-type': 'application/json', origin: base, 'x-studio-operation-kind': name.endsWith('.write') ? 'write' : 'read', ...headers }, body: JSON.stringify(body) });
+    return { status: res.status, body: await res.json() };
+  };
+  const first = await call('site.read', { input: null });
+  assert.equal(first.status, 200);
+  assert.equal(first.body.ok, true);
+  assert.equal(first.body.data.settings.siteName, 'Example Tasks');
+  assert.ok(Array.isArray(first.body.data.history));
+  const wrote = await call('site.write', { input: { siteName: 'Renamed' }, expectedRevision: first.body.revision });
+  assert.equal(wrote.body.ok, true);
+  assert.notEqual(wrote.body.revision, first.body.revision);
+  const stale = await call('site.write', { input: { siteName: 'Late' }, expectedRevision: first.body.revision });
+  assert.equal(stale.status, 409);
+  assert.deepEqual(stale.body.error.code, 'conflict');
+  assert.equal(stale.body.error.recoverable, true);
+  assert.equal(stale.body.current.data.settings.siteName, 'Renamed');
+  assert.equal(stale.body.current.revision, wrote.body.revision);
+  assert.equal((await call('site.read', { input: null })).body.data.settings.siteName, 'Renamed', 'a conflict changes nothing');
+  assert.equal((await call('site.write', { input: { siteName: '' } })).body.error.code, 'invalid');
+  assert.equal((await call('site.write', { input: { colour: 'red' } })).status, 422);
+  assert.equal((await call('site.write', { input: { region: 'us' } }, { 'x-studio-operation-kind': 'read' })).status, 400);
+  assert.equal((await call('site.read', { input: null }, { origin: 'https://elsewhere.example' })).status, 403);
+  assert.equal((await call('nothing.here', { input: null })).body.error.code, 'unknown-operation');
+});
