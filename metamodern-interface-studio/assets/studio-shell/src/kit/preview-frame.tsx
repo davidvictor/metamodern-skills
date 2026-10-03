@@ -37,6 +37,13 @@ export function PreviewFrame(props: PreviewFrameProps) {
   // As every preview: a frame that is starting says so, and one that failed with nothing to keep on screen says why and offers Retry.
   const [status, setStatus] = React.useState<LiveStatus | null>(null)
   const [retry, setRetry] = React.useState(0)
+  // Another frame (src, scenario, theme or profile) starts afresh: a failure belongs to the frame that reported it.
+  const frame = live ? JSON.stringify([live.src, live.scenario, live.theme, live.profile]) : ""
+  const [shown, setShown] = React.useState(frame)
+  if (shown !== frame) {
+    setShown(frame)
+    setStatus(null)
+  }
   // The boundary shows a failure instead of the frame, so Retry clears it and the frame mounts again with a fresh runtime.
   const retryFrame = () => {
     setStatus(null)

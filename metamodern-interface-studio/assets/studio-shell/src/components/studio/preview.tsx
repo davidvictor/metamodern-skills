@@ -114,7 +114,14 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
       title: "The preview did not start",
       description: status.reason ?? "The frame reported an error.",
       tone: "danger",
-      action: { label: "Retry", onClick: () => setRetry((n) => n + 1) },
+      // The boundary shows this failure instead of the frame, so Retry clears it and the frame mounts again with a fresh runtime.
+      action: {
+        label: "Retry",
+        onClick: () => {
+          setStatus(null)
+          setRetry((n) => n + 1)
+        },
+      },
     }
 
   const w = capture?.w ?? size?.w ?? pr.w

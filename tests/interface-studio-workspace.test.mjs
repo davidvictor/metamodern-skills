@@ -247,6 +247,9 @@ test('WM-10 the kit is one versioned barrel with the floors built in', () => {
   // Retry clears the failure so the frame mounts again, and bumps the key so it is a fresh runtime.
   assert.match(frame, /const retryFrame = \(\) => \{\s*setStatus\(null\)\s*setRetry\(\(n\) => n \+ 1\)/);
   assert.match(frame, /label: "Retry", onClick: retryFrame/);
+  // Another frame (src, scenario, theme or profile) starts afresh: a failure does not outlive the frame that reported it.
+  assert.match(frame, /const frame = live \? JSON\.stringify\(\[live\.src, live\.scenario, live\.theme, live\.profile\]\) : ""/);
+  assert.match(frame, /if \(shown !== frame\) \{\s*setShown\(frame\)\s*setStatus\(null\)/);
   const css = read('src/studio.css');
   assert.match(css, /\[data-kit\] :focus-visible \{ outline: 2px solid var\(--ring\)/);
   assert.match(css, /forced-colors: active/);

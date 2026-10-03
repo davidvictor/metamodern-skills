@@ -2324,6 +2324,43 @@ await check("AC-60", async () => {
   return [ok ? "pass" : "fail", `with the capability the Code tab showed ${JSON.stringify(shown)} (only changed props) and Copy put the same text on the clipboard (${copied === shown}); a frame without it shows tabs ${without.join(", ")}`]
 })
 
+// AC-61 A preview that did not start offers Retry, and Retry mounts the frame again: once the cause is gone the preview is Ready
+await check("AC-61", async () => {
+  const until = async (read, test, ms) => {
+    const end = Date.now() + ms
+    let value = await read()
+    while (!test(value) && Date.now() < end) {
+      await wait(100)
+      value = await read()
+    }
+    return value
+  }
+  const q = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const p = await q.newPage()
+  // Frames reject this title until the page says the cause is gone.
+  await p.addInitScript(() => {
+    if (window === window.top) return
+    try {
+      if (!window.top.__causeGone) window.__studioStrictTitle = true
+    } catch {
+      window.__studioStrictTitle = true
+    }
+  })
+  await p.goto(servers.normal.url + `#view=inspect&scenario=${CARD}&title=${encodeURIComponent("Reject this title")}`)
+  await p.waitForSelector("header")
+  const retry = p.locator(".preview-frame").getByRole("button", { name: "Retry" })
+  const offered = await until(() => retry.count(), (n) => n > 0, 8000)
+  const failed = await p.locator("header").innerText()
+  await p.evaluate(() => (window.__causeGone = true))
+  if (offered) await retry.click()
+  const ready = await until(() => p.locator("header").innerText(), (t) => /Ready/.test(t), 8000)
+  const left = await retry.count()
+  const shown = left ? "" : ((await frameState(await liveFrame(p))).text ?? "")
+  await q.close()
+  const ok = offered > 0 && /Did not start/.test(failed) && /Ready/.test(ready) && left === 0 && /Reject this title/.test(shown)
+  return [ok ? "pass" : "fail", `a frame that failed to mount showed Retry (${offered > 0}) with "${/Did not start/.test(failed) ? "Did not start" : failed.replace(/\s+/g, " ").slice(0, 40)}" in the top bar; after the cause was removed, Retry mounted the frame (${left === 0 ? "Retry gone" : "Retry still shown"}), the top bar read ${/Ready/.test(ready) ? "Ready" : JSON.stringify(ready.replace(/\s+/g, " ").slice(0, 40))} and the card shows "${shown.slice(0, 40)}"`]
+})
+
 // ---------- Workspace modules (WS-01 to WS-09, references/workspace.md) ----------
 
 const railModule = (p, name) => p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button', { hasText: name })
