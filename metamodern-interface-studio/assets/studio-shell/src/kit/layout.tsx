@@ -63,5 +63,5 @@ export function Toolbar({ label, children }: { label: string; children: React.Re
 
 /** The Studio's button with the kit's target floor; a destructive button's text keeps AA contrast. */
 export function Button({ className, ...props }: React.ComponentProps<typeof UIButton>) {
-  return <UIButton className={cn(TARGET, props.variant === "destructive" && "text-(color:--kit-danger-ink)", className)} {...props} />
+  return <UIButton className={cn(TARGET, props.variant === "destructive" && "text-[color:var(--kit-danger-ink,var(--destructive))]", className)} {...props} />
 }

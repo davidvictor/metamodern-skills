@@ -1,7 +1,7 @@
 import * as React from "react"
 import { adapter } from "@/adapter"
 import { FidelityBadge, lookOf, PreviewFrame as Boundary, useFit } from "@/components/studio/bits"
-import { LivePreview } from "@/studio/live-preview"
+import { LivePreview, type LiveStatus } from "@/studio/live-preview"
 import type { MountInputs } from "@/studio/protocol"
 import type { Fidelity, Profile } from "@/studio/types"
 
@@ -34,6 +34,18 @@ export function PreviewFrame(props: PreviewFrameProps) {
   const box = React.useRef<HTMLDivElement>(null)
   const scale = useFit(box, props.w, props.h, "fit", PAD, true)
   const live = "src" in props ? props : null
+  // As every preview: a frame that is starting says so, and one that failed with nothing to keep on screen says why and offers Retry.
+  const [status, setStatus] = React.useState<LiveStatus | null>(null)
+  const [retry, setRetry] = React.useState(0)
+  // The boundary shows a failure instead of the frame, so Retry clears it and the frame mounts again with a fresh runtime.
+  const retryFrame = () => {
+    setStatus(null)
+    setRetry((n) => n + 1)
+  }
+  const failed =
+    live && status?.status === "error" && !status.previous
+      ? { title: "The preview did not start", description: status.reason ?? "The frame reported an error.", tone: "danger" as const, action: { label: "Retry", onClick: retryFrame } }
+      : undefined
   return (
     <figure data-kit className="grid gap-2">
       <figcaption className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -44,20 +56,21 @@ export function PreviewFrame(props: PreviewFrameProps) {
         </span>
       </figcaption>
       <div ref={box} className="stage-surface flex justify-center overflow-hidden rounded-xl p-6">
-        <Boundary w={props.w} h={props.h} scale={scale} profile={{ kind: props.kind ?? "desktop" }} appearance={props.appearance} label={props.label}>
+        <Boundary w={props.w} h={props.h} scale={scale} profile={{ kind: props.kind ?? "desktop" }} appearance={status?.appearance ?? props.appearance} empty={failed} loading={!!live && (!status || status.status === "loading")} label={props.label}>
           {live ? (
             <LivePreview
               src={live.src}
               origin={live.origin}
               isolation={adapter.frameIsolation}
               inputs={{ scenario: live.scenario, theme: live.theme, profile: live.profile, values: live.values ?? {}, commands: [] }}
-              // Values travel in inputs: a frame with live-values takes them in place, as in every preview.
-              mountKey={JSON.stringify([live.scenario, live.theme, live.profile])}
+              // Values travel in inputs: a frame with live-values takes them in place, as in every preview. Retry mounts a fresh runtime.
+              mountKey={JSON.stringify([live.scenario, live.theme, live.profile, retry])}
               draft={NO_DRAFT}
               w={props.w}
               h={props.h}
               scale={scale}
               label={props.label}
+              onStatus={setStatus}
             />
           ) : (
             <iframe title={props.label} sandbox="" tabIndex={-1} referrerPolicy="no-referrer" srcDoc={"html" in props ? props.html : ""} className="absolute top-0 left-0 origin-top-left border-0" style={{ width: props.w, height: props.h, transform: `scale(${scale})` }} />

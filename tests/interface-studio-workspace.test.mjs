@@ -235,8 +235,20 @@ test('WM-10 the kit is one versioned barrel with the floors built in', () => {
   assert.match(read('src/kit/layout.tsx'), /pointer-coarse:text-base!/);
   assert.match(read('src/kit/data.tsx'), /<VirtualList/);
   assert.match(read('src/kit/preview-frame.tsx'), /sandbox=""/);
+  const frame = read('src/kit/preview-frame.tsx');
+  // Values reach a live frame through its inputs; only scenario, theme, profile and Retry mount a new runtime.
+  assert.match(frame, /mountKey=\{JSON\.stringify\(\[live\.scenario, live\.theme, live\.profile, retry\]\)\}/);
+  assert.doesNotMatch(frame, /mountKey=\{[^}]*values/);
+  // The frame's status drives the boundary as in every preview: loading, appearance, and a failure with Retry.
+  assert.match(frame, /onStatus=\{setStatus\}/);
+  assert.match(frame, /loading=\{!!live && \(!status \|\| status\.status === "loading"\)\}/);
+  assert.match(frame, /appearance=\{status\?\.appearance \?\? props\.appearance\}/);
+  assert.match(frame, /empty=\{failed\}/);
+  // Retry clears the failure so the frame mounts again, and bumps the key so it is a fresh runtime.
+  assert.match(frame, /const retryFrame = \(\) => \{\s*setStatus\(null\)\s*setRetry\(\(n\) => n \+ 1\)/);
+  assert.match(frame, /label: "Retry", onClick: retryFrame/);
   const css = read('src/studio.css');
-  assert.match(css, /\[data-kit\] :focus-visible \{ outline: 2px solid transparent/);
+  assert.match(css, /\[data-kit\] :focus-visible \{ outline: 2px solid var\(--ring\)/);
   assert.match(css, /forced-colors: active/);
   assert.match(css, /\[data-kit\], \[data-kit\] \* \{ animation: none !important; transition: none !important; \}/);
 });

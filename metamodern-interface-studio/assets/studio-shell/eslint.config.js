@@ -25,7 +25,7 @@ export default defineConfig([
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {
-    // The kit and the workspace layer co-locate small helpers with components.
+    // The kit co-locates small helpers with components.
     files: ['src/kit/**/*.{ts,tsx}'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },

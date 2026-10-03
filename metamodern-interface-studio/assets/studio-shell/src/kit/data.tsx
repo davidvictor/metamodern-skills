@@ -87,6 +87,7 @@ export function DataTable<T>({ label, rows, columns, filterable, initialSort, on
   const rowHeight = useCoarse() ? 44 : 36
   const shown = React.useMemo(() => sortRows(filterRows(rows, columns, query), columns, sort), [rows, columns, query, sort])
   const template = columns.map((c) => c.width ?? "minmax(0,1fr)").join(" ")
+  const sorted = sort && columns.find((c) => c.id === sort.column)
   return (
     <div className="grid gap-2">
       {filterable && (
@@ -101,6 +102,9 @@ export function DataTable<T>({ label, rows, columns, filterable, initialSort, on
           className={INPUT}
         />
       )}
+      <p role="status" aria-live="polite" className="sr-only">
+        {sorted ? `Sorted by ${sorted.label}, ${sort?.direction === "asc" ? "ascending" : "descending"}` : ""}
+      </p>
       <div role="grid" aria-label={label} aria-rowcount={shown.length + 1} aria-colcount={columns.length} className="flex flex-col overflow-hidden rounded-xl border">
         <div role="row" aria-rowindex={1} className="grid border-b bg-muted/40" style={{ gridTemplateColumns: template }}>
           {columns.map((c) => {
@@ -116,7 +120,7 @@ export function DataTable<T>({ label, rows, columns, filterable, initialSort, on
           })}
         </div>
         {shown.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">{query ? `Nothing matches "${query}". Clear the filter.` : empty}</p>
+          <p className="p-4 text-sm text-muted-foreground">{query ? `Nothing matches "${query}". Edit the filter.` : empty}</p>
         ) : (
           <div className="flex flex-col" style={{ height: Math.min(height, shown.length * rowHeight) }}>
             <VirtualList

@@ -48,7 +48,7 @@ export function Field(props: FieldProps) {
           </SelectTrigger>
           <SelectContent data-kit>
             {options.map((o) => (
-              <SelectItem key={o.id} value={o.id} className={cn(TARGET, "focus-visible:shadow-[inset_0_0_0_2px_var(--ring)]")}>
+              <SelectItem key={o.id} value={o.id} className={TARGET}>
                 {o.label}
               </SelectItem>
             ))}
@@ -74,7 +74,7 @@ function SecretField({ id, field, describedBy, note }: { id: string; field: Text
     <UIField data-invalid={field.error ? true : undefined}>
       <FieldLabel htmlFor={id}>{field.label}</FieldLabel>
       <InputGroup className="pointer-coarse:min-h-11">
-        <InputGroupInput id={id} type={shown ? "text" : "password"} value={field.value} placeholder={field.placeholder} disabled={field.disabled} autoComplete="off" spellCheck={false} aria-invalid={field.error ? true : undefined} aria-describedby={describedBy} onChange={(e) => field.onChange(e.target.value)} className="pointer-coarse:text-base!" />
+        <InputGroupInput id={id} type={shown ? "text" : "password"} value={field.value} placeholder={field.placeholder} disabled={field.disabled} autoComplete="new-password" data-1p-ignore data-lpignore="true" data-bwignore spellCheck={false} aria-invalid={field.error ? true : undefined} aria-describedby={describedBy} onChange={(e) => field.onChange(e.target.value)} className="pointer-coarse:text-base!" />
         <InputGroupAddon align="inline-end">
           <InputGroupButton aria-label={shown ? `Hide ${field.label}` : `Reveal ${field.label}`} aria-pressed={shown} onClick={() => setShown((v) => !v)} className={TARGET}>
             {shown ? <EyeOffIcon /> : <EyeIcon />}

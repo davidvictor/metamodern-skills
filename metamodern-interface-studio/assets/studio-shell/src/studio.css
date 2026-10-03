@@ -138,18 +138,15 @@
 }
 
 /* Studio UI kit (studio-kit/1): focus stays visible in forced colors, and nothing moves under reduced motion. */
-[data-kit] :focus-visible { outline: 2px solid transparent; outline-offset: 2px; }
+[data-kit] :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+/* Rows, options and column headers sit inside clipping containers, so their ring is drawn inside. */
+[data-kit] [role="row"]:focus-visible, [data-kit] [role="option"]:focus-visible, [data-kit] [role="columnheader"] :focus-visible { outline-offset: -2px; }
 @media (forced-colors: active) {
   [data-kit] :focus-visible { outline-color: Highlight; }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-kit], [data-kit] * { animation: none !important; transition: none !important; }
 }
-/*
- * Measured floors: the kit's focus ring is a solid --ring (3:1 or more against the page, card, popover and muted
- * grounds in both appearances), and a destructive button's text reaches 4.5:1 at rest and on hover.
- */
+/* Measured floors: the kit's ring (--ring) reaches 3:1 or more against the page, card, popover and muted grounds in both appearances. */
 [data-kit] { --ring: oklch(0.556 0 0); --kit-danger-ink: oklch(0.5 0.19 27); }
 .dark [data-kit] { --kit-danger-ink: var(--danger); }
-[data-kit] :focus-visible,
-[data-kit] [data-slot="input-group"]:has(:focus-visible) { --tw-ring-color: var(--ring); }
