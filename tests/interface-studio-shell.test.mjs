@@ -343,3 +343,11 @@ test('0.12.1 touch and focus floors: stacked controls keep their own targets and
   assert.match(doc, /equivalent/);
   assert.match(read('UPDATING.md'), /^## 0\.12\.1$/m);
 });
+
+test('0.12.1 a focused slider outlines its thumb and AC-66 walks the Design sliders', () => {
+  assert.match(read('src/studio.css'), /\[data-slot="slider-thumb"\]:has\(input:focus-visible\) \{ outline: 2px solid var\(--ring\); outline-offset: 2px; \}/);
+  const script = read('scripts/acceptance.mjs');
+  assert.match(script, /const range = !!a\?\.matches\('input\[type="range"\]'\)/);
+  assert.match(script, /hash: "view=design&scenario=tasks\.list" \}\)\n\s*await d\.addStyleTag/);
+  assert.match(script, /no Design slider was reached/);
+});

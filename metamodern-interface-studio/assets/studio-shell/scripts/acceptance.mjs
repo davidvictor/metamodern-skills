@@ -2903,8 +2903,12 @@ await check("AC-66", async () => {
       await p.keyboard.press("Tab")
       await settle(p)
       const f = await p.evaluate(() => {
-        const e = document.activeElement
-        if (!e || e === document.body || e.tagName === "IFRAME" || e.matches("input, textarea, select")) return null
+        const a = document.activeElement
+        // A slider's focus sits on its range input inside the thumb, so the thumb is what draws the indicator. Text fields
+        // and selects keep their focus border and are not measured here.
+        const range = !!a?.matches('input[type="range"]')
+        if (!a || a === document.body || a.tagName === "IFRAME" || (!range && a.matches("input, textarea, select"))) return null
+        const e = (range && a.closest('[data-slot="slider-thumb"]')) || a
         const region = e.closest('[role="dialog"]') ? "drawer" : e.closest('[aria-label="Studio"]') ? "rail" : e.closest("header") ? "header" : e.closest('[role="toolbar"]') ? "dock" : e.closest('nav[aria-label="Views"]') ? "bar" : e.closest('[data-sidebar="sidebar"]') ? "panel" : null
         if (!region) return null
         // The part of the control in view: a panel taller than its scroller is measured on what shows.
@@ -2916,7 +2920,7 @@ await check("AC-66", async () => {
           if (st.overflowX !== "visible") ((v.l = Math.max(v.l, c.left)), (v.r = Math.min(v.r, c.right)))
           if (st.overflowY !== "visible") ((v.t = Math.max(v.t, c.top)), (v.b = Math.min(v.b, c.bottom)))
         }
-        return { region, n: window.__floors.name(e), crumb: !!e.closest('[data-slot="breadcrumb"]'), visible: e.matches(":focus-visible"), r: { x: v.l, y: v.t, w: v.r - v.l, h: v.b - v.t } }
+        return { region, n: range ? a.getAttribute("aria-label") ?? "slider" : window.__floors.name(e), range, crumb: !!e.closest('[data-slot="breadcrumb"]'), visible: a.matches(":focus-visible"), r: { x: v.l, y: v.t, w: v.r - v.l, h: v.b - v.t } }
       })
       if (!f || f.r.w < 2 || f.r.h < 2) continue
       const x = Math.max(0, Math.floor(f.r.x) - 6)
@@ -2949,15 +2953,28 @@ await check("AC-66", async () => {
           await wait(600)
         }
       }
+      await p.closeAll()
+      // Design: the panel's sliders take keyboard focus on their range inputs.
+      const d = await openFloors("normal", { appearance, width, height: width === 1440 ? 900 : phone ? 844 : 1024, touch: width < 1440, hash: "view=design&scenario=tasks.list" })
+      await d.addStyleTag({ content: '[data-slot="tooltip-content"], [role="tooltip"] { visibility: hidden !important; }' })
+      await d.mouse.move(0, 0)
+      if (phone) {
+        await d.getByRole("button", { name: "Panel", exact: true }).click()
+        await wait(800)
+      }
+      const before = found.length
+      await walk(d, phone ? 30 : 60, found)
+      const sliders = found.slice(before).filter((f) => f.range)
+      await d.closeAll()
       const label = `${appearance} ${width}`
+      if (!sliders.length) bad.push(`${label}: no Design slider was reached`)
       const short = found.filter((f) => !f.visible || f.count < f.perimeter)
       const crumb = found.find((f) => f.crumb)
       const regions = phone ? ["header", "dock", "bar", "drawer"] : ["rail", "header", "panel", "dock"]
       const missing = regions.filter((r) => !found.some((f) => f.region === r))
       if (short.length || !crumb || missing.length) bad.push(`${label}:${short.length ? ` under the perimeter ${short.slice(0, 6).map((f) => `${f.region} "${f.n}" ${f.count}/${f.perimeter} px${f.visible ? "" : " (not focus-visible)"}`).join(", ")}` : ""}${crumb ? "" : " the scenario trigger was not reached"}${missing.length ? ` not reached ${missing.join(", ")}` : ""}`)
       const low = Math.min(...found.map((f) => f.count / f.perimeter))
-      notes.push(`${label}: ${found.length} stops, lowest ${low.toFixed(2)}× perimeter, scenario trigger ${crumb ? `${crumb.count} px for a ${crumb.perimeter} px perimeter` : "not reached"}`)
-      await p.closeAll()
+      notes.push(`${label}: ${found.length} stops, lowest ${low.toFixed(2)}× perimeter, scenario trigger ${crumb ? `${crumb.count} px for a ${crumb.perimeter} px perimeter` : "not reached"}, Design sliders ${sliders.map((f) => `${f.n} ${(f.count / f.perimeter).toFixed(2)}×`).join(", ") || "none"}`)
     }
   }
   return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `${notes.join("; ")}. Screenshots of each stop focused and unfocused, tooltips hidden; a stop passes when the pixels changed by 3:1 or more cover at least its perimeter.`]
