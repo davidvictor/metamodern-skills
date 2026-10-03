@@ -40,6 +40,8 @@ export function useOperation<T = unknown>(name: string) {
   const { operations, uses } = useModule()
   const [state, setState] = React.useState<OperationState<T>>({ status: "idle", result: null })
   const live = React.useRef(true)
+  // Only the latest call sets status and result, so an earlier, slower answer cannot replace it.
+  const seq = React.useRef(0)
   React.useEffect(() => {
     live.current = true
     return () => {
@@ -49,10 +51,11 @@ export function useOperation<T = unknown>(name: string) {
   const call = React.useMemo(() => createOperationClient({ base: operations, uses, location: window.location.href, fetch: (url, init) => window.fetch(url, init) }), [operations, uses])
   const run = React.useCallback(
     async (kind: "read" | "write", input: unknown, expectedRevision?: string) => {
+      const id = ++seq.current
       setState((s) => ({ status: "running", result: s.result }))
       const result = (await call(name, kind, input, { expectedRevision })) as OperationResult<T>
       if (!result.ok && result.error.code === HOST_UNAVAILABLE) hostStatus.set({ down: result.error.reason })
-      if (live.current) setState({ status: "done", result })
+      if (live.current && id === seq.current) setState({ status: "done", result })
       return result
     },
     [call, name]

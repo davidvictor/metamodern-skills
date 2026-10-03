@@ -32,9 +32,14 @@ export default defineConfig([
   },
   {
     // Workspace modules import only @studio/kit, @studio/workspace, React and their own files (references/workspace.md).
-    files: ['src/workspace/**/*.{ts,tsx}', 'example/workspace/**/*.{ts,tsx}'],
+    files: ['src/workspace/**/*.{ts,tsx,js,jsx,mjs}', 'example/workspace/**/*.{ts,tsx}'],
     ignores: ['example/workspace/adapter.ts'],
     plugins: { studio: workspaceBoundary },
     rules: { 'studio/imports': 'error' },
+  },
+  {
+    // Plain JavaScript workspace files may use JSX too.
+    files: ['src/workspace/**/*.{js,jsx,mjs}'],
+    languageOptions: { globals: globals.browser, parserOptions: { ecmaFeatures: { jsx: true } } },
   },
 ])

@@ -9,7 +9,7 @@ import type { StudioConfig } from "./src/studio/config"
 import { LAYOUTS_MAX_BYTES, validateLayouts } from "./src/studio/layouts"
 import { SCENARIOS_MAX_BYTES, validateScenarios } from "./src/studio/scenarios"
 import type { StudioAdapter } from "./src/studio/types"
-import { undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
+import { definedModules, undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
 
 // Shell owned: product settings come from studio.config.ts, so an update can
 // replace this file. The Studio (index.html) builds with any extra pages the
@@ -117,34 +117,6 @@ const studioAliases = [
 ]
 const aliases = [...acceptance, ...studioAliases, { find: "@", replacement: path.resolve(root, "./src") }]
 
-/** The module IDs a workspace file passes to defineWorkspace, or why they cannot be read. */
-function definedModules(source: string, file: string): string[] | string {
-  const found: { ids: string[] | null; problem: string | null } = { ids: null, problem: null }
-  const visit = (node: unknown): void => {
-    if (!node || typeof node !== "object" || found.problem) return
-    if (Array.isArray(node)) return node.forEach(visit)
-    const n = node as { type?: string; callee?: { type?: string; name?: string }; arguments?: unknown[] }
-    if (n.type === "CallExpression" && n.callee?.type === "Identifier" && n.callee.name === "defineWorkspace") {
-      const arg = n.arguments?.[0] as { type?: string; properties?: { type?: string; computed?: boolean; key?: { type?: string; name?: string; value?: unknown } }[] } | undefined
-      if (arg?.type !== "ObjectExpression") {
-        found.problem = "defineWorkspace takes an object literal of module IDs"
-        return
-      }
-      found.ids = []
-      for (const p of arg.properties ?? []) {
-        if (p.type !== "Property" || p.computed || !p.key) {
-          found.problem = "defineWorkspace keys must be plain module IDs, without spreads or computed keys"
-          return
-        }
-        found.ids.push(p.key.type === "Identifier" ? String(p.key.name) : String(p.key.value))
-      }
-    }
-    for (const value of Object.values(node)) if (value && typeof value === "object") visit(value)
-  }
-  visit(parseAst(source, { lang: file.endsWith(".tsx") ? "tsx" : "ts" }))
-  return found.problem ?? found.ids ?? "the file does not call defineWorkspace"
-}
-
 // A module file that defines a module the adapter does not declare fails the build with its name, as
 // does an invalid declaration (references/workspace.md). Skipped when the file defines no modules.
 // When Vite cannot load the adapter (for example it imports CSS) the check only warns; the Studio then
@@ -156,7 +128,7 @@ const workspaceCheck = (): Plugin => ({
     const file = (await this.resolve("@/workspace"))?.id
     if (!file) return
     const rel = path.relative(root, file)
-    const defined = definedModules(readFileSync(file, "utf8"), file)
+    const defined = definedModules(parseAst(readFileSync(file, "utf8"), { lang: file.endsWith(".tsx") ? "tsx" : "ts" }))
     if (typeof defined === "string") return this.error(`${rel}: ${defined}`)
     if (!defined.length) return
     const adapterFile = (await this.resolve("@/adapter"))?.id

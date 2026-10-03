@@ -254,7 +254,7 @@ test('WM-10 the kit is one versioned barrel with the floors built in', () => {
 });
 
 test('WM-11 workspace files import only the kit, the workspace API, React and their own files', async () => {
-  const { workspaceImportProblem, workspaceBoundary } = await import(new URL('scripts/workspace-boundary.mjs', shell).href);
+  const { workspaceImportProblem, createWorkspaceBoundary, workspaceBoundary } = await import(new URL('scripts/workspace-boundary.mjs', shell).href);
   const cwd = '/studio';
   const file = '/studio/src/workspace/env/page.tsx';
   for (const ok of ['react', 'react/jsx-runtime', '@studio/kit', '@studio/workspace', './fields', '../index', '../shared/table', '@/workspace/env/fields', '@/workspace']) {
@@ -272,7 +272,7 @@ test('WM-11 workspace files import only the kit, the workspace API, React and th
   // The lint rule checks every import form, and reports a dynamic import whose target it cannot read.
   const lint = (node) => {
     const reports = [];
-    const visitors = workspaceBoundary.rules.imports.create({ filename: file, cwd, report: (r) => reports.push(r.message) });
+    const visitors = createWorkspaceBoundary(cwd).rules.imports.create({ filename: file, cwd: '/elsewhere', report: (r) => reports.push(r.message) });
     visitors[node.type](node);
     return reports;
   };
@@ -286,6 +286,55 @@ test('WM-11 workspace files import only the kit, the workspace API, React and th
   assert.deepEqual(lint({ type: 'ImportExpression', source: { type: 'TemplateLiteral', expressions: [], quasis: [{ value: { cooked: './fields' } }] } }), []);
   assert.match(lint({ type: 'ImportExpression', source: { type: 'TemplateLiteral', expressions: [{ type: 'Identifier', name: 'x' }], quasis: [{ value: { cooked: '../' } }, { value: { cooked: '' } }] } })[0], /import\(\) whose target is not a string literal/);
   assert.match(lint({ type: 'ImportExpression', source: { type: 'Identifier', name: 'target' } })[0], /import\(\) whose target is not a string literal/);
+
+  // import.meta.glob patterns, alone or in a list, negated or under a base, stay inside the boundary.
+  const globCall = (...args) => ({ type: 'CallExpression', callee: { type: 'MemberExpression', computed: false, object: { type: 'MetaProperty', meta: { name: 'import' }, property: { name: 'meta' } }, property: { type: 'Identifier', name: 'glob' } }, arguments: args });
+  const list = (...values) => ({ type: 'ArrayExpression', elements: values.map(literal) });
+  assert.deepEqual(lint(globCall(literal('./**/*.tsx'))), []);
+  assert.deepEqual(lint(globCall(list('./**/*.tsx', '!./**/*.test.tsx'))), []);
+  assert.deepEqual(lint(globCall(literal('/src/workspace/**/*.ts'))), []);
+  assert.match(lint(globCall(literal('../../studio/*.ts')))[0], /\.\.\/\.\.\/studio\/\*\.ts is outside the workspace boundary/);
+  assert.match(lint(globCall(list('./*.tsx', '!../../store.tsx')))[0], /\.\.\/\.\.\/store\.tsx is outside the workspace boundary/);
+  assert.match(lint(globCall(literal('/src/store.tsx')))[0], /outside the workspace boundary/);
+  assert.match(lint(globCall(literal('./*.ts'), { type: 'ObjectExpression', properties: [{ type: 'Property', computed: false, key: { type: 'Identifier', name: 'base' }, value: literal('../../studio') }] }))[0], /outside the workspace boundary/);
+  assert.match(lint(globCall({ type: 'Identifier', name: 'pattern' }))[0], /not a string literal/);
+  assert.deepEqual(lint({ type: 'CallExpression', callee: { type: 'Identifier', name: 'glob' }, arguments: [literal('../../store')] }), []);
+
+  // Type-only imports: type T = import("...").T, in either typescript-eslint shape.
+  assert.match(lint({ type: 'TSImportType', argument: { type: 'TSLiteralType', literal: literal('../../studio/types') } })[0], /outside the workspace boundary/);
+  assert.match(lint({ type: 'TSImportType', source: literal('@/store') })[0], /outside the workspace boundary/);
+  assert.deepEqual(lint({ type: 'TSImportType', argument: { type: 'TSLiteralType', literal: literal('./fields') } }), []);
+
+  // The shared plugin checks against the Studio that holds it, not the directory ESLint runs in.
+  const studioRoot = fileURLToPath(shell);
+  const reports = [];
+  workspaceBoundary.rules.imports.create({ filename: join(studioRoot, 'src/workspace/page.tsx'), cwd: '/', report: (r) => reports.push(r.message) }).ImportDeclaration({ type: 'ImportDeclaration', source: literal('./fields') });
+  assert.deepEqual(reports, []);
+});
+
+test('WM-13 the build reads the module IDs a workspace file defines, or says why it cannot', async () => {
+  const { definedModules } = await loadPure('src/studio/workspace/declaration.ts');
+  const key = (name) => ({ type: 'Property', computed: false, key: { type: 'Identifier', name }, value: { type: 'ObjectExpression', properties: [] } });
+  const define = (arg) => ({ type: 'CallExpression', callee: { type: 'Identifier', name: 'defineWorkspace' }, arguments: arg ? [arg] : [] });
+  const object = (...properties) => ({ type: 'ObjectExpression', properties });
+  const program = (...calls) => ({ type: 'Program', body: calls.map((expression) => ({ type: 'ExportDefaultDeclaration', declaration: expression })) });
+  const cases = [
+    ['empty seed', program(define(object())), []],
+    ['plain keys', program(define(object(key('site'), key('audit')))), ['site', 'audit']],
+    ['string-literal keys', program(define(object({ type: 'Property', computed: false, key: { type: 'Literal', value: 'site-tools' } }))), ['site-tools']],
+    ['spread', program(define(object({ type: 'SpreadElement', argument: { type: 'Identifier', name: 'more' } }))), /without spreads or computed keys/],
+    ['computed key', program(define(object({ type: 'Property', computed: true, key: { type: 'Identifier', name: 'id' } }))), /without spreads or computed keys/],
+    ['numeric key', program(define(object({ type: 'Property', computed: false, key: { type: 'Literal', value: 1 } }))), /without spreads or computed keys/],
+    ['non-object argument', program(define({ type: 'Identifier', name: 'modules' })), /takes an object literal/],
+    ['no argument', program(define(null)), /takes an object literal/],
+    ['no call', { type: 'Program', body: [] }, /does not call defineWorkspace/],
+    ['two calls', program(define(object(key('site'))), define(object(key('audit')))), /called more than once/],
+  ];
+  for (const [name, ast, expected] of cases) {
+    const got = definedModules(ast);
+    if (Array.isArray(expected)) assert.deepEqual(got, expected, name);
+    else assert.match(got, expected, name);
+  }
 });
 
 test('WM-12 the product seed is empty and the workspace API is the published surface', () => {
@@ -294,7 +343,7 @@ test('WM-12 the product seed is empty and the workspace API is the published sur
   for (const name of ['defineWorkspace', 'useModule', 'useOperation', 'useDirtyGuard', 'useModuleState']) assert.match(api, new RegExp(`export function ${name}\\b`));
   const eslint = read('eslint.config.js');
   assert.match(eslint, /'studio\/imports': 'error'/);
-  assert.match(eslint, /src\/workspace\/\*\*\/\*\.\{ts,tsx\}/);
+  assert.match(eslint, /'src\/workspace\/\*\*\/\*\.\{ts,tsx,js,jsx,mjs\}'/);
   const vite = read('vite.config.ts');
   assert.match(vite, /@studio\\\/workspace/);
   assert.match(vite, /which the adapter does not declare in workspace\.modules/);

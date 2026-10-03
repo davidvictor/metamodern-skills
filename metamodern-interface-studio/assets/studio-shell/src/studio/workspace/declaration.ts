@@ -40,6 +40,44 @@ export function undeclaredDefinitions(decl: WorkspaceDeclaration | undefined, de
   return defined.filter((id) => !declared.has(id))
 }
 
+type AstNode = { type?: string; [key: string]: unknown }
+type AstProperty = { type?: string; computed?: boolean; key?: { type?: string; name?: string; value?: unknown } }
+
+/**
+ * The module IDs src/workspace/index.ts passes to defineWorkspace, read from its parsed ESTree program
+ * (vite.config.ts parses it with parseAst), or why they cannot be read. The build fails on a reason.
+ */
+export function definedModules(program: unknown): string[] | string {
+  const found: { ids: string[] | null; problem: string | null } = { ids: null, problem: null }
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object" || found.problem) return
+    if (Array.isArray(node)) return node.forEach(visit)
+    const n = node as AstNode & { callee?: { type?: string; name?: string }; arguments?: unknown[] }
+    if (n.type === "CallExpression" && n.callee?.type === "Identifier" && n.callee.name === "defineWorkspace") {
+      if (found.ids) {
+        found.problem = "defineWorkspace is called more than once; define every module in one call"
+        return
+      }
+      const arg = n.arguments?.[0] as { type?: string; properties?: AstProperty[] } | undefined
+      if (arg?.type !== "ObjectExpression") {
+        found.problem = "defineWorkspace takes an object literal of module IDs"
+        return
+      }
+      found.ids = []
+      for (const p of arg.properties ?? []) {
+        if (p.type !== "Property" || p.computed || !p.key || (p.key.type !== "Identifier" && typeof p.key.value !== "string")) {
+          found.problem = "defineWorkspace keys must be plain module IDs, without spreads or computed keys"
+          return
+        }
+        found.ids.push(p.key.type === "Identifier" ? String(p.key.name) : String(p.key.value))
+      }
+    }
+    for (const value of Object.values(node)) if (value && typeof value === "object") visit(value)
+  }
+  visit(program)
+  return found.problem ?? found.ids ?? "the file does not call defineWorkspace"
+}
+
 const ID = /^[a-z][a-z0-9-]*$/
 /** Operation names: lowercase letters, digits, dots and hyphens. operations.ts keeps the same pattern to refuse other names at runtime. */
 export const OPERATION = /^[a-z][a-z0-9.-]*$/
