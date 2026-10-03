@@ -2361,6 +2361,298 @@ await check("AC-61", async () => {
   return [ok ? "pass" : "fail", `a frame that failed to mount showed Retry (${offered > 0}) with "${/Did not start/.test(failed) ? "Did not start" : failed.replace(/\s+/g, " ").slice(0, 40)}" in the top bar; after the cause was removed, Retry mounted the frame (${left === 0 ? "Retry gone" : "Retry still shown"}), the top bar read ${/Ready/.test(ready) ? "Ready" : JSON.stringify(ready.replace(/\s+/g, " ").slice(0, 40))} and the card shows "${shown.slice(0, 40)}"`]
 })
 
+/** Page helpers for AC-62 to AC-64: painted colors, contrast, the backdrop behind an element and a target's hit box. */
+const floorHelpers = () => {
+  const canvas = document.createElement("canvas")
+  canvas.width = canvas.height = 1
+  const g = canvas.getContext("2d", { willReadFrequently: true })
+  const paint = (layers) => {
+    g.clearRect(0, 0, 1, 1)
+    for (const c of layers) {
+      g.fillStyle = c
+      g.fillRect(0, 0, 1, 1)
+    }
+    return Array.from(g.getImageData(0, 0, 1, 1).data)
+  }
+  const lum = (c) => {
+    const f = (v) => {
+      v /= 255
+      return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+    }
+    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
+  }
+  const ratio = (a, b) => {
+    const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
+    return (x + 0.05) / (y + 0.05)
+  }
+  const backdrop = (el) => {
+    const chain = []
+    for (let a = el; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+    return paint(["#ffffff", ...chain]).slice(0, 3)
+  }
+  const on = (color, el) => {
+    const bg = backdrop(el)
+    return ratio(paint([`rgb(${bg.join(",")})`, color]).slice(0, 3), bg)
+  }
+  // A switch, checkbox, radio or slider thumb counts the hit area its ::after adds; a slider's input is its thumb.
+  const hit = (el) => {
+    const e = (el.matches('input[type="range"]') && el.closest('[data-slot="slider-thumb"]')) || el
+    const r = e.getBoundingClientRect()
+    let w = r.width
+    let h = r.height
+    if (/^(switch|checkbox|radio)$/.test(e.getAttribute("role") ?? "") || e.matches('[data-slot="slider-thumb"]')) {
+      const a = getComputedStyle(e, "::after")
+      if (a.position === "absolute") {
+        h -= (parseFloat(a.top) || 0) + (parseFloat(a.bottom) || 0)
+        w -= (parseFloat(a.left) || 0) + (parseFloat(a.right) || 0)
+      }
+    }
+    return { w: Math.round(w), h: Math.round(h) }
+  }
+  const name = (e) => (e.getAttribute("aria-label") || e.textContent.trim() || e.id || e.tagName).replace(/\s+/g, " ").slice(0, 24)
+  const shown = (e) => {
+    if (!e.getClientRects().length || e.closest("[inert]")) return false
+    const r = e.getBoundingClientRect()
+    return r.width > 2 && r.height > 2 && getComputedStyle(e).visibility !== "hidden"
+  }
+  window.__floors = { paint, ratio, backdrop, on, hit, name, shown }
+}
+const openFloors = async (name, o) => {
+  const p = await open(name, o)
+  await p.evaluate(floorHelpers)
+  return p
+}
+
+// AC-62 Tablets and phones (touch): the narration never overlaps its controls; the top bar truncates its breadcrumb and keeps every
+// action on screen; every dock control stays on screen; Tokens values and stage are readable; the bottom bar's labels fit their entries
+await check("AC-62", async () => {
+  const bad = []
+  const notes = []
+  for (const appearance of ["light", "dark"]) {
+    // 1. Present: text and controls never overlap, nothing spills sideways, no word runs out of the text column.
+    for (const width of [390, 600, 768, 900, 1024]) {
+      const p = await openFloors("normal", { appearance, width, height: width < 768 ? 844 : 1024, touch: true, hash: "view=present" })
+      const m = await p.evaluate(() => {
+        const sec = document.querySelector('section[aria-label="Narration"]')
+        const text = sec.querySelector('[aria-live="polite"]')
+        const ctl = sec.querySelector('[aria-label="Walkthrough controls"]')
+        const a = text.getBoundingClientRect()
+        const b = ctl.getBoundingClientRect()
+        const box = sec.getBoundingClientRect()
+        const overlap = a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1
+        const spill = [...sec.querySelectorAll("*")].filter((e) => e.getClientRects().length && (e.getBoundingClientRect().right > box.right + 1 || e.getBoundingClientRect().left < box.left - 1)).length
+        return { overlap, spill, words: text.scrollWidth > text.clientWidth + 1, buttons: ctl.querySelectorAll("button").length }
+      })
+      if (m.overlap || m.spill || m.words || !m.buttons) bad.push(`${appearance} Present@${width}: ${JSON.stringify(m)}`)
+      await p.closeAll()
+    }
+    // 2. Top bar at 768 with the panel open, a status and an Edited badge: nothing overlaps, every action is on screen.
+    {
+      const p = await openFloors("normal", { appearance, width: 768, height: 1024, touch: true, hash: `view=inspect&scenario=${CARD}&title=${encodeURIComponent("Edited in the link")}` })
+      await wait(800)
+      const m = await p.evaluate(() => {
+        const h = document.querySelector("header")
+        const hr = h.getBoundingClientRect()
+        const parts = [...h.children].filter((e) => e.getClientRects().length && e.getBoundingClientRect().width > 0).map((e) => ({ n: e.tagName === "NAV" ? "breadcrumb" : e.getAttribute("aria-live") ? "status" : e.matches("button") ? "button" : e.className.includes("ml-auto") ? "actions" : "badge", r: e.getBoundingClientRect().toJSON() }))
+        const overlaps = []
+        for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) if (parts[i].r.right > parts[j].r.left + 1) overlaps.push(`${parts[i].n}/${parts[j].n}`)
+        const off = [...h.querySelectorAll("button")].filter((b) => window.__floors.shown(b)).filter((b) => { const r = b.getBoundingClientRect(); return r.left < hr.left - 1 || r.right > Math.min(hr.right, innerWidth) + 1 }).map((b) => window.__floors.name(b))
+        const crumb = h.querySelector("nav")
+        return { overlaps, off, truncated: crumb.scrollWidth > crumb.clientWidth + 1 || [...crumb.querySelectorAll(".truncate")].some((e) => e.scrollWidth > e.clientWidth + 1), status: h.querySelector("[aria-live]")?.innerText.replace(/\s+/g, " ") }
+      })
+      if (m.overlaps.length || m.off.length || !/Ready/.test(m.status)) bad.push(`${appearance} top bar@768: ${JSON.stringify(m)}`)
+      if (appearance === "light") notes.push(`top bar at 768: status "${m.status}", breadcrumb ${m.truncated ? "truncated" : "whole"}`)
+      await p.closeAll()
+    }
+    // 3. The dock (and the phone's control strip) on Inspect and Responsive: every control on screen and inside the dock.
+    for (const [width, view] of [[768, "inspect"], [768, "responsive"], [390, "inspect"], [390, "responsive"]]) {
+      const p = await openFloors("normal", { appearance, width, height: width < 768 ? 844 : 1024, touch: true, hash: `view=${view}&scenario=tasks.list${view === "responsive" ? "&layout=task-sizes" : ""}` })
+      await wait(800)
+      const m = await p.evaluate(() => {
+        const t = document.querySelector('[role="toolbar"][aria-label="Preview controls"]')
+        const tr = t.getBoundingClientRect()
+        const vp = { left: 0, top: 0, right: innerWidth, bottom: innerHeight }
+        const names = [...t.querySelectorAll("button")].filter((b) => b.getClientRects().length).map((b) => {
+          const r = b.getBoundingClientRect()
+          const onScreen = r.left >= -1 && r.right <= vp.right + 1 && r.top >= -1 && r.bottom <= vp.bottom + 1 && r.left >= tr.left - 1 && r.right <= tr.right + 1 && r.top >= tr.top - 1 && r.bottom <= tr.bottom + 1
+          return { n: window.__floors.name(b), onScreen }
+        })
+        return { off: names.filter((x) => !x.onScreen).map((x) => x.n), names: names.map((x) => x.n), scrolls: t.scrollWidth > t.clientWidth + 1 }
+      })
+      const zoom = m.names.some((n) => /^Zoom/.test(n))
+      const role = m.names.some((n) => /^Role/.test(n))
+      const reset = view === "responsive" || m.names.some((n) => /Reset preview/.test(n))
+      if (m.off.length || m.scrolls || !zoom || !role || !reset) bad.push(`${appearance} dock ${view}@${width}: off ${JSON.stringify(m.off)}, scrolls ${m.scrolls}, zoom ${zoom}, Role lens ${role}, reset ${reset}`)
+      if (appearance === "light" && view === "inspect") notes.push(`dock at ${width}: ${m.names.length} controls on screen`)
+      await p.closeAll()
+    }
+    // 4. Tokens: every value is shown in full and the stage (its toggles and preview) is on screen.
+    for (const width of [768, 390]) {
+      const p = await openFloors("normal", { appearance, width, height: width < 768 ? 844 : 1024, touch: true, hash: "view=tokens" })
+      await wait(800)
+      const m = await p.evaluate(() => {
+        const cut = [...document.querySelectorAll('[role="treegrid"] [role="row"] > [role="gridcell"]:not(:first-child) code')].filter((c) => c.getClientRects().length && (c.scrollWidth > c.clientWidth + 1 || c.scrollHeight > c.clientHeight + 1)).map((c) => c.textContent)
+        const values = document.querySelectorAll('[role="treegrid"] [role="row"] > [role="gridcell"]:not(:first-child) code').length
+        const vp = { left: 0, top: 0, right: innerWidth, bottom: innerHeight }
+        const toggles = [...document.querySelectorAll('[aria-label="Preview theme"] button, [aria-label="Values"] button')].filter((b) => b.getClientRects().length)
+        const offToggles = toggles.filter((b) => !((r) => r.left >= -1 && r.right <= vp.right + 1 && r.top >= -1 && r.bottom <= vp.bottom + 1)(b.getBoundingClientRect())).map((b) => b.textContent)
+        const f = document.querySelector('[aria-label="Token preview"]')?.closest(".preview-frame")?.getBoundingClientRect()
+        return { values, cut, toggles: toggles.length, offToggles, frame: f ? { left: Math.round(f.left), right: Math.round(f.right), width: Math.round(f.width) } : null, page: document.documentElement.scrollWidth - innerWidth }
+      })
+      const frameOk = m.frame && m.frame.left >= -1 && m.frame.right <= width + 1 && m.frame.width >= 60
+      if (!m.values || m.cut.length || m.toggles < 3 || m.offToggles.length || !frameOk || m.page > 0) bad.push(`${appearance} tokens@${width}: ${JSON.stringify(m)}`)
+      if (appearance === "light") notes.push(`Tokens at ${width}: ${m.values} values in full, stage frame ${m.frame?.width} px wide`)
+      await p.closeAll()
+    }
+    // 8. The bottom bar: each label stays inside its entry; at 390 and 430 it is shown in full (with and without a workspace).
+    for (const [name, width] of [["workspace", 360], ["workspace", 390], ["workspace", 430], ["normal", 390]]) {
+      const p = await openFloors(name, { appearance, width, height: 844, touch: true, hash: "view=inspect&scenario=tasks.list" })
+      const m = await p.evaluate(() =>
+        [...document.querySelectorAll('nav[aria-label="Views"] > button')].map((b) => {
+          // The label's own box: a truncated label is clipped to it.
+          const label = b.querySelector("span") ?? b
+          const t = label.getBoundingClientRect()
+          const c = b.getBoundingClientRect()
+          return { n: b.textContent, within: t.left >= c.left - 0.5 && t.right <= c.right + 0.5, whole: label.scrollWidth <= label.clientWidth + 1, w: Math.round(c.width), h: Math.round(c.height) }
+        })
+      )
+      const out = m.filter((x) => !x.within || x.w < 44 || x.h < 44 || (width >= 390 && !x.whole))
+      if (out.length || !m.length) bad.push(`${appearance} ${name} bottom bar@${width}: ${JSON.stringify(out)}`)
+      if (appearance === "light" && name === "workspace" && width === 390) notes.push(`bottom bar at 390 with a workspace: ${m.map((x) => `${x.n} ${x.w}`).join(", ")}`)
+      await p.closeAll()
+    }
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 8).join("; ") : `light and dark, touch: Present at 390, 600, 768, 900 and 1024 keeps narration and controls apart with nothing spilling; ${notes.join("; ")}; every label fits its entry at 360, 390 and 430`]
+})
+
+// AC-63 Coarse pointers at any width: every Studio target is at least 44 px and text fields use 16 px text (768 and 390, both appearances)
+await check("AC-63", async () => {
+  const measure = (p) =>
+    p.evaluate(() => {
+      const f = window.__floors
+      const targets = [...document.querySelectorAll('button, a[href], summary, select, textarea, input:not([type="hidden"]), [role="button"], [role="tab"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="combobox"], [role="switch"], [role="checkbox"], [role="radio"]')].filter((e) => f.shown(e) && !e.closest(".react-flow__viewport"))
+      const small = targets.map((e) => ({ n: f.name(e), ...f.hit(e) })).filter((m) => m.w < 44 || m.h < 44)
+      const text = targets.filter((e) => e.matches('textarea, select, input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"])')).map((e) => ({ n: f.name(e), px: parseFloat(getComputedStyle(e).fontSize) })).filter((m) => m.px < 16)
+      return { count: targets.length, small: small.map((m) => `${m.n} ${m.w}×${m.h}`), text: text.map((m) => `${m.n} ${m.px}px`) }
+    })
+  const bad = []
+  let measured = 0
+  let states = 0
+  for (const appearance of ["light", "dark"]) {
+    // A tablet: every view with its panel, Details on Inspect, and an open dock menu.
+    for (const hash of ["view=inspect&scenario=tasks.list", "view=compare", "view=responsive&scenario=tasks.list&layout=task-sizes", "view=gallery", "view=present", "view=design", "view=tokens", "view=inspect&scenario=components.task-card&details"]) {
+      const p = await openFloors("normal", { appearance, width: 768, height: 1024, touch: true, hash: hash.replace("&details", "") })
+      if (hash.endsWith("&details")) {
+        await p.getByRole("button", { name: "Toggle details" }).click()
+        await wait(800)
+      }
+      const m = await measure(p)
+      measured += m.count
+      states++
+      if (m.small.length || m.text.length) bad.push(`${appearance} 768 ${hash}: under 44 px ${m.small.slice(0, 6).join(", ")}${m.text.length ? `; text ${m.text.slice(0, 4).join(", ")}` : ""}`)
+      if (hash.startsWith("view=inspect&scenario=tasks.list")) {
+        await p.getByRole("button", { name: /^Size,/ }).click()
+        await wait(500)
+        const menu = await measure(p)
+        measured += menu.count
+        states++
+        if (menu.small.length) bad.push(`${appearance} 768 size menu: ${menu.small.slice(0, 6).join(", ")}`)
+        await p.keyboard.press("Escape")
+        await wait(300)
+        // The folded top bar's actions and Studio settings.
+        await p.getByRole("button", { name: "More actions" }).click()
+        await wait(500)
+        await p.getByRole("button", { name: "Studio settings" }).click()
+        await wait(600)
+        const settings = await measure(p)
+        measured += settings.count
+        states++
+        if (settings.small.length || settings.text.length) bad.push(`${appearance} 768 Studio settings: ${settings.small.slice(0, 6).join(", ")}${settings.text.length ? `; text ${settings.text.slice(0, 4).join(", ")}` : ""}`)
+      }
+      await p.closeAll()
+    }
+    // A phone: every view, and the Panel and Details drawers.
+    for (const hash of ["view=inspect&scenario=tasks.list", "view=compare", "view=responsive&scenario=tasks.list&layout=task-sizes", "view=gallery", "view=present", "view=design", "view=tokens", "drawer=Panel", "drawer=Details"]) {
+      const drawer = hash.startsWith("drawer=") ? hash.slice(7) : null
+      const p = await openFloors("normal", { appearance, width: 390, height: 844, touch: true, hash: drawer ? `view=inspect&scenario=${CARD}` : hash })
+      if (drawer) {
+        await p.getByRole("button", { name: drawer, exact: true }).click()
+        await wait(800)
+      }
+      const m = await measure(p)
+      measured += m.count
+      states++
+      if (m.small.length || m.text.length) bad.push(`${appearance} 390 ${hash}: under 44 px ${m.small.slice(0, 6).join(", ")}${m.text.length ? `; text ${m.text.slice(0, 4).join(", ")}` : ""}`)
+      await p.closeAll()
+    }
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 8).join("; ") : `${states} states on a 768 px tablet and a 390 px phone with touch, light and dark (every view with its panel, Details, the Size menu, the Panel and Details drawers): ${measured} targets, every one at least 44 px (a switch, checkbox or radio by its hit area) and every text field at 16 px. Real devices are not covered.`]
+})
+
+// AC-64 Keyboard focus in the core shell (rail, top bar, panel, dock) adds an indicator at 3:1 or more, and the active rail label
+// reaches 4.5:1, in both appearances
+await check("AC-64", async () => {
+  const bad = []
+  const notes = []
+  for (const appearance of ["light", "dark"]) {
+    for (const [width, touch] of [[1440, false], [768, true]]) {
+      const p = await openFloors("normal", { appearance, width, height: width === 1440 ? 900 : 1024, touch, hash: "view=inspect&scenario=tasks.list" })
+      // Every ring utility leaves a computed box-shadow even unfocused: record each element unfocused, then count only what focus adds.
+      await p.mouse.move(0, 0)
+      await p.evaluate(() => {
+        const before = new WeakMap()
+        for (const e of document.querySelectorAll("body *")) {
+          const s = getComputedStyle(e)
+          before.set(e, { outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}`, shadow: s.boxShadow })
+        }
+        window.__unfocused = before
+      })
+      const rail = await p.evaluate(() => {
+        const b = document.querySelector('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]')
+        const label = b.querySelector("span") ?? b
+        return { text: label.textContent, ratio: window.__floors.on(getComputedStyle(label).color, b), size: parseFloat(getComputedStyle(label).fontSize) }
+      })
+      if (rail.ratio < 4.5) bad.push(`${appearance} ${width}: active rail label "${rail.text}" ${rail.ratio.toFixed(2)}:1`)
+      const regions = { rail: [], header: [], panel: [], dock: [] }
+      const faint = []
+      for (let i = 0; i < 70; i++) {
+        await p.keyboard.press("Tab")
+        // Controls transition their ring in: read once the running transitions end.
+        await p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => null))))
+        const f = await p.evaluate(() => {
+          const e = document.activeElement
+          if (!e || e === document.body || e.tagName === "IFRAME") return null
+          const region = e.closest('[aria-label="Studio"]') ? "rail" : e.closest("header") ? "header" : e.closest('[role="toolbar"]') ? "dock" : e.closest('[data-sidebar="sidebar"]') ? "panel" : null
+          if (!region || e.matches("input, textarea, select")) return null
+          const F = window.__floors
+          const s = getComputedStyle(e)
+          const was = window.__unfocused.get(e) ?? { outline: "none", shadow: "none" }
+          const split = (v) => (v === "none" ? [] : v.split(/,(?![^(]*\))/).map((x) => x.trim()))
+          const marks = []
+          if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 2 && `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor}` !== was.outline && F.paint([s.outlineColor])[3] > 0) marks.push({ color: s.outlineColor, inside: parseFloat(s.outlineOffset) < 0 })
+          for (const layer of split(s.boxShadow)) {
+            if (split(was.shadow).includes(layer)) continue
+            const color = /^(rgba?|oklch|oklab|lab|lch|color|hsla?)\([^)]*\)/.exec(layer)?.[0]
+            const lengths = layer.replace(color ?? "", "").match(/-?[\d.]+px/g)?.map(parseFloat) ?? []
+            if (color && F.paint([color])[3] > 0 && ((lengths[3] ?? 0) >= 2 || (lengths[2] ?? 0) >= 2)) marks.push({ color, inside: /\binset\b/.test(layer) })
+          }
+          const best = Math.max(0, ...marks.map((m) => F.on(m.color, m.inside ? e : e.parentElement)))
+          return { region, n: F.name(e), ratio: best }
+        })
+        if (!f) continue
+        regions[f.region].push(f.ratio)
+        if (f.ratio < 3) faint.push(`${f.region} "${f.n}" ${f.ratio.toFixed(2)}`)
+      }
+      const missing = Object.entries(regions).filter(([, r]) => !r.length).map(([k]) => k)
+      if (faint.length || missing.length) bad.push(`${appearance} ${width}: ${faint.length ? `under 3:1 ${faint.slice(0, 6).join(", ")}` : ""}${missing.length ? ` not reached ${missing.join(", ")}` : ""}`)
+      const low = Object.entries(regions).filter(([, r]) => r.length).map(([k, r]) => `${k} ${Math.min(...r).toFixed(1)}`)
+      notes.push(`${appearance} ${width}: active rail label ${rail.ratio.toFixed(1)}:1 at ${rail.size} px, lowest focus indicator by region ${low.join(", ")}`)
+      await p.closeAll()
+    }
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `${notes.join("; ")} (Tab through the rail, top bar, panel and dock; an indicator counts only where focus adds it)`]
+})
+
 // ---------- Workspace modules (WS-01 to WS-09, references/workspace.md) ----------
 
 const railModule = (p, name) => p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button', { hasText: name })

@@ -103,9 +103,9 @@ function Commands({ onDone }: { onDone: () => void }) {
 function Tab() {
   const s = useStudio()
   return (
-    <button aria-current={s.module ? "page" : undefined} className={cn("flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-colors", s.module && "text-foreground")} onClick={() => s.set({ mobilePanel: "workspace" })}>
+    <button aria-current={s.module ? "page" : undefined} className={cn("flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-colors", s.module && "text-foreground")} onClick={() => s.set({ mobilePanel: "workspace" })}>
       <BoxesIcon className="size-5" />
-      Workspace
+      <span className="max-w-full truncate">Workspace</span>
     </button>
   )
 }

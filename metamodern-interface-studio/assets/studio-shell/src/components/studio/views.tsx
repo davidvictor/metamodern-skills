@@ -17,6 +17,7 @@ import {
   PencilIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useCoarse, useMedia } from "@/hooks/use-mobile"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -654,7 +655,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
          </div>
         </div>
       </div>
-      <section aria-label="Narration" className="border-t bg-background">
+      <section aria-label="Narration" className="@container border-t bg-background">
         {tour.steps.length <= MAX_SEGMENTS ? (
           <div className="seg-track px-4 pt-3" aria-hidden>
             {tour.steps.map((x, j) => (
@@ -670,13 +671,14 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
             </div>
           </div>
         )}
-        <div className={cn("grid items-start gap-x-6 gap-y-3 px-4 pt-3 pb-4", narrow ? "grid-cols-1" : "grid-cols-[minmax(160px,1fr)_minmax(0,2.4fr)_auto]")}>
+        {/* The bar follows its own width, not the window's: one column, then the controls under the text, then three columns, so text and controls never overlap. */}
+        <div className={cn("grid items-start gap-x-6 gap-y-3 px-4 pt-3 pb-4", !narrow && "@xl:grid-cols-[minmax(160px,1fr)_minmax(0,2.4fr)] @4xl:grid-cols-[minmax(160px,1fr)_minmax(0,2.4fr)_auto]")}>
           <div className="grid gap-1">
             <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{tour.name} · {i + 1} of {tour.steps.length}</p>
             {!narrow && <p className="text-xs leading-relaxed text-muted-foreground">{tour.goal}</p>}
             {tour.illustrative && <Badge variant="outline" className="w-fit border-dashed text-[10px]">Illustrative tour</Badge>}
           </div>
-          <div aria-live="polite" className="grid gap-2">
+          <div aria-live="polite" className="grid min-w-0 gap-2 break-words">
             {problem ? (
               <Alert variant="destructive" className="animate-in fade-in-0">
                 <TriangleAlertIcon />
@@ -696,7 +698,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
             )}
             {step.hidden && <p className="text-xs text-muted-foreground">This step is hidden from autoplay. It remains available here for review.</p>}
           </div>
-          <div role="group" aria-label="Walkthrough controls" className="flex flex-wrap items-center gap-1">
+          <div role="group" aria-label="Walkthrough controls" className="flex flex-wrap items-center gap-1 @xl:col-span-2 @4xl:col-span-1">
             <Button variant="outline" size="icon" aria-label="Previous step" disabled={i === 0} onClick={() => go(-1)}><ChevronLeftIcon /></Button>
             <Button size="icon" aria-label={s.present.playing ? "Pause" : "Play"} onClick={() => s.set({ present: { ...s.present, playing: !s.present.playing } })} disabled={!!problem}>
               {s.present.playing ? <PauseIcon /> : <PlayIcon />}
@@ -894,7 +896,10 @@ export function TokensStage() {
   const found = rows.findIndex((r) => r.key === (activeKey ?? s.tokens.selected))
   const active = found >= 0 ? found : 0
   const handle = React.useRef<VirtualListHandle>(null)
-  const heightOf = React.useCallback((i: number) => (rows[i].kind === "family" ? FAMILY_ROW : TOKEN_ROW), [rows])
+  // On a touch screen a family row is a 44 px target. Below 1024 px the stage sits under the table and a token's values take the full width.
+  const coarse = useCoarse()
+  const stacked = useMedia("(max-width: 1023px)")
+  const heightOf = React.useCallback((i: number) => (rows[i].kind === "family" ? (coarse ? 44 : FAMILY_ROW) : TOKEN_ROW), [rows, coarse])
   const ground = (theme: string) => t.grounds?.[theme] ?? (themeOf(theme).appearance === "dark" ? "#111111" : "#ffffff")
   const pval = (v: string | undefined, theme: string, draft?: string) => (
     <span className="flex min-w-0 items-center gap-2">
@@ -903,7 +908,7 @@ export function TokensStage() {
           <span className="size-3 rounded-[3px]" style={{ background: draft && CSS.supports("color", draft) ? draft : v }} />
         </span>
       )}
-      <code className={cn("truncate font-mono text-xs", draft && "text-info")} title={v}>{draft ?? v ?? "none"}</code>
+      <code className={cn("font-mono text-xs", stacked ? "line-clamp-2 break-all" : "truncate", draft && "text-info")} title={v}>{draft ?? v ?? "none"}</code>
     </span>
   )
   const select = (name: string) => s.set({ tokens: { ...s.tokens, selected: name }, detailsOpen: true })
@@ -911,18 +916,18 @@ export function TokensStage() {
   const box = React.useRef<HTMLDivElement>(null)
   const pr = profileOf(s.profile)
   const scale = useFit(box, pr.w, pr.h, s.zoom, 40)
-  const COLS = "grid-cols-[minmax(0,42%)_minmax(0,1fr)_minmax(0,1fr)]"
+  const COLS = stacked ? "grid-cols-2 gap-y-1" : "grid-cols-[minmax(0,42%)_minmax(0,1fr)_minmax(0,1fr)]"
   const report = useReportStatus()
   return (
-    <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
-      <ResizablePanel defaultSize="60" minSize="40">
+    <ResizablePanelGroup key={String(stacked)} orientation={stacked ? "vertical" : "horizontal"} className="min-h-0 flex-1">
+      <ResizablePanel defaultSize={stacked ? "50" : "60"} minSize="40">
         <div className="flex h-full min-h-0 flex-col bg-background">
           <div className="flex items-center gap-2 border-b px-4 py-2 text-xs text-muted-foreground">
             <span>{family ? `${family} · ` : ""}{matches.length} shown of {familyCount ?? t.total} · read from {t.source} at {adapter.product.revision}</span>
             <span className="ml-auto hidden lg:inline">Product values sit on the product’s own ground</span>
           </div>
           <div className={cn("grid border-b py-2 pr-4 pl-4 text-xs font-medium text-muted-foreground [scrollbar-gutter:stable]", COLS)} aria-hidden>
-            <span>Token</span>
+            <span className={cn(stacked && "sr-only")}>Token</span>
             <span>{themeOf(ca).label}</span>
             <span>{themeOf(cb).label}</span>
           </div>
@@ -986,7 +991,7 @@ export function TokensStage() {
                 const d = s.tokens.drafts[x.name]
                 return (
                   <>
-                    <div className="grid min-w-0 gap-0.5" role="gridcell">
+                    <div className={cn("grid min-w-0 gap-0.5", stacked && "col-span-2 flex items-center gap-2")} role="gridcell">
                       <code className="truncate font-mono text-xs font-medium">{x.name}</code>
                       <span className="flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
                         <span className="shrink-0">{x.reads != null ? `${x.reads} reads` : "reads unknown"}</span>
@@ -1006,7 +1011,7 @@ export function TokensStage() {
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize="40" minSize="25">
+      <ResizablePanel defaultSize={stacked ? "50" : "40"} minSize="25">
         <div className="stage-surface flex h-full min-h-0 flex-col">
           <div ref={box} className="flex min-h-0 flex-1 flex-col overflow-auto p-4">
            <div className="mx-auto my-auto flex w-max flex-col items-center gap-3">

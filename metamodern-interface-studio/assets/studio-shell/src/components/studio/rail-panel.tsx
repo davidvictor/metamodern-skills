@@ -16,6 +16,7 @@ import {
   LockIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useCoarse } from "@/hooks/use-mobile"
 
 import {
   Sidebar,
@@ -76,7 +77,7 @@ export function RailButton({ label, keyHint, labels, active, hint, onClick, chil
       className={cn(
         "relative flex w-full shrink-0 items-center justify-center text-sidebar-foreground/65 outline-none transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:text-sidebar-foreground focus-visible:shadow-[inset_0_0_0_2px_var(--sidebar-ring)] [&_svg]:size-[18px] [&_svg]:shrink-0",
         labels ? "h-14 flex-col gap-1 text-[10.5px] font-medium" : "h-10",
-        active && "bg-sidebar-accent text-sidebar-primary before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-sidebar-primary hover:text-sidebar-primary"
+        active && "bg-sidebar-accent text-(--rail-active) before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-sidebar-primary hover:text-(--rail-active)"
       )}
     >
       {children}
@@ -218,7 +219,9 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
   const found = rows.findIndex((r) => r.key === (activeKey ?? s.scenarioObj.id))
   const active = found >= 0 ? found : 0
   const handle = React.useRef<VirtualListHandle>(null)
-  const heightOf = React.useCallback((i: number) => (rows[i].kind === "area" ? AREA_ROW : SCENARIO_ROW), [rows])
+  // On a touch screen every row is a 44 px target.
+  const coarse = useCoarse()
+  const heightOf = React.useCallback((i: number) => (coarse ? 44 : rows[i].kind === "area" ? AREA_ROW : SCENARIO_ROW), [rows, coarse])
   const toggle = (areaId: string) => setOpenAreas((m) => ({ ...m, [areaId]: !m[areaId] }))
   const reveal = rows.findIndex((r) => r.key === s.scenarioObj.id)
   return (

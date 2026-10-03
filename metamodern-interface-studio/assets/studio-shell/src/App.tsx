@@ -171,6 +171,8 @@ function DesktopShell() {
   )
 }
 
+const TAB = "flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground"
+
 function MobileShell() {
   const s = useStudio()
   // On a phone with no profile chosen, open on the product's phone profile when it exists.
@@ -194,13 +196,16 @@ function MobileShell() {
           <StageControls variant="toolbar" compact lookOnly={s.view === "responsive"} />
         </div>
       )}
-      <nav aria-label="Views" className="grid border-t bg-background pb-[env(safe-area-inset-bottom)]" style={{ gridTemplateColumns: `repeat(${tabs.length + 2}, minmax(0, 1fr))` }}>
-        <button className="flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground" onClick={() => s.set({ mobilePanel: "panel" })}>
-          <ListTreeIcon className="size-5" />Panel
+      {/* Each entry is at least 44 px and grows from its label's width, so a long label (Responsive, Workspace) keeps its room. */}
+      <nav aria-label="Views" className="flex border-t bg-background pb-[env(safe-area-inset-bottom)]">
+        <button className={TAB} onClick={() => s.set({ mobilePanel: "panel" })}>
+          <ListTreeIcon className="size-5" />
+          <span className="max-w-full truncate">Panel</span>
         </button>
         {tabs.map((v) => (
-          <button key={v.id} aria-current={!s.module && s.view === v.id ? "page" : undefined} className={cn("flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-colors", !s.module && s.view === v.id && "text-foreground")} onClick={() => s.set({ view: v.id })}>
-            <v.icon className="size-5" />{v.label}
+          <button key={v.id} aria-current={!s.module && s.view === v.id ? "page" : undefined} className={cn(TAB, "transition-colors", !s.module && s.view === v.id && "text-foreground")} onClick={() => s.set({ view: v.id })}>
+            <v.icon className="size-5" />
+            <span className="max-w-full truncate">{v.label}</span>
           </button>
         ))}
         {hasWorkspace ? (
@@ -208,8 +213,9 @@ function MobileShell() {
             <WorkspaceNav part="tab" />
           </Slot>
         ) : (
-          <button className="flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground" onClick={() => s.set({ mobilePanel: "details" })}>
-            <InfoIcon className="size-5" />Details
+          <button className={TAB} onClick={() => s.set({ mobilePanel: "details" })}>
+            <InfoIcon className="size-5" />
+            <span className="max-w-full truncate">Details</span>
           </button>
         )}
       </nav>
