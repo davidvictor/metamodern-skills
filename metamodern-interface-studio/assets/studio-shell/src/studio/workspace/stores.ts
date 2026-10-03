@@ -24,7 +24,10 @@ export function createStore<T>(initial: T): Store<T> {
   }
 }
 
-/** Set when an operation found no host; every module then shows the reason until Try again. */
+/**
+ * Set when a module's read found no host before the host had answered that module and while nothing was unsaved: such a
+ * module cannot start, so it shows the reason until Try again. Writes and later reads report a missing host as their own result.
+ */
 export const hostStatus = createStore<{ down: string | null }>({ down: null })
 /**
  * Modules whose operations the host has answered in this Studio session. Before that a missing host makes the module

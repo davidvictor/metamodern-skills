@@ -41,11 +41,13 @@ function useOpenModule(): { info: ModuleInfo | null; reason: string | null; host
   const { module, section, set } = useStudio()
   const host = React.useSyncExternalStore(hostStatus.subscribe, hostStatus.get)
   const started = React.useSyncExternalStore(answered.subscribe, answered.get)
+  const unsaved = React.useSyncExternalStore(guards.subscribe, guards.active)
   const m = modules.find((x) => x.id === module)
   // `uses` is the declaration's own array, so operation clients built from it keep their identity across renders.
   const info = React.useMemo<ModuleInfo | null>(() => (m ? { id: m.id, label: m.label, sections: m.sections, section, go: (next) => set({ section: next }), uses: m.uses, operations: adapter.workspace?.operations } : null), [m, section, set])
-  // A missing host stops a module only before the host has answered it; afterwards each operation reports it (stores.ts).
-  const down = m && !started[m.id] ? host.down : null
+  // A missing host stops a module only before the host has answered it, and never while it has unsaved changes:
+  // the page is not swapped out under an edit. Otherwise each operation reports it (stores.ts).
+  const down = m && !started[m.id] && !unsaved ? host.down : null
   const reason = m?.unavailable ?? down
   return { info, reason, hostDown: !m?.unavailable && !!down, def: m ? workspace.modules[m.id] : undefined }
 }

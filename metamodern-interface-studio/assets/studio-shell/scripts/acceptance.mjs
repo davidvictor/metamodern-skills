@@ -3032,31 +3032,35 @@ await check("WS-05b", async () => {
   const host = createMockHost()
   servers.workspace.host = host
   const p = await open("workspace", { hash: "module=site&section=general" })
-  await wait(1200)
-  await siteName(p).fill("Kept edit")
-  // The host goes away: whatever answers now is not the operations host (a proxy's HTML error page).
-  servers.workspace.host = (req, res) => {
-    res.statusCode = 502
-    res.setHeader("content-type", "text/html")
-    res.end("<html><body>Bad gateway</body></html>")
+  try {
+    await wait(1200)
+    await siteName(p).fill("Kept edit")
+    // The host goes away: whatever answers now is not the operations host (a proxy's HTML error page).
+    servers.workspace.host = (req, res) => {
+      res.statusCode = 502
+      res.setHeader("content-type", "text/html")
+      res.end("<html><body>Bad gateway</body></html>")
+    }
+    await p.getByRole("button", { name: "Save", exact: true }).click()
+    const barText = () => p.getByRole("region", { name: "Changes", exact: true }).innerText().catch(() => "")
+    const bar = await poll(barText, (t) => /No operations host answered/.test(t))
+    const failed = { retry: await p.getByRole("button", { name: "Retry", exact: true }).count(), value: await siteName(p).inputValue(), h1: await p.locator("h1").first().innerText().catch(() => ""), unavailable: await p.getByText(/is unavailable/).count() }
+    await railView(p, "Compare").click()
+    await wait(500)
+    const asked = await p.getByRole("dialog", { name: "Leave without saving?" }).isVisible().catch(() => false)
+    await p.getByRole("button", { name: "Stay", exact: true }).click()
+    await wait(400)
+    servers.workspace.host = host
+    await p.getByRole("button", { name: "Retry", exact: true }).click()
+    const after = await poll(barText, (t) => /Saved/.test(t))
+    const stored = (await ops("site.read", { input: null })).data.settings.siteName
+    const errors = [...p.errors]
+    const ok = !errors.length && /No operations host answered/.test(bar) && failed.retry === 1 && failed.value === "Kept edit" && failed.h1 === "Site" && failed.unavailable === 0 && asked && /Saved/.test(after) && stored === "Kept edit"
+    return [ok ? "pass" : "fail", `with the host gone Save ${/No operations host answered/.test(bar) ? "showed the host error" : "showed no host error"} with ${failed.retry} Retry, kept "${failed.value}" on the ${failed.h1} page (${failed.unavailable} unavailable notices) and leaving ${asked ? "asked" : "did not ask"}; with the host back Retry ${/Saved/.test(after) ? "saved" : "did not save"} and the host holds "${stored}"; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  } finally {
+    servers.workspace.host = host
+    await p.closeAll()
   }
-  await p.getByRole("button", { name: "Save", exact: true }).click()
-  const barText = () => p.getByRole("region", { name: "Changes", exact: true }).innerText().catch(() => "")
-  const bar = await poll(barText, (t) => /No operations host answered/.test(t))
-  const failed = { retry: await p.getByRole("button", { name: "Retry", exact: true }).count(), value: await siteName(p).inputValue(), h1: await p.locator("h1").first().innerText().catch(() => ""), unavailable: await p.getByText(/is unavailable/).count() }
-  await railView(p, "Compare").click()
-  await wait(500)
-  const asked = await p.getByRole("dialog", { name: "Leave without saving?" }).isVisible().catch(() => false)
-  await p.getByRole("button", { name: "Stay", exact: true }).click()
-  await wait(400)
-  servers.workspace.host = host
-  await p.getByRole("button", { name: "Retry", exact: true }).click()
-  const after = await poll(barText, (t) => /Saved/.test(t))
-  const stored = (await ops("site.read", { input: null })).data.settings.siteName
-  const errors = [...p.errors]
-  await p.closeAll()
-  const ok = !errors.length && /No operations host answered/.test(bar) && failed.retry === 1 && failed.value === "Kept edit" && failed.h1 === "Site" && failed.unavailable === 0 && asked && /Saved/.test(after) && stored === "Kept edit"
-  return [ok ? "pass" : "fail", `with the host gone Save ${/No operations host answered/.test(bar) ? "showed the host error" : "showed no host error"} with ${failed.retry} Retry, kept "${failed.value}" on the ${failed.h1} page (${failed.unavailable} unavailable notices) and leaving ${asked ? "asked" : "did not ask"}; with the host back Retry ${/Saved/.test(after) ? "saved" : "did not save"} and the host holds "${stored}"; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 // WS-06 The dirty guard stops leaving unsaved changes (rail, view keys and Back) and Esc keeps them

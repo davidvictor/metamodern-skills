@@ -57,10 +57,11 @@ export function useOperation<T = unknown>(name: string) {
       const id = ++seq.current
       setState((s) => ({ status: "running", result: s.result }))
       const result = (await call(name, kind, input, { expectedRevision })) as OperationResult<T>
-      // Until the host has answered this module, no host means the module cannot start. After that the failure is
-      // this operation's own result, so the page stays and shows it (SaveBar's error with Retry keeps the edit).
+      // Only a read before the host has answered this module, with nothing unsaved, means the module cannot start.
+      // Any other failure (a write, a later read) is this operation's own result: the page, its edit and its guard
+      // stay, and the module shows it (SaveBar's error with Retry).
       if (!result.ok && result.error.code === HOST_UNAVAILABLE) {
-        if (!answered.get()[moduleId]) hostStatus.set({ down: result.error.reason })
+        if (kind === "read" && !answered.get()[moduleId] && !guards.active()) hostStatus.set({ down: result.error.reason })
       } else if ((result.ok || !SHELL_CODES.has(result.error.code)) && !answered.get()[moduleId]) answered.set({ ...answered.get(), [moduleId]: true })
       if (live.current && id === seq.current) setState({ status: "done", result })
       return result

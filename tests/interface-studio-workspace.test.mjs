@@ -461,10 +461,14 @@ test('WM-15 the workspace reference documents the contract and SKILL.md routes t
   assert.match(read('README.md'), /src\/workspace\//);
 });
 
-test('WM-17 a missing host stops a module only before the host has answered it', () => {
+test('WM-17 a missing host stops a module only on a read before the host answered it, never under unsaved changes', () => {
   const api = read('src/studio/workspace/api.ts');
-  assert.match(api, /if \(!answered\.get\(\)\[moduleId\]\) hostStatus\.set\(\{ down: result\.error\.reason \}\)/);
+  // Only a read, before the host has answered the module and with nothing unsaved, makes it unavailable; a write never does.
+  assert.match(api, /if \(kind === "read" && !answered\.get\(\)\[moduleId\] && !guards\.active\(\)\) hostStatus\.set\(\{ down: result\.error\.reason \}\)/);
+  assert.equal((api.match(/hostStatus\.set\(/g) ?? []).length, 1, 'no other path marks the host down');
   assert.match(api, /result\.ok \|\| !SHELL_CODES\.has\(result\.error\.code\)/, 'only an answer from the host starts a module');
   const page = read('src/studio/workspace/workspace-page.tsx');
-  assert.match(page, /const down = m && !started\[m\.id\] \? host\.down : null/);
+  // The page is never swapped out while it has unsaved changes.
+  assert.match(page, /const unsaved = React\.useSyncExternalStore\(guards\.subscribe, guards\.active\)/);
+  assert.match(page, /const down = m && !started\[m\.id\] && !unsaved \? host\.down : null/);
 });
