@@ -74,6 +74,10 @@ export type State = {
 }
 
 const A = adapter
+// Dock choices travel in links under their input's ID; one on a reserved link key would clash with the Studio's own state, so it is left out of links.
+for (const i of A.axes.inputs)
+  if (i.placement === "dock" && !isProperty(i) && RESERVED_LINK_KEYS.includes(i.id))
+    console.error(`Interface Studio: dock input "${i.id}" uses a reserved link key, so its value is left out of links. Rename it; reserved keys are ${RESERVED_LINK_KEYS.join(", ")}.`)
 const OPTIONS_KEY = `studio.${A.id}.options`
 const DRAFTS_KEY = `studio.${A.id}.token-drafts`
 const DESIGN_KEY = `studio.${A.id}.design-drafts.v1`

@@ -144,6 +144,7 @@ const workspaceFlag = (): Plugin => ({
   name: "studio-workspace-flag",
   async config(_, env) {
     const loaded = env.command === "build" ? await loadAdapter() : null
+    if (loaded && "error" in loaded) console.warn(`Interface Studio: could not load the adapter to tell whether it declares a workspace, so the build keeps the workspace layer: ${loaded.error}`)
     return { define: { __STUDIO_WORKSPACE__: JSON.stringify(!loaded || "error" in loaded || !!loaded.adapter.workspace) } }
   },
 })

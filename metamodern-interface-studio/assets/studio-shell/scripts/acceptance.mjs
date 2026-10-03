@@ -2241,6 +2241,69 @@ await check("AC-60", async () => {
   return [ok ? "pass" : "fail", `with the capability the Code tab showed ${JSON.stringify(shown)} (only changed props) and Copy put the same text on the clipboard (${copied === shown}); a frame without it shows tabs ${without.join(", ")}`]
 })
 
+// WS-06b Back and Forward out of a module with unsaved changes ask on any step; Stay keeps the module's link and page and later
+// history steps still work; leaving through history leaves no duplicate entry behind (the example workspace in the dev server)
+await check("WS-06b", async () => {
+  const port = 5396
+  const dev = spawn("npx", ["vite", "--port", String(port), "--strictPort", "--logLevel", "error"], { cwd: root, stdio: "ignore", env: { ...process.env, VITE_STUDIO_ADAPTER: "workspace" } })
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  try {
+    const url = `http://localhost:${port}/`
+    for (let i = 0; i < 60 && !(await fetch(url).then((r) => r.ok).catch(() => false)); i++) await wait(500)
+    const p = await context.newPage()
+    const hash = () => p.evaluate(() => location.hash)
+    const h1 = () => p.locator("h1").first().innerText().catch(() => "")
+    const dialog = () => p.getByRole("dialog", { name: "Leave without saving?" })
+    const rail = (label) => p.locator('[aria-label="Studio"] nav[aria-label="Workspace"] button', { hasText: label })
+    const name = () => p.getByLabel("Site name", { exact: true })
+    await p.goto(`${url}#view=inspect&scenario=tasks.list`)
+    await p.waitForSelector('nav[aria-label="Workspace"]')
+    await rail("Site").click()
+    await name().waitFor()
+    await rail("Audit").click()
+    await wait(600)
+    await p.goBack()
+    await name().waitFor()
+    await wait(600)
+    await name().fill("Unsaved edit")
+    // Forward would leave Site for Audit: it asks, and Stay keeps Site.
+    await p.goForward()
+    await wait(800)
+    const forwardAsked = await dialog().isVisible().catch(() => false)
+    await p.getByRole("button", { name: "Stay", exact: true }).click()
+    await wait(500)
+    const stayed = { hash: await hash(), h1: await h1(), value: await name().inputValue() }
+    // Stay put Site's place back on top of Audit's entry, so the next Back asks again; Leave without saving opens Audit.
+    await p.goBack()
+    await wait(800)
+    const backAsked = await dialog().isVisible().catch(() => false)
+    await p.getByRole("button", { name: "Leave without saving", exact: true }).click()
+    await wait(900)
+    const leftTo = { hash: await hash(), h1: await h1() }
+    // The next Back reaches Site's own entry, not a duplicate of Audit's.
+    await p.goBack()
+    await name().waitFor()
+    await wait(600)
+    const backAgain = { hash: await hash(), h1: await h1() }
+    // A guarded Back out to the view, then Leave: Forward returns to Site, not to a duplicate of the view.
+    await name().fill("Second edit")
+    await p.goBack()
+    await wait(800)
+    const viewAsked = await dialog().isVisible().catch(() => false)
+    await p.getByRole("button", { name: "Leave without saving", exact: true }).click()
+    await wait(900)
+    const atView = { hash: await hash(), h1: await p.locator("h1").count() }
+    await p.goForward()
+    await wait(900)
+    const forwardAgain = { hash: await hash(), h1: await h1() }
+    const ok = forwardAsked && /module=site/.test(stayed.hash) && stayed.h1 === "Site" && stayed.value === "Unsaved edit" && backAsked && /module=audit/.test(leftTo.hash) && leftTo.h1 === "Audit" && /module=site/.test(backAgain.hash) && backAgain.h1 === "Site" && viewAsked && /view=inspect/.test(atView.hash) && atView.h1 === 0 && /module=site/.test(forwardAgain.hash) && forwardAgain.h1 === "Site"
+    return [ok ? "pass" : "fail", `Forward with an unsaved edit ${forwardAsked ? "asked" : "did not ask"}; Stay kept ${stayed.hash} showing ${stayed.h1} with "${stayed.value}"; the next Back ${backAsked ? "asked" : "did not ask"} and Leave opened ${leftTo.hash} (${leftTo.h1}); Back then opened ${backAgain.hash} (${backAgain.h1}); a guarded Back to the view ${viewAsked ? "asked" : "did not ask"}, Leave opened ${atView.hash}, and Forward opened ${forwardAgain.hash} (${forwardAgain.h1})`]
+  } finally {
+    await context.close()
+    dev.kill()
+  }
+})
+
 await browser.close()
 for (const s of Object.values(servers)) s.server.close()
 writeFileSync(join(root, "acceptance-report.json"), JSON.stringify({ at: new Date().toISOString(), results }, null, 2) + "\n")

@@ -193,12 +193,7 @@ function Runtime() {
   React.useEffect(() => {
     const link = parseModuleLink(openingLink, adapter.workspace)
     if (link.unknown) toast.warning("That link names a workspace module this Studio does not have", { id: "studio-unknown-module", description: `${link.unknown} is not declared in this Studio's workspace.`, duration: 12000 })
-    let skip = false
     const onPop = () => {
-      if (skip) {
-        skip = false
-        return
-      }
       const at = shown.current
       const to = parseModuleLink(location.hash, adapter.workspace)
       // Between two view entries: views keep no history of their own.
@@ -210,10 +205,14 @@ function Runtime() {
         set(patch)
       }
       if (!leaveGuard.ask || to.module === at.module) return go()
-      // Unsaved changes: return to the module's entry until the person decides.
-      skip = true
-      history.forward()
-      leaveGuard.ask(go)
+      // Unsaved changes: put the module's place back on top of the entry reached (Back, Forward or several steps)
+      // until the person decides. Leaving then steps back onto that entry, which this handler applies, so no
+      // duplicate entry remains.
+      const q = new URLSearchParams()
+      q.set("module", at.module ?? "")
+      if (at.section) q.set("section", at.section)
+      history.pushState(null, "", `#${q}`)
+      leaveGuard.ask(() => history.back())
     }
     window.addEventListener("popstate", onPop)
     return () => window.removeEventListener("popstate", onPop)
