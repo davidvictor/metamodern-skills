@@ -41,7 +41,8 @@ export function undeclaredDefinitions(decl: WorkspaceDeclaration | undefined, de
 }
 
 const ID = /^[a-z][a-z0-9-]*$/
-const OPERATION = /^[a-z][a-z0-9.-]*$/
+/** Operation names: lowercase letters, digits, dots and hyphens. operations.ts keeps the same pattern to refuse other names at runtime. */
+export const OPERATION = /^[a-z][a-z0-9.-]*$/
 
 /** Problems with the declaration itself. The build fails on any. */
 export function workspaceProblems(decl: WorkspaceDeclaration | undefined) {

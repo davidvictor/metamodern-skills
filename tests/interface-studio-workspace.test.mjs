@@ -107,6 +107,36 @@ test('WM-04 undeclared names, kind mismatches, cross-origin and missing hosts ar
   assert.deepEqual(refused.map((r) => r.error.code), [REFUSED.undeclared, REFUSED.kind, REFUSED.kind, REFUSED.origin, REFUSED.origin, REFUSED.origin, REFUSED.noHost]);
   assert.ok(refused.every((r) => r.ok === false && r.error.recoverable === false && /not sent|nothing was sent/.test(r.error.reason)));
   assert.equal(t.calls.length, 0, 'no refusal sends a request');
+  // Only http(s) addresses on this origin are callable, and a base may not carry a query or fragment.
+  const notCallable = [
+    await client('data:text/plain,ops')('site.read', 'read'),
+    await client('file:///ops')('site.read', 'read'),
+    await createOperationClient({ base: './__studio/ops', uses: USES, location: 'file:///studio/index.html', fetch: t.fetch })('site.read', 'read'),
+    await client('./__studio/ops?x=1')('site.read', 'read'),
+    await client('./__studio/ops#x')('site.read', 'read'),
+  ];
+  assert.deepEqual(notCallable.map((r) => r.error.code), Array(5).fill(REFUSED.origin));
+  // A declared name the declaration rules reject is refused at runtime too, so it cannot climb the path.
+  const odd = createOperationClient({ base: './__studio/ops', uses: [{ name: '..', kind: 'read' }, { name: 'Site Read', kind: 'read' }], location: LOCATION, fetch: t.fetch });
+  assert.equal((await odd('..', 'read')).error.code, REFUSED.undeclared);
+  assert.equal((await odd('Site Read', 'read')).error.code, REFUSED.undeclared);
+  // Input that is not JSON is refused before a request, never reported as a missing host.
+  const circular = {};
+  circular.self = circular;
+  const bad = [
+    await client('./__studio/ops')('site.write', 'write', circular),
+    await client('./__studio/ops')('site.write', 'write', { n: 1n }),
+  ];
+  assert.deepEqual(bad.map((r) => r.error), Array(2).fill({ code: REFUSED.input, reason: 'site.write input is not JSON, so it was not sent.', recoverable: false }));
+  assert.equal(REFUSED.input, 'bad-input');
+  assert.equal(t.calls.length, 0, 'still no request');
+});
+
+test('WM-04b the runtime operation-name pattern matches the declaration rule', () => {
+  const ops = /const OPERATION_NAME = (\/.+\/)\n/.exec(read('src/studio/workspace/operations.ts'));
+  const decl = /export const OPERATION = (\/.+\/)\n/.exec(read('src/studio/workspace/declaration.ts'));
+  assert.ok(ops && decl);
+  assert.equal(ops[1], decl[1]);
 });
 
 test('WM-05 a declared operation is one same-origin JSON POST to {operations}/{name}', async () => {

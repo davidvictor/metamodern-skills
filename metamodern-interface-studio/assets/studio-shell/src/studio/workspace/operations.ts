@@ -12,7 +12,9 @@ export type OperationResult<T = unknown> =
   | { ok: false; error: OperationError; current?: { data: T; revision?: string } }
 
 /** Codes the shell answers with itself. None of them sent a request. */
-export const REFUSED = { undeclared: "undeclared", kind: "kind-mismatch", origin: "cross-origin", noHost: "no-host" } as const
+export const REFUSED = { undeclared: "undeclared", kind: "kind-mismatch", origin: "cross-origin", noHost: "no-host", input: "bad-input" } as const
+/** The same pattern as OPERATION in declaration.ts (kept here so this file stays types-only). */
+const OPERATION_NAME = /^[a-z][a-z0-9.-]*$/
 /** No host answered, or the answer was not JSON. Every module then says so. */
 export const HOST_UNAVAILABLE = "host-unavailable"
 /** JSON that is not the envelope. */
@@ -59,20 +61,29 @@ export type OperationClientOptions = {
 export function createOperationClient(o: OperationClientOptions) {
   return async function call(name: string, kind: OperationKind, input?: unknown, options: { expectedRevision?: string } = {}): Promise<OperationResult> {
     const use = o.uses.find((u) => u.name === name)
-    if (!use) return refuse(REFUSED.undeclared, `${name} is not in this module's uses, so it was not sent.`)
+    if (!use || !OPERATION_NAME.test(name)) return refuse(REFUSED.undeclared, `${name} is not in this module's uses, so it was not sent.`)
     if (use.kind !== kind) return refuse(REFUSED.kind, `${name} is declared as a ${use.kind} and was called as a ${kind}, so it was not sent.`)
     if (!o.base) return refuse(REFUSED.noHost, "This Studio declares no operations host, so nothing was sent.")
+    const notCallable = refuse(REFUSED.origin, `${o.base} is not an address this Studio can call, so nothing was sent.`)
+    if (/[?#]/.test(o.base)) return notCallable
     let url: URL
     try {
       url = new URL(`${o.base.replace(/\/+$/, "")}/${encodeURIComponent(name)}`, o.location)
     } catch {
-      return refuse(REFUSED.origin, `${o.base} is not an address this Studio can call, so nothing was sent.`)
+      return notCallable
     }
+    if (url.origin === "null" || (url.protocol !== "http:" && url.protocol !== "https:")) return notCallable
     if (url.origin !== new URL(o.location).origin) return refuse(REFUSED.origin, `${url.origin} is not this Studio's origin. Operations are same-origin only, so nothing was sent.`)
     const body = kind === "write" && options.expectedRevision !== undefined ? { input: input ?? null, expectedRevision: options.expectedRevision } : { input: input ?? null }
+    let payload: string
+    try {
+      payload = JSON.stringify(body)
+    } catch {
+      return refuse(REFUSED.input, `${name} input is not JSON, so it was not sent.`)
+    }
     const unavailable: OperationResult = { ok: false, error: { code: HOST_UNAVAILABLE, reason: hostUnavailable(o.base), recoverable: true } }
     try {
-      const res = await o.fetch(url.href, { method: "POST", headers: { "content-type": "application/json", "x-studio-operation-kind": kind }, credentials: "same-origin", body: JSON.stringify(body) })
+      const res = await o.fetch(url.href, { method: "POST", headers: { "content-type": "application/json", "x-studio-operation-kind": kind }, credentials: "same-origin", body: payload })
       return parseEnvelope(await res.text()) ?? unavailable
     } catch {
       return unavailable
