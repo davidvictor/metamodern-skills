@@ -1888,6 +1888,7 @@ await check("AC-53", async () => {
   const edited = await p.getByText(/Edited ·/).count()
   const keys = await p.evaluate(() => [...new URLSearchParams(location.hash.slice(1)).keys()].join(","))
   const values = Object.keys((await frameState(await liveFrame(p))).mounted.values).join(",")
+  // A built Studio never requests __studio/scenarios (dev builds only), so only the properties- chunk half of this can catch a regression here.
   const loaded = await p.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name).filter((n) => /properties-|__studio\/scenarios/.test(n)))
   const stored = await p.evaluate(() => Object.keys(localStorage).filter((k) => k.includes("property-edits")))
   await p.closeAll()

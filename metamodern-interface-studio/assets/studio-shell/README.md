@@ -68,7 +68,7 @@ scripts/acceptance.mjs       measures AC-01 to AC-60 in headless Chromium
 - Fidelity is always stated (Details, and the top bar for static captures and recreations) and scale is always disclosed (the Zoom control, or a chip under the frame).
 - A broken reference shows as unresolved. Nothing is substituted.
 - Modified means a person changed product state. Clicks that change nothing do not count, and the badge is a state, not a count.
-- Edited means the viewer changed properties of the selected state. It is separate from Modified, and R keeps it; Reset properties clears it.
+- Edited means the viewer changed properties of the selected state. It is separate from Modified, and R keeps it; Reset (n) in Properties clears it.
 
 ## Local edits to generated components
 
