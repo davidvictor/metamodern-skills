@@ -103,7 +103,9 @@ export type EmptyState = { title: string; description: string; tone?: "neutral" 
 /**
  * The anchor highlight and the label naming it. The frame clips its content, so the label sits above the ring when
  * there is room inside the frame, below it when there is not, and inside the ring's top edge when neither fits; it
- * stays within the frame's width and truncates there, keeping its full text as its title.
+ * runs from the highlight's edge toward the frame's far edge and truncates there. It takes no pointer (it lies over the
+ * product), so a tooltip could never show: the full name stays in its text, which assistive technology reads whole, after a
+ * visually hidden "Highlighted:".
  */
 function AnchorLayer({ anchor, w, h, scale }: { anchor: { x: number; y: number; w: number; h: number; label: string }; w: number; h: number; scale: number }) {
   const LABEL = 20
@@ -116,15 +118,18 @@ function AnchorLayer({ anchor, w, h, scale }: { anchor: { x: number; y: number; 
   const placement = ring.top - GAP - LABEL >= EDGE ? "above" : bottom + GAP + LABEL <= H - EDGE ? "below" : "inside"
   const top = placement === "above" ? ring.top - GAP - LABEL : placement === "below" ? bottom + GAP : Math.max(EDGE, Math.min(H - LABEL - EDGE, ring.top + GAP))
   const end = anchor.x > w / 2
+  // The label grows from the highlight's edge toward the frame's far edge, so its width is the room on that side.
+  const right = Math.max(EDGE, W - ring.left - ring.width)
+  const left = Math.max(EDGE, ring.left)
   return (
     <>
       <div className="anchor-ring" style={ring} />
       <span
         className="anchor-label pointer-events-none absolute truncate rounded-md bg-anchor px-1.5 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap text-anchor-foreground shadow-sm"
         data-placement={placement}
-        title={anchor.label}
-        style={{ top, maxWidth: Math.max(0, W - 2 * EDGE), ...(end ? { right: Math.max(EDGE, W - ring.left - ring.width) } : { left: Math.max(EDGE, ring.left) }) }}
+        style={{ top, maxWidth: Math.max(0, W - EDGE - (end ? right : left)), ...(end ? { right } : { left }) }}
       >
+        <span className="sr-only">Highlighted: </span>
         {anchor.label}
       </span>
     </>

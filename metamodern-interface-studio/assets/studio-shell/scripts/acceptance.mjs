@@ -3037,8 +3037,28 @@ await check("AC-67", async () => {
         if (st.overflowY !== "visible") ((v.t = Math.max(v.t, c.top)), (v.b = Math.min(v.b, c.bottom)))
       }
       const out = Math.max(0, v.l - r.left, v.t - r.top, r.right - v.r, r.bottom - v.b)
-      return { text: l.textContent, ratio: window.__floors.on(getComputedStyle(l).color, l), out: Math.round(out * 100) / 100, cut: l.scrollWidth > l.clientWidth + 1, placement: l.dataset.placement }
+      // A truncated label is whole only if its full name stays in its text for assistive technology (it takes no pointer, so no tooltip).
+      const text = [...l.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("")
+      const cut = l.scrollWidth > l.clientWidth + 1
+      return { text, ratio: window.__floors.on(getComputedStyle(l).color, l), out: Math.round(out * 100) / 100, cut: cut && (!!l.closest("[aria-hidden='true']") || !l.textContent.includes(text)), truncated: cut, placement: l.dataset.placement }
     })
+  // A test-only long name written into the shown label: the label must stay inside the frame, truncating, on either side.
+  const LONG = "A deliberately long anchor name that no frame at these sizes can show whole, so the label has to truncate inside it"
+  const lengthen = (p) =>
+    p.evaluate((long) => {
+      const l = document.querySelector(".anchor-label") ?? document.querySelector(".anchor-ring span")
+      const t = [...l.childNodes].filter((n) => n.nodeType === 3).pop()
+      const was = t.textContent
+      t.textContent = long
+      return was
+    }, LONG)
+  const restore = (p, was) =>
+    p.evaluate((was) => {
+      const l = document.querySelector(".anchor-label") ?? document.querySelector(".anchor-ring span")
+      ;[...l.childNodes].filter((n) => n.nodeType === 3).pop().textContent = was
+    }, was)
+  let lengthened = 0
+  let truncatedLong = 0
   const runs = []
   for (const appearance of ["light", "dark"]) for (const width of [1440, 768, 390]) runs.push({ appearance, width })
   for (const appearance of ["light", "dark"]) runs.push({ appearance, width: 768, brand: "#fde68a" })
@@ -3061,6 +3081,16 @@ await check("AC-67", async () => {
       if (m.ratio < 4.5) bad.push(`${tag} step ${step + 1} "${m.text}": ${m.ratio.toFixed(2)}:1`)
       if (m.out > 0.5 || m.cut) bad.push(`${tag} step ${step + 1} "${m.text}": ${m.out > 0.5 ? `${m.out} px outside the visible stage` : ""}${m.cut ? " truncated" : ""} (${m.placement ?? "above"})`)
       if (step === 0) notes.push(`${tag} "${m.text}" ${m.ratio.toFixed(2)}:1 ${m.placement ?? "above"}`)
+      // The first step anchors past the frame's midpoint and the second before it, so both label sides get a long name.
+      if (!brand && step < 2) {
+        const was = await lengthen(p)
+        await settleFrames(p)
+        const long = await label(p)
+        await restore(p, was)
+        lengthened++
+        if (!long || long.out > 0.5 || long.cut) bad.push(`${tag} step ${step + 1} long name: ${!long ? "not shown" : long.out > 0.5 ? `${long.out} px outside the visible stage` : "truncated without its full name in its text"}`)
+        else if (long.truncated) truncatedLong++
+      }
     }
     // Forced colors, on the first step.
     if (!brand) {
@@ -3098,7 +3128,7 @@ await check("AC-67", async () => {
     }
     await p.closeAll()
   }
-  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 10).join("; ") : `${measured} anchored steps (the example walkthrough's four, at 1440, 768 and 390 px, light and dark, and with a pale brand color at 768): every label reached 4.5:1 and sat whole inside its frame and the visible stage; ${notes.join("; ")}. In forced colors the highlight's pixels changed by 3:1 or more cover at least its perimeter. Real forced-color themes are not covered.`]
+  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 10).join("; ") : `${measured} anchored steps (the example walkthrough's four, at 1440, 768 and 390 px, light and dark, and with a pale brand color at 768): every label reached 4.5:1 and sat whole inside its frame and the visible stage; ${lengthened} labels given a test-only long name (one each side of the frame's midpoint) stayed inside the frame, ${truncatedLong} of them truncated with the full name in their text; ${notes.join("; ")}. In forced colors the highlight's pixels changed by 3:1 or more cover at least its perimeter. Real forced-color themes are not covered.`]
 })
 
 // AC-68 Present and Compare at 390, 768 and 1440 px (touch below 1440), light and dark: every Compare side header is whole on
@@ -3158,7 +3188,11 @@ await check("AC-68", async () => {
         for (const count of ["2-up", "3-up"]) {
           const item = c.getByRole("radio", { name: count }).or(c.getByRole("button", { name: count }))
           if (count !== "2-up") {
-            if (await item.first().isDisabled().catch(() => true)) continue
+            // The example's Theme axis has more than two values, so 3-up must be reachable here.
+            if (await item.first().isDisabled().catch(() => true)) {
+              bad.push(`${tag} Compare ${count}: not available`)
+              continue
+            }
             await item.first().click()
             await until(() => c.locator("figure > figcaption").count(), (n) => n >= 3)
             await wait(800)
@@ -3175,13 +3209,16 @@ await check("AC-68", async () => {
         await c.getByRole("radio", { name: "Split" }).or(c.getByRole("button", { name: "Split" })).first().click()
         await wait(900)
         const split = await c.evaluate(() => { const s = document.querySelector('[aria-label="Split position"]')?.closest(".overflow-auto"); return s ? s.scrollWidth - s.clientWidth : -1 })
-        if (split > 1) bad.push(`${tag} Compare split: the stage scrolls ${split} px sideways`)
+        if (split < 0) bad.push(`${tag} Compare split: the split stage was not found`)
+        else if (split > 1) bad.push(`${tag} Compare split: the stage scrolls ${split} px sideways`)
         modes.push("split")
         await sweep(c, `${tag} Compare split`)
       }
       // Flip (the phone's only mode).
-      await c.getByRole("radio", { name: "Flip" }).or(c.getByRole("button", { name: "Flip" })).first().click().catch(() => {})
+      const flipped = await c.getByRole("radio", { name: "Flip" }).or(c.getByRole("button", { name: "Flip" })).first().click().then(() => true, () => false)
       await wait(900)
+      // Flip shows its A and B toggle above the preview.
+      if (!flipped || !(await c.getByText(/^A · /).first().isVisible().catch(() => false))) bad.push(`${tag} Compare flip: ${flipped ? "the A and B toggle is not shown" : "Flip could not be chosen"}`)
       const doc = await c.evaluate(() => document.documentElement.scrollWidth - innerWidth)
       if (doc > 0) bad.push(`${tag} Compare flip: the page scrolls ${doc} px sideways`)
       modes.push("flip")

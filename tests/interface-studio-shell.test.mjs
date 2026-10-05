@@ -365,13 +365,17 @@ test('0.12.2 Present anchor label and Compare headers: AA text, whole on the sta
   const bits = read('src/components/studio/bits.tsx');
   assert.match(bits, /const placement = ring\.top - GAP - LABEL >= EDGE \? "above" : bottom \+ GAP \+ LABEL <= H - EDGE \? "below" : "inside"/);
   assert.match(bits, /className="anchor-label pointer-events-none absolute truncate/);
-  assert.match(bits, /title=\{anchor\.label\}/);
+  assert.match(bits, /maxWidth: Math\.max\(0, W - EDGE - \(end \? right : left\)\)/, 'the label is no wider than the room on the side it grows toward');
+  assert.match(bits, /<span className="sr-only">Highlighted: <\/span>\s*\{anchor\.label\}/, 'the full name stays in the label text');
   const views = read('src/components/studio/views.tsx');
   assert.match(views, /<figcaption className="flex justify-center self-stretch \[contain:inline-size\]">/, 'a side header takes its preview\'s width');
   assert.match(views, /<b className="min-w-0 truncate font-medium" title=\{label\}>/);
   const script = read('scripts/acceptance.mjs');
   for (const id of ['AC-67', 'AC-68']) assert.match(script, new RegExp(`check\\("${id}"`), `${id} is not checked`);
   assert.match(script, /emulateMedia\(\{ forcedColors: "active" \}\)/);
+  assert.match(script, /A deliberately long anchor name/);
+  assert.match(script, /Compare \$\{count\}: not available/);
+  assert.match(script, /the split stage was not found/);
   assert.match(script, /brand: "#fde68a" \}\)\n/);
   assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.12\.1"/);
   const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');
