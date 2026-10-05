@@ -45,6 +45,8 @@
   --boundary-inner: oklch(1 0 0 / 0.14);
   --boundary: oklch(0 0 0 / 0.5);
   --anchor: oklch(0.72 0.15 256);
+  /* The anchor label's text: dark on the lifted dark-appearance anchor, so it reaches 4.5:1 (white measured 2.4:1). */
+  --anchor-foreground: oklch(0.18 0 0);
   --success: oklch(0.8 0.12 152);
   --success-surface: oklch(0.3 0.05 152);
   --warning: oklch(0.84 0.12 80);
@@ -113,6 +115,11 @@
 /* Anchor highlight drawn by the shell over the frame */
 .anchor-ring { position: absolute; border-radius: 8px; box-shadow: 0 0 0 2px var(--anchor), 0 0 0 6px color-mix(in oklch, var(--anchor) 25%, transparent); animation: anchor-pulse 1.8s var(--ease-out-quint) infinite; pointer-events: none; }
 @keyframes anchor-pulse { 0%, 100% { box-shadow: 0 0 0 2px var(--anchor), 0 0 0 6px color-mix(in oklch, var(--anchor) 25%, transparent); } 50% { box-shadow: 0 0 0 2px var(--anchor), 0 0 0 11px color-mix(in oklch, var(--anchor) 0%, transparent); } }
+/* Forced colors drop box shadows, so the ring becomes a system-color outline and the label keeps a system-color pair. */
+@media (forced-colors: active) {
+  .anchor-ring { box-shadow: none; animation: none; outline: 2px solid Highlight; outline-offset: -2px; }
+  .anchor-label { forced-color-adjust: none; background: Canvas; color: CanvasText; outline: 1px solid CanvasText; box-shadow: none; }
+}
 
 /* Panels that slide open */
 .panel-slide { transition: width 220ms var(--ease-out-quint), opacity 180ms ease-out, transform 220ms var(--ease-out-quint); }

@@ -28,10 +28,10 @@ try {
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
 const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace" }
-// WS-01: the initial Studio chunk of the previous release's shell (0.12.0), gzipped, built with the example product. A
+// WS-01: the initial Studio chunk of the previous release's shell (0.12.1), gzipped, built with the example product. A
 // Studio that declares no workspace may grow by at most 3 KB over it. Each release moves it to the release before it.
-const STUDIO_CHUNK_BASELINE = "0.12.0"
-const STUDIO_CHUNK_BASELINE_GZ = 297677
+const STUDIO_CHUNK_BASELINE = "0.12.1"
+const STUDIO_CHUNK_BASELINE_GZ = 297733
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 const serve = (out, host) =>
@@ -2978,6 +2978,287 @@ await check("AC-66", async () => {
     }
   }
   return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `${notes.join("; ")}. Screenshots of each stop focused and unfocused, tooltips hidden; a stop passes when the pixels changed by 3:1 or more cover at least its perimeter.`]
+})
+
+/** Every visible text run in the Studio document (product frames are their own documents) against its painted ground. */
+const textFloor = (p) =>
+  p.evaluate(() => {
+    const F = window.__floors
+    const low = []
+    let n = 0
+    for (const el of document.querySelectorAll("body *")) {
+      if (!el.getClientRects().length || ![...el.childNodes].some((t) => t.nodeType === 3 && t.textContent.trim())) continue
+      const r = el.getBoundingClientRect()
+      if (r.width < 2 || r.height < 2 || r.right <= 0 || r.bottom <= 0 || r.left >= innerWidth || r.top >= innerHeight) continue
+      const st = getComputedStyle(el)
+      if (st.visibility === "hidden" || el.closest("[inert], [aria-hidden='true'], :disabled, [aria-disabled='true'], [data-disabled]")) continue
+      // Text faded out by an ancestor is on its way in or out, not at rest.
+      let op = 1
+      for (let a = el; a; a = a.parentElement) op *= parseFloat(getComputedStyle(a).opacity)
+      if (op < 0.99) continue
+      const size = parseFloat(st.fontSize)
+      const need = size >= 24 || (size >= 18.66 && Number(st.fontWeight) >= 700) ? 3 : 4.5
+      const q = F.on(st.color, el)
+      n++
+      if (q < need) low.push(`"${el.textContent.trim().slice(0, 28)}" ${q.toFixed(2)}`)
+    }
+    return { n, low }
+  })
+const settleFrames = (p) => p.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))
+const until = async (read, test, ms = 8000) => {
+  const end = Date.now() + ms
+  let value = await read()
+  while (!test(value) && Date.now() < end) {
+    await wait(150)
+    value = await read()
+  }
+  return value
+}
+
+// AC-67 Present's anchor highlight and its label: the label reaches 4.5:1 in both appearances and with a pale brand color,
+// stays whole inside the frame and the visible stage at 390, 768 and 1440 px for every anchored step, and in forced colors
+// the highlight is drawn in system colors (box shadows are dropped there) and the label keeps a 4.5:1 system-color pair.
+await check("AC-67", async () => {
+  const bad = []
+  const notes = []
+  const label = (p) =>
+    p.evaluate(() => {
+      const l = document.querySelector(".anchor-label") ?? document.querySelector(".anchor-ring span")
+      const ring = document.querySelector(".anchor-ring")
+      if (!l || !ring || !window.__floors.shown(l)) return null
+      const frame = l.closest(".preview-frame").getBoundingClientRect()
+      const r = l.getBoundingClientRect()
+      // The visible stage: the frame, inside every clipping ancestor, inside the viewport.
+      const v = { l: Math.max(0, frame.left), t: Math.max(0, frame.top), r: Math.min(innerWidth, frame.right), b: Math.min(innerHeight, frame.bottom) }
+      for (let a = l.closest(".preview-frame").parentElement; a && a !== document.documentElement; a = a.parentElement) {
+        const st = getComputedStyle(a)
+        const c = a.getBoundingClientRect()
+        if (st.overflowX !== "visible") ((v.l = Math.max(v.l, c.left)), (v.r = Math.min(v.r, c.right)))
+        if (st.overflowY !== "visible") ((v.t = Math.max(v.t, c.top)), (v.b = Math.min(v.b, c.bottom)))
+      }
+      const out = Math.max(0, v.l - r.left, v.t - r.top, r.right - v.r, r.bottom - v.b)
+      // A truncated label is whole only if its full name stays in its text for assistive technology (it takes no pointer, so no tooltip).
+      const text = [...l.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("")
+      const cut = l.scrollWidth > l.clientWidth + 1
+      return { text, ratio: window.__floors.on(getComputedStyle(l).color, l), out: Math.round(out * 100) / 100, cut: cut && (!!l.closest("[aria-hidden='true']") || !l.textContent.includes(text)), truncated: cut, placement: l.dataset.placement }
+    })
+  // A test-only long name written into the shown label: the label must stay inside the frame, truncating, on either side.
+  const LONG = "A deliberately long anchor name that no frame at these sizes can show whole, so the label has to truncate inside it"
+  const lengthen = (p) =>
+    p.evaluate((long) => {
+      const l = document.querySelector(".anchor-label") ?? document.querySelector(".anchor-ring span")
+      const t = [...l.childNodes].filter((n) => n.nodeType === 3).pop()
+      const was = t.textContent
+      t.textContent = long
+      return was
+    }, LONG)
+  const restore = (p, was) =>
+    p.evaluate((was) => {
+      const l = document.querySelector(".anchor-label") ?? document.querySelector(".anchor-ring span")
+      ;[...l.childNodes].filter((n) => n.nodeType === 3).pop().textContent = was
+    }, was)
+  let lengthened = 0
+  let truncatedLong = 0
+  const runs = []
+  for (const appearance of ["light", "dark"]) for (const width of [1440, 768, 390]) runs.push({ appearance, width })
+  for (const appearance of ["light", "dark"]) runs.push({ appearance, width: 768, brand: "#fde68a" })
+  let measured = 0
+  for (const { appearance, width, brand } of runs) {
+    const tag = `${appearance}${brand ? ` brand ${brand}` : ""} ${width}`
+    const p = await openFloors("normal", { appearance, width, height: width === 1440 ? 900 : width < 768 ? 844 : 1024, touch: width < 1440, hash: "view=present", brand })
+    await p.mouse.move(0, 0)
+    const seen = []
+    // The example walkthrough anchors its first four steps.
+    for (let step = 0; step < 4; step++) {
+      if (step) await p.keyboard.press("ArrowRight")
+      const m = await until(() => label(p), (x) => !!x && !seen.includes(x.text))
+      if (!m || seen.includes(m.text)) {
+        bad.push(`${tag} step ${step + 1}: no anchor label shown`)
+        continue
+      }
+      seen.push(m.text)
+      measured++
+      if (m.ratio < 4.5) bad.push(`${tag} step ${step + 1} "${m.text}": ${m.ratio.toFixed(2)}:1`)
+      // The example's names are short: an ordinary step's label shows whole. Only the long name below may truncate.
+      if (m.out > 0.5 || m.truncated) bad.push(`${tag} step ${step + 1} "${m.text}": ${m.out > 0.5 ? `${m.out} px outside the visible stage` : ""}${m.truncated ? " truncated" : ""} (${m.placement ?? "above"})`)
+      if (step === 0) notes.push(`${tag} "${m.text}" ${m.ratio.toFixed(2)}:1 ${m.placement ?? "above"}`)
+      // The first step anchors past the frame's midpoint and the second before it, so both label sides get a long name.
+      if (!brand && step < 2) {
+        const was = await lengthen(p)
+        await settleFrames(p)
+        const long = await label(p)
+        await restore(p, was)
+        lengthened++
+        if (!long || long.out > 0.5 || long.cut) bad.push(`${tag} step ${step + 1} long name: ${!long ? "not shown" : long.out > 0.5 ? `${long.out} px outside the visible stage` : "truncated without its full name in its text"}`)
+        else if (long.truncated) truncatedLong++
+      }
+    }
+    // Forced colors, on the first step.
+    if (!brand) {
+      await p.keyboard.press("Home").catch(() => {})
+      for (let i = 0; i < 4; i++) await p.keyboard.press("ArrowLeft")
+      await until(() => label(p), (x) => x?.text === seen[0])
+      await p.emulateMedia({ forcedColors: "active" })
+      await wait(400)
+      await settleFrames(p)
+      const box = await p.evaluate(() => {
+        const ring = document.querySelector(".anchor-ring")
+        const r = ring.getBoundingClientRect()
+        const f = ring.closest(".preview-frame").getBoundingClientRect()
+        const v = { l: Math.max(r.left, f.left, 0), t: Math.max(r.top, f.top, 0), r: Math.min(r.right, f.right, innerWidth), b: Math.min(r.bottom, f.bottom, innerHeight) }
+        return { x: v.l, y: v.t, w: v.r - v.l, h: v.b - v.t }
+      })
+      const clip = { x: Math.max(0, Math.floor(box.x) - 4), y: Math.max(0, Math.floor(box.y) - 4), width: Math.ceil(box.w) + 8, height: Math.ceil(box.h) + 8 }
+      const shown = (await p.screenshot({ clip })).toString("base64")
+      await p.addStyleTag({ content: ".anchor-ring { visibility: hidden !important; }" })
+      await settleFrames(p)
+      const hidden = (await p.screenshot({ clip })).toString("base64")
+      const count = await p.evaluate(async ([a, b]) => {
+        const load = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.src = `data:image/png;base64,${src}` })
+        const px = (img) => { const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; const g = c.getContext("2d"); g.drawImage(img, 0, 0); return g.getImageData(0, 0, img.width, img.height).data }
+        const [da, db] = (await Promise.all([load(a), load(b)])).map(px)
+        let n = 0
+        for (let i = 0; i < da.length; i += 4) if (window.__floors.ratio([da[i], da[i + 1], da[i + 2]], [db[i], db[i + 1], db[i + 2]]) >= 3) n++
+        return n
+      }, [shown, hidden])
+      const perimeter = Math.round(2 * (box.w + box.h))
+      const forced = await label(p)
+      if (count < perimeter) bad.push(`${tag} forced colors: the highlight changed ${count} px by 3:1 for a ${perimeter} px perimeter`)
+      if (!forced || forced.ratio < 4.5) bad.push(`${tag} forced colors: label ${forced ? `${forced.ratio.toFixed(2)}:1` : "not shown"}`)
+      notes.push(`${tag} forced colors ${count}/${perimeter} px`)
+    }
+    await p.closeAll()
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 10).join("; ") : `${measured} anchored steps (the example walkthrough's four, at 1440, 768 and 390 px, light and dark, and with a pale brand color at 768): every label reached 4.5:1 and sat whole inside its frame and the visible stage; ${lengthened} labels given a test-only long name (one each side of the frame's midpoint) stayed inside the frame, ${truncatedLong} of them truncated with the full name in their text; ${notes.join("; ")}. In forced colors the highlight's pixels changed by 3:1 or more cover at least its perimeter. Real forced-color themes are not covered.`]
+})
+
+// AC-68 Present and Compare at 390, 768 and 1440 px (touch below 1440), light and dark: every Compare side header is whole on
+// screen inside the stage with its full name and its contents inside it, nothing scrolls sideways, and all Studio text in both
+// views reaches AA (4.5:1, or 3:1 at 24 px or 18.66 px bold): Present on an anchored step and on a step that cannot run, Compare
+// side by side (2-up and 3-up, and Profile 3-up at Fit below 1440 px), split and flip.
+await check("AC-68", async () => {
+  const bad = []
+  const notes = []
+  let texts = 0
+  const headers = (p) =>
+    p.evaluate(() => {
+      const box = document.querySelector("figure figcaption")?.closest(".overflow-auto")
+      const v = box?.getBoundingClientRect()
+      return {
+        scroll: box ? box.scrollWidth - box.clientWidth : 0,
+        doc: document.documentElement.scrollWidth - innerWidth,
+        caps: [...document.querySelectorAll("figure > figcaption")].filter((c) => !c.closest("[data-frame]")).map((c) => {
+          // The header and everything in it: a part that runs past the stage's edge counts.
+          const rs = [c, ...c.querySelectorAll("*")].filter((e) => e.getClientRects().length).map((e) => e.getBoundingClientRect())
+          const r = { left: Math.min(...rs.map((x) => x.left)), right: Math.max(...rs.map((x) => x.right)), top: Math.min(...rs.map((x) => x.top)) }
+          const name = c.querySelector("b")
+          const out = Math.max(0, v.left - r.left, r.right - Math.min(v.right, innerWidth), v.top - r.top)
+          // Everything in the header's visible box (its pill) stays inside it; visually hidden text is not drawn.
+          const pill = [c, ...c.querySelectorAll("*")].filter((e) => e.getClientRects().length && getComputedStyle(e).backgroundColor !== "rgba(0, 0, 0, 0)").find((e) => e.contains(name)) ?? c
+          const p = pill.getBoundingClientRect()
+          const spill = Math.max(0, ...[...pill.querySelectorAll("*")].filter((e) => e.getClientRects().length && getComputedStyle(e).clip === "auto" && getComputedStyle(e).clipPath === "none").map((e) => { const q = e.getBoundingClientRect(); return Math.max(p.left - q.left, q.right - p.right, p.top - q.top, q.bottom - p.bottom) }))
+          return { text: c.textContent, out: Math.round(out * 100) / 100, spill: Math.round(spill * 100) / 100, named: !!name && (name.scrollWidth <= name.clientWidth + 1 || name.title === name.textContent) }
+        }),
+      }
+    })
+  const headerFault = (h, want, where) => {
+    const off = h.caps.filter((x) => x.out > 0.5 || x.spill > 0.5 || !x.named)
+    if (h.caps.length < want || off.length || h.scroll > 1 || h.doc > 0) bad.push(`${where}: ${h.caps.length} headers${off.length ? `, cut ${off.map((x) => `"${x.text}" ${x.out > 0.5 ? `${x.out} px off the stage` : ""}${x.spill > 0.5 ? ` contents ${x.spill} px outside the header` : ""}${x.named ? "" : " unnamed"}`).join(", ")}` : ""}${h.scroll > 1 ? `, the stage scrolls ${h.scroll} px sideways` : ""}${h.doc > 0 ? `, the page scrolls ${h.doc} px sideways` : ""}`)
+  }
+  const sweep = async (p, tag) => {
+    const t = await textFloor(p)
+    texts += t.n
+    if (t.low.length) bad.push(`${tag}: under AA ${t.low.slice(0, 4).join(", ")}`)
+  }
+  for (const appearance of ["light", "dark"]) {
+    for (const width of [1440, 768, 390]) {
+      const phone = width < 768
+      const opts = { appearance, width, height: width === 1440 ? 900 : phone ? 844 : 1024, touch: width < 1440 }
+      const tag = `${appearance} ${width}`
+      // Present: the first step (anchored), then the walkthrough's last step, which cannot run and says why.
+      const p = await openFloors("normal", { ...opts, hash: "view=present" })
+      await p.mouse.move(0, 0)
+      await until(() => p.locator(".anchor-label, .anchor-ring span").count(), (n) => n > 0)
+      await wait(400)
+      await sweep(p, `${tag} Present step 1`)
+      await p.keyboard.press("End")
+      for (let i = 0; i < 6; i++) await p.keyboard.press("ArrowRight")
+      await until(() => p.getByRole("alert").count(), (n) => n > 0)
+      await wait(400)
+      await sweep(p, `${tag} Present last step`)
+      await p.closeAll()
+      // Compare.
+      const c = await openFloors("normal", { ...opts, hash: "view=compare&scenario=tasks.list" })
+      await c.mouse.move(0, 0)
+      await until(() => c.getByText("Ready", { exact: true }).count(), (n) => n >= (phone ? 1 : 2))
+      await wait(400)
+      const modes = []
+      if (!phone) {
+        for (const count of ["2-up", "3-up"]) {
+          const item = c.getByRole("radio", { name: count }).or(c.getByRole("button", { name: count }))
+          if (count !== "2-up") {
+            // The example's Theme axis has more than two values, so 3-up must be reachable here.
+            if (await item.first().isDisabled().catch(() => true)) {
+              bad.push(`${tag} Compare ${count}: not available`)
+              continue
+            }
+            await item.first().click()
+            await until(() => c.locator("figure > figcaption").count(), (n) => n >= 3)
+            await wait(800)
+          }
+          const h = await headers(c)
+          headerFault(h, count === "2-up" ? 2 : 3, `${tag} Compare ${count}`)
+          modes.push(`${count} ${h.caps.length} headers`)
+          await sweep(c, `${tag} Compare ${count}`)
+        }
+        const two = c.getByRole("radio", { name: "2-up" }).or(c.getByRole("button", { name: "2-up" }))
+        await two.first().click()
+        await wait(500)
+        await c.getByRole("radio", { name: "Split" }).or(c.getByRole("button", { name: "Split" })).first().click()
+        await wait(900)
+        const split = await c.evaluate(() => { const s = document.querySelector('[aria-label="Split position"]')?.closest(".overflow-auto"); return s ? s.scrollWidth - s.clientWidth : -1 })
+        if (split < 0) bad.push(`${tag} Compare split: the split stage was not found`)
+        else if (split > 1) bad.push(`${tag} Compare split: the stage scrolls ${split} px sideways`)
+        modes.push("split")
+        await sweep(c, `${tag} Compare split`)
+      }
+      // Profile, 3-up, at Fit: a phone frame scales to a few dozen pixels, and its header must still hold its status and Reset.
+      if (width < 1440) {
+        await c.getByRole("combobox", { name: "Changing axis" }).click()
+        await wait(400)
+        const chosen = await c.getByRole("option", { name: "Profile" }).click().then(() => true, () => false)
+        await wait(800)
+        const three = c.getByRole("radio", { name: "3-up" }).or(c.getByRole("button", { name: "3-up" })).first()
+        if (!chosen || (await three.isDisabled().catch(() => true))) bad.push(`${tag} Compare Profile 3-up: not available`)
+        else {
+          await three.click()
+          await until(() => c.locator("figure > figcaption").count(), (n) => n >= 3)
+          await until(() => c.getByText("Ready", { exact: true }).count(), (n) => n >= 3)
+          await wait(800)
+          headerFault(await headers(c), 3, `${tag} Compare Profile 3-up`)
+          modes.push("Profile 3-up")
+          await sweep(c, `${tag} Compare Profile 3-up`)
+        }
+        await c.getByRole("combobox", { name: "Changing axis" }).click()
+        await wait(400)
+        await c.getByRole("option", { name: "Theme" }).click().catch(() => {})
+        await c.getByRole("radio", { name: "2-up" }).or(c.getByRole("button", { name: "2-up" })).first().click().catch(() => {})
+        await wait(800)
+      }
+      // Flip (the phone's only mode).
+      const flipped = await c.getByRole("radio", { name: "Flip" }).or(c.getByRole("button", { name: "Flip" })).first().click().then(() => true, () => false)
+      await wait(900)
+      // Flip shows its A and B toggle above the preview.
+      if (!flipped || !(await c.getByText(/^A · /).first().isVisible().catch(() => false))) bad.push(`${tag} Compare flip: ${flipped ? "the A and B toggle is not shown" : "Flip could not be chosen"}`)
+      const doc = await c.evaluate(() => document.documentElement.scrollWidth - innerWidth)
+      if (doc > 0) bad.push(`${tag} Compare flip: the page scrolls ${doc} px sideways`)
+      modes.push("flip")
+      await sweep(c, `${tag} Compare flip`)
+      await c.closeAll()
+      notes.push(`${tag}: ${modes.join(", ")}`)
+    }
+  }
+  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 10).join("; ") : `${texts} text runs measured in Present (an anchored step, a step that cannot run) and Compare (${notes.join("; ")}): every one reached AA, every side header sat whole inside the stage with its full name and its contents inside it, and nothing scrolled sideways. Product frames are their own documents and are not measured here.`]
 })
 
 // ---------- Workspace modules (WS-01 to WS-10, references/workspace.md) ----------

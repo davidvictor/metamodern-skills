@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.15.2 — 2026-10-04
+
+- Interface Studio 0.12.2 fixes Present and Compare. Present's anchor label reaches 4.5:1 in dark appearance (it measured 2.4:1), stays whole inside the frame (above the highlight, below it, or inside its top edge, whichever fits) instead of disappearing above a tablet or phone frame, and in forced colors the highlight is drawn as a system-color outline. A Compare side's header is never wider than its preview, so on a tablet side B's header no longer runs off the stage.
+- Acceptance adds AC-67 and AC-68, which measure the anchor label and highlight, AA text across Present and Compare, and whole Compare headers at 390, 768 and 1440 px in both appearances. WS-01 measures against 0.12.1.
+
 ## 1.15.1 — 2026-10-03
 
 - Interface Studio 0.12.1 fixes core-shell shortfalls against its own touch and focus floors. On coarse pointers, stacked switches and checkboxes (Gallery areas, Present Autoplay, Responsive Sync) and the Responsive frame list's Remove buttons each keep their own 44 by 44 px target instead of sharing or losing hit area to a neighbour or the panel's edge handle, and a Design range's marks clear its thumb. Keyboard focus in the top bar's breadcrumb and on tab panels is drawn inside, so it is no longer cut to its corners, and a focused slider now outlines its thumb.
