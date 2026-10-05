@@ -101,6 +101,37 @@ export function useFit(ref: React.RefObject<HTMLElement | null>, w: number, h: n
 export type EmptyState = { title: string; description: string; tone?: "neutral" | "danger"; action?: { label: string; onClick: () => void } }
 
 /**
+ * The anchor highlight and the label naming it. The frame clips its content, so the label sits above the ring when
+ * there is room inside the frame, below it when there is not, and inside the ring's top edge when neither fits; it
+ * stays within the frame's width and truncates there, keeping its full text as its title.
+ */
+function AnchorLayer({ anchor, w, h, scale }: { anchor: { x: number; y: number; w: number; h: number; label: string }; w: number; h: number; scale: number }) {
+  const LABEL = 20
+  const GAP = 4
+  const EDGE = 2
+  const W = w * scale
+  const H = h * scale
+  const ring = { left: anchor.x * scale - 4, top: anchor.y * scale - 4, width: anchor.w * scale + 8, height: anchor.h * scale + 8 }
+  const bottom = ring.top + ring.height
+  const placement = ring.top - GAP - LABEL >= EDGE ? "above" : bottom + GAP + LABEL <= H - EDGE ? "below" : "inside"
+  const top = placement === "above" ? ring.top - GAP - LABEL : placement === "below" ? bottom + GAP : Math.max(EDGE, Math.min(H - LABEL - EDGE, ring.top + GAP))
+  const end = anchor.x > w / 2
+  return (
+    <>
+      <div className="anchor-ring" style={ring} />
+      <span
+        className="anchor-label pointer-events-none absolute truncate rounded-md bg-anchor px-1.5 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap text-anchor-foreground shadow-sm"
+        data-placement={placement}
+        title={anchor.label}
+        style={{ top, maxWidth: Math.max(0, W - 2 * EDGE), ...(end ? { right: Math.max(EDGE, W - ring.left - ring.width) } : { left: Math.max(EDGE, ring.left) }) }}
+      >
+        {anchor.label}
+      </span>
+    </>
+  )
+}
+
+/**
  * The preview boundary: frame line, corner ticks and the anchor layer. The
  * content is a live frame, a capture or an explicit empty state, never a stand-in.
  */
@@ -142,11 +173,7 @@ export function PreviewFrame({ w, h, scale, profile, appearance, anchor, empty, 
         ) : (
           children
         )}
-        {anchor && !empty && !loading && (
-          <div className="anchor-ring" style={{ left: anchor.x * scale - 4, top: anchor.y * scale - 4, width: anchor.w * scale + 8, height: anchor.h * scale + 8 }}>
-            <span className={cn("absolute -top-6 rounded-md bg-anchor px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap text-anchor-foreground shadow-sm", anchor.x > w / 2 ? "right-0" : "left-0")}>{anchor.label}</span>
-          </div>
-        )}
+        {anchor && !empty && !loading && <AnchorLayer anchor={anchor} w={w} h={h} scale={scale} />}
         {loading && (
           <div className="pointer-events-none absolute inset-0 flex items-start justify-end p-3 animate-in fade-in-0">
             <Badge variant="secondary" className="gap-1.5 shadow-sm">

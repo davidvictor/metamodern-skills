@@ -327,7 +327,6 @@ test('0.12.1 touch and focus floors: stacked controls keep their own targets and
   // AC-65 measures where a finger lands with elementFromPoint; AC-66 compares rendered pixels, focused and unfocused.
   assert.match(script, /document\.elementFromPoint\(x, y\)/);
   assert.match(script, /a stop passes when the pixels changed by 3:1 or more cover at least its perimeter/);
-  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.12\.0"/);
   const css = read('src/studio.css');
   assert.match(css, /\[role="tabpanel"\], \[aria-label="Studio"\] button, \[data-slot="breadcrumb"\] :is\(button, a\[href\]\)\):focus-visible \{ outline-offset: -2px;/, 'the breadcrumb and tab panels draw focus inside');
   const panel = read('src/components/studio/rail-panel.tsx');
@@ -339,7 +338,6 @@ test('0.12.1 touch and focus floors: stacked controls keep their own targets and
   assert.match(read('src/components/studio/design.tsx'), /relative h-5 pointer-coarse:mt-4 pointer-coarse:h-11/);
   const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');
   for (const id of ['AC-65', 'AC-66']) assert.match(doc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
-  assert.match(doc, /AC-01 to AC-66/);
   assert.match(doc, /equivalent/);
   assert.match(read('UPDATING.md'), /^## 0\.12\.1$/m);
 });
@@ -358,4 +356,26 @@ test('0.12.1 kit: the SaveBar message wraps above its actions and a DataTable ke
   const script = read('scripts/acceptance.mjs');
   assert.match(script, /check\("WS-10"/);
   assert.match(script, /width: 390, height: 520, touch: true, hash: "module=site&section=general"/);
+});
+
+test('0.12.2 Present anchor label and Compare headers: AA text, whole on the stage, a forced-colors highlight', () => {
+  const css = read('src/studio.css');
+  assert.match(css, /\.dark \{[^}]*--anchor-foreground: oklch\(0\.18 0 0\);/, 'the dark anchor label is dark text on the lifted anchor');
+  assert.match(css, /@media \(forced-colors: active\) \{\s*\.anchor-ring \{ box-shadow: none; animation: none; outline: 2px solid Highlight;/);
+  const bits = read('src/components/studio/bits.tsx');
+  assert.match(bits, /const placement = ring\.top - GAP - LABEL >= EDGE \? "above" : bottom \+ GAP \+ LABEL <= H - EDGE \? "below" : "inside"/);
+  assert.match(bits, /className="anchor-label pointer-events-none absolute truncate/);
+  assert.match(bits, /title=\{anchor\.label\}/);
+  const views = read('src/components/studio/views.tsx');
+  assert.match(views, /<figcaption className="flex justify-center self-stretch \[contain:inline-size\]">/, 'a side header takes its preview\'s width');
+  assert.match(views, /<b className="min-w-0 truncate font-medium" title=\{label\}>/);
+  const script = read('scripts/acceptance.mjs');
+  for (const id of ['AC-67', 'AC-68']) assert.match(script, new RegExp(`check\\("${id}"`), `${id} is not checked`);
+  assert.match(script, /emulateMedia\(\{ forcedColors: "active" \}\)/);
+  assert.match(script, /brand: "#fde68a" \}\)\n/);
+  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.12\.1"/);
+  const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');
+  for (const id of ['AC-67', 'AC-68']) assert.match(doc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
+  assert.match(doc, /AC-01 to AC-68/);
+  assert.match(read('UPDATING.md'), /^## 0\.12\.2$/m);
 });

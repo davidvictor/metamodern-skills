@@ -130,6 +130,27 @@ function useSideStatus() {
   return { st, setSt, nonce, reset: () => setNonce((n) => n + 1) }
 }
 
+/**
+ * A compared side's header. It takes the width of its preview, never more: its size containment keeps it out of the
+ * stage's measured width, so a narrow preview wraps the header and truncates the value's name (kept whole as its title).
+ */
+function SideCaption({ side, label, status, onReset }: { side: string; label: string; status: React.ReactNode; onReset: () => void }) {
+  return (
+    <figcaption className="flex justify-center self-stretch [contain:inline-size]">
+      <span className="flex max-w-full min-w-0 flex-wrap items-center justify-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs shadow-sm backdrop-blur">
+        <span className="flex min-w-0 items-center gap-1.5">
+          <Badge variant="secondary" className="h-4 px-1 text-[10px]">{side}</Badge>
+          <b className="min-w-0 truncate font-medium" title={label}>{label}</b>
+        </span>
+        <span className="flex items-center gap-1.5">
+          {status}
+          <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${side}`} onClick={onReset}><RotateCcwIcon /></Button>
+        </span>
+      </span>
+    </figcaption>
+  )
+}
+
 export function CompareStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
   const sc = s.scenarioObj
@@ -329,12 +350,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
         {available && effectiveMode === "side" &&
           (["a", "b"] as const).map((k) => (
             <figure key={k} className="m-0 flex flex-col items-center gap-2">
-              <figcaption className="flex items-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs shadow-sm backdrop-blur">
-                <Badge variant="secondary" className="h-4 px-1 text-[10px]">{k.toUpperCase()}</Badge>
-                <b className="font-medium">{label(pick(k))}</b>
-                {sideStatus((k === "a" ? A : B).st)}
-                <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${k.toUpperCase()}`} onClick={(k === "a" ? A : B).reset}><RotateCcwIcon /></Button>
-              </figcaption>
+              <SideCaption side={k.toUpperCase()} label={label(pick(k))} status={sideStatus((k === "a" ? A : B).st)} onReset={(k === "a" ? A : B).reset} />
               {side(k)}
             </figure>
           ))}
@@ -343,12 +359,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           const state = sideIndex === 2 ? C : D
           return (
             <figure key={`${sideIndex}:${value}`} className="m-0 flex flex-col items-center gap-2">
-              <figcaption className="flex items-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs shadow-sm backdrop-blur">
-                <Badge variant="secondary" className="h-4 px-1 text-[10px]">{String.fromCharCode(65 + sideIndex)}</Badge>
-                <b className="font-medium">{label(value)}</b>
-                {sideStatus(state.st)}
-                <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${String.fromCharCode(65 + sideIndex)}`} onClick={state.reset}><RotateCcwIcon /></Button>
-              </figcaption>
+              <SideCaption side={String.fromCharCode(65 + sideIndex)} label={label(value)} status={sideStatus(state.st)} onReset={state.reset} />
               {extraSide(value, sideIndex)}
             </figure>
           )
