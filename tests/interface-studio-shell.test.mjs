@@ -368,7 +368,9 @@ test('0.12.2 Present anchor label and Compare headers: AA text, whole on the sta
   assert.match(bits, /maxWidth: Math\.max\(0, W - EDGE - \(end \? right : left\)\)/, 'the label is no wider than the room on the side it grows toward');
   assert.match(bits, /<span className="sr-only">Highlighted: <\/span>\s*\{anchor\.label\}/, 'the full name stays in the label text');
   const views = read('src/components/studio/views.tsx');
-  assert.match(views, /<figcaption className="flex justify-center self-stretch \[contain:inline-size\]">/, 'a side header takes its preview\'s width');
+  assert.match(views, /<figcaption className="@container flex justify-center self-stretch">/, 'a side header takes its preview\'s width');
+  assert.match(views, /<span className="@max-\[7rem\]:sr-only">\{text\}<\/span>/, 'a narrow header shows the status as its dot, with its word as its name');
+  assert.match(views, /className="m-0 flex min-w-15 flex-col items-center gap-2"/, 'a header always fits Reset');
   assert.match(views, /<b className="min-w-0 truncate font-medium" title=\{label\}>/);
   const script = read('scripts/acceptance.mjs');
   for (const id of ['AC-67', 'AC-68']) assert.match(script, new RegExp(`check\\("${id}"`), `${id} is not checked`);
@@ -376,6 +378,8 @@ test('0.12.2 Present anchor label and Compare headers: AA text, whole on the sta
   assert.match(script, /A deliberately long anchor name/);
   assert.match(script, /Compare \$\{count\}: not available/);
   assert.match(script, /the split stage was not found/);
+  assert.match(script, /Compare Profile 3-up/);
+  assert.match(script, /contents \$\{x\.spill\} px outside the header/);
   assert.match(script, /brand: "#fde68a" \}\)\n/);
   assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.12\.1"/);
   const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');

@@ -3079,7 +3079,8 @@ await check("AC-67", async () => {
       seen.push(m.text)
       measured++
       if (m.ratio < 4.5) bad.push(`${tag} step ${step + 1} "${m.text}": ${m.ratio.toFixed(2)}:1`)
-      if (m.out > 0.5 || m.cut) bad.push(`${tag} step ${step + 1} "${m.text}": ${m.out > 0.5 ? `${m.out} px outside the visible stage` : ""}${m.cut ? " truncated" : ""} (${m.placement ?? "above"})`)
+      // The example's names are short: an ordinary step's label shows whole. Only the long name below may truncate.
+      if (m.out > 0.5 || m.truncated) bad.push(`${tag} step ${step + 1} "${m.text}": ${m.out > 0.5 ? `${m.out} px outside the visible stage` : ""}${m.truncated ? " truncated" : ""} (${m.placement ?? "above"})`)
       if (step === 0) notes.push(`${tag} "${m.text}" ${m.ratio.toFixed(2)}:1 ${m.placement ?? "above"}`)
       // The first step anchors past the frame's midpoint and the second before it, so both label sides get a long name.
       if (!brand && step < 2) {
@@ -3132,9 +3133,9 @@ await check("AC-67", async () => {
 })
 
 // AC-68 Present and Compare at 390, 768 and 1440 px (touch below 1440), light and dark: every Compare side header is whole on
-// screen inside the stage with its full name, nothing scrolls sideways, and all Studio text in both views reaches AA
-// (4.5:1, or 3:1 at 24 px or 18.66 px bold): Present on an anchored step and on a step that cannot run, Compare side by side
-// (2-up and 3-up), split and flip.
+// screen inside the stage with its full name and its contents inside it, nothing scrolls sideways, and all Studio text in both
+// views reaches AA (4.5:1, or 3:1 at 24 px or 18.66 px bold): Present on an anchored step and on a step that cannot run, Compare
+// side by side (2-up and 3-up, and Profile 3-up at Fit below 1440 px), split and flip.
 await check("AC-68", async () => {
   const bad = []
   const notes = []
@@ -3152,10 +3153,18 @@ await check("AC-68", async () => {
           const r = { left: Math.min(...rs.map((x) => x.left)), right: Math.max(...rs.map((x) => x.right)), top: Math.min(...rs.map((x) => x.top)) }
           const name = c.querySelector("b")
           const out = Math.max(0, v.left - r.left, r.right - Math.min(v.right, innerWidth), v.top - r.top)
-          return { text: c.textContent, out: Math.round(out * 100) / 100, named: !!name && (name.scrollWidth <= name.clientWidth + 1 || name.title === name.textContent) }
+          // Everything in the header's visible box (its pill) stays inside it; visually hidden text is not drawn.
+          const pill = [c, ...c.querySelectorAll("*")].filter((e) => e.getClientRects().length && getComputedStyle(e).backgroundColor !== "rgba(0, 0, 0, 0)").find((e) => e.contains(name)) ?? c
+          const p = pill.getBoundingClientRect()
+          const spill = Math.max(0, ...[...pill.querySelectorAll("*")].filter((e) => e.getClientRects().length && getComputedStyle(e).clip === "auto" && getComputedStyle(e).clipPath === "none").map((e) => { const q = e.getBoundingClientRect(); return Math.max(p.left - q.left, q.right - p.right, p.top - q.top, q.bottom - p.bottom) }))
+          return { text: c.textContent, out: Math.round(out * 100) / 100, spill: Math.round(spill * 100) / 100, named: !!name && (name.scrollWidth <= name.clientWidth + 1 || name.title === name.textContent) }
         }),
       }
     })
+  const headerFault = (h, want, where) => {
+    const off = h.caps.filter((x) => x.out > 0.5 || x.spill > 0.5 || !x.named)
+    if (h.caps.length < want || off.length || h.scroll > 1 || h.doc > 0) bad.push(`${where}: ${h.caps.length} headers${off.length ? `, cut ${off.map((x) => `"${x.text}" ${x.out > 0.5 ? `${x.out} px off the stage` : ""}${x.spill > 0.5 ? ` contents ${x.spill} px outside the header` : ""}${x.named ? "" : " unnamed"}`).join(", ")}` : ""}${h.scroll > 1 ? `, the stage scrolls ${h.scroll} px sideways` : ""}${h.doc > 0 ? `, the page scrolls ${h.doc} px sideways` : ""}`)
+  }
   const sweep = async (p, tag) => {
     const t = await textFloor(p)
     texts += t.n
@@ -3198,8 +3207,7 @@ await check("AC-68", async () => {
             await wait(800)
           }
           const h = await headers(c)
-          const off = h.caps.filter((x) => x.out > 0.5 || !x.named)
-          if (h.caps.length < (count === "2-up" ? 2 : 3) || off.length || h.scroll > 1 || h.doc > 0) bad.push(`${tag} Compare ${count}: ${h.caps.length} headers${off.length ? `, cut ${off.map((x) => `"${x.text}" ${x.out} px${x.named ? "" : " unnamed"}`).join(", ")}` : ""}${h.scroll > 1 ? `, the stage scrolls ${h.scroll} px sideways` : ""}${h.doc > 0 ? `, the page scrolls ${h.doc} px sideways` : ""}`)
+          headerFault(h, count === "2-up" ? 2 : 3, `${tag} Compare ${count}`)
           modes.push(`${count} ${h.caps.length} headers`)
           await sweep(c, `${tag} Compare ${count}`)
         }
@@ -3214,6 +3222,29 @@ await check("AC-68", async () => {
         modes.push("split")
         await sweep(c, `${tag} Compare split`)
       }
+      // Profile, 3-up, at Fit: a phone frame scales to a few dozen pixels, and its header must still hold its status and Reset.
+      if (width < 1440) {
+        await c.getByRole("combobox", { name: "Changing axis" }).click()
+        await wait(400)
+        const chosen = await c.getByRole("option", { name: "Profile" }).click().then(() => true, () => false)
+        await wait(800)
+        const three = c.getByRole("radio", { name: "3-up" }).or(c.getByRole("button", { name: "3-up" })).first()
+        if (!chosen || (await three.isDisabled().catch(() => true))) bad.push(`${tag} Compare Profile 3-up: not available`)
+        else {
+          await three.click()
+          await until(() => c.locator("figure > figcaption").count(), (n) => n >= 3)
+          await until(() => c.getByText("Ready", { exact: true }).count(), (n) => n >= 3)
+          await wait(800)
+          headerFault(await headers(c), 3, `${tag} Compare Profile 3-up`)
+          modes.push("Profile 3-up")
+          await sweep(c, `${tag} Compare Profile 3-up`)
+        }
+        await c.getByRole("combobox", { name: "Changing axis" }).click()
+        await wait(400)
+        await c.getByRole("option", { name: "Theme" }).click().catch(() => {})
+        await c.getByRole("radio", { name: "2-up" }).or(c.getByRole("button", { name: "2-up" })).first().click().catch(() => {})
+        await wait(800)
+      }
       // Flip (the phone's only mode).
       const flipped = await c.getByRole("radio", { name: "Flip" }).or(c.getByRole("button", { name: "Flip" })).first().click().then(() => true, () => false)
       await wait(900)
@@ -3227,7 +3258,7 @@ await check("AC-68", async () => {
       notes.push(`${tag}: ${modes.join(", ")}`)
     }
   }
-  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 10).join("; ") : `${texts} text runs measured in Present (an anchored step, a step that cannot run) and Compare (${notes.join("; ")}): every one reached AA, every side header sat whole inside the stage with its full name, and nothing scrolled sideways. Product frames are their own documents and are not measured here.`]
+  return [bad.length ? "fail" : "pass", bad.length ? bad.slice(0, 10).join("; ") : `${texts} text runs measured in Present (an anchored step, a step that cannot run) and Compare (${notes.join("; ")}): every one reached AA, every side header sat whole inside the stage with its full name and its contents inside it, and nothing scrolled sideways. Product frames are their own documents and are not measured here.`]
 })
 
 // ---------- Workspace modules (WS-01 to WS-10, references/workspace.md) ----------

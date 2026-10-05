@@ -131,18 +131,20 @@ function useSideStatus() {
 }
 
 /**
- * A compared side's header. It takes the width of its preview, never more: its size containment keeps it out of the
+ * A compared side's header. It takes the width of its preview, never more: as a size container it stays out of the
  * stage's measured width, so a narrow preview wraps the header and truncates the value's name (kept whole as its title).
+ * Below 7rem the status shows only its dot or icon (its word stays as its accessible name) and Reset wraps below it;
+ * the figure is at least 60 px wide, so Reset's 44 px target always fits inside the header.
  */
 function SideCaption({ side, label, status, onReset }: { side: string; label: string; status: React.ReactNode; onReset: () => void }) {
   return (
-    <figcaption className="flex justify-center self-stretch [contain:inline-size]">
+    <figcaption className="@container flex justify-center self-stretch">
       <span className="flex max-w-full min-w-0 flex-wrap items-center justify-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs shadow-sm backdrop-blur">
         <span className="flex min-w-0 items-center gap-1.5">
           <Badge variant="secondary" className="h-4 px-1 text-[10px]">{side}</Badge>
           <b className="min-w-0 truncate font-medium" title={label}>{label}</b>
         </span>
-        <span className="flex items-center gap-1.5">
+        <span className="flex flex-wrap items-center justify-center gap-1.5">
           {status}
           <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${side}`} onClick={onReset}><RotateCcwIcon /></Button>
         </span>
@@ -269,8 +271,10 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
       />
     )
   }
+  // In a narrow side header the status keeps its dot or icon and its word becomes its accessible name only.
+  const word = (text: string) => <span className="@max-[7rem]:sr-only">{text}</span>
   const sideStatus = (st: LiveStatus | null) =>
-    !st ? null : st.status === "loading" ? <StatusBadge kind="loading">Loading</StatusBadge> : st.status === "error" ? <StatusBadge kind="unresolved">Did not start</StatusBadge> : st.modified ? <StatusBadge kind="modified">Modified</StatusBadge> : <StatusBadge kind="ready">Ready</StatusBadge>
+    !st ? null : st.status === "loading" ? <StatusBadge kind="loading">{word("Loading")}</StatusBadge> : st.status === "error" ? <StatusBadge kind="unresolved">{word("Did not start")}</StatusBadge> : st.modified ? <StatusBadge kind="modified">{word("Modified")}</StatusBadge> : <StatusBadge kind="ready">{word("Ready")}</StatusBadge>
   return (
     <Stage controls={false}>
       <StageNav nav={nav}>
@@ -349,7 +353,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
         )}
         {available && effectiveMode === "side" &&
           (["a", "b"] as const).map((k) => (
-            <figure key={k} className="m-0 flex flex-col items-center gap-2">
+            <figure key={k} className="m-0 flex min-w-15 flex-col items-center gap-2">
               <SideCaption side={k.toUpperCase()} label={label(pick(k))} status={sideStatus((k === "a" ? A : B).st)} onReset={(k === "a" ? A : B).reset} />
               {side(k)}
             </figure>
@@ -358,7 +362,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           const sideIndex = (index + 2) as 2 | 3
           const state = sideIndex === 2 ? C : D
           return (
-            <figure key={`${sideIndex}:${value}`} className="m-0 flex flex-col items-center gap-2">
+            <figure key={`${sideIndex}:${value}`} className="m-0 flex min-w-15 flex-col items-center gap-2">
               <SideCaption side={String.fromCharCode(65 + sideIndex)} label={label(value)} status={sideStatus(state.st)} onReset={state.reset} />
               {extraSide(value, sideIndex)}
             </figure>
