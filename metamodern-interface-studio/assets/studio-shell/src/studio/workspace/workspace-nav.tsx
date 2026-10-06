@@ -17,6 +17,7 @@ import { Icon } from "@/kit/icons"
 import { resolveModules, type ResolvedModule } from "./declaration"
 import { parseModuleLink } from "./link"
 import { openingLink } from "./slots"
+import { hasLibrary, LibraryNav, LibrarySlot } from "@/studio/library/slots"
 
 // Without the module file: only reasons the declaration gives (a declared reason, no operations host). A
 // missing component is reported by the module's own page when it opens.
@@ -103,7 +104,7 @@ function Commands({ onDone }: { onDone: () => void }) {
 function Tab() {
   const s = useStudio()
   return (
-    <button aria-current={s.module ? "page" : undefined} className={cn("flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-colors", s.module && "text-foreground")} onClick={() => s.set({ mobilePanel: "workspace" })}>
+    <button aria-current={s.module || s.library ? "page" : undefined} className={cn("flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-colors", (s.module || s.library) && "text-foreground")} onClick={() => s.set({ mobilePanel: "workspace" })}>
       <BoxesIcon className="size-5" />
       <span className="max-w-full truncate">Workspace</span>
     </button>
@@ -139,6 +140,11 @@ function ModuleDrawer() {
           </li>
         ))}
       </ul>
+      {hasLibrary && (
+        <LibrarySlot>
+          <LibraryNav part="drawer-entry" />
+        </LibrarySlot>
+      )}
     </div>
   )
 }

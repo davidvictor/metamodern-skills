@@ -55,7 +55,8 @@ import type { CapabilityDimension, InputValue } from "@/studio/types"
 import { FidelityBadge, ProductMark, ProfileIcon, StatusBadge, lookOf, themeIcon } from "./bits"
 import { inspectHandle, profileOf } from "./preview"
 import { navigationHint, stepZoom, zoomTarget, type ZoomApi } from "./stage-nav"
-import { Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
+import { hasWorkspace, Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
+import { LibraryNav, LibraryPage, LibrarySlot } from "@/studio/library/slots"
 
 async function copyLink() {
   try {
@@ -198,7 +199,11 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
         <BreadcrumbList className="flex-nowrap">
           <BreadcrumbItem className="hidden whitespace-nowrap lg:inline-flex">{adapter.product.name}</BreadcrumbItem>
           <BreadcrumbSeparator className="hidden lg:inline-flex" />
-          {s.module ? (
+          {s.library ? (
+            <LibrarySlot>
+              <LibraryNav part="crumbs" />
+            </LibrarySlot>
+          ) : s.module ? (
             <Slot>
               <WorkspaceNav part="crumbs" />
             </Slot>
@@ -225,16 +230,16 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
         </BreadcrumbList>
       </Breadcrumb>
       <div className="ml-1 hidden shrink-0 sm:block" aria-live="polite">
-        {s.view === "inspect" && !s.module && <StatusNow />}
+        {s.view === "inspect" && !s.module && !s.library && <StatusNow />}
         {/* Edited also shows in Details; a narrow bar leaves it there. */}
-        {s.view === "inspect" && !s.module && (
+        {s.view === "inspect" && !s.module && !s.library && (
           <span className="@max-xl/header:hidden">
             <EditedNow spaced />
           </span>
         )}
       </div>
       {/* Fidelity lives in Details. It also shows here when the preview is not the real product UI, where misreading it would matter. */}
-      {s.view === "inspect" && !s.module && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
+      {s.view === "inspect" && !s.module && !s.library && adapter.target.showFidelityInToolbar !== false && (lookOf(adapter.target.fidelity) === "static" || lookOf(adapter.target.fidelity) === "recreation") && (
         <FidelityBadge mode={lookOf(adapter.target.fidelity)} className="hidden shrink-0 @xl/header:inline-flex">
           {adapter.target.label}
         </FidelityBadge>
@@ -244,6 +249,11 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
           <Slot>
             <WorkspaceNav part="details-button" />
           </Slot>
+        )}
+        {mobile && !hasWorkspace && (
+          <LibrarySlot>
+            <LibraryNav part="details-button" />
+          </LibrarySlot>
         )}
         {!mobile && (
           <Button variant="outline" size="sm" className="hidden w-52 justify-start gap-2 text-muted-foreground xl:inline-flex" onClick={() => s.set({ commandOpen: true })}>
@@ -926,6 +936,12 @@ const DIMENSIONS: [CapabilityDimension, string][] = [
 /** Details: the summary is always visible; Scenario, Fidelity and Evidence as line tabs. */
 export function DetailsContent({ onClose }: { onClose?: () => void }) {
   const s = useStudio()
+  if (s.library)
+    return (
+      <LibrarySlot>
+        <LibraryPage part="details" onClose={onClose} />
+      </LibrarySlot>
+    )
   if (s.module)
     return (
       <Slot>

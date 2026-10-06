@@ -16,6 +16,7 @@ import { DesignStage } from "@/components/studio/design"
 import { ResponsiveStage } from "@/components/studio/responsive"
 import { CommandMenu, ShortcutsDialog } from "@/components/studio/command"
 import { hasWorkspace, Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
+import { hasLibrary, LibraryNav, LibraryPage, LibrarySlot } from "@/studio/library/slots"
 import { stepZoom, zoomTarget } from "@/components/studio/stage-nav"
 
 function useGlobalKeys() {
@@ -35,6 +36,8 @@ function useGlobalKeys() {
       if (e.metaKey || e.ctrlKey || e.altKey) return
       // In a workspace module only the view keys and the shortcut list apply.
       if (s.module && e.key !== "?" && !VIEWS.some((x) => x.key === e.key)) return
+      // On a library page only the view keys, search (/) and the shortcut list apply.
+      if (s.library && e.key !== "?" && e.key !== "/" && !VIEWS.some((x) => x.key === e.key)) return
       // Zoom keys act on the stage on screen (a canvas has its own viewport); without one they set the Studio zoom.
       const z = zoomTarget.current
       if (e.shiftKey && e.code === "Digit1") { if (z) z.fit(); else s.set({ zoom: "fit" }); return }
@@ -85,8 +88,12 @@ function usePresentFocus() {
 function StageForView({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
   return (
-    <div key={s.module ? "module" : s.view} className="flex min-h-0 min-w-0 flex-1 animate-in fade-in-0 duration-200">
-      {s.module ? (
+    <div key={s.library ? "library" : s.module ? "module" : s.view} className="flex min-h-0 min-w-0 flex-1 animate-in fade-in-0 duration-200">
+      {s.library ? (
+        <LibrarySlot>
+          <LibraryPage part="stage" />
+        </LibrarySlot>
+      ) : s.module ? (
         <Slot>
           <WorkspacePage part="stage" />
         </Slot>
@@ -106,7 +113,7 @@ function StageForView({ narrow }: { narrow?: boolean }) {
 
 function Details() {
   const s = useStudio()
-  const hidden = s.module ? !s.moduleDetails : s.view === "gallery" || s.view === "present"
+  const hidden = s.library ? false : s.module ? !s.moduleDetails : s.view === "gallery" || s.view === "present"
   const open = s.detailsOpen && !hidden
   if (s.options.details === "floating")
     return (
@@ -191,7 +198,7 @@ function MobileShell() {
       <div className="relative flex min-h-0 flex-1 flex-col">
         <StageForView narrow />
       </div>
-      {!s.module && (s.view === "inspect" || s.view === "responsive") && (
+      {!s.module && !s.library && (s.view === "inspect" || s.view === "responsive") && (
         <div className="flex justify-center border-t bg-background px-2 py-1.5">
           <StageControls variant="toolbar" compact lookOnly={s.view === "responsive"} />
         </div>
@@ -203,7 +210,7 @@ function MobileShell() {
           <span className="max-w-full truncate">Panel</span>
         </button>
         {tabs.map((v) => (
-          <button key={v.id} aria-current={!s.module && s.view === v.id ? "page" : undefined} className={cn(TAB, "transition-colors", !s.module && s.view === v.id && "text-foreground")} onClick={() => s.set({ view: v.id })}>
+          <button key={v.id} aria-current={!s.module && !s.library && s.view === v.id ? "page" : undefined} className={cn(TAB, "transition-colors", !s.module && !s.library && s.view === v.id && "text-foreground")} onClick={() => s.set({ view: v.id })}>
             <v.icon className="size-5" />
             <span className="max-w-full truncate">{v.label}</span>
           </button>
@@ -212,6 +219,10 @@ function MobileShell() {
           <Slot>
             <WorkspaceNav part="tab" />
           </Slot>
+        ) : hasLibrary ? (
+          <LibrarySlot>
+            <LibraryNav part="tab" />
+          </LibrarySlot>
         ) : (
           <button className={TAB} onClick={() => s.set({ mobilePanel: "details" })}>
             <InfoIcon className="size-5" />
@@ -251,6 +262,9 @@ function Shell() {
       <Slot>
         <WorkspaceNav part="runtime" />
       </Slot>
+      <LibrarySlot>
+        <LibraryNav part="runtime" />
+      </LibrarySlot>
       <Toaster position="bottom-right" />
     </TooltipProvider>
   )

@@ -271,3 +271,19 @@ test('LM-13 library pages render documentation as React text, load frames only f
   assert.match(read('src/studio/library/rich-text.tsx'), /data-inline/);
   assert.match(read('src/studio.css'), /\.library-code \.tok-keyword/);
 });
+
+test('LM-14 the core shell reaches the library only through lazy slots, and library is a reserved link key', () => {
+  const slots = read('src/studio/library/slots.tsx');
+  assert.match(slots, /!__STUDIO_LIBRARY__ \? never\(\) : import\("\.\/library-nav"\)/);
+  assert.match(slots, /!__STUDIO_LIBRARY__ \? never\(\) : import\("\.\/library-page"\)/);
+  assert.match(slots, /hasLibrary = __STUDIO_LIBRARY__ && !!adapter\.library/);
+  for (const file of ['src/App.tsx', 'src/store.tsx', 'src/components/studio/rail-panel.tsx', 'src/components/studio/chrome.tsx', 'src/components/studio/command.tsx', 'src/studio/workspace/workspace-nav.tsx']) {
+    assert.doesNotMatch(read(file), /from "@\/studio\/library\/(library-nav|library-page|preview-block|rich-text|code-block|model|highlight|api)"/, `${file} imports library code eagerly`);
+  }
+  assert.match(read('src/store.tsx'), /from "@\/studio\/library\/link"/);
+  assert.match(read('src/store.tsx'), /q\.set\("library", state\.library\)/);
+  assert.match(read('src/studio/input.ts'), /"module", "section", "library"\]/);
+  assert.match(read('src/studio/library/library-page.tsx'), /from "@\/library"/);
+  const app = read('src/App.tsx');
+  assert.match(app, /hasWorkspace \? \([\s\S]*?WorkspaceNav part="tab"[\s\S]*?\) : hasLibrary \? \([\s\S]*?LibraryNav part="tab"/, 'one place entry on the phone bar');
+});

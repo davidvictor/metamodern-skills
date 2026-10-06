@@ -52,6 +52,7 @@ import { savedComparison } from "@/studio/compare"
 import { ProductMark } from "./bits"
 import { staticProblem } from "./views"
 import { Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
+import { LibraryNav, LibraryPage, LibrarySlot } from "@/studio/library/slots"
 
 /** Joined filter segments sized to fit a 272 px panel: small type, tight padding, never wider than their column. */
 const SEG = "h-7 min-w-0 gap-1 px-1.5 text-xs"
@@ -120,7 +121,7 @@ export function Rail({ labels }: { labels: boolean }) {
       <SidebarContent>
         <nav aria-label="Views" className="flex flex-col py-1">
           {VIEWS.map((v) => (
-            <RailButton key={v.id} label={v.label} keyHint={v.key} labels={labels} active={!s.module && s.view === v.id} onClick={() => s.setView(v.id)}>
+            <RailButton key={v.id} label={v.label} keyHint={v.key} labels={labels} active={!s.module && !s.library && s.view === v.id} onClick={() => s.setView(v.id)}>
               <v.icon />
             </RailButton>
           ))}
@@ -128,6 +129,9 @@ export function Rail({ labels }: { labels: boolean }) {
         <Slot>
           <WorkspaceNav part="rail" labels={labels} />
         </Slot>
+        <LibrarySlot>
+          <LibraryNav part="rail" labels={labels} />
+        </LibrarySlot>
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0 pb-2">
         <RailButton label="Go to scenario" keyHint="⌘K" onClick={() => s.set({ commandOpen: true })}>
@@ -512,8 +516,12 @@ export function ContextPanel() {
   const s = useStudio()
   return (
     <Sidebar collapsible="none" className="hidden flex-1 md:flex">
-      <div key={s.module ? "module" : s.view} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-left-1 duration-200">
-        {s.module ? (
+      <div key={s.library ? "library" : s.module ? "module" : s.view} className="flex min-h-0 flex-1 flex-col animate-in fade-in-0 slide-in-from-left-1 duration-200">
+        {s.library ? (
+          <LibrarySlot>
+            <LibraryPage part="panel" />
+          </LibrarySlot>
+        ) : s.module ? (
           <Slot>
             <WorkspacePage part="panel" />
           </Slot>
@@ -536,7 +544,11 @@ export function MobilePanel() {
   const s = useStudio()
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-sidebar text-sidebar-foreground">
-      {s.module ? (
+      {s.library ? (
+        <LibrarySlot>
+          <LibraryPage part="panel" />
+        </LibrarySlot>
+      ) : s.module ? (
         <Slot>
           <WorkspacePage part="panel" />
         </Slot>
