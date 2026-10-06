@@ -211,6 +211,12 @@ test('LM-10 documentation files import only @studio/library and their own files'
   const glob = { type: 'CallExpression', callee: { type: 'MemberExpression', computed: false, object: { type: 'MetaProperty', meta: { name: 'import' }, property: { name: 'meta' } }, property: { type: 'Identifier', name: 'glob' } }, arguments: [literal('./*.ts')] };
   assert.match(lint(glob)[0], /may not use import\.meta\.glob/);
   assert.match(lint({ type: 'TSImportType', argument: { type: 'TSLiteralType', literal: literal('@/store') } })[0], /outside the library boundary/);
+  const { libraryFileProblem } = await import(new URL('scripts/library-boundary.mjs', shell).href);
+  for (const ok of ['button.ts', 'button.js', 'button.mjs']) assert.equal(libraryFileProblem(`/studio/src/library/${ok}`), null, ok);
+  for (const bad of ['button.tsx', 'button.jsx']) assert.match(libraryFileProblem(`/studio/src/library/${bad}`), /is a JSX file\. Documentation is data/, bad);
+  const fileReports = [];
+  createLibraryBoundary(cwd).rules.files.create({ filename: '/studio/src/library/button.tsx', report: (r) => fileReports.push(r.message) }).Program({ type: 'Program' });
+  assert.equal(fileReports.length, 1, 'the files rule refuses JSX documentation');
   const reports = [];
   libraryBoundary.rules.imports.create({ filename: join(fileURLToPath(shell), 'src/library/index.ts'), report: (r) => reports.push(r.message) }).ImportDeclaration({ type: 'ImportDeclaration', source: literal('./button') });
   assert.deepEqual(reports, [], 'the shared plugin checks against the Studio that holds it');
@@ -230,7 +236,7 @@ test('LM-11 the product seed is empty, the API is the published surface, and the
   assert.match(vite, /"example-library": path\.resolve\(root, "example\/library\/frame\.html"\)/);
   for (const config of ['tsconfig.json', 'tsconfig.app.json']) assert.match(read(config), /"@studio\/library": \["\.\/src\/studio\/library\/api\.ts"\]/, config);
   const eslint = read('eslint.config.js');
-  assert.match(eslint, /'library\/imports': 'error'/);
+  assert.match(eslint, /'library\/imports': 'error', 'library\/files': 'error'/);
   assert.match(eslint, /'src\/library\/\*\*\/\*\.\{ts,tsx,js,jsx,mjs\}'/);
 });
 
@@ -251,7 +257,10 @@ test('LM-12 the example library is a valid declaration, and every documented com
   assert.equal(button.source.version, '2.4.0');
   assert.deepEqual(button.preview.groups.map((g) => g.id).concat(button.examples.items.map((g) => g.id)), ['styles', 'sizes', 'states', 'with-icon', 'in-a-row']);
   assert.ok(!('performance' in (await loadPure('example/library/text-field.ts')).default), 'Text field leaves Performance out');
-  for (const scenario of ['button:playground', 'button:styles', 'button:sizes', 'button:states', 'button:with-icon', 'button:in-a-row', 'icon-button:sizes', 'text-field:states']) assert.ok(read('example/library/frame.ts').includes(`"${scenario}"`), `the example entry renders ${scenario}`);
+  const { default: textField } = await loadPure('example/library/text-field.ts');
+  assert.ok(textField.examples.items.length >= 6, 'Text field stacks at least six examples, for the live-frame budget');
+  for (const id of documented) assert.deepEqual(docsProblems((await loadPure(`example/library/${id}.ts`)).default, exampleLibrary.components.map((c) => c.id)), [], `${id} refers only to declared components`);
+  for (const scenario of ['button:playground', 'button:styles', 'button:sizes', 'button:states', 'button:with-icon', 'button:in-a-row', 'icon-button:sizes', 'text-field:states', ...textField.examples.items.map((g) => g.scenario)]) assert.ok(read('example/library/frame.ts').includes(`"${scenario}"`), `the example entry renders ${scenario}`);
 });
 
 test('LM-13 library pages render documentation as React text, load frames only from the adapter, and never remount for values', () => {
@@ -311,4 +320,41 @@ test('LM-17 the library files ship with the starter', () => {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
   assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.13.0');
+});
+
+test('LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported', async () => {
+  const { docsProblems } = await loadPure('src/studio/library/model.ts');
+  const group = { id: 'g', label: 'G', scenario: 'x', width: 10, height: 10 };
+  const malformed = [
+    undefined, 'text', [], { preview: null }, { preview: { groups: null } }, { preview: { groups: [null, 7, 'g'] } },
+    { preview: { groups: [{ ...group, id: 5, label: null, capture: null }] } },
+    { preview: { groups: [{ ...group, capture: { alt: 'x' } }] } },
+    { preview: { groups: [], playground: null } },
+    { preview: { groups: [], playground: { scenario: 'p', width: 10, height: 10, properties: null } } },
+    { preview: { groups: [], playground: { scenario: 'p', width: 10, height: 10, properties: [null, { id: 'v', label: 'V', kind: 'select', default: 'a' }, { id: 'w', label: 'W', kind: 'select', default: 'a', options: [null] }, { id: 'k', label: 'K', kind: 'slider', default: 1 }, { id: 'n', label: 'N', kind: 'number', default: 1, min: 'a' }, { id: 't', label: 'T', kind: 'text', default: 'x', maxLength: -1 }] } } },
+    { preview: { groups: [] }, examples: { items: null } },
+    { preview: { groups: [] }, examples: { items: [group], intro: 'not blocks' } },
+    { preview: { groups: [] }, api: { props: [null, { name: 'a', type: 't', description: 5 }] } },
+    { preview: { groups: [] }, usage: null, keyboard: { body: 'text' }, motion: { body: [null, { kind: 'list', items: null }, { kind: 'table', columns: 'a', rows: [null, { cells: 'x' }] }, { kind: 'callout', tone: 'loud', text: [7] }, { kind: 'html', text: 'x' }, { kind: 'paragraph', text: [{ link: 'x' }, { strong: 4 }] }] } },
+    { preview: { groups: [] }, source: 'Example UI' },
+    { preview: { get groups() { throw new Error('getter'); } } },
+  ];
+  malformed.forEach((docs, i) => {
+    let problems;
+    assert.doesNotThrow(() => { problems = docsProblems(docs, ['button']); }, `case ${i}`);
+    assert.ok(Array.isArray(problems) && problems.length > 0 && problems.every((p) => typeof p === 'string'), `no problem reported for case ${i}`);
+  });
+  assert.match(docsProblems({ preview: { get groups() { throw new Error('getter'); } } }).join(), /could not be checked: getter/);
+  const refs = { preview: { groups: [] }, usage: { body: [{ kind: 'paragraph', text: ['See ', { component: 'button' }, ' and ', { component: 'menu' }] }] } };
+  assert.deepEqual(docsProblems(refs), [], 'without the declared IDs references are not checked');
+  assert.deepEqual(docsProblems(refs, ['button']), ['Usage, block 1: refers to component "menu", which the library does not declare']);
+  const rich = read('src/studio/library/rich-text.tsx');
+  assert.match(rich, /if \(!label\) return <React\.Fragment key=\{i\}>/, 'an undeclared reference renders as plain text');
+  const page = read('src/studio/library/library-page.tsx');
+  assert.match(page, /docsProblems\(docs, DECLARED\)/);
+  assert.match(page, /class PartBoundary extends React\.Component/);
+  for (const name of ['name={`${c.label} page`}', 'name="outline"', 'name="playground"']) assert.ok(page.includes(name), `${name} has an error boundary`);
+  const block = read('src/studio/library/preview-block.tsx');
+  assert.match(block, /distance: s\.near \? distance\(s\.el\) : Infinity/, 'the budget measures near previews afresh');
+  assert.match(block, /el\?\.addEventListener\("scroll", onMove/, 'the budget follows the page scroll');
 });

@@ -4189,10 +4189,11 @@ await check("LB-02", async () => {
   await p.locator('nav[aria-label="Components"] button', { hasText: "Text field" }).click()
   await poll(() => libTitle(p), (t) => t === "Text field")
   const back = []
-  for (let i = 0; i < 2; i++) {
+  const place = () => p.evaluate(() => ({ hash: location.hash, title: document.querySelector("[data-library-page] h1")?.textContent ?? null }))
+  // Each Back is read once the page shows where it should land (or the time runs out): Button, then the view.
+  for (const arrived of [(b) => b.title === "Button", (b) => /view=inspect/.test(b.hash) && b.title === null]) {
     await p.evaluate(() => history.back())
-    await wait(900)
-    back.push(await p.evaluate(() => ({ hash: location.hash, title: document.querySelector("[data-library-page] h1")?.textContent ?? null })))
+    back.push(await poll(place, arrived, 8000))
   }
   await p.keyboard.press("ControlOrMeta+k")
   await wait(400)
@@ -4236,17 +4237,18 @@ await check("LB-02", async () => {
 // history entry; scrolling marks the section on screen; rich text renders; a missing section and missing documentation say so
 await check("LB-03", async () => {
   const p = await openLibrary("library=button")
-  await wait(600)
-  const headings = await p.evaluate(() => [...document.querySelectorAll("[data-library-page] section[data-section] > h2")].map((h) => h.textContent.trim()))
+  const headings = await poll(() => p.evaluate(() => [...document.querySelectorAll("[data-library-page] section[data-section] > h2")].map((h) => h.textContent.trim())), (h) => h.length === LIBRARY_SECTIONS.length)
   const outline = await p.locator('nav[aria-label="On this page"] button').allTextContents()
   const anchors = await p.evaluate(() => document.querySelectorAll('[data-library-page] a, nav[aria-label="On this page"] a').length)
   const before = await p.evaluate(() => history.length)
   await p.locator('nav[aria-label="On this page"] button', { hasText: "Accessibility" }).click()
-  await wait(1200)
-  const jumped = await p.evaluate(() => ({ top: Math.round(document.querySelector("#lib-accessibility").getBoundingClientRect().top - document.querySelector("[data-library-page]").getBoundingClientRect().top), hash: location.hash, length: history.length, current: document.querySelector('nav[aria-label="On this page"] [aria-current="location"]')?.textContent?.trim() }))
+  // Read once the scroll has landed and the outline caught up (a smooth scroll takes a moment), or when the time runs out.
+  const jumped = await poll(
+    () => p.evaluate(() => ({ top: Math.round(document.querySelector("#lib-accessibility").getBoundingClientRect().top - document.querySelector("[data-library-page]").getBoundingClientRect().top), hash: location.hash, length: history.length, current: document.querySelector('nav[aria-label="On this page"] [aria-current="location"]')?.textContent?.trim() })),
+    (j) => j.top >= -2 && j.top <= 40 && /section=accessibility/.test(j.hash) && j.current === "Accessibility"
+  )
   await toSection(p, "motion")
-  await wait(500)
-  const spy = await p.evaluate(() => document.querySelector('nav[aria-label="On this page"] [aria-current="location"]')?.textContent?.trim())
+  const spy = await poll(() => p.evaluate(() => document.querySelector('nav[aria-label="On this page"] [aria-current="location"]')?.textContent?.trim()), (t) => t === "Motion")
   const rich = await p.evaluate(() => {
     const page = document.querySelector("[data-library-page]")
     return { lists: page.querySelectorAll("section[data-section] ul, section[data-section] ol").length, tables: page.querySelectorAll("section[data-section] table").length, inline: page.querySelectorAll("section[data-section] p code").length, code: page.querySelectorAll("section[data-section] .library-code pre").length, callouts: page.querySelectorAll('section[data-section] [role="note"]').length, refs: page.querySelectorAll("section[data-section] button[data-inline]").length }
@@ -4347,8 +4349,37 @@ await check("LB-05", async () => {
   const errors = [...p.errors]
   await p.closeAll()
   const kept = Object.keys(top.heights).every((id) => Math.abs(top.heights[id] - end.heights[id]) <= 1)
-  const ok = top.blocks.join() === "playground,styles,sizes,states,with-icon,in-a-row" && top.live.length === 4 && top.frames === 4 && !top.live.includes("in-a-row") && Math.max(...counts) <= 5 && end.live.includes("with-icon") && end.live.includes("in-a-row") && !end.live.includes("playground") && end.frames <= 4 && kept && !errors.length
-  return [ok ? "pass" : "fail", `${top.blocks.length} previews; at the top ${top.frames} frames live (${top.live.join(", ")}); while scrolling to Examples ${counts.join(", ")} frames; at Examples ${end.frames} live (${end.live.join(", ")}); every preview kept its height ${kept}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  // A long section: Text field stacks six examples. Scrolling through it in small steps keeps several previews inside the
+  // near margin the whole time, so only re-measuring tells which are nearest now. At rest the live ones must be the
+  // nearest four (of the previews within the margin), and the page never holds more than four frames: a swap mounts
+  // and unmounts in the same render, so no transient fifth frame is allowed.
+  const t = await openLibrary("library=text-field")
+  const nearest = () =>
+    t.evaluate((near) => {
+      const page = document.querySelector("[data-library-page]")
+      const r = page.getBoundingClientRect()
+      const middle = r.top + r.height / 2
+      const blocks = [...page.querySelectorAll("[data-preview-block]")].map((b) => ({ id: b.dataset.previewBlock, live: b.dataset.live === "true", rect: b.getBoundingClientRect() }))
+      const within = blocks.filter((b) => b.rect.bottom >= r.top - near && b.rect.top <= r.bottom + near).sort((a, c) => Math.abs(a.rect.top + a.rect.height / 2 - middle) - Math.abs(c.rect.top + c.rect.height / 2 - middle))
+      return { frames: page.querySelectorAll("iframe").length, live: blocks.filter((b) => b.live).map((b) => b.id).sort().join(), expected: within.slice(0, 4).map((b) => b.id).sort().join(), count: blocks.length }
+    }, 400)
+  const settled = (x) => x.live === x.expected && x.frames <= 4
+  await toSection(t, "examples")
+  const atExamples = await poll(nearest, settled, 15000)
+  const longCounts = []
+  for (let i = 0; i < 10; i++) {
+    await t.evaluate(() => {
+      document.querySelector("[data-library-page]").scrollTop += 120
+    })
+    await wait(120)
+    longCounts.push((await nearest()).frames)
+  }
+  const atRest = await poll(nearest, settled, 15000)
+  errors.push(...t.errors)
+  await t.closeAll()
+  const long = atExamples.count >= 7 && settled(atExamples) && settled(atRest) && atRest.live !== atExamples.live && Math.max(...longCounts) <= 4
+  const ok = top.blocks.join() === "playground,styles,sizes,states,with-icon,in-a-row" && top.live.length === 4 && top.frames === 4 && !top.live.includes("in-a-row") && Math.max(...counts) <= 4 && end.live.includes("with-icon") && end.live.includes("in-a-row") && !end.live.includes("playground") && end.frames <= 4 && kept && long && !errors.length
+  return [ok ? "pass" : "fail", `${top.blocks.length} previews; at the top ${top.frames} frames live (${top.live.join(", ")}); while scrolling to Examples ${counts.join(", ")} frames; at Examples ${end.frames} live (${end.live.join(", ")}); every preview kept its height ${kept}; Text field (${atExamples.count} previews) at its Examples had ${atExamples.live} live (nearest ${atExamples.expected}), while scrolling 1,200 px in small steps ${longCounts.join(", ")} frames, and at rest ${atRest.live} live (nearest ${atRest.expected}), ${atRest.frames} frames; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 // LB-06 The playground changes the frame in place (one mount), sends only declared properties, refuses an over-long label with a
@@ -4370,9 +4401,13 @@ await check("LB-06", async () => {
   await details.getByRole("switch", { name: "Disabled" }).click()
   const after = await poll(state, (s) => s?.text === "Publish" && s?.variant === "danger" && s?.disabled === true)
   await details.getByLabel("Label", { exact: true }).fill("x".repeat(81))
-  await wait(600)
-  const refused = await state()
-  const reason = await details.getByText("At most 80 characters on one line").isVisible().catch(() => false)
+  // Read once the reason shows and the frame has been sent the default in place of the refused label (or the time runs out).
+  const refusal = await poll(
+    async () => ({ reason: await details.getByText("At most 80 characters on one line").isVisible().catch(() => false), frame: await state() }),
+    (r) => r.reason && r.frame?.text === "Save changes"
+  )
+  const reason = refusal.reason
+  const refused = refusal.frame
   await details.getByRole("button", { name: "Reset" }).click()
   const reset = await poll(state, (s) => s?.text === "Save changes" && s?.variant === "primary" && s?.disabled === false)
   await details.getByRole("combobox", { name: "Theme" }).click()
@@ -4384,7 +4419,7 @@ await check("LB-06", async () => {
   const errors = [...p.errors]
   await p.closeAll()
   const keys = Object.keys(after?.values ?? {}).sort().join()
-  const ok = before?.mounts === 1 && after?.mounts === 1 && keys === "disabled,label,size,variant" && refused?.mounts === 1 && refused?.text === "Save changes" && reason && reset?.mounts === 1 && dark?.theme === "dark" && contrast?.theme === "dark-contrast" && styles === "dark-contrast" && !errors.length
+  const ok = before?.mounts === 1 && after?.mounts === 1 && keys === "disabled,label,size,variant" && refused?.mounts === 1 && refused?.text === "Save changes" && refused?.values?.label === "Save changes" && reason && reset?.mounts === 1 && dark?.theme === "dark" && contrast?.theme === "dark-contrast" && styles === "dark-contrast" && !errors.length
   return [ok ? "pass" : "fail", `before ${JSON.stringify(before)}; after editing ${JSON.stringify(after)} (sent ${keys}); an 81-character label left the frame on "${refused?.text}" with ${reason ? "the reason shown" : "no reason"} after ${refused?.mounts} mount; Reset showed "${reset?.text}" after ${reset?.mounts} mount; theme ${dark?.theme}, then Contrast ${contrast?.theme}, Styles ${styles}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 

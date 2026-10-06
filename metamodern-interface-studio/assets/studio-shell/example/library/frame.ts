@@ -43,6 +43,12 @@ const SCENES: Record<string, (v: Values) => string> = {
   "button:with-icon": () => button({ ...DEFAULTS, label: "New task" }, ICON),
   "button:in-a-row": () => `<div class="row">${button({ ...DEFAULTS, variant: "secondary", label: "Cancel" })}${button(DEFAULTS)}</div>`,
   "icon-button:sizes": () => ["sm", "", "lg"].map((size) => `<button type="button" data-sample class="icon-btn ${size}" aria-label="Add">${ICON}</button>`).join(""),
+  "text-field:empty": () => field("", "What needs doing?"),
+  "text-field:filled": () => field("Draft the quarterly plan", ""),
+  "text-field:with-error": () => field("", "What needs doing?", "Add a title"),
+  "text-field:disabled": () => field("Locked", "", undefined, true),
+  "text-field:long-value": () => field("Draft the quarterly plan, review it with the team and send it to finance before Friday", ""),
+  "text-field:short-width": () => `<div class="narrow">${field("Short", "")}</div>`,
   "text-field:states": () => `${field("", "What needs doing?")}${field("Draft the quarterly plan", "")}${field("", "What needs doing?", "Add a title")}${field("Locked", "", undefined, true)}`,
 }
 

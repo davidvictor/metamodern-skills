@@ -69,7 +69,7 @@ export default {
 } satisfies ComponentDocs
 ```
 
-Documentation is data. Files under `src/library/` import only `@studio/library` and their own files; the `library/imports` lint rule (`scripts/library-boundary.mjs`) fails `npm run lint` on anything else, including React, the kit, shell internals, other packages, an `import()` whose target is not a string, and `import.meta.glob`. Generate documentation files, or write them by hand; both use the same schema.
+Documentation is data. Files under `src/library/` import only `@studio/library` and their own files; the `library/imports` lint rule (`scripts/library-boundary.mjs`) fails `npm run lint` on anything else, including React, the kit, shell internals, other packages, an `import()` whose target is not a string, and `import.meta.glob`. Documentation files are `.ts`, `.js` or `.mjs`; the `library/files` rule refuses `.tsx` and `.jsx`, so no component reaches the documentation. Generate documentation files, or write them by hand; both use the same schema.
 
 ### Sections
 
@@ -90,7 +90,9 @@ Every page shows the same sections in this order. A section missing from a modul
 | `performance` | Performance | `{ body }` |
 | `notesForAI` | Notes for AI | `{ body }` |
 
-A body is rich text as data: blocks of `paragraph`, `list` (with `ordered`), `code` (`language`, `code`, optional `title`), `table` (`columns` and `rows` of `cells`) and `callout` (`tone` `note` or `warning`). Text is a string or a list of runs: strings, `{ code }`, `{ strong }`, `{ em }`, `{ kbd }`, and `{ component, text? }`, a reference that opens that component's page. Nothing is ever rendered as HTML.
+A body is rich text as data: blocks of `paragraph`, `list` (with `ordered`), `code` (`language`, `code`, optional `title`), `table` (`columns` and `rows` of `cells`) and `callout` (`tone` `note` or `warning`). Text is a string or a list of runs: strings, `{ code }`, `{ strong }`, `{ em }`, `{ kbd }`, and `{ component, text? }`, a reference that opens that component's page. A reference to a component the library does not declare is a documentation problem, and is drawn as plain text if it is ever shown. Nothing is ever rendered as HTML.
+
+The page checks every module before it renders it: a shape it cannot read (a missing list, a property without options, an unknown block or property kind, text that is neither a string nor a list of runs) opens the page to the list of problems instead of an error. A fault while rendering stays in its part (the page, On this page or the playground), which shows the reason; the rest of the Studio keeps working.
 
 ### Provenance and product adjustments
 
@@ -118,7 +120,7 @@ Library previews are ordinary studio-preview/1 frames mounted by the same host a
 
 The rail shows the library as one item after a divider, after the workspace modules when the Studio has them, with the views' marker, focus ring and label; choosing it opens the last component viewed or the first. The context panel lists the components under their groups with search (`/` focuses it). The breadcrumb reads product, library, group, component, and Go to (⌘K) lists the components by group. Links carry `library=`, `section=` when a link or On this page names a section, and `theme=`. Opening another component adds a history entry, so Back returns; choosing an On this page entry only replaces the link. Leaving a workspace module with unsaved changes for the library asks first. On a phone the Workspace drawer lists the library after its modules (or, in a Studio without a workspace, the library takes Details' place in the bottom bar); the Panel drawer holds the component list and the top bar's Details holds the sidebar.
 
-The page is one centred documentation column on the Studio surface. Details holds On this page (the sections as buttons, the one on screen marked), the playground with Reset, and the product theme with Contrast when themes pair with high-contrast versions; they drive every preview. Each preview has Preview and Code tabs, Phone width and Expand. A page keeps at most 4 frames live (`LIVE_FRAMES`), the playground first and then the nearest, mounting within 400 px of the viewport and unmounting beyond it; a preview without a frame keeps its size, and an expanded preview releases the page's frames while it is open.
+The page is one centred documentation column on the Studio surface. Details holds On this page (the sections as buttons, the one on screen marked), the playground with Reset (a number keeps what is typed and sends only a value it accepts), and the product theme with Contrast when themes pair with high-contrast versions; they drive every preview. Each preview has Preview and Code tabs, Phone width and Expand. A page keeps at most 4 frames live (`LIVE_FRAMES`), the playground first and then the nearest, mounting within 400 px of the viewport and unmounting beyond it; the nearest are measured again as the page scrolls or resizes, so a swap happens as previews pass and a page never holds a fifth frame; a preview without a frame keeps its size, and an expanded preview releases the page's frames while it is open.
 
 ## Offline export
 

@@ -17,3 +17,4 @@ html, body { margin: 0; background: var(--ex-ground); color: var(--ex-ink); font
 .lib-field input { font: inherit; padding: 8px 10px; border: 1px solid var(--ex-line); border-radius: var(--ex-radius); background: var(--ex-surface); color: var(--ex-ink); }
 .lib-field input[aria-invalid="true"] { border-color: var(--ex-danger); }
 .lib-field small { color: var(--ex-danger); }
+.narrow { max-width: 240px; }

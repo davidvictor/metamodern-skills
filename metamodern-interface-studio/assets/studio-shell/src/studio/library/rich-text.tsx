@@ -12,7 +12,7 @@ import type { Adjusted, Block, Inline, ListItem, RichText, Text } from "./schema
 /** Opens another component's page; provided by the library page. */
 export const OpenComponent = React.createContext<(id: string) => void>(() => undefined)
 
-const labelOf = (id: string) => adapter.library?.components.find((c) => c.id === id)?.label ?? id
+const labelOf = (id: string) => adapter.library?.components.find((c) => c.id === id)?.label
 
 /** What the product changed from the documentation's source, in text: never only a tooltip. */
 export function AdjustedNote({ reason, className }: { reason?: string; className?: string }) {
@@ -35,10 +35,14 @@ export function InlineText({ text }: { text: Text }) {
         if ("strong" in r) return <strong key={i} className="font-semibold">{r.strong}</strong>
         if ("em" in r) return <em key={i}>{r.em}</em>
         if ("kbd" in r) return <kbd key={i} className="rounded border bg-muted px-1 font-mono text-[0.85em]">{r.kbd}</kbd>
+        // A reference to a component the library does not declare is plain text, never a button that opens nothing
+        // (docsProblems reports it before a page renders).
+        const label = labelOf(r.component)
+        if (!label) return <React.Fragment key={i}>{r.text ?? r.component}</React.Fragment>
         // An inline reference: text in a sentence, so the inline exception to the 44 px target applies (data-inline).
         return (
           <button key={i} type="button" data-inline className="rounded-sm font-medium text-foreground underline underline-offset-2 hover:decoration-2" onClick={() => open(r.component)}>
-            {r.text ?? labelOf(r.component)}
+            {r.text ?? label}
           </button>
         )
       })}

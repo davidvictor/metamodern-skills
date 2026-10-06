@@ -26,18 +26,39 @@ const SOURCE = previewSource(adapter, location.href)
 const PROFILE = libraryProfile(adapter.axes.profiles, adapter.axes.defaultProfile)
 const PAD = 48
 
-type Seen = { near: boolean; distance: number; pinned: boolean }
-/** Which of a page's previews hold a live frame: the nearest LIVE_FRAMES (the playground first), none while one is expanded. */
+type Seen = { near: boolean; pinned: boolean; el: Element }
+/**
+ * Which of a page's previews hold a live frame: the nearest LIVE_FRAMES (the playground first), none while one is
+ * expanded. The observer only says which previews are near; their distances are measured afresh from the page every
+ * time the budget decides (on an observer change, and on the page's scroll or a resize, once per animation frame), so a
+ * preview that stays inside the margin while the page scrolls is ranked by where it is now, not where it entered.
+ */
 function createBudget() {
   const seen = new Map<string, Seen>()
   let live = new Set<string>()
   let expanded: string | null = null
+  let root: HTMLElement | null = null
   const subscribers = new Set<() => void>()
+  const distance = (el: Element) => {
+    const r = el.getBoundingClientRect()
+    const b = root?.getBoundingClientRect()
+    const middle = b ? b.top + b.height / 2 : innerHeight / 2
+    return Math.abs(r.top + r.height / 2 - middle)
+  }
   const update = () => {
-    const next = expanded ? new Set<string>() : pickLive([...seen].map(([id, s]) => ({ id, ...s })), LIVE_FRAMES)
+    const slots = [...seen].map(([id, s]) => ({ id, near: s.near, pinned: s.pinned, distance: s.near ? distance(s.el) : Infinity }))
+    const next = expanded ? new Set<string>() : pickLive(slots, LIVE_FRAMES)
     if (next.size === live.size && [...next].every((id) => live.has(id))) return
     live = next
     subscribers.forEach((f) => f())
+  }
+  let frame = 0
+  const onMove = () => {
+    if (!frame)
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        update()
+      })
   }
   return {
     see: (id: string, s: Seen) => {
@@ -51,6 +72,20 @@ function createBudget() {
     expand: (id: string | null) => {
       expanded = id
       update()
+    },
+    /** Follows the page's scroller (and the window's size) while the page is open; returns the cleanup. */
+    attach: (el: HTMLElement | null) => {
+      root = el
+      el?.addEventListener("scroll", onMove, { passive: true })
+      addEventListener("resize", onMove)
+      // Previews report before their page attaches: rank them again against the page itself.
+      update()
+      return () => {
+        el?.removeEventListener("scroll", onMove)
+        removeEventListener("resize", onMove)
+        cancelAnimationFrame(frame)
+        frame = 0
+      }
     },
     subscribe: (f: () => void) => {
       subscribers.add(f)
@@ -91,17 +126,13 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode }: { co
   const { w, h } = sizeOf(spec, phone)
   const scale = useFit(box, w, h, "fit", PAD, true)
 
-  // How near the page's viewport this preview is, for the budget. The observer lives as long as the preview.
+  // Whether this preview is near the page's viewport, for the budget (which measures how near). The observer lives as long as the preview.
   React.useEffect(() => {
     const el = wrap.current
     if (!el || !page) return
     const io = new IntersectionObserver(
-      ([e]) => {
-        const r = e.rootBounds
-        const middle = r ? r.top + r.height / 2 : innerHeight / 2
-        page.budget.see(key, { near: e.isIntersecting, distance: Math.abs(e.boundingClientRect.top + e.boundingClientRect.height / 2 - middle), pinned: !!pinned })
-      },
-      { root: page.root.current, rootMargin: `${NEAR_PX}px 0px`, threshold: [0, 0.25, 0.5, 0.75, 1] }
+      ([e]) => page.budget.see(key, { near: e.isIntersecting, pinned: !!pinned, el }),
+      { root: page.root.current, rootMargin: `${NEAR_PX}px 0px` }
     )
     io.observe(el)
     return () => {

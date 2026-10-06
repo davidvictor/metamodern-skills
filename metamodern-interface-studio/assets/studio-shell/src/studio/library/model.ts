@@ -4,7 +4,7 @@
  * Pure (types-only imports), so vite.config.ts and node tests load it.
  */
 import type { InputValue, LibraryComponent, LibraryDeclaration, LibraryGroup } from "../types"
-import type { ComponentDocs, PlaygroundProperty, PreviewGroup } from "./schema"
+import type { ComponentDocs, PlaygroundProperty } from "./schema"
 
 /** The sections of every component page, in order. `id` is the anchor and the link's `section=` (link.ts lists the same IDs). */
 export const SECTIONS = [
@@ -183,44 +183,202 @@ export function playgroundValues(props: PlaygroundProperty[], edits: Record<stri
   return out
 }
 
-/** Problems with a documentation module's default export; the page lists them instead of rendering broken documentation. */
-export function docsProblems(docs: unknown): string[] {
-  if (!docs || typeof docs !== "object") return ["The documentation module's default export is not an object"]
-  const d = docs as ComponentDocs
-  if (!d.preview || !Array.isArray(d.preview.groups)) return ["The documentation has no preview (preview.groups)"]
+type Loose = Record<string, unknown>
+const isObj = (x: unknown): x is Loose => !!x && typeof x === "object" && !Array.isArray(x)
+const INLINE_KEYS = ["code", "strong", "em", "kbd"] as const
+const KINDS = new Set(["text", "select", "switch", "number"])
+
+/**
+ * Problems with a documentation module's default export; the page lists them instead of rendering broken documentation.
+ * Never throws: every nested shape is checked before it is read. With `declared`, an inline reference to a component the
+ * library does not declare is a problem too (the page would otherwise draw a reference that opens nothing).
+ */
+export function docsProblems(docs: unknown, declared?: readonly string[]): string[] {
+  try {
+    return checkDocs(docs, declared)
+  } catch (e) {
+    return [`The documentation could not be checked: ${e instanceof Error ? e.message : String(e)}`]
+  }
+}
+
+function checkDocs(docs: unknown, declared?: readonly string[]): string[] {
+  if (!isObj(docs)) return ["The documentation module's default export is not an object"]
+  const d = docs as Loose
+  const preview = d.preview
+  if (!isObj(preview) || !Array.isArray(preview.groups)) return ["The documentation has no preview (preview.groups)"]
   const out: string[] = []
-  const size = (where: string, x: { width: number; height: number; mobileHeight?: number }) => {
+  const known = declared ? new Set(declared) : null
+  const str = (v: unknown) => typeof v === "string"
+  const optStr = (where: string, name: string, v: unknown) => {
+    if (v !== undefined && !str(v)) out.push(`${where}: ${name} must be a string`)
+  }
+  const text = (where: string, t: unknown) => {
+    if (str(t)) return
+    if (!Array.isArray(t)) return void out.push(`${where}: text must be a string or a list of inline runs`)
+    for (const r of t) {
+      if (str(r)) continue
+      if (!isObj(r)) {
+        out.push(`${where}: an inline run must be a string or an object`)
+        continue
+      }
+      if ("component" in r) {
+        if (!str(r.component) || !ID.test(r.component as string)) out.push(`${where}: a component reference needs a component ID`)
+        else if (known && !known.has(r.component as string)) out.push(`${where}: refers to component "${r.component}", which the library does not declare`)
+        optStr(where, "a reference's text", r.text)
+        continue
+      }
+      const key = INLINE_KEYS.find((k) => k in r)
+      if (!key || !str(r[key])) out.push(`${where}: an inline run must be one of code, strong, em, kbd or component with a string value`)
+    }
+  }
+  const rich = (where: string, blocks: unknown) => {
+    if (blocks === undefined) return
+    if (!Array.isArray(blocks)) return void out.push(`${where}: rich text must be a list of blocks`)
+    blocks.forEach((b, i) => {
+      const at = `${where}, block ${i + 1}`
+      if (!isObj(b)) return void out.push(`${at}: a block must be an object`)
+      optStr(at, "adjusted", b.adjusted)
+      switch (b.kind) {
+        case "paragraph":
+          return text(at, b.text)
+        case "callout":
+          if (b.tone !== "note" && b.tone !== "warning") out.push(`${at}: a callout's tone must be note or warning`)
+          return text(at, b.text)
+        case "code":
+          if (!str(b.language) || !str(b.code)) out.push(`${at}: code needs a language and code as strings`)
+          return optStr(at, "title", b.title)
+        case "list":
+          if (!Array.isArray(b.items)) return void out.push(`${at}: a list needs items`)
+          for (const item of b.items) {
+            if (isObj(item)) {
+              text(at, item.text)
+              optStr(at, "adjusted", item.adjusted)
+            } else text(at, item)
+          }
+          return
+        case "table":
+          if (!Array.isArray(b.columns) || !b.columns.every(str)) out.push(`${at}: a table needs columns as strings`)
+          if (!Array.isArray(b.rows)) return void out.push(`${at}: a table needs rows`)
+          for (const row of b.rows) {
+            if (!isObj(row) || !Array.isArray(row.cells)) {
+              out.push(`${at}: each row needs cells`)
+              continue
+            }
+            for (const cell of row.cells) text(at, cell)
+            optStr(at, "adjusted", row.adjusted)
+          }
+          return
+        default:
+          out.push(`${at}: unknown block kind ${JSON.stringify(b.kind)}`)
+      }
+    })
+  }
+  const code = (where: string, c: unknown) => {
+    if (c !== undefined && (!isObj(c) || !str(c.language) || !str(c.code))) out.push(`${where}: code needs a language and code as strings`)
+  }
+  const size = (where: string, x: Loose) => {
     for (const [name, v] of [["width", x.width], ["height", x.height], ["mobileHeight", x.mobileHeight ?? 1]] as const)
-      if (!Number.isInteger(v) || v < 1 || v > MAX_SIDE) out.push(`${where}: ${name} must be a whole number of pixels from 1 to ${MAX_SIDE}`)
+      if (!Number.isInteger(v) || (v as number) < 1 || (v as number) > MAX_SIDE) out.push(`${where}: ${name} must be a whole number of pixels from 1 to ${MAX_SIDE}`)
   }
   const scenario = (where: string, s: unknown) => {
     if (typeof s !== "string" || !s.trim() || s.length > 200 || [...s].some((ch) => ch.charCodeAt(0) < 32)) out.push(`${where}: scenario must be a short string`)
   }
   const ids = new Set<string>()
-  const group = (where: string, g: PreviewGroup) => {
-    const at = `${where} "${g.id}"`
-    if (!ID.test(g.id)) out.push(`${at}: ID must be lowercase letters, digits and hyphens`)
+  const group = (where: string, g: unknown, i: number) => {
+    if (!isObj(g)) return void out.push(`${where} ${i + 1} is not an object`)
+    const at = `${where} "${String(g.id)}"`
+    if (!str(g.id) || !ID.test(g.id as string)) out.push(`${at}: ID must be lowercase letters, digits and hyphens`)
     if (g.id === "playground") out.push(`${at}: the ID is reserved for the playground`)
-    if (ids.has(g.id)) out.push(`${at} is listed twice`)
-    ids.add(g.id)
+    if (str(g.id) && ids.has(g.id as string)) out.push(`${at} is listed twice`)
+    if (str(g.id)) ids.add(g.id as string)
+    if (!str(g.label)) out.push(`${at}: label must be a string`)
+    optStr(at, "adjusted", g.adjusted)
+    if (g.description !== undefined) text(at, g.description)
+    code(at, g.code)
     size(at, g)
-    if (g.capture) {
-      if (!g.capture.alt?.trim()) out.push(`${at}: a capture needs alt text`)
+    if (g.capture !== undefined) {
+      if (!isObj(g.capture) || !str(g.capture.src)) out.push(`${at}: a capture needs an image src`)
+      else if (!str(g.capture.alt) || !(g.capture.alt as string).trim()) out.push(`${at}: a capture needs alt text`)
     } else scenario(at, g.scenario)
   }
-  for (const g of d.preview.groups) group("Preview group", g)
-  for (const g of d.examples?.items ?? []) group("Example", g)
-  const pg = d.preview.playground
-  if (pg) {
-    size("Playground", pg)
-    scenario("Playground", pg.scenario)
-    const seen = new Set<string>()
-    for (const p of pg.properties) {
-      if (!PROPERTY.test(p.id)) out.push(`Playground property "${p.id}" must start with a lowercase letter and use only letters and digits`)
-      if (seen.has(p.id)) out.push(`Playground property "${p.id}" is listed twice`)
-      seen.add(p.id)
-      if (playgroundValue(p, p.default) === undefined) out.push(`Playground property "${p.id}": its default is not a value it accepts`)
+  preview.groups.forEach((g, i) => group("Preview group", g, i))
+  optStr("Preview", "adjusted", preview.adjusted)
+  const examples = d.examples
+  if (examples !== undefined) {
+    if (!isObj(examples) || !Array.isArray(examples.items)) out.push("Examples: items must be a list of preview groups")
+    else {
+      examples.items.forEach((g, i) => group("Example", g, i))
+      rich("Examples intro", examples.intro)
+      optStr("Examples", "adjusted", examples.adjusted)
     }
+  }
+  const pg = preview.playground
+  if (pg !== undefined) {
+    if (!isObj(pg)) out.push("Playground: must be an object")
+    else {
+      size("Playground", pg)
+      scenario("Playground", pg.scenario)
+      code("Playground", pg.code)
+      if (!Array.isArray(pg.properties)) out.push("Playground: properties must be a list")
+      else {
+        const seen = new Set<string>()
+        for (const raw of pg.properties) {
+          if (!isObj(raw)) {
+            out.push("Playground: each property must be an object")
+            continue
+          }
+          const id = String(raw.id)
+          if (!str(raw.id) || !PROPERTY.test(id)) out.push(`Playground property "${id}" must start with a lowercase letter and use only letters and digits`)
+          if (seen.has(id)) out.push(`Playground property "${id}" is listed twice`)
+          seen.add(id)
+          if (!str(raw.label)) out.push(`Playground property "${id}": label must be a string`)
+          optStr(`Playground property "${id}"`, "description", raw.description)
+          if (!KINDS.has(raw.kind as string)) {
+            out.push(`Playground property "${id}": kind must be text, select, switch or number`)
+            continue
+          }
+          if (raw.kind === "select" && (!Array.isArray(raw.options) || !raw.options.length || !raw.options.every((o) => isObj(o) && str(o.id) && str(o.label)))) {
+            out.push(`Playground property "${id}": a select needs options, each with an ID and a label`)
+            continue
+          }
+          if (raw.kind === "number" && (["min", "max", "step"] as const).some((k) => raw[k] !== undefined && !Number.isFinite(raw[k]))) {
+            out.push(`Playground property "${id}": min, max and step must be numbers`)
+            continue
+          }
+          if (raw.kind === "text" && raw.maxLength !== undefined && !(Number.isInteger(raw.maxLength) && (raw.maxLength as number) >= 0)) {
+            out.push(`Playground property "${id}": maxLength must be a whole number`)
+            continue
+          }
+          if (playgroundValue(raw as PlaygroundProperty, raw.default) === undefined) out.push(`Playground property "${id}": its default is not a value it accepts`)
+        }
+      }
+    }
+  }
+  const api = d.api
+  if (api !== undefined) {
+    if (!isObj(api) || !Array.isArray(api.props)) out.push("API reference: props must be a list")
+    else {
+      api.props.forEach((row, i) => {
+        if (!isObj(row) || !str(row.name) || !str(row.type)) return void out.push(`API reference, row ${i + 1}: needs a name and a type as strings`)
+        optStr(`API reference "${row.name}"`, "default", row.default)
+        optStr(`API reference "${row.name}"`, "adjusted", row.adjusted)
+        text(`API reference "${row.name}"`, row.description)
+      })
+      rich("API reference notes", api.notes)
+      optStr("API reference", "adjusted", api.adjusted)
+    }
+  }
+  if (d.source !== undefined && (!isObj(d.source) || !str(d.source.name) || !str(d.source.version) || !str(d.source.notice))) out.push("Source: needs a name, version and notice as strings")
+  for (const s of SECTIONS) {
+    if (s.key === "preview" || s.key === "examples" || s.key === "api") continue
+    const section = d[s.key]
+    if (section === undefined) continue
+    if (!isObj(section) || !Array.isArray(section.body)) {
+      out.push(`${s.label}: needs a body of rich text`)
+      continue
+    }
+    optStr(s.label, "adjusted", section.adjusted)
+    rich(s.label, section.body)
   }
   return out
 }

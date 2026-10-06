@@ -29,6 +29,11 @@ export function libraryImportProblem(filename, source, cwd) {
   return `${source} is outside the library boundary. Documentation imports only @studio/library and its own files under ${root}/.`
 }
 
+/** Why a documentation file may not exist as it is named, or null: documentation is data, so .ts, .js or .mjs, never JSX. */
+export function libraryFileProblem(filename) {
+  return /\.(tsx|jsx)$/.test(filename) ? `${path.basename(filename)} is a JSX file. Documentation is data: write it as .ts or .js against @studio/library, with no components.` : null
+}
+
 /** The target when it is written as a string, or null when it is computed. */
 const literalSource = (node) => {
   if (!node) return null
@@ -42,6 +47,17 @@ export function createLibraryBoundary(root = STUDIO_ROOT) {
   return {
     meta: { name: "studio-library-boundary" },
     rules: {
+      files: {
+        meta: { type: "problem", docs: { description: "Documentation files are .ts or .js data, never JSX" }, schema: [] },
+        create(context) {
+          return {
+            Program(node) {
+              const problem = libraryFileProblem(context.filename)
+              if (problem) context.report({ node, message: problem })
+            },
+          }
+        },
+      },
       imports: {
         meta: { type: "problem", docs: { description: "Documentation imports only @studio/library and its own files" }, schema: [] },
         create(context) {

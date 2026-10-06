@@ -28,6 +28,7 @@ import { BudgetContext, PreviewBlock, useBudget } from "./preview-block"
 const decl = adapter.library ?? { groups: [], components: [] }
 const LABEL = decl.label ?? LIBRARY_LABEL
 const defined = Object.keys(library.docs)
+const DECLARED = decl.components.map((c) => c.id)
 const orphans = undeclaredDocs(decl, defined)
 if (orphans.length) {
   // The build fails on this when it can load the adapter; when it cannot, this is where it shows.
@@ -72,14 +73,43 @@ function docsFor(id: string): Promise<Loaded> {
       ? Promise.resolve({ docs: null, problems: [noDocs(id)] })
       : load().then(
           (m) => {
-            const problems = docsProblems(m.default)
-            return { docs: problems.length ? null : m.default, problems }
+            // A bad module yields its problems, never an exception that takes the page down.
+            try {
+              const docs: unknown = m?.default
+              const problems = docsProblems(docs, DECLARED)
+              return { docs: problems.length ? null : (docs as ComponentDocs), problems }
+            } catch (e) {
+              return { docs: null, problems: [`The documentation could not be read: ${e instanceof Error ? e.message : String(e)}`] }
+            }
           },
           (e: unknown) => ({ docs: null, problems: [`The documentation could not load: ${e instanceof Error ? e.message : String(e)}`], failed: true })
         )
     loads.set(id, p)
   }
   return p
+}
+
+/**
+ * Keeps a fault in one component's documentation inside its part of the Studio: the part shows the reason instead of
+ * taking the Studio down. Reset by its key (the component), so another page renders normally.
+ */
+class PartBoundary extends React.Component<{ name: string; children: React.ReactNode }, { error: string | null }> {
+  state = { error: null as string | null }
+  static getDerivedStateFromError(e: unknown) {
+    return { error: e instanceof Error ? e.message : String(e) }
+  }
+  componentDidCatch(e: unknown) {
+    console.error(`The library's ${this.props.name} could not render`, e)
+  }
+  render() {
+    if (this.state.error === null) return this.props.children
+    return (
+      <div role="alert" data-library-fault className="grid gap-1 p-4 text-sm">
+        <p className="font-medium">The {this.props.name} could not render</p>
+        <p className="text-muted-foreground">{this.state.error}</p>
+      </div>
+    )
+  }
 }
 
 export type PageProps = { part: "stage" } | { part: "panel" } | { part: "details"; onClose?: () => void }
@@ -97,22 +127,23 @@ function LibraryStage() {
   if (!c) return null
   return (
     <div data-kit className="flex min-h-0 min-w-0 flex-1 flex-col bg-background">
-      <React.Suspense
-        fallback={
-          <p role="status" className="p-8 text-sm text-muted-foreground">
-            Loading {c.label}
-          </p>
-        }
-      >
-        <ComponentPage
-          key={`${c.id}/${attempt}`}
-          id={c.id}
-          retry={() => {
-            loads.delete(c.id)
-            setAttempt((n) => n + 1)
-          }}
-        />
-      </React.Suspense>
+      <PartBoundary key={`${c.id}/${attempt}`} name={`${c.label} page`}>
+        <React.Suspense
+          fallback={
+            <p role="status" className="p-8 text-sm text-muted-foreground">
+              Loading {c.label}
+            </p>
+          }
+        >
+          <ComponentPage
+            id={c.id}
+            retry={() => {
+              loads.delete(c.id)
+              setAttempt((n) => n + 1)
+            }}
+          />
+        </React.Suspense>
+      </PartBoundary>
     </div>
   )
 }
@@ -124,6 +155,8 @@ function ComponentPage({ id, retry }: { id: string; retry: () => void }) {
   const scroller = React.useRef<HTMLDivElement>(null)
   const budget = useBudget()
   const page = React.useMemo(() => ({ budget, root: scroller }), [budget])
+  // The budget ranks previews by where they are now, so it follows this page's scrolling.
+  React.useEffect(() => budget.attach(scroller.current), [budget])
   const pg = docs?.preview.playground
   const all = React.useSyncExternalStore(edits.subscribe, edits.get)
   const values = React.useMemo(() => (pg ? playgroundValues(pg.properties, all[id]) : undefined), [pg, all, id])
@@ -355,28 +388,32 @@ function LibraryDetails({ onClose }: { onClose?: () => void }) {
         )}
       </div>
       <div data-kit className="grid min-h-0 flex-1 content-start gap-8 overflow-y-auto p-4">
-        <nav aria-label="On this page">
-          <ul className="grid">
-            {SECTIONS.map((section) => (
-              <li key={section.id}>
-                <button
-                  type="button"
-                  aria-current={current === section.id ? "location" : undefined}
-                  className={cn("flex min-h-8 w-full items-center rounded-md border border-transparent px-2 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground pointer-coarse:min-h-11", current === section.id && "font-medium text-foreground")}
-                  onClick={() => {
-                    s.set({ libraryAt: section.id, mobilePanel: null })
-                    scrollTo.current?.(section.id, true)
-                  }}
-                >
-                  {section.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <React.Suspense fallback={null}>
-          <Playground id={c.id} />
-        </React.Suspense>
+        <PartBoundary key={`outline/${c.id}`} name="outline">
+          <nav aria-label="On this page">
+            <ul className="grid">
+              {SECTIONS.map((section) => (
+                <li key={section.id}>
+                  <button
+                    type="button"
+                    aria-current={current === section.id ? "location" : undefined}
+                    className={cn("flex min-h-8 w-full items-center rounded-md border border-transparent px-2 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground pointer-coarse:min-h-11", current === section.id && "font-medium text-foreground")}
+                    onClick={() => {
+                      s.set({ libraryAt: section.id, mobilePanel: null })
+                      scrollTo.current?.(section.id, true)
+                    }}
+                  >
+                    {section.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </PartBoundary>
+        <PartBoundary key={`playground/${c.id}`} name="playground">
+          <React.Suspense fallback={null}>
+            <Playground id={c.id} />
+          </React.Suspense>
+        </PartBoundary>
         <PreviewSettings />
       </div>
     </div>
@@ -415,16 +452,43 @@ function PropertyField({ p, raw, onChange }: { p: PlaygroundProperty; raw: Input
   if (p.kind === "switch") return <Field kind="switch" label={p.label} description={p.description} checked={value === true} onChange={onChange} />
   if (p.kind === "select") return <Field kind="select" label={p.label} description={p.description} value={String(value)} options={p.options} onChange={onChange} />
   if (p.kind === "text") return <Field kind="text" label={p.label} description={p.description} value={String(value)} error={invalid ? `At most ${p.maxLength ?? 500} characters on one line` : undefined} onChange={onChange} />
-  return <NumberField p={p} value={value} invalid={invalid} onChange={onChange} />
+  return <NumberField p={p} value={value} onChange={onChange} />
 }
 
-function NumberField({ p, value, invalid, onChange }: { p: Extract<PlaygroundProperty, { kind: "number" }>; value: InputValue; invalid: boolean; onChange: (v: InputValue) => void }) {
+/**
+ * A number property keeps what the person types while they type (an empty field, "-" or "1." are steps on the way), and
+ * sends an edit only for a non-empty value the property accepts; anything else shows the range and leaves the frame alone.
+ */
+function NumberField({ p, value, onChange }: { p: Extract<PlaygroundProperty, { kind: "number" }>; value: InputValue; onChange: (v: InputValue) => void }) {
   const id = React.useId()
   const range = `From ${p.min ?? "any"} to ${p.max ?? "any"}${p.step ? ` in steps of ${p.step}` : ""}`
+  const [field, setField] = React.useState({ text: String(value), from: value })
+  // Reset (or another part) changed the value: show it, unless it is what the typed text already says.
+  if (field.from !== value) setField({ text: Number(field.text) === value && field.text.trim() !== "" ? field.text : String(value), from: value })
+  const parsed = field.text.trim() === "" ? undefined : Number(field.text)
+  const invalid = field.text.trim() !== "" && (parsed === undefined || playgroundValue(p, parsed) === undefined)
   return (
     <UIField data-invalid={invalid || undefined}>
       <FieldLabel htmlFor={id}>{p.label}</FieldLabel>
-      <Input id={id} type="number" inputMode="decimal" min={p.min} max={p.max} step={p.step} value={String(value)} aria-invalid={invalid || undefined} aria-describedby={`${id}-hint`} onChange={(e) => onChange(e.target.value === "" ? p.default : Number(e.target.value))} className={INPUT} />
+      <Input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        min={p.min}
+        max={p.max}
+        step={p.step}
+        value={field.text}
+        aria-invalid={invalid || undefined}
+        aria-describedby={`${id}-hint`}
+        onChange={(e) => {
+          const text = e.target.value
+          const n = text.trim() === "" ? undefined : Number(text)
+          const ok = n !== undefined && playgroundValue(p, n) !== undefined
+          setField({ text, from: ok ? n : value })
+          if (ok) onChange(n)
+        }}
+        className={INPUT}
+      />
       {invalid ? <FieldError id={`${id}-hint`}>{range}</FieldError> : <FieldDescription id={`${id}-hint`} className="text-xs">{p.description ?? range}</FieldDescription>}
     </UIField>
   )
