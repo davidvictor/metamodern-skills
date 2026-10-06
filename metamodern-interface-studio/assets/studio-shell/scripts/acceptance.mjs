@@ -4160,6 +4160,23 @@ await check("LB-01", async () => {
 // that order; Go to lists its groups after Scenarios and before the views; Tab and Enter, the grouped list and its search, Go to, links
 // and Back reach components; a view key leaves; leaving unsaved module changes asks; unknown links are named
 await check("LB-02", async () => {
+  // With the navigation chunk held back, the rail's placeholder keeps the views where the loaded library item puts them.
+  servers.library.host = createMockHost()
+  const held = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 })
+  const hp = await held.newPage()
+  let release
+  const gate = new Promise((r) => (release = r))
+  await hp.route(/\/library-nav-[\w-]+\.js$/, async (route) => (await gate, route.continue()))
+  await hp.goto(`${servers.library.url}#view=inspect&scenario=tasks.list`)
+  await hp.waitForSelector('[aria-label="Studio"] nav[aria-label="Views"]', { timeout: 15000 })
+  await wait(600)
+  const viewsTop = () => hp.evaluate(() => Math.round(document.querySelector('[aria-label="Studio"] nav[aria-label="Views"]').getBoundingClientRect().top))
+  const beforeNav = { top: await viewsTop(), lib: await hp.locator('nav[aria-label="Library"]').count() }
+  release()
+  await poll(() => hp.locator('nav[aria-label="Library"]').count(), (n) => n === 1, 8000)
+  await wait(300)
+  const afterNav = await viewsTop()
+  await held.close()
   const p = await openLibrary("view=inspect&scenario=tasks.list")
   const rail = await p.evaluate(() => {
     const studio = document.querySelector('[aria-label="Studio"]')
@@ -4239,14 +4256,14 @@ await check("LB-02", async () => {
   const named = await poll(() => u.getByText("That link names a component this Studio's library does not have").isVisible().catch(() => false), Boolean)
   await u.closeAll()
   const ok =
-    rail.navs.join() === "Library,Views,Workspace" && rail.divider && rail.wsDivider && rail.dividers === 2 && rail.tops[0] < rail.tops[1] && rail.tops[1] < rail.tops[2] && /^2px /.test(viewMarker) && libMarker === viewMarker &&
+    beforeNav.lib === 0 && beforeNav.top === afterNav && rail.navs.join() === "Library,Views,Workspace" && rail.divider && rail.wsDivider && rail.dividers === 2 && rail.tops[0] < rail.tops[1] && rail.tops[1] < rail.tops[2] && /^2px /.test(viewMarker) && libMarker === viewMarker &&
     focused.text === "Library" && /inset/.test(focused.ring) && nextStop === "Inspect" && backStop === "Library" &&
     goToGroups.slice(0, 4).join() === "Scenarios,Library: Actions,Library: Inputs,Views" && goToGroups.indexOf("Workspace") > goToGroups.indexOf("Views") &&
     /library=button/.test(opened.hash) && /Library/.test(opened.crumbs) && /Actions/.test(opened.crumbs) && /Button/.test(opened.crumbs) && opened.views === 0 &&
     list.join(";") === "Actions:Button|Icon button;Inputs:Text field|Switch" && found.join() === "Text field" &&
     back[0].title === "Button" && /view=inspect/.test(back[1].hash) && back[1].title === null && /library=icon-button/.test(viaGoTo) && /view=compare/.test(left.hash) && !left.page &&
     asked && /module=site/.test(stayed.hash) && !stayed.page && linked.title === "Text field" && linked.top >= -2 && linked.top < 80 && linked.pressed && named && !errors.length
-  return [ok ? "pass" : "fail", `rail ${rail.navs.join(", ")} top to bottom (${rail.tops.join(", ")} px) with ${rail.dividers} dividers${rail.divider ? ", one after the library and none before it" : ""}${rail.wsDivider ? ", one before the workspace" : ""}; marker ${viewMarker} on a view and ${libMarker} on the library; Tab from the product mark reached "${focused.text}" with ${/inset/.test(focused.ring) ? "the inset ring" : "no ring"}, then "${nextStop}", and Shift+Tab returned to "${backStop}"; Go to's groups read ${goToGroups.join(", ")}; Enter opened ${opened.hash} (views pressed ${opened.views}; breadcrumb "${opened.crumbs.slice(0, 70)}"); the list read ${list.join("; ")}; "textbox" found ${found.join(", ")}; Back went to ${back.map((b) => b.title ?? b.hash).join(", then ")}; Go to opened ${viaGoTo}; the 2 key left to ${left.hash}; leaving unsaved Site changes for the library ${asked ? "asked" : "did not ask"} and Esc stayed on ${stayed.hash}; a link to API opened "${linked.title}" with the heading ${linked.top} px from the top; an unknown component link ${named ? "was named in a toast" : "was not named"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  return [ok ? "pass" : "fail", `with the navigation chunk held back the views sat at ${beforeNav.top} px (library item ${beforeNav.lib ? "already shown" : "not yet shown"}) and at ${afterNav} px once it loaded; rail ${rail.navs.join(", ")} top to bottom (${rail.tops.join(", ")} px) with ${rail.dividers} dividers${rail.divider ? ", one after the library and none before it" : ""}${rail.wsDivider ? ", one before the workspace" : ""}; marker ${viewMarker} on a view and ${libMarker} on the library; Tab from the product mark reached "${focused.text}" with ${/inset/.test(focused.ring) ? "the inset ring" : "no ring"}, then "${nextStop}", and Shift+Tab returned to "${backStop}"; Go to's groups read ${goToGroups.join(", ")}; Enter opened ${opened.hash} (views pressed ${opened.views}; breadcrumb "${opened.crumbs.slice(0, 70)}"); the list read ${list.join("; ")}; "textbox" found ${found.join(", ")}; Back went to ${back.map((b) => b.title ?? b.hash).join(", then ")}; Go to opened ${viaGoTo}; the 2 key left to ${left.hash}; leaving unsaved Site changes for the library ${asked ? "asked" : "did not ask"} and Esc stayed on ${stayed.hash}; a link to API opened "${linked.title}" with the heading ${linked.top} px from the top; an unknown component link ${named ? "was named in a toast" : "was not named"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 // LB-03 Twelve sections in order with a matching outline of buttons; choosing an entry scrolls there and writes section= without a
@@ -4287,7 +4304,8 @@ await check("LB-03", async () => {
 
 // LB-04 Each preview group is one labelled frame with all its variants; Phone width resizes the same runtime; Code shows highlighted code
 // and Copy copies it exactly; focus enters the frame from the tabs and leaves it; Expand shows one frame in a dialog and none on the page;
-// Home, End and the page keys typed in a field inside a preview never scroll the page, so the preview keeps its focus and text
+// Home, End and the page keys typed in a field inside a preview never scroll the page, so the preview keeps its focus and text, and
+// Home and Shift+Home keep their caret and selection behavior
 await check("LB-04", async () => {
   const p = await openLibrary("library=button")
   await p.context().grantPermissions(["clipboard-read", "clipboard-write"])
@@ -4333,30 +4351,43 @@ await check("LB-04", async () => {
   const returned = await p.evaluate(() => document.activeElement?.getAttribute("aria-label"))
   const errors = [...p.errors]
   await p.closeAll()
-  // Keys typed into a field inside a preview stay there: Home, End and the page keys (which scroll on macOS) never scroll
-  // the library page, so the preview is not scrolled away, unmounted and remounted, and keeps its focus and its text.
+  // Keys typed into a field inside a preview stay there: Home, End and the page keys never scroll the library page (on
+  // Apple platforms, where they scroll even in a field, the frame client cancels that scroll and moves the caret for Home
+  // and End; elsewhere they move the caret natively), so the preview is not scrolled away and remounted. Home moves the
+  // caret to the start and Shift+Home still selects to it, on every platform.
   const t = await openLibrary("library=text-field")
   await frameReady(t, "states")
+  const platform = await t.evaluate(() => navigator.userAgentData?.platform || navigator.platform)
+  const applePlatform = /mac|iphone|ipad|ipod|ios/i.test(platform)
   const fieldFrame = await t.locator('[data-library-page] [data-preview-block="states"] iframe.opacity-100').elementHandle()
   const field = (await fieldFrame.contentFrame()).locator("input:not([disabled])").first()
   await field.click()
-  await t.keyboard.type("abc")
-  const keysAt = await t.evaluate(() => document.querySelector("[data-library-page]").scrollTop)
+  await field.fill("abc")
+  const pageTop = () => t.evaluate(() => document.querySelector("[data-library-page]").scrollTop)
+  const keysAt = await pageTop()
+  const tops = []
   for (const key of ["End", "Home", "PageDown", "PageUp", "End"]) {
     await t.keyboard.press(key)
     await wait(250)
+    tops.push(await pageTop())
   }
+  const fieldValue = () => fieldFrame.contentFrame().then((f) => f.evaluate(() => ({ tag: document.activeElement?.tagName, value: document.activeElement?.value ?? "" }))).catch(() => ({ tag: "frame gone", value: "" }))
+  await t.keyboard.press("End")
+  await t.keyboard.press("Home")
+  await t.keyboard.type("X")
+  const caret = await fieldValue()
+  await t.keyboard.press("End")
+  await t.keyboard.press("Shift+Home")
+  await t.keyboard.type("Y")
   await wait(600)
-  const typed = await t.evaluate(() => document.querySelector("[data-library-page]").scrollTop)
+  tops.push(await pageTop())
+  const selected = await fieldValue()
   const kept = await fieldFrame.evaluate((n) => n.isConnected && n.classList.contains("opacity-100"))
-  const fieldState = await (await fieldFrame.contentFrame())
-    .evaluate(() => ({ tag: document.activeElement?.tagName, value: document.activeElement?.value ?? "" }))
-    .catch(() => ({ tag: "frame gone", value: "" }))
   errors.push(...t.errors)
   await t.closeAll()
-  const keys = typed === keysAt && kept && fieldState.tag === "INPUT" && fieldState.value.includes("abc")
+  const keys = tops.every((x) => x === keysAt) && kept && caret.tag === "INPUT" && caret.value === "Xabc" && selected.tag === "INPUT" && selected.value === "Y"
   const ok = groups.join() === "playground:Playground:1,styles:Styles:1,sizes:Sizes:1,states:States:1" && variants === 3 && phone.width === "390px" && phone.frames === 1 && inside.mounts === mounts && inside.width === 390 && code.spans > 0 && copied === code.text && copied.includes('variant="danger"') && entered && left && expanded.dialog === 1 && expanded.page === 0 && returned === "Expand Styles" && keys && !errors.length
-  return [ok ? "pass" : "fail", `groups ${groups.join(", ")}; the Styles frame shows ${variants} variants; Phone width set the frame to ${phone.width} with ${phone.frames} frame, mounts ${mounts} then ${inside.mounts}, inner width ${inside.width}; Code drew ${code.spans} token spans and Copy ${copied === code.text ? "copied it exactly" : `copied "${copied.slice(0, 30)}"`}; focus ${entered ? "entered the frame" : "never entered the frame"} and ${left ? "left it" : "stayed"}; Expand showed ${expanded.dialog} frame in the dialog and ${expanded.page} on the page; Esc returned focus to ${returned}; End, Home, Page Down and Page Up typed in a Text field preview moved the page from ${keysAt} to ${typed} px, the frame ${kept ? "stayed mounted" : "was unmounted"} and focus was on ${fieldState.tag} holding "${fieldState.value}"; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  return [ok ? "pass" : "fail", `groups ${groups.join(", ")}; the Styles frame shows ${variants} variants; Phone width set the frame to ${phone.width} with ${phone.frames} frame, mounts ${mounts} then ${inside.mounts}, inner width ${inside.width}; Code drew ${code.spans} token spans and Copy ${copied === code.text ? "copied it exactly" : `copied "${copied.slice(0, 30)}"`}; focus ${entered ? "entered the frame" : "never entered the frame"} and ${left ? "left it" : "stayed"}; Expand showed ${expanded.dialog} frame in the dialog and ${expanded.page} on the page; Esc returned focus to ${returned}; on ${platform} (${applePlatform ? "Apple: the frame client cancels the scroll and moves the caret" : "not Apple: these keys are native caret moves, the frame client does nothing"}) End, Home, Page Down, Page Up and Shift+Home typed in a Text field preview left the page at ${[...new Set(tops)].join(", ")} px (from ${keysAt}), the frame ${kept ? "stayed mounted" : "was unmounted"}, Home then X gave "${caret.value}" and Shift+Home then Y gave "${selected.value}" with focus on ${selected.tag}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 // LB-05 Frames mount only near the viewport, never more than LIVE_FRAMES at rest, nearest first; frames far above unmount when

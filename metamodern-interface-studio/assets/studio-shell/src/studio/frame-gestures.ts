@@ -40,27 +40,56 @@ function canTake(start: Element | null, axis: "x" | "y", delta: number) {
   return !locked && room(root)
 }
 
-/** Where typing happens: keys pressed here edit the field, so none of them should move anything outside the frame. */
-const EDITABLE =
-  "input:not([type=button], [type=submit], [type=reset], [type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=image]), textarea, select, [contenteditable=''], [contenteditable='true'], [contenteditable='plaintext-only'], [role=textbox], [role=searchbox], [role=spinbutton], [role=combobox]"
-/** Keys macOS turns into a page scroll even inside a text field (elsewhere they move the caret, so they are left alone). */
+/**
+ * Where typing happens: text entry, whose caret Home and End move. A native select, a listbox or a combobox without a
+ * text field uses these keys to move its selection, so they are not here and keep every key.
+ */
+const TYPING =
+  "input:is(:not([type]), [type=''], [type=text], [type=search], [type=url], [type=tel], [type=email], [type=password]), textarea, [contenteditable=''], [contenteditable='true'], [contenteditable='plaintext-only'], [role=textbox], [role=searchbox]"
+/** Keys Apple platforms turn into a page scroll even inside a text field (elsewhere they move the caret natively). */
 const SCROLL_KEYS: Record<string, number> = { Home: -1, PageUp: -1, End: 1, PageDown: 1 }
-const apple = () => /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+const apple = () => {
+  const ua = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform
+  return /mac|iphone|ipad|ipod|ios/i.test(ua || navigator.platform || "")
+}
+
+/** Home or End as a caret move: to the start or end of the field, or of the current line in a multi-line field. */
+function moveCaret(t: Element, dir: number) {
+  if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement) {
+    try {
+      const v = t.value
+      const at = dir < 0 ? (t.selectionStart ?? 0) : (t.selectionEnd ?? v.length)
+      const multi = t instanceof HTMLTextAreaElement
+      const to = dir < 0 ? (multi ? v.lastIndexOf("\n", at - 1) + 1 : 0) : multi ? (v.indexOf("\n", at) < 0 ? v.length : v.indexOf("\n", at)) : v.length
+      t.setSelectionRange(to, to)
+    } catch {
+      // A field type without a text selection keeps its caret.
+    }
+    return
+  }
+  document.getSelection()?.modify?.("move", dir < 0 ? "backward" : "forward", "lineboundary")
+}
 
 /**
- * Keeps keys typed into a field inside the frame. Where Home, End, Page Up or Page Down would scroll and nothing in the
- * frame can take that scroll, the browser hands it to the Studio's page around the frame (a library page, say), which
- * then scrolls this preview away and unmounts it, losing what was typed and the focus. The scroll is cancelled
- * instead; when the frame's page or a scroller in it can take it, the browser scrolls that as usual. Only on Apple
- * platforms, where these keys scroll rather than move the caret; always on, also with gestures off.
+ * Keeps keys typed into a field inside the frame. On Apple platforms Home, End, Page Up and Page Down scroll even in a
+ * text field; where nothing in the frame can take that scroll, the browser hands it to the Studio's page around the
+ * frame (a library page, say), which scrolls this preview away and unmounts it, losing what was typed and the focus.
+ * There the scroll is cancelled, and Home and End move the caret to the start or end (of the line in a multi-line
+ * field) instead. With Shift or any other modifier the key is left alone, so selection keeps its native behavior; a
+ * scroll the frame's page or a scroller in it can take still happens; a select, listbox or combobox without a text
+ * field keeps every key. Elsewhere these keys move the caret natively and are left alone. Always on, also with gestures
+ * off. (overscroll-behavior on the frame's root would also stop wheel scrolls over a preview from reaching the page
+ * around it, and WebKit does not apply it to keyboard scrolls.)
  */
 export function keepFieldKeys() {
   const onKeyDown = (e: KeyboardEvent) => {
     const dir = SCROLL_KEYS[e.key]
-    if (!dir || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || !apple()) return
+    if (!dir || e.defaultPrevented || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey || !apple()) return
     const t = e.target instanceof Element ? e.target : null
-    if (!t?.closest(EDITABLE) || canTake(t, "y", dir)) return
+    const field = t?.closest(TYPING)
+    if (!field || canTake(field, "y", dir)) return
     e.preventDefault()
+    if (e.key === "Home" || e.key === "End") moveCaret(field, dir)
   }
   window.addEventListener("keydown", onKeyDown)
   return () => window.removeEventListener("keydown", onKeyDown)

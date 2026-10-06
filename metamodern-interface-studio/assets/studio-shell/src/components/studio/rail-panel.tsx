@@ -119,8 +119,16 @@ export function Rail({ labels }: { labels: boolean }) {
         </Tooltip>
       </SidebarHeader>
       <SidebarContent>
-        {/* The library comes first, above the views, with a divider after it; its place is held while its chunk loads. */}
-        <LibrarySlot fallback={<div aria-hidden className={cn("shrink-0", labels ? "h-[73px]" : "h-[57px]")} />}>
+        {/* The library comes first, above the views, with a divider after it. While its chunk loads, two blocks the size of
+            the item and the divider hold their places in the same gaps, so the views do not move when it arrives. */}
+        <LibrarySlot
+          fallback={
+            <>
+              <div aria-hidden className={cn("shrink-0", labels ? "h-16" : "h-12")} />
+              <div aria-hidden className="mx-2 my-1 h-px shrink-0" />
+            </>
+          }
+        >
           <LibraryNav part="rail" labels={labels} />
         </LibrarySlot>
         <nav aria-label="Views" className="flex flex-col py-1">
