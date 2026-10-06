@@ -29,11 +29,11 @@ try {
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
 const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace", library: "library" }
-// WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.12.2), gzipped, built with the example
+// WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.13.0), gzipped, built with the example
 // product. A Studio that declares neither a workspace nor a library may grow by at most 3 KB over it. Each release moves
 // it to the release before it.
-const STUDIO_CHUNK_BASELINE = "0.12.2"
-const STUDIO_CHUNK_BASELINE_GZ = 298530
+const STUDIO_CHUNK_BASELINE = "0.13.0"
+const STUDIO_CHUNK_BASELINE_GZ = 299004
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 const serve = (out, host) =>
@@ -4156,14 +4156,22 @@ await check("LB-01", async () => {
   return [ok ? "pass" : "fail", `initial Studio chunk ${gz} bytes gzipped, ${growth >= 0 ? "+" : ""}${growth} against the ${STUDIO_CHUNK_BASELINE} baseline of ${STUDIO_CHUNK_BASELINE_GZ} (budget 3,072); without a library the build has ${built.length} library chunks, ${requested.length} were requested across the views and Go to, the rail has ${rail} library items and Go to ${goTo ? "lists" : "has no"} library group; with one, the navigation chunk loaded at start ${navEarly}, the page chunk before opening ${pageEarly} and after ${pageAfter}, the opened component's documentation ${button} and others ${others}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
-// LB-02 The library follows the workspace modules after a second divider with the views' marker and focus; Tab and Enter, the grouped
-// list and its search, Go to, links and Back reach components; a view key leaves; leaving unsaved module changes asks; unknown links are named
+// LB-02 The library comes first in the rail, above the views with a divider after it, with the views' marker and focus, and Tab follows
+// that order; Go to lists its groups after Scenarios and before the views; Tab and Enter, the grouped list and its search, Go to, links
+// and Back reach components; a view key leaves; leaving unsaved module changes asks; unknown links are named
 await check("LB-02", async () => {
   const p = await openLibrary("view=inspect&scenario=tasks.list")
   const rail = await p.evaluate(() => {
     const studio = document.querySelector('[aria-label="Studio"]')
     const lib = studio.querySelector('nav[aria-label="Library"]')
-    return { navs: [...studio.querySelectorAll("nav")].map((n) => n.getAttribute("aria-label")), divider: lib?.previousElementSibling?.getAttribute("role") === "separator", dividers: studio.querySelectorAll('[role="separator"]').length }
+    const ws = studio.querySelector('nav[aria-label="Workspace"]')
+    return {
+      navs: [...studio.querySelectorAll("nav")].map((n) => n.getAttribute("aria-label")),
+      divider: lib?.nextElementSibling?.getAttribute("role") === "separator" && lib?.previousElementSibling?.getAttribute("role") !== "separator",
+      wsDivider: ws?.previousElementSibling?.getAttribute("role") === "separator",
+      dividers: studio.querySelectorAll('[role="separator"]').length,
+      tops: ["Library", "Views", "Workspace"].map((n) => Math.round(studio.querySelector(`nav[aria-label="${n}"]`)?.getBoundingClientRect().top ?? -1)),
+    }
   })
   const marker = (selector) =>
     p.locator(selector).first().evaluate((el) => {
@@ -4171,12 +4179,17 @@ await check("LB-02", async () => {
       return `${b.width} ${b.backgroundColor}`
     })
   const viewMarker = await marker('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]')
-  await railModule(p, "Audit").focus()
+  // Tab from the product mark reaches the library, then the first view; Shift+Tab from the first view returns to the library.
+  await p.locator('[aria-label="Studio"] [role="img"][tabindex="0"]').first().focus()
   await p.keyboard.press("Tab")
   const focused = await p.evaluate(() => {
     const s = getComputedStyle(document.activeElement)
     return { text: document.activeElement?.textContent?.trim(), ring: s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 2 && parseFloat(s.outlineOffset) < 0 ? `inset outline ${s.outlineWidth} ${s.outlineColor}` : s.boxShadow }
   })
+  await p.keyboard.press("Tab")
+  const nextStop = await p.evaluate(() => document.activeElement?.textContent?.trim())
+  await p.keyboard.press("Shift+Tab")
+  const backStop = await p.evaluate(() => document.activeElement?.textContent?.trim())
   await p.keyboard.press("Enter")
   await poll(() => libTitle(p), (t) => t === "Button", 8000)
   const libMarker = await marker('[aria-label="Studio"] nav[aria-label="Library"] button[aria-pressed="true"]')
@@ -4197,6 +4210,7 @@ await check("LB-02", async () => {
   }
   await p.keyboard.press("ControlOrMeta+k")
   await wait(400)
+  const goToGroups = (await p.locator("[cmdk-group-heading]").allTextContents()).map((h) => h.trim())
   await p.keyboard.type("library icon button")
   await wait(300)
   await p.keyboard.press("Enter")
@@ -4225,12 +4239,14 @@ await check("LB-02", async () => {
   const named = await poll(() => u.getByText("That link names a component this Studio's library does not have").isVisible().catch(() => false), Boolean)
   await u.closeAll()
   const ok =
-    rail.navs.join() === "Views,Workspace,Library" && rail.divider && rail.dividers === 2 && /^2px /.test(viewMarker) && libMarker === viewMarker && focused.text === "Library" && /inset/.test(focused.ring) &&
+    rail.navs.join() === "Library,Views,Workspace" && rail.divider && rail.wsDivider && rail.dividers === 2 && rail.tops[0] < rail.tops[1] && rail.tops[1] < rail.tops[2] && /^2px /.test(viewMarker) && libMarker === viewMarker &&
+    focused.text === "Library" && /inset/.test(focused.ring) && nextStop === "Inspect" && backStop === "Library" &&
+    goToGroups.slice(0, 4).join() === "Scenarios,Library: Actions,Library: Inputs,Views" && goToGroups.indexOf("Workspace") > goToGroups.indexOf("Views") &&
     /library=button/.test(opened.hash) && /Library/.test(opened.crumbs) && /Actions/.test(opened.crumbs) && /Button/.test(opened.crumbs) && opened.views === 0 &&
     list.join(";") === "Actions:Button|Icon button;Inputs:Text field|Switch" && found.join() === "Text field" &&
     back[0].title === "Button" && /view=inspect/.test(back[1].hash) && back[1].title === null && /library=icon-button/.test(viaGoTo) && /view=compare/.test(left.hash) && !left.page &&
     asked && /module=site/.test(stayed.hash) && !stayed.page && linked.title === "Text field" && linked.top >= -2 && linked.top < 80 && linked.pressed && named && !errors.length
-  return [ok ? "pass" : "fail", `rail ${rail.navs.join(", ")} with ${rail.dividers} dividers${rail.divider ? ", one before the library" : ""}; marker ${viewMarker} on a view and ${libMarker} on the library; Tab from the last module reached "${focused.text}" with ${/inset/.test(focused.ring) ? "the inset ring" : "no ring"}; Enter opened ${opened.hash} (views pressed ${opened.views}; breadcrumb "${opened.crumbs.slice(0, 70)}"); the list read ${list.join("; ")}; "textbox" found ${found.join(", ")}; Back went to ${back.map((b) => b.title ?? b.hash).join(", then ")}; Go to opened ${viaGoTo}; the 2 key left to ${left.hash}; leaving unsaved Site changes for the library ${asked ? "asked" : "did not ask"} and Esc stayed on ${stayed.hash}; a link to API opened "${linked.title}" with the heading ${linked.top} px from the top; an unknown component link ${named ? "was named in a toast" : "was not named"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  return [ok ? "pass" : "fail", `rail ${rail.navs.join(", ")} top to bottom (${rail.tops.join(", ")} px) with ${rail.dividers} dividers${rail.divider ? ", one after the library and none before it" : ""}${rail.wsDivider ? ", one before the workspace" : ""}; marker ${viewMarker} on a view and ${libMarker} on the library; Tab from the product mark reached "${focused.text}" with ${/inset/.test(focused.ring) ? "the inset ring" : "no ring"}, then "${nextStop}", and Shift+Tab returned to "${backStop}"; Go to's groups read ${goToGroups.join(", ")}; Enter opened ${opened.hash} (views pressed ${opened.views}; breadcrumb "${opened.crumbs.slice(0, 70)}"); the list read ${list.join("; ")}; "textbox" found ${found.join(", ")}; Back went to ${back.map((b) => b.title ?? b.hash).join(", then ")}; Go to opened ${viaGoTo}; the 2 key left to ${left.hash}; leaving unsaved Site changes for the library ${asked ? "asked" : "did not ask"} and Esc stayed on ${stayed.hash}; a link to API opened "${linked.title}" with the heading ${linked.top} px from the top; an unknown component link ${named ? "was named in a toast" : "was not named"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 // LB-03 Twelve sections in order with a matching outline of buttons; choosing an entry scrolls there and writes section= without a
@@ -4270,7 +4286,8 @@ await check("LB-03", async () => {
 })
 
 // LB-04 Each preview group is one labelled frame with all its variants; Phone width resizes the same runtime; Code shows highlighted code
-// and Copy copies it exactly; focus enters the frame from the tabs and leaves it; Expand shows one frame in a dialog and none on the page
+// and Copy copies it exactly; focus enters the frame from the tabs and leaves it; Expand shows one frame in a dialog and none on the page;
+// Home, End and the page keys typed in a field inside a preview never scroll the page, so the preview keeps its focus and text
 await check("LB-04", async () => {
   const p = await openLibrary("library=button")
   await p.context().grantPermissions(["clipboard-read", "clipboard-write"])
@@ -4316,8 +4333,30 @@ await check("LB-04", async () => {
   const returned = await p.evaluate(() => document.activeElement?.getAttribute("aria-label"))
   const errors = [...p.errors]
   await p.closeAll()
-  const ok = groups.join() === "playground:Playground:1,styles:Styles:1,sizes:Sizes:1,states:States:1" && variants === 3 && phone.width === "390px" && phone.frames === 1 && inside.mounts === mounts && inside.width === 390 && code.spans > 0 && copied === code.text && copied.includes('variant="danger"') && entered && left && expanded.dialog === 1 && expanded.page === 0 && returned === "Expand Styles" && !errors.length
-  return [ok ? "pass" : "fail", `groups ${groups.join(", ")}; the Styles frame shows ${variants} variants; Phone width set the frame to ${phone.width} with ${phone.frames} frame, mounts ${mounts} then ${inside.mounts}, inner width ${inside.width}; Code drew ${code.spans} token spans and Copy ${copied === code.text ? "copied it exactly" : `copied "${copied.slice(0, 30)}"`}; focus ${entered ? "entered the frame" : "never entered the frame"} and ${left ? "left it" : "stayed"}; Expand showed ${expanded.dialog} frame in the dialog and ${expanded.page} on the page; Esc returned focus to ${returned}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  // Keys typed into a field inside a preview stay there: Home, End and the page keys (which scroll on macOS) never scroll
+  // the library page, so the preview is not scrolled away, unmounted and remounted, and keeps its focus and its text.
+  const t = await openLibrary("library=text-field")
+  await frameReady(t, "states")
+  const fieldFrame = await t.locator('[data-library-page] [data-preview-block="states"] iframe.opacity-100').elementHandle()
+  const field = (await fieldFrame.contentFrame()).locator("input:not([disabled])").first()
+  await field.click()
+  await t.keyboard.type("abc")
+  const keysAt = await t.evaluate(() => document.querySelector("[data-library-page]").scrollTop)
+  for (const key of ["End", "Home", "PageDown", "PageUp", "End"]) {
+    await t.keyboard.press(key)
+    await wait(250)
+  }
+  await wait(600)
+  const typed = await t.evaluate(() => document.querySelector("[data-library-page]").scrollTop)
+  const kept = await fieldFrame.evaluate((n) => n.isConnected && n.classList.contains("opacity-100"))
+  const fieldState = await (await fieldFrame.contentFrame())
+    .evaluate(() => ({ tag: document.activeElement?.tagName, value: document.activeElement?.value ?? "" }))
+    .catch(() => ({ tag: "frame gone", value: "" }))
+  errors.push(...t.errors)
+  await t.closeAll()
+  const keys = typed === keysAt && kept && fieldState.tag === "INPUT" && fieldState.value.includes("abc")
+  const ok = groups.join() === "playground:Playground:1,styles:Styles:1,sizes:Sizes:1,states:States:1" && variants === 3 && phone.width === "390px" && phone.frames === 1 && inside.mounts === mounts && inside.width === 390 && code.spans > 0 && copied === code.text && copied.includes('variant="danger"') && entered && left && expanded.dialog === 1 && expanded.page === 0 && returned === "Expand Styles" && keys && !errors.length
+  return [ok ? "pass" : "fail", `groups ${groups.join(", ")}; the Styles frame shows ${variants} variants; Phone width set the frame to ${phone.width} with ${phone.frames} frame, mounts ${mounts} then ${inside.mounts}, inner width ${inside.width}; Code drew ${code.spans} token spans and Copy ${copied === code.text ? "copied it exactly" : `copied "${copied.slice(0, 30)}"`}; focus ${entered ? "entered the frame" : "never entered the frame"} and ${left ? "left it" : "stayed"}; Expand showed ${expanded.dialog} frame in the dialog and ${expanded.page} on the page; Esc returned focus to ${returned}; End, Home, Page Down and Page Up typed in a Text field preview moved the page from ${keysAt} to ${typed} px, the frame ${kept ? "stayed mounted" : "was unmounted"} and focus was on ${fieldState.tag} holding "${fieldState.value}"; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 // LB-05 Frames mount only near the viewport, never more than LIVE_FRAMES at rest, nearest first; frames far above unmount when

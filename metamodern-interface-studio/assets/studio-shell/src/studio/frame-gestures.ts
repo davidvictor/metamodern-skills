@@ -40,6 +40,32 @@ function canTake(start: Element | null, axis: "x" | "y", delta: number) {
   return !locked && room(root)
 }
 
+/** Where typing happens: keys pressed here edit the field, so none of them should move anything outside the frame. */
+const EDITABLE =
+  "input:not([type=button], [type=submit], [type=reset], [type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=image]), textarea, select, [contenteditable=''], [contenteditable='true'], [contenteditable='plaintext-only'], [role=textbox], [role=searchbox], [role=spinbutton], [role=combobox]"
+/** Keys macOS turns into a page scroll even inside a text field (elsewhere they move the caret, so they are left alone). */
+const SCROLL_KEYS: Record<string, number> = { Home: -1, PageUp: -1, End: 1, PageDown: 1 }
+const apple = () => /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+
+/**
+ * Keeps keys typed into a field inside the frame. Where Home, End, Page Up or Page Down would scroll and nothing in the
+ * frame can take that scroll, the browser hands it to the Studio's page around the frame (a library page, say), which
+ * then scrolls this preview away and unmounts it, losing what was typed and the focus. The scroll is cancelled
+ * instead; when the frame's page or a scroller in it can take it, the browser scrolls that as usual. Only on Apple
+ * platforms, where these keys scroll rather than move the caret; always on, also with gestures off.
+ */
+export function keepFieldKeys() {
+  const onKeyDown = (e: KeyboardEvent) => {
+    const dir = SCROLL_KEYS[e.key]
+    if (!dir || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || !apple()) return
+    const t = e.target instanceof Element ? e.target : null
+    if (!t?.closest(EDITABLE) || canTake(t, "y", dir)) return
+    e.preventDefault()
+  }
+  window.addEventListener("keydown", onKeyDown)
+  return () => window.removeEventListener("keydown", onKeyDown)
+}
+
 export function createFrameGestures(send: (g: StageGesture) => void) {
   const onWheel = (e: WheelEvent) => {
     const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1

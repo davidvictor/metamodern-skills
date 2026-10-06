@@ -37,6 +37,10 @@ export function CommandMenu() {
               </CommandItem>
             ))}
           </CommandGroup>
+          {/* The library's groups come before the views, as its item comes before them in the rail. */}
+          <LibrarySlot>
+            <LibraryNav part="commands" onDone={close} />
+          </LibrarySlot>
           <CommandSeparator />
           <CommandGroup heading="Views">
             {VIEWS.map((v) => (
@@ -50,9 +54,6 @@ export function CommandMenu() {
           <Slot>
             <WorkspaceNav part="commands" onDone={close} />
           </Slot>
-          <LibrarySlot>
-            <LibraryNav part="commands" onDone={close} />
-          </LibrarySlot>
           <CommandSeparator />
           <CommandGroup heading="Actions">
             <CommandItem value="reset preview" onSelect={run(s.reset)}><RotateCcwIcon />Reset preview<CommandShortcut>R</CommandShortcut></CommandItem>

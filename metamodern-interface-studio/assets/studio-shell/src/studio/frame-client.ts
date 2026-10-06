@@ -9,7 +9,7 @@
  */
 import { PROTOCOL, fingerprint, isShellMessage, type AnchorRect, type FrameBody, type FrameCapability, type FrameDiagnostic, type MountInputs } from "./protocol"
 import { createFrameSync } from "./frame-sync"
-import { createFrameGestures } from "./frame-gestures"
+import { createFrameGestures, keepFieldKeys } from "./frame-gestures"
 
 export type FrameHandlers = {
   /** Materialize the scenario from scratch: state, navigation, theme, profile and inputs. */
@@ -306,6 +306,8 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
 
   // Stage navigation that starts over this frame: the part of a scroll the page cannot use, zoom, Space and middle drag.
   const gestures = options.gestures === false ? null : createFrameGestures((gesture) => post({ type: "gesture", gesture }))
+  // Home, End and the page keys typed in a field never scroll the Studio around the frame.
+  const releaseFieldKeys = keepFieldKeys()
 
   post({
     type: "hello",
@@ -325,6 +327,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
     disconnect: () => {
       sync.dispose()
       gestures?.dispose()
+      releaseFieldKeys()
       observer.disconnect()
       sizes.disconnect()
       sizeChanges.disconnect()

@@ -26,6 +26,7 @@ export const LibraryNav: React.LazyExoticComponent<React.ComponentType<NavProps>
 /** The open component's page, the component list and the sidebar: loaded when the library opens. */
 export const LibraryPage: React.LazyExoticComponent<React.ComponentType<PageProps>> = React.lazy(() => (!__STUDIO_LIBRARY__ ? never() : import("./library-page").then((m) => ({ default: m.LibraryPage }), failed<PageProps>)))
 
-export function LibrarySlot({ children }: { children: React.ReactNode }) {
-  return hasLibrary ? <React.Suspense fallback={null}>{children}</React.Suspense> : null
+/** A fallback holds the part's place while its chunk loads, such as the rail item above the views, so nothing below it moves. */
+export function LibrarySlot({ children, fallback = null }: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  return hasLibrary ? <React.Suspense fallback={fallback}>{children}</React.Suspense> : null
 }
