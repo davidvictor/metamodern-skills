@@ -388,7 +388,7 @@ test('0.12.2 Present anchor label and Compare headers: AA text, whole on the sta
   assert.match(script, /Compare Profile 3-up/);
   assert.match(script, /contents \$\{x\.spill\} px outside the header/);
   assert.match(script, /brand: "#fde68a" \}\)\n/);
-  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.13\.0"/);
+  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.13\.1"/);
   const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');
   for (const id of ['AC-67', 'AC-68']) assert.match(doc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
   assert.match(doc, /AC-01 to AC-68/);

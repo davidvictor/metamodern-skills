@@ -46,7 +46,13 @@ function canTake(start: Element | null, axis: "x" | "y", delta: number) {
  */
 const TYPING =
   "input:is(:not([type]), [type=''], [type=text], [type=search], [type=url], [type=tel], [type=email], [type=password]), textarea, [contenteditable=''], [contenteditable='true'], [contenteditable='plaintext-only'], [role=textbox], [role=searchbox]"
-/** Keys Apple platforms turn into a page scroll even inside a text field (elsewhere they move the caret natively). */
+/** A number field has no caret page move either: Chromium scrolls on Page Up and Page Down there and keeps the value. */
+const PAGE_ONLY = "input[type=number]"
+/**
+ * Keys that scroll from inside a text field. Apple platforms scroll on all four even there. Elsewhere Home and End are
+ * caret moves, and Page Up and Page Down are too while the caret can move that way in a multi-line field; in a
+ * single-line field, or with the caret already at that end, Chromium scrolls instead.
+ */
 const SCROLL_KEYS: Record<string, number> = { Home: -1, PageUp: -1, End: 1, PageDown: 1 }
 const apple = () => {
   const ua = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform
@@ -72,27 +78,59 @@ function moveCaret(t: Element, dir: number) {
 }
 
 /**
- * Keeps keys typed into a field inside the frame. On Apple platforms Home, End, Page Up and Page Down scroll even in a
- * text field; where nothing in the frame can take that scroll, the browser hands it to the Studio's page around the
- * frame (a library page, say), which scrolls this preview away and unmounts it, losing what was typed and the focus.
- * There the scroll is cancelled, and Home and End move the caret to the start or end (of the line in a multi-line
- * field) instead. With Shift or any other modifier the key is left alone, so selection keeps its native behavior; a
- * scroll the frame's page or a scroller in it can take still happens; a select or listbox, and any field that is a
- * combobox or points at an active option (`aria-activedescendant`), keeps every key for its own list. It listens in the
- * bubble phase, after the product's own handlers: a key the product cancelled is left alone, and a product that stops
- * propagation is handling the key itself. Elsewhere these keys move the caret natively and are left alone. Always on,
- * also with gestures off. (overscroll-behavior on the frame's root would also stop wheel scrolls over a preview from reaching the page
- * around it, and WebKit does not apply it to keyboard scrolls.)
+ * Whether Page Up (dir -1) or Page Down (1) has no caret move left in the field, which is when a browser outside Apple
+ * platforms scrolls instead: always in a single-line field, and in a multi-line one when the selection already reaches
+ * the start or the end. There the browser leaves the caret where it is, so cancelling the scroll keeps it there too.
+ * That includes a selection that is not collapsed: measured in Linux Chromium, Page Down with a selection reaching the
+ * end (or Page Up with one from the start) scrolls and leaves the selection as it was, so it counts as at that end.
+ */
+function pageAtEnd(t: Element, dir: number) {
+  if (t instanceof HTMLInputElement) return true
+  if (t instanceof HTMLTextAreaElement) {
+    try {
+      return dir < 0 ? t.selectionStart === 0 : t.selectionEnd === t.value.length
+    } catch {
+      return true
+    }
+  }
+  const s = document.getSelection()
+  const at = s?.rangeCount ? s.getRangeAt(0) : null
+  if (!at || !t.contains(at.startContainer) || !t.contains(at.endContainer)) return true
+  const rest = document.createRange()
+  rest.selectNodeContents(t)
+  if (dir < 0) rest.setEnd(at.startContainer, at.startOffset)
+  else rest.setStart(at.endContainer, at.endOffset)
+  return !rest.toString()
+}
+
+/**
+ * Keeps keys typed into a field inside the frame. Where nothing in the frame can take a key's scroll, the browser hands
+ * it to the Studio's page around the frame (a library page, say), which scrolls this preview away and unmounts it,
+ * losing what was typed and the focus. On Apple platforms Home, End, Page Up and Page Down scroll even in a text field:
+ * there the scroll is cancelled, and Home and End move the caret to the start or end (of the line in a multi-line
+ * field) instead. Elsewhere Home and End are native caret moves and are left alone; Page Up and Page Down scroll from a
+ * single-line field, and from a multi-line one whose caret is already at that end, and there the scroll is cancelled
+ * with the caret left where the browser leaves it; a Page Up or Page Down that moves the caret stays native. With
+ * Shift or any other modifier the key is left alone, so selection keeps its native behavior; a scroll the frame's page
+ * or a scroller in it can take still happens; a select or listbox, and any field that is a combobox or points at an
+ * active option (`aria-activedescendant`), keeps every key for its own list. It listens in the bubble phase, after the
+ * product's own handlers: a key the product cancelled is left alone, and a product that stops propagation is handling
+ * the key itself. Always on, also with gestures off. (overscroll-behavior on the frame's root would also stop wheel
+ * scrolls over a preview from reaching the page around it, and WebKit does not apply it to keyboard scrolls.)
  */
 export function keepFieldKeys() {
   const onKeyDown = (e: KeyboardEvent) => {
     const dir = SCROLL_KEYS[e.key]
-    if (!dir || e.defaultPrevented || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey || !apple()) return
+    if (!dir || e.defaultPrevented || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return
+    const mac = apple()
+    const page = e.key === "PageUp" || e.key === "PageDown"
+    if (!mac && !page) return
     const t = e.target instanceof Element ? e.target : null
-    const field = t?.closest(TYPING)
+    const field = t?.closest(TYPING) ?? (page ? t?.closest(PAGE_ONLY) : null)
     if (!field || field.matches("[role=combobox], [aria-activedescendant]") || canTake(field, "y", dir)) return
+    if (!mac && !pageAtEnd(field, dir)) return
     e.preventDefault()
-    if (e.key === "Home" || e.key === "End") moveCaret(field, dir)
+    if (!page) moveCaret(field, dir)
   }
   // Bubble phase, after the product's handlers, so a key the product handles (cancelled or stopped) stays the product's.
   window.addEventListener("keydown", onKeyDown)

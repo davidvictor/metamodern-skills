@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.16.2 — 2026-10-06
+
+- Interface Studio 0.13.2 keeps Page Up and Page Down typed in a preview's text field from scrolling the Studio outside Apple platforms. Chromium there (measured on Linux) scrolls on those keys from a single-line or number field, and from a textarea or editable region whose selection already reaches that end, and the scroll reached the library page around the frame (745 px on a Text field page), which could unmount the preview. The frame client now cancels exactly those scrolls on every platform and leaves the caret where the browser leaves it; a page key that moves a textarea's caret, and Home and End outside Apple platforms, stay native, and Apple platforms behave as in 0.13.1.
+- LB-04 starts the library page scrolled, checks a textarea's native Page Down, and adds a run with the preview frames told they are on Linux, so the non-Apple branch is checked on any OS; it passes on macOS and in Linux Chromium. WS-01 and LB-01 measure the initial chunk against 0.13.1.
+
 ## 1.16.1 — 2026-10-06
 
 - Interface Studio 0.13.1 moves the component library to the top of the rail: its item now comes first, above the views, with a divider after it, and the workspace modules still follow the views after theirs. The item keeps its marker, inset focus ring, label and tooltip, Tab follows the new order, and the rail holds the item's place while it loads so the views do not shift. Go to lists the library's groups after Scenarios and before Views, so Scenarios stay first and the highlighted entry is still a scenario. The phone layout is unchanged: one place entry in the bottom bar, and the library after the modules in the Workspace drawer. A Studio without a library is unchanged.

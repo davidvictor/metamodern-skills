@@ -319,7 +319,7 @@ test('LM-17 the library files ship with the starter', () => {
   for (const path of ['src/studio/library/schema.ts', 'src/studio/library/model.ts', 'src/studio/library/link.ts', 'src/studio/library/highlight.ts', 'src/studio/library/api.ts', 'src/studio/library/slots.tsx', 'src/studio/library/library-nav.tsx', 'src/studio/library/library-page.tsx', 'src/studio/library/rich-text.tsx', 'src/studio/library/code-block.tsx', 'src/studio/library/preview-block.tsx', 'src/library/index.ts', 'scripts/library-boundary.mjs', 'example/library/declaration.ts', 'example/library/adapter.ts', 'example/library/index.ts', 'example/library/button.ts', 'example/library/icon-button.ts', 'example/library/text-field.ts', 'example/library/frame.html', 'example/library/frame.ts', 'example/library/library.css']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
-  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.13.1');
+  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.13.2');
 });
 
 test('LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported', async () => {
@@ -390,8 +390,8 @@ test('0.13.1 Home, End and the page keys typed in a field inside a frame never s
   const gestures = read('src/studio/frame-gestures.ts');
   assert.match(gestures, /export function keepFieldKeys\(\)/);
   assert.match(gestures, /const SCROLL_KEYS: Record<string, number> = \{ Home: -1, PageUp: -1, End: 1, PageDown: 1 \}/);
-  assert.match(gestures, /\|\| canTake\(field, "y", dir\)\) return\n    e\.preventDefault\(\)\n    if \(e\.key === "Home" \|\| e\.key === "End"\) moveCaret\(field, dir\)/, 'only a scroll nothing in the frame can take is cancelled, and Home and End move the caret');
-  assert.match(gestures, /e\.shiftKey \|\| e\.metaKey \|\| e\.ctrlKey \|\| e\.altKey \|\| !apple\(\)\) return/, 'modifier keys and other platforms are left alone');
+  assert.match(gestures, /\|\| canTake\(field, "y", dir\)\) return\n    if \(!mac && !pageAtEnd\(field, dir\)\) return\n    e\.preventDefault\(\)\n    if \(!page\) moveCaret\(field, dir\)/, 'only a scroll nothing in the frame can take is cancelled, and Home and End move the caret');
+  assert.match(gestures, /e\.shiftKey \|\| e\.metaKey \|\| e\.ctrlKey \|\| e\.altKey\) return/, 'modifier keys are left alone');
   assert.match(gestures, /userAgentData\?\.platform/);
   assert.match(gestures, /window\.addEventListener\("keydown", onKeyDown\)\n  return \(\) => window\.removeEventListener\("keydown", onKeyDown\)/, 'bubble phase, after the product handlers');
   assert.match(gestures, /field\.matches\("\[role=combobox\], \[aria-activedescendant\]"\)/, 'list fields keep their keys');
@@ -406,9 +406,29 @@ test('0.13.1 Home, End and the page keys typed in a field inside a frame never s
   const script = read('scripts/acceptance.mjs');
   assert.match(script, /for \(const key of \["End", "Home", "PageDown", "PageUp", "End"\]\)/);
   assert.match(script, /caret\.value === "Xabc" && selected\.tag === "INPUT" && selected\.value === "Y"/);
-  assert.match(script, /const appleKeys = await keyRun\(true\)/, 'the Apple branch runs on any OS');
-  assert.match(script, /area\?\.value === "Z\\nWab" && area\.own === "aQbc" && area\.combo\.join\(\) === "aQbc,aQbc"/);
+  assert.match(script, /const appleKeys = await keyRun\("apple"\)/, 'the Apple branch runs on any OS');
+  assert.match(script, /area\.value === "Z\\nWab" && area\.own === "aQbc" && area\.combo\.join\(\) === "aQbc,aQbc"/);
   assert.match(script, /combo got Home,combo Home:false/);
   assert.match(script, /beforeNav\.lib === 0 && beforeNav\.top === afterNav/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /Keys typed into a field stay in the frame/);
+});
+
+test('0.13.2 Page Up and Page Down typed in a field never scroll the Studio on any platform', () => {
+  const gestures = read('src/studio/frame-gestures.ts');
+  assert.match(gestures, /const mac = apple\(\)\n    const page = e\.key === "PageUp" \|\| e\.key === "PageDown"\n    if \(!mac && !page\) return/, 'outside Apple platforms Home and End stay native');
+  assert.match(gestures, /function pageAtEnd\(t: Element, dir: number\)/);
+  assert.match(gestures, /if \(t instanceof HTMLInputElement\) return true/, 'a single-line field has no page caret move, so its page keys always scroll');
+  assert.match(gestures, /return dir < 0 \? t\.selectionStart === 0 : t\.selectionEnd === t\.value\.length/, 'a textarea scrolls only with the caret already at that end');
+  assert.match(gestures, /return !rest\.toString\(\)/, 'an editable region likewise');
+  assert.match(gestures, /const PAGE_ONLY = "input\[type=number\]"/);
+  assert.match(gestures, /t\?\.closest\(TYPING\) \?\? \(page \? t\?\.closest\(PAGE_ONLY\) : null\)/, 'number fields get the page keys only');
+  const script = read('scripts/acceptance.mjs');
+  assert.match(script, /const otherKeys = await keyRun\("other"\)/, 'the other branch runs on any OS');
+  assert.match(script, /scrollTop = 100\)\)/, 'the page starts scrolled so an escaping Page Up shows');
+  assert.match(script, /want: applePlatform \? "abQ\\ncd" : "ab\\ncdQ"/, 'a native Page Down that moves a textarea caret stays native');
+  assert.match(script, /line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,area PageDown:true,area PageUp:true,number PageDown:true,combo PageDown:false/);
+  assert.match(script, /area\.selection === "abQ" && area\.number\.join\(\) === "5,5"/, 'a selection reaching the end and a number field, natively');
+  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.13\.1"/);
+  assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /Outside Apple platforms Home and End are native caret moves/);
+  assert.match(read('UPDATING.md'), /^## 0\.13\.2$/m);
 });
