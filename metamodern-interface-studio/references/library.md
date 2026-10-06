@@ -35,6 +35,33 @@ library: {
 - `library` is a reserved link key (`RESERVED_LINK_KEYS` in `src/studio/input.ts`); a component property or dock input with that ID is rejected or left out of links. Rename it.
 - The index is all the adapter carries. Keep each component's documentation in `src/library/`, so a library of hundreds of components adds only its index to the Studio's first load.
 
+## Sections and cross-listing
+
+A larger library can add a top level: `sections`, each holding groups. Every group then names its section, and a component may also be listed in other groups with `alsoIn`, opening the same page from each:
+
+```ts
+library: {
+  sections: [{ id: "controls", label: "Controls" }, { id: "ai", label: "AI" }],
+  groups: [
+    { id: "buttons", label: "Buttons", section: "controls" },
+    { id: "inputs", label: "Inputs", section: "controls" },
+    { id: "chat", label: "Chat", section: "ai" },
+  ],
+  components: [
+    { id: "button", label: "Button", group: "buttons", summary: "Starts an action with one press." },
+    { id: "prompt-input", label: "Prompt input", group: "inputs", alsoIn: ["chat"], summary: "Takes a prompt and sends it." },
+  ],
+}
+```
+
+- `LibrarySection` is `{ id, label }`; `LibraryGroup` gains `section`, and `LibraryComponent` gains `alsoIn` (other group IDs). `group` stays the component's home.
+- Without `sections` nothing changes: the panel lists the groups flat, as before. With them, every group must name a declared section; a build fails on an unknown or missing section, a duplicate section ID, a section without a label, `sections: []`, a group naming a section in a library without sections, and an `alsoIn` naming an unknown group, the home group or one group twice.
+- Order is the declared order: sections, then groups within each section, then components within each group. A cross-listed component appears in each group it is listed in at its place in `components`; empty groups and sections are left out.
+- The panel shows each section and group heading as a native button disclosure (`aria-expanded`, `aria-controls`) with its label and the number of listings beneath it, at two quiet levels. All are closed at first except the open page's branch (its home section and group), which opens each time a page opens, also where the viewer closed it; branches opened stay open for the session. The viewer's own toggles are kept in the browser under `studio.<adapter id>.library-open.v1`, so a reload starts from them.
+- Search matches the labels of every group listing a component and their sections too. While searching, each match shows its path (Section › Group), every branch holding a match opens, and toggles made then are dropped when the search changes; clearing it restores the open state from before.
+- The breadcrumb reads product, library, home section, home group and component, and Go to lists each component once, under a heading naming its home section and group (`Library: Controls › Inputs`). A cross-listed component's page is the same page from every listing.
+- Sections add no request and no capability, so an offline export behaves the same.
+
 ## Write documentation in `src/library/`
 
 `src/library/index.ts` belongs to the product, as does every file beside it. The updater creates it, empty (`defineLibrary({})`), when it is missing and never changes anything in `src/library/`. Map each component to a loader of its documentation module, so a page's text loads only when the page opens:
@@ -118,7 +145,7 @@ Library previews are ordinary studio-preview/1 frames mounted by the same host a
 
 ## Navigation and page
 
-The rail shows the library first, as one item above the views with a divider after it (the workspace modules, when the Studio has them, still follow the views after their own divider), with the views' marker, focus ring and label and its tooltip; Tab and the visual order agree, so Tab from the product mark reaches the library before the views. Choosing it opens the last component viewed or the first. The context panel lists the components under their groups with search (`/` focuses it). The breadcrumb reads product, library, group, component, and Go to (⌘K) lists the components by group, after Scenarios and before the views, in the rail's order; Scenarios stay first, so the entry Go to highlights when it opens is still a scenario. Links carry `library=`, `section=` when a link or On this page names a section, and `theme=`. Opening another component adds a history entry, so Back returns; choosing an On this page entry only replaces the link. Leaving a workspace module with unsaved changes for the library asks first. On a phone the Workspace drawer lists the library after its modules (or, in a Studio without a workspace, the library takes Details' place in the bottom bar); the Panel drawer holds the component list and the top bar's Details holds the sidebar.
+The rail shows the library first, as one item above the views with a divider after it (the workspace modules, when the Studio has them, still follow the views after their own divider), with the views' marker, focus ring and label and its tooltip; Tab and the visual order agree, so Tab from the product mark reaches the library before the views. Choosing it opens the last component viewed or the first. The context panel lists the components under their groups (within collapsible sections, when declared) with search (`/` focuses it). The breadcrumb reads product, library, group (after its section, when declared), component, and Go to (⌘K) lists the components by home group, after Scenarios and before the views, in the rail's order; Scenarios stay first, so the entry Go to highlights when it opens is still a scenario. Links carry `library=`, `section=` when a link or On this page names a section, and `theme=`. Opening another component adds a history entry, so Back returns; choosing an On this page entry only replaces the link. Leaving a workspace module with unsaved changes for the library asks first. On a phone the Workspace drawer lists the library after its modules (or, in a Studio without a workspace, the library takes Details' place in the bottom bar); the Panel drawer holds the component list and the top bar's Details holds the sidebar.
 
 The page is one centred documentation column on the Studio surface. Details holds On this page (the sections as buttons, the one on screen marked), the playground with Reset (a number keeps what is typed and sends only a value it accepts), and the product theme with Contrast when themes pair with high-contrast versions; they drive every preview. Each preview has Preview and Code tabs, Phone width and Expand. A page keeps at most 4 frames live (`LIVE_FRAMES`), the playground first and then the nearest, mounting within 400 px of the viewport and unmounting beyond it; the nearest are measured again as the page scrolls or resizes, so a swap happens as previews pass and a page never holds a fifth frame; a preview without a frame keeps its size, and an expanded preview releases the page's frames while it is open.
 
@@ -134,6 +161,6 @@ Without a preview entry, live groups show the reason and their code.
 
 ## Verify
 
-Shell acceptance LB-01 to LB-10 in [shell](shell.md#acceptance-criteria) measure the library with the starter's synthetic example (`example/library/`, which also carries the example workspace); `VITE_STUDIO_ADAPTER=library npm run dev` runs it. A product's own library needs the product's checks: its preview entry's validation of scenarios and values, its documentation's accuracy and its components' floors.
+Shell acceptance LB-01 to LB-16 in [shell](shell.md#acceptance-criteria) measure the library with the starter's synthetic example (`example/library/`, which also carries the example workspace); `VITE_STUDIO_ADAPTER=library npm run dev` runs it, and `VITE_STUDIO_ADAPTER=sections npm run dev` runs the same library declared with sections and a cross-listed component (LB-11 to LB-16). A product's own library needs the product's checks: its preview entry's validation of scenarios and values, its documentation's accuracy and its components' floors.
 
 Out of scope: editing documentation in the Studio, playground values in links, and documentation code that runs in the Studio.

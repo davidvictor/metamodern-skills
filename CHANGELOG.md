@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.17.0 — 2026-10-06
+
+- Interface Studio 0.14.0: library sections. A component library can declare `sections` holding its groups, each group naming its section, and a component can be listed in other groups with `alsoIn`, opening the same page from each. With sections the library panel nests groups under their sections, in declared order (a cross-listed component keeps its place in the components list), and each section and group heading is a native button disclosure with `aria-expanded`, `aria-controls` and the number of listings beneath it, at two quiet levels with no badges. All start closed except the open page's home section and group, which open on every navigation, also where the viewer closed them; the viewer's toggles are kept per viewer under `studio.<adapter id>.library-open.v1`. Search shows each match with its Section › Group path, opens every branch holding a match and restores the open state when cleared. The breadcrumb reads product, library, home section, home group and component, and Go to lists each component once under its home section and group. Invalid sections or `alsoIn` fail the build by name. A library without sections, and a Studio without a library, are unchanged; sections add no request or capability, so offline exports behave the same.
+- Acceptance adds LB-11 to LB-16 on a sixth build, the example library declared with sections, and WS-01 and LB-01 measure the initial chunk against 0.13.2.
+
 ## 1.16.2 — 2026-10-06
 
 - Interface Studio 0.13.2 keeps Page Up and Page Down typed in a preview's text field from scrolling the Studio outside Apple platforms. Chromium there (measured on Linux) scrolls on those keys from a single-line or number field, and from a textarea or editable region whose selection already reaches that end, and the scroll reached the library page around the frame (745 px on a Text field page), which could unmount the preview. The frame client now cancels exactly those scrolls on every platform and leaves the caret where the browser leaves it; a page key that moves a textarea's caret, and Home and End outside Apple platforms, stay native, and Apple platforms behave as in 0.13.1.
