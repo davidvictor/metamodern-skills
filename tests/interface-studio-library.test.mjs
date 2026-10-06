@@ -309,7 +309,7 @@ test('LM-16 the library reference documents the contract and SKILL.md routes to 
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /`section`, `library` and `item` \(`RESERVED_LINK_KEYS`/);
   assert.match(readFileSync(new URL('references/updating.md', skill), 'utf8'), /`src\/library\/`/);
   const shellDoc = readFileSync(new URL('references/shell.md', skill), 'utf8');
-  assert.match(shellDoc, /LB-01 to LB-16/);
+  assert.match(shellDoc, /LB-01 to LB-17/);
   for (let i = 1; i <= 16; i++) assert.match(shellDoc, new RegExp(`^\\| LB-${String(i).padStart(2, '0')} \\|`, 'm'), `shell.md has no LB-${i} row`);
   assert.match(read('README.md'), /src\/library\//);
 });
@@ -319,7 +319,7 @@ test('LM-17 the library files ship with the starter', () => {
   for (const path of ['src/studio/library/schema.ts', 'src/studio/library/model.ts', 'src/studio/library/link.ts', 'src/studio/library/highlight.ts', 'src/studio/library/api.ts', 'src/studio/library/slots.tsx', 'src/studio/library/library-nav.tsx', 'src/studio/library/library-page.tsx', 'src/studio/library/rich-text.tsx', 'src/studio/library/code-block.tsx', 'src/studio/library/preview-block.tsx', 'src/library/index.ts', 'scripts/library-boundary.mjs', 'example/library/declaration.ts', 'example/library/adapter.ts', 'example/library/sections.ts', 'example/library/invalid.ts', 'example/library/index.ts', 'example/library/button.ts', 'example/library/icon-button.ts', 'example/library/text-field.ts', 'example/library/frame.html', 'example/library/frame.ts', 'example/library/library.css']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
-  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.14.0');
+  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.15.0');
 });
 
 test('LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported', async () => {
@@ -428,7 +428,7 @@ test('0.13.2 Page Up and Page Down typed in a field never scroll the Studio on a
   assert.match(script, /want: applePlatform \? "abQ\\ncd" : "ab\\ncdQ"/, 'a native Page Down that moves a textarea caret stays native');
   assert.match(script, /line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,area PageDown:true,area PageUp:true,number PageDown:true,combo PageDown:false/);
   assert.match(script, /area\.selection === "abQ" && area\.number\.join\(\) === "5,5"/, 'a selection reaching the end and a number field, natively');
-  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.13\.2"/);
+  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.14\.0"/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /Outside Apple platforms Home and End are native caret moves/);
   assert.match(read('UPDATING.md'), /^## 0\.13\.2$/m);
 });
@@ -490,6 +490,9 @@ test('0.14.0 invalid sections and alsoIn are named, and the panel, Go to and bre
     const script = read('scripts/acceptance.mjs');
     for (const id of ['LB-11', 'LB-12', 'LB-13', 'LB-14', 'LB-15', 'LB-16']) assert.match(script, new RegExp(`await check\\("${id}"`), `acceptance has no ${id}`);
     assert.match(script, /sections: "sections"/);
+    assert.match(types, /wide\?: boolean/);
+    assert.match(read('src/studio/library/model.ts'), /wide must be true or false/);
+    assert.match(read('src/studio/library/preview-block.tsx'), /width: "min\(150%, 100cqw - 2 \* var\(--library-gutter\)\)"/);
     assert.match(read('vite.config.ts'), /VITE_STUDIO_LIBRARY === "invalid"/);
   });
 });

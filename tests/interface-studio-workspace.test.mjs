@@ -507,8 +507,8 @@ test('WM-15 the workspace reference documents the contract and SKILL.md routes t
   assert.match(readFileSync(new URL('references/updating.md', skill), 'utf8'), /--accept-kit/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /## Product output in workspace modules/);
   const shellDoc = readFileSync(new URL('references/shell.md', skill), 'utf8');
-  assert.match(shellDoc, /WS-01 to WS-10/);
-  for (const id of ['WS-01', 'WS-02', 'WS-03', 'WS-04', 'WS-05', 'WS-05b', 'WS-06', 'WS-06b', 'WS-07', 'WS-08', 'WS-09', 'WS-10', 'AC-61', 'AC-62', 'AC-63', 'AC-64']) assert.match(shellDoc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
+  assert.match(shellDoc, /WS-01 to WS-15/);
+  for (const id of ['WS-01', 'WS-02', 'WS-03', 'WS-04', 'WS-05', 'WS-05b', 'WS-06', 'WS-06b', 'WS-07', 'WS-08', 'WS-09', 'WS-10', 'WS-11', 'WS-12', 'WS-13', 'WS-14', 'WS-15', 'AC-61', 'AC-62', 'AC-63', 'AC-64', 'AC-69']) assert.match(shellDoc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
   assert.match(shellDoc, /x-studio-expected-revision/);
   assert.match(read('README.md'), /src\/workspace\//);
 });
@@ -544,4 +544,47 @@ test('WM-16 the workspace files ship with the starter', () => {
   for (const path of ['src/studio/workspace/declaration.ts', 'src/studio/workspace/link.ts', 'src/studio/workspace/operations.ts', 'src/studio/workspace/stores.ts', 'src/studio/workspace/context.ts', 'src/studio/workspace/api.ts', 'src/studio/workspace/slots.tsx', 'src/studio/workspace/workspace-nav.tsx', 'src/studio/workspace/workspace-page.tsx', 'src/kit/index.ts', 'src/workspace/index.ts', 'scripts/workspace-boundary.mjs', 'example/workspace/adapter.ts', 'example/workspace/index.ts', 'example/workspace/orphan.ts', 'example/workspace/site.tsx', 'example/workspace/mock-host.mjs']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
+});
+
+test('WM-17 0.15.0: groups, host-free modules, items, SelectList and step keys are public, documented and measured', () => {
+  const kit = read('src/kit/index.ts');
+  assert.match(kit, /export \{ SelectList, type SelectListGroup, type SelectListItem, type SelectListProps \} from "\.\/select-list"/);
+  assert.match(kit, /KIT_VERSION = "studio-kit\/1"/, 'SelectList is additive within studio-kit/1');
+  const list = read('src/kit/select-list.tsx');
+  assert.match(list, /role="listbox"/);
+  assert.match(list, /role="group" aria-labelledby/);
+  assert.match(list, /aria-selected=\{selected\}/);
+  assert.match(list, /tabIndex=\{item\.id === stop \? 0 : -1\}/, 'one tab stop');
+  assert.match(list, /ArrowDown: "next", j: "next", ArrowUp: "previous", k: "previous", Home: "first", End: "last"/);
+  const api = read('src/studio/workspace/api.ts');
+  assert.match(api, /export function useStepKeys\(onPrevious: \(\) => void, onNext: \(\) => void\)/);
+  assert.match(api, /e\.defaultPrevented \|\| e\.isComposing \|\| e\.metaKey \|\| e\.ctrlKey \|\| e\.altKey \|\| e\.shiftKey/);
+  const context = read('src/studio/workspace/context.ts');
+  assert.match(context, /item: string \| null/);
+  assert.match(context, /setItem: \(item: string \| null\) => void/);
+  const page = read('src/studio/workspace/workspace-page.tsx');
+  assert.match(page, /go: \(next\) => set\(\{ section: next, item: null \}\)/, 'go(section) clears the item');
+  assert.match(page, /setItem: \(next\) => set\(\{ item: validItem\(next\) \}\)/);
+  const nav = read('src/studio/workspace/workspace-nav.tsx');
+  assert.match(nav, /if \(module === at\.module && section === at\.section\) return/, 'only a module or section change pushes history');
+  assert.match(nav, /startsGroup\(modules, i\)/);
+  const types = read('src/studio/types.ts');
+  assert.match(types, /group\?: string/);
+  assert.match(types, /uses\?: WorkspaceOperationUse\[\]/);
+  const script = read('scripts/acceptance.mjs');
+  for (const id of ['WS-11', 'WS-12', 'WS-13', 'WS-14', 'WS-15', 'LB-17', 'AC-69']) assert.match(script, new RegExp(`await check\\("${id}"`), `acceptance has no ${id}`);
+  assert.match(script, /static: "static"/);
+  assert.ok(existsSync(new URL('example/static-adapter.ts', shell)));
+  const doc = readFileSync(new URL('references/workspace.md', skill), 'utf8');
+  for (const term of ['group', 'host-free', 'setItem', 'item=', 'SelectList', 'useStepKeys', 'replaces the current entry']) assert.ok(doc.includes(term), `workspace.md lacks ${term}`);
+  const verification = readFileSync(new URL('references/verification.md', skill), 'utf8');
+  for (const term of ['## Publishing to a static host', 'allowedOrigins', 'Access-Control-Allow-Origin', 'frame-ancestors', 'connect-src', 'host-free']) assert.ok(verification.includes(term), `verification.md lacks ${term}`);
+  assert.doesNotMatch(verification, /[\u2013\u2014]/);
+  assert.match(read('UPDATING.md'), /^## 0\.15\.0$/m);
+});
+
+test('WM-18 a sandbox without allow-same-origin makes every preview frame opaque, wherever it is served', () => {
+  const host = read('src/studio/live-preview.tsx');
+  assert.match(host, /const sandboxed = isolation\?\.sandbox !== undefined && !isolation\.sandbox\.split\(\/\\s\+\/\)\.includes\("allow-same-origin"\)/);
+  assert.match(host, /const expectedOrigin = sandboxed \? "null" : \(origin \?\? \(location\.origin === "null" \? "null" : new URL\(src, location\.href\)\.origin\)\)/);
 });

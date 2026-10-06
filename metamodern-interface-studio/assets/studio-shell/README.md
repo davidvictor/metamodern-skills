@@ -70,7 +70,8 @@ src/
 example/                     synthetic example product preview entry (replace)
 example/workspace/           synthetic example workspace and mock operations host for the acceptance suite (remove with example/)
 example/library/             synthetic example library: declaration, documentation and preview entry for the acceptance suite (remove with example/)
-scripts/acceptance.mjs       measures AC-01 to AC-68, WS-01 to WS-10 and LB-01 to LB-16 in headless Chromium
+example/static-adapter.ts    the example as published to a static host (opaque frames, host-free grouped modules, a wide component) for the acceptance suite (remove with example/)
+scripts/acceptance.mjs       measures AC-01 to AC-69, WS-01 to WS-15 and LB-01 to LB-17 in headless Chromium
 scripts/saved-file.ts        the dev server's layouts and scenarios endpoints, with revisions
 scripts/workspace-boundary.mjs   the lint rule that keeps module code to @studio/kit and @studio/workspace
 scripts/library-boundary.mjs     the lint rule that keeps documentation to @studio/library
