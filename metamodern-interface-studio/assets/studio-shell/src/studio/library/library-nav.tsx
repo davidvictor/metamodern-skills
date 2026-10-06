@@ -15,14 +15,18 @@ import { Button } from "@/components/ui/button"
 import { BreadcrumbItem, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { CommandGroup, CommandItem, CommandSeparator } from "@/components/ui/command"
 import { Icon } from "@/kit/icons"
-import { groupedComponents, LIBRARY_LABEL, libraryProblems } from "./model"
+import { groupedComponents, homePath, LIBRARY_LABEL, libraryProblems } from "./model"
 import { parseLibraryLink } from "./link"
 import { openingLibraryLink } from "./slots"
 
 const decl = adapter.library ?? { groups: [], components: [] }
 const LABEL = decl.label ?? LIBRARY_LABEL
 const ICON = decl.icon ?? "layers"
-const groups = groupedComponents(decl)
+/** Each component once, under its home group: Go to and the rail's first page. */
+const groups = groupedComponents(decl, decl.components, true)
+const sectionLabel = new Map((decl.sections ?? []).map((x) => [x.id, x.label]))
+/** A group's place in Go to: the section and the group with sections, else the group. */
+const placeOf = (g: { label: string; section?: string }) => (g.section && sectionLabel.has(g.section) ? `${sectionLabel.get(g.section)} › ${g.label}` : g.label)
 const first = groups[0]?.components[0]?.id ?? null
 /** The component viewed last, so the rail returns to it. */
 let last: string | null = null
@@ -68,7 +72,10 @@ function RailItem({ labels }: { labels: boolean }) {
   )
 }
 
-/** One Go to group per library group, in the declared order, each after a separator (Go to places them after Scenarios). */
+/**
+ * One Go to group per library group, in the declared order, each after a separator (Go to places them after Scenarios).
+ * With sections a group's heading names its section too; a cross-listed component appears once, under its home group.
+ */
 function Commands({ onDone }: { onDone: () => void }) {
   const s = useStudio()
   return (
@@ -76,11 +83,11 @@ function Commands({ onDone }: { onDone: () => void }) {
       {groups.map((g) => (
         <React.Fragment key={g.id}>
           <CommandSeparator />
-          <CommandGroup heading={`${LABEL}: ${g.label}`}>
+          <CommandGroup heading={`${LABEL}: ${placeOf(g)}`}>
             {g.components.map((c) => (
               <CommandItem
                 key={c.id}
-                value={`library ${LABEL} ${g.label} ${c.label} ${c.id} ${(c.keywords ?? []).join(" ")}`}
+                value={`library ${LABEL} ${placeOf(g)} ${c.label} ${c.id} ${(c.keywords ?? []).join(" ")}`}
                 onSelect={() => {
                   onDone()
                   s.set(openPatch(c.id))
@@ -88,7 +95,7 @@ function Commands({ onDone }: { onDone: () => void }) {
               >
                 <Icon name={ICON} />
                 {c.label}
-                <span className="text-muted-foreground">{g.label}</span>
+                <span className="text-muted-foreground">{placeOf(g)}</span>
               </CommandItem>
             ))}
           </CommandGroup>
@@ -122,16 +129,23 @@ function DrawerEntry() {
   )
 }
 
-/** Product, then the library, its group and the component. */
+/** Product, then the library, the component's home section (with sections) and group, and the component. */
 function Crumbs() {
   const s = useStudio()
-  const c = decl.components.find((x) => x.id === s.library)
-  const g = decl.groups.find((x) => x.id === c?.group)
+  const { section: x, group: g, component: c } = homePath(decl, s.library)
   return (
     <>
       <BreadcrumbItem className="hidden min-w-0 sm:inline-flex">
         <span className="truncate">{LABEL}</span>
       </BreadcrumbItem>
+      {x && (
+        <>
+          <BreadcrumbSeparator className="hidden md:inline-flex" />
+          <BreadcrumbItem className="hidden min-w-0 md:inline-flex">
+            <span className="truncate">{x.label}</span>
+          </BreadcrumbItem>
+        </>
+      )}
       {g && (
         <>
           <BreadcrumbSeparator className="hidden md:inline-flex" />

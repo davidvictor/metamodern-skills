@@ -28,7 +28,7 @@ try {
 }
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
-const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace", library: "library" }
+const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace", library: "library", sections: "sections" }
 // WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.13.1), gzipped, built with the example
 // product. A Studio that declares neither a workspace nor a library may grow by at most 3 KB over it. Each release moves
 // it to the release before it.
@@ -53,9 +53,10 @@ const listen = async (name, server) => {
 for (const [name, variant] of Object.entries(builds)) {
   const out = join(root, ".acceptance", name)
   execFileSync("npx", ["vite", "build", "--outDir", out, "--emptyOutDir", "--logLevel", "error"], { cwd: root, env: { ...process.env, ...(variant ? { VITE_STUDIO_ADAPTER: variant } : {}) }, stdio: "inherit" })
-  // The library build carries the example workspace too, so it is served with its own mock host.
-  if (name === "workspace" || name === "library") servers[name] = { host: createMockHost() }
-  await listen(name, serve(out, name === "workspace" || name === "library" ? () => servers[name].host : null))
+  // The library builds carry the example workspace too, so each is served with its own mock host.
+  const hosted = name === "workspace" || name === "library" || name === "sections"
+  if (hosted) servers[name] = { host: createMockHost() }
+  await listen(name, serve(out, hosted ? () => servers[name].host : null))
 }
 await listen("nohost", serve(join(root, ".acceptance", "workspace"), null))
 
@@ -4757,6 +4758,268 @@ await check("LB-10", async () => {
   await c.closeAll()
   const ok = srcs.length >= 1 && srcs.every((s) => s === entry) && !foreign.length && docs.sections === 12 && docs.code >= 1 && capture.frames === 0 && capture.loaded && !!capture.alt && capture.label && !errors.length
   return [ok ? "pass" : "fail", `served from the built files: ${docs.sections} sections and ${docs.code} code samples; ${srcs.length} frames, ${srcs.every((s) => s === entry) ? "every one" : "not every one"} at ${entry.replace(servers.library.url, "./")}; requests off the Studio's origin ${foreign.length ? foreign.slice(0, 3).join(", ") : "none"}; the Pressed capture loaded ${capture.loaded} with alt "${capture.alt}", ${capture.frames} frames and ${capture.label ? "the Static capture label" : "no label"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// ---------- Library sections (LB-11 to LB-16, references/library.md) ----------
+// The sections build declares the example library with two sections holding three groups, Switch at home in Controls ›
+// Toggles and also listed under Forms › Inputs, and Switch before Text field in its components (example/library/sections.ts).
+
+const OPEN_KEY = "studio.example-tasks.library-open.v1"
+const openSections = async (hash, o = {}) => {
+  servers.sections.host = createMockHost()
+  const p = await open("sections", { ...o, hash })
+  if (/library=/.test(hash)) await poll(() => libTitle(p), Boolean, 8000)
+  return p
+}
+/** The panel's disclosures in order: level, label, count, open, a native button wired to its region, and an open group's listings. */
+const outline = (p) =>
+  p.evaluate(() =>
+    [...document.querySelectorAll('nav[aria-label="Components"] [data-library-disclosure]')].map((b) => {
+      const region = document.getElementById(b.getAttribute("aria-controls") ?? "")
+      const open = b.getAttribute("aria-expanded") === "true"
+      const shown = b.dataset.libraryDisclosure === "group" && region && !region.closest("[hidden]")
+      return {
+        level: b.dataset.libraryDisclosure,
+        label: b.querySelector("span:not([data-library-count])")?.textContent ?? "",
+        count: Number(b.querySelector("[data-library-count]")?.textContent),
+        open,
+        wired: b.tagName === "BUTTON" && b.getAttribute("type") === "button" && !!region && region.hidden === !open,
+        items: shown ? [...region.querySelectorAll("li button")].map((i) => ({ label: (i.firstElementChild?.matches("span") ? i.firstElementChild.textContent : i.textContent).trim(), path: i.querySelector("[data-library-path]")?.textContent ?? null, current: i.getAttribute("aria-current") === "page" })) : null,
+      }
+    })
+  )
+const shape = (o) => o.map((d) => `${d.level === "group" ? "/" : ""}${d.label}(${d.count})${d.open ? "+" : "-"}${d.items ? `[${d.items.map((i) => `${i.label}${i.path ? ` @ ${i.path}` : ""}${i.current ? "*" : ""}`).join(", ")}]` : ""}`).join(" ")
+const disclosureOf = (p, label) => p.locator('nav[aria-label="Components"] [data-library-disclosure]', { hasText: label }).first()
+const crumbs = (p) => p.evaluate(() => [...document.querySelectorAll('[data-slot="breadcrumb-item"]')].map((e) => e.textContent.trim()).filter(Boolean).join(" › "))
+const goTo = async (p, text) => {
+  await p.keyboard.press("ControlOrMeta+k")
+  await wait(400)
+  await p.keyboard.type(text)
+  await wait(300)
+  await p.keyboard.press("Enter")
+  await poll(() => libTitle(p), (t) => t === text, 8000)
+  await wait(300)
+}
+const searchFor = async (p, text) => {
+  await p.locator("#library-search").fill(text)
+  await wait(300)
+}
+
+// LB-11 Without sections the library is listed exactly as before: flat group headings in declared order, no disclosures, Go to
+// groups and the breadcrumb by group, and nothing stored for disclosures
+await check("LB-11", async () => {
+  const p = await openLibrary("library=button")
+  const flat = await p.evaluate(() => {
+    const nav = document.querySelector('nav[aria-label="Components"]')
+    return {
+      disclosures: nav.querySelectorAll("[data-library-disclosure], [data-library-section], [aria-expanded]").length,
+      groups: [...nav.querySelectorAll("[data-library-group]")].map((g) => `${g.querySelector(":scope > h3")?.textContent}: ${[...g.querySelectorAll("li button")].map((b) => b.textContent).join(", ")}`),
+    }
+  })
+  const crumb = await crumbs(p)
+  await p.keyboard.press("ControlOrMeta+k")
+  await wait(400)
+  const headings = (await p.locator("[cmdk-group-heading]").allTextContents()).filter((h) => h.startsWith("Library"))
+  await p.keyboard.press("Escape")
+  await searchFor(p, "inputs")
+  const found = await p.evaluate(() => [...document.querySelectorAll('nav[aria-label="Components"] li button')].map((b) => b.textContent).join(", "))
+  const stored = await p.evaluate((k) => localStorage.getItem(k), OPEN_KEY)
+  const errors = [...p.errors]
+  await p.closeAll()
+  const ok = flat.disclosures === 0 && flat.groups.join(" | ") === "Actions: Button, Icon button | Inputs: Text field, Switch" && crumb === "Example Tasks › Library › Actions › Button" && headings.join(" | ") === "Library: Actions | Library: Inputs" && found === "Text field, Switch" && stored === null && !errors.length
+  return [ok ? "pass" : "fail", `without sections: ${flat.disclosures} disclosures; groups ${flat.groups.join(" | ")}; breadcrumb ${crumb}; Go to ${headings.join(", ")}; "inputs" found ${found}; disclosure storage ${stored ?? "empty"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-12 With sections the panel nests groups under sections in declared order (a cross-listed component at its place in the
+// components list); each section and group heading is a native button disclosure with aria-expanded, aria-controls and a count of the
+// listings beneath; Tab reaches them with a visible focus indicator, Enter and Space toggle them; touch targets are 44 px
+await check("LB-12", async () => {
+  const p = await openSections("library=button")
+  const start = await outline(p)
+  await p.locator("#library-search").focus()
+  const walk = []
+  const step = async (key) => {
+    await p.keyboard.press(key)
+    await wait(150)
+    walk.push(
+      await p.evaluate(() => {
+        const e = document.activeElement
+        const cs = getComputedStyle(e)
+        return { name: (e.dataset.libraryDisclosure ? `${e.dataset.libraryDisclosure}:` : "") + (e.querySelector?.("span:not([data-library-count])")?.textContent ?? e.textContent).trim(), ring: e.matches(":focus-visible") && cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) >= 2 }
+      })
+    )
+  }
+  // Controls, Actions, Button, Icon button, Toggles (Enter opens it), Switch, Forms (Space opens it), Inputs (Enter opens it).
+  for (const key of ["Tab", "Tab", "Tab", "Tab", "Tab", "Enter", "Tab", "Tab", "Space", "Tab", "Enter"]) {
+    if (key === "Tab") await step(key)
+    else {
+      await p.keyboard.press(key)
+      await wait(200)
+    }
+  }
+  const full = await outline(p)
+  await p.keyboard.press("Enter")
+  await wait(200)
+  const closedByKey = (await outline(p)).find((d) => d.label === "Inputs")?.open === false
+  const errors = [...p.errors]
+  await p.closeAll()
+  const t = await openSections("library=switch", { width: 390, height: 844, touch: true })
+  await scenarioMenu(t, 390)
+  const heights = await t.evaluate(() => [...document.querySelectorAll("[data-library-disclosure]")].filter((b) => b.getClientRects().length).map((b) => Math.round(b.getBoundingClientRect().height)))
+  errors.push(...t.errors)
+  await t.closeAll()
+  const expectStart = "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)- /Inputs(2)-"
+  const expectFull = "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)+[Switch] Forms(2)+ /Inputs(2)+[Switch, Text field]"
+  const order = walk.map((w) => w.name).join(", ")
+  const ok =
+    shape(start) === expectStart &&
+    shape(full) === expectFull &&
+    full.every((d) => d.wired) &&
+    order === "section:Controls, group:Actions, Button, Icon button, group:Toggles, Switch, section:Forms, group:Inputs" &&
+    walk.every((w) => w.ring) &&
+    closedByKey &&
+    heights.length === 4 &&
+    heights.every((h) => h >= 44) &&
+    !errors.length
+  return [ok ? "pass" : "fail", `on Button: ${shape(start)}; after Tab with Enter and Space: ${shape(full)}; ${full.filter((d) => d.wired).length} of ${full.length} native buttons with aria-expanded matching their aria-controls region; Tab order ${order}; focus ring visible at ${walk.filter((w) => w.ring).length} of ${walk.length} stops; Enter closed Inputs ${closedByKey}; at 390 px touch the ${heights.length} disclosures measured ${heights.join(", ")} px; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-13 Disclosures start closed except the open page's branch; the viewer's toggles are kept per viewer, under the product's ID, across
+// reloads; the open page's branch opens on every navigation, also where the viewer closed it, and branches opened stay open
+await check("LB-13", async () => {
+  const p = await openSections("library=button")
+  const fresh = shape(await outline(p))
+  await disclosureOf(p, "Forms").click()
+  await disclosureOf(p, "Inputs").click()
+  await disclosureOf(p, "Actions").click()
+  await wait(200)
+  const toggled = shape(await outline(p))
+  const stored = await p.evaluate((k) => localStorage.getItem(k), OPEN_KEY)
+  await p.reload()
+  await poll(() => libTitle(p), Boolean, 8000)
+  await wait(800)
+  const reloaded = shape(await outline(p))
+  await disclosureOf(p, "Actions").click()
+  await wait(200)
+  const closedHere = (await outline(p)).find((d) => d.label === "Actions")?.open === false
+  await goTo(p, "Icon button")
+  const toIcon = shape(await outline(p))
+  await goTo(p, "Switch")
+  const toSwitch = shape(await outline(p))
+  await p.reload()
+  await poll(() => libTitle(p), Boolean, 8000)
+  await wait(800)
+  const reloadedOnSwitch = shape(await outline(p))
+  const errors = [...p.errors]
+  await p.closeAll()
+  const other = await openSections("library=switch")
+  const otherViewer = shape(await outline(other))
+  errors.push(...other.errors)
+  await other.closeAll()
+  const ok =
+    fresh === "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)- /Inputs(2)-" &&
+    toggled === "Controls(3)+ /Actions(2)- /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]" &&
+    stored === JSON.stringify({ "section:forms": true, "group:inputs": true, "group:actions": false }) &&
+    reloaded === "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]" &&
+    closedHere &&
+    toIcon === "Controls(3)+ /Actions(2)+[Button, Icon button*] /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]" &&
+    toSwitch === "Controls(3)+ /Actions(2)+[Button, Icon button] /Toggles(1)+[Switch*] Forms(2)+ /Inputs(2)+[Switch*, Text field]" &&
+    reloadedOnSwitch === "Controls(3)+ /Actions(2)- /Toggles(1)+[Switch*] Forms(2)+ /Inputs(2)+[Switch*, Text field]" &&
+    otherViewer === "Controls(3)+ /Actions(2)- /Toggles(1)+[Switch*] Forms(2)- /Inputs(2)-" &&
+    !errors.length
+  return [ok ? "pass" : "fail", `fresh on Button: ${fresh}; after opening Forms and Inputs and closing Actions: ${toggled}, stored under ${OPEN_KEY} as ${stored}; after a reload: ${reloaded}; closing Actions again held ${closedHere}; Go to Icon button: ${toIcon}; Go to Switch: ${toSwitch}; reloaded there: ${reloadedOnSwitch}; another viewer on Switch: ${otherViewer}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-14 Search shows each match with its path (Section › Group), opens every branch holding a match, finds by section and group
+// labels, and clearing it restores the open state from before, also after a branch was closed while searching
+await check("LB-14", async () => {
+  const p = await openSections("library=button")
+  const before = shape(await outline(p))
+  await searchFor(p, "switch")
+  const matches = shape(await outline(p))
+  const count = await p.evaluate(() => [...document.querySelectorAll("h2")].find((h) => h.textContent === "Library")?.nextElementSibling?.textContent ?? "")
+  await disclosureOf(p, "Forms").click()
+  await wait(200)
+  const closedWhileSearching = shape(await outline(p))
+  await searchFor(p, "forms")
+  const bySection = shape(await outline(p))
+  await searchFor(p, "")
+  const after = shape(await outline(p))
+  const stored = await p.evaluate((k) => localStorage.getItem(k), OPEN_KEY)
+  const errors = [...p.errors]
+  await p.closeAll()
+  const ok =
+    matches === "Controls(1)+ /Toggles(1)+[Switch @ Controls › Toggles] Forms(1)+ /Inputs(1)+[Switch @ Forms › Inputs]" &&
+    /1 of 4/.test(count) &&
+    closedWhileSearching === "Controls(1)+ /Toggles(1)+[Switch @ Controls › Toggles] Forms(1)- /Inputs(1)+" &&
+    bySection === "Controls(1)+ /Toggles(1)+[Switch @ Controls › Toggles] Forms(2)+ /Inputs(2)+[Switch @ Forms › Inputs, Text field @ Forms › Inputs]" &&
+    after === before &&
+    stored === null &&
+    !errors.length
+  return [ok ? "pass" : "fail", `before: ${before}; "switch": ${matches} (${count}); Forms closed while searching: ${closedWhileSearching}; "forms": ${bySection}; cleared: ${after}${after === before ? " (as before)" : ""}; storage ${stored ?? "untouched"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-15 A cross-listed component opens the same page from every listing, with its home path in the breadcrumb and Go to, where it
+// appears once; Go to's groups read Section › Group in order; no request leaves the Studio's origin
+await check("LB-15", async () => {
+  const p = await openSections("library=text-field")
+  const inputs = p.locator('nav[aria-label="Components"] [data-library-group="inputs"] li button', { hasText: "Switch" })
+  await inputs.click()
+  await poll(() => libTitle(p), (t) => t === "Switch", 8000)
+  await wait(300)
+  const fromInputs = { hash: await p.evaluate(() => location.hash), crumb: await crumbs(p), current: (await outline(p)).flatMap((d) => d.items ?? []).filter((i) => i.current).map((i) => i.label).join(", ") }
+  // Back to Text field, then Switch from its home listing.
+  await p.locator('nav[aria-label="Components"] [data-library-group="inputs"] li button', { hasText: "Text field" }).click()
+  await poll(() => libTitle(p), (t) => t === "Text field", 8000)
+  await p.locator('nav[aria-label="Components"] [data-library-group="toggles"] li button', { hasText: "Switch" }).click()
+  await poll(() => libTitle(p), (t) => t === "Switch", 8000)
+  await wait(300)
+  const fromToggles = { hash: await p.evaluate(() => location.hash), crumb: await crumbs(p), title: await libTitle(p) }
+  await p.keyboard.press("ControlOrMeta+k")
+  await wait(400)
+  const goToLib = await p.evaluate(() =>
+    [...document.querySelectorAll("[cmdk-group]")]
+      .filter((g) => g.querySelector("[cmdk-group-heading]")?.textContent.startsWith("Library"))
+      .map((g) => `${g.querySelector("[cmdk-group-heading]").textContent}: ${[...g.querySelectorAll("[cmdk-item]")].map((i) => [...i.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim()).join(", ")}`)
+  )
+  await p.keyboard.press("Escape")
+  const urls = []
+  for (const f of p.frames()) urls.push(f.url(), ...(await f.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name)).catch(() => [])))
+  const foreign = [...new Set(urls.filter((u) => u && !u.startsWith(servers.sections.url) && !u.startsWith("data:") && u !== "about:blank"))]
+  const errors = [...p.errors]
+  await p.closeAll()
+  const switches = goToLib.join(" ").match(/Switch/g)?.length ?? 0
+  const ok =
+    /library=switch/.test(fromInputs.hash) &&
+    fromInputs.crumb === "Example Tasks › Library › Controls › Toggles › Switch" &&
+    fromInputs.current === "Switch, Switch" &&
+    fromToggles.hash === fromInputs.hash &&
+    fromToggles.crumb === fromInputs.crumb &&
+    fromToggles.title === "Switch" &&
+    goToLib.length === 3 &&
+    goToLib.join(" | ") === "Library: Controls › Actions: Button, Icon button | Library: Controls › Toggles: Switch | Library: Forms › Inputs: Text field" &&
+    switches === 1 &&
+    !foreign.length &&
+    !errors.length
+  return [ok ? "pass" : "fail", `Switch under Inputs opened ${fromInputs.hash} with the breadcrumb ${fromInputs.crumb}, both listings current (${fromInputs.current}); from Text field, Switch under Toggles opened ${fromToggles.hash} (${fromToggles.title}) with ${fromToggles.crumb}; Go to: ${goToLib.join(" | ")}, Switch ${switches} time${switches === 1 ? "" : "s"}; requests outside the Studio's origin ${foreign.length ? foreign.slice(0, 3).join(", ") : "none"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-16 An invalid sectioned declaration fails the build, naming every problem: a duplicate section, a group naming an unknown section, a
+// group without a section, a component listing its home group in alsoIn and one naming an unknown group
+await check("LB-16", async () => {
+  const b = spawnSync("npx", ["vite", "build", "--outDir", join(root, ".acceptance", "invalid-sections"), "--emptyOutDir", "--logLevel", "error"], { cwd: root, encoding: "utf8", env: { ...process.env, VITE_STUDIO_ADAPTER: "sections", VITE_STUDIO_LIBRARY: "invalid" } })
+  const out = `${b.stdout}${b.stderr}`
+  const expected = [
+    'Section ID "controls" is declared twice',
+    'Group "toggles" names section "nowhere", which the library does not declare',
+    'Group "inputs" names no section; when the library declares sections every group needs one',
+    'Component "button" lists its home group "actions" in alsoIn',
+    'Component "button" is also listed in group "missing", which the library does not declare',
+  ]
+  const named = expected.filter((e) => out.includes(e))
+  rmSync(join(root, ".acceptance", "invalid-sections"), { recursive: true, force: true })
+  const ok = b.status !== 0 && /The adapter's library declaration is invalid/.test(out) && named.length === expected.length
+  return [ok ? "pass" : "fail", `the build ${b.status !== 0 ? "failed" : "succeeded"}${/The adapter's library declaration is invalid/.test(out) ? " with the library declaration invalid" : ""}, naming ${named.length} of ${expected.length} problems${named.length < expected.length ? `; missing ${expected.filter((e) => !named.includes(e)).join("; ")}` : ""}`]
 })
 
 await browser.close()

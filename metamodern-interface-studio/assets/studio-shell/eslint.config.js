@@ -56,7 +56,7 @@ export default defineConfig([
   {
     // Component documentation is data: it imports only @studio/library and its own files (references/library.md).
     files: ['src/library/**/*.{ts,tsx,js,jsx,mjs}', 'example/library/**/*.ts'],
-    ignores: ['example/library/adapter.ts', 'example/library/declaration.ts', 'example/library/frame.ts'],
+    ignores: ['example/library/adapter.ts', 'example/library/declaration.ts', 'example/library/frame.ts', 'example/library/sections.ts', 'example/library/invalid.ts'],
     plugins: { library: libraryBoundary },
     // Documentation is data: .ts, .js or .mjs only, so no JSX reaches it (library/files refuses .tsx and .jsx).
     rules: { 'library/imports': 'error', 'library/files': 'error' },

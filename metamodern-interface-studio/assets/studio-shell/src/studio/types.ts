@@ -351,16 +351,26 @@ export type WorkspaceDeclaration = {
   modules: WorkspaceModuleDeclaration[]
 }
 
+/** A top-level section of the component library, holding groups (references/library.md). */
+export type LibrarySection = { id: string; label: string }
+
 /** A group of the component library, in the product's own taxonomy (references/library.md). */
-export type LibraryGroup = { id: string; label: string }
+export type LibraryGroup = {
+  id: string
+  label: string
+  /** The ID of one of the library's sections. Required when the library declares sections, refused when it does not. */
+  section?: string
+}
 
 /** A component in the library's index. Its documentation is a product module in src/library/, loaded when its page opens. */
 export type LibraryComponent = {
   /** Stable ID: lowercase letters, digits and hyphens. Links carry it as `library=`. */
   id: string
   label: string
-  /** The ID of one of the library's groups. */
+  /** The ID of one of the library's groups: the component's home, which the breadcrumb and Go to use. */
   group: string
+  /** Other groups that also list the component, each opening the same page. Never the home group. */
+  alsoIn?: string[]
   /** One sentence, shown under the title and searched; at most 200 characters. */
   summary: string
   /** More words search finds it by. */
@@ -378,7 +388,12 @@ export type LibraryDeclaration = {
    * on the frame entry's origin. Defaults to `frameEntry`; without either, previews show their code and captures only.
    */
   entry?: string
-  /** In the order the panel and Go to list them. */
+  /**
+   * Optional top level: with sections the panel nests groups under them, and each section and group is a disclosure.
+   * Without them the panel lists the groups flat, as before.
+   */
+  sections?: LibrarySection[]
+  /** In the order the panel and Go to list them (within each section when there are sections). */
   groups: LibraryGroup[]
   /** In the order each group lists them. */
   components: LibraryComponent[]

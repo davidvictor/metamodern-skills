@@ -5,7 +5,7 @@
  * opens and checked before it renders.
  */
 import * as React from "react"
-import { PanelRightIcon, RotateCcwIcon, SearchIcon } from "lucide-react"
+import { ChevronRightIcon, PanelRightIcon, RotateCcwIcon, SearchIcon } from "lucide-react"
 import { toast } from "sonner"
 import library from "@/library"
 import { adapter } from "@/adapter"
@@ -19,8 +19,8 @@ import { SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuBu
 import { FidelityBadge, lookOf } from "@/components/studio/bits"
 import { EmptyState, Field } from "@/kit"
 import { INPUT, TARGET } from "@/kit/layout"
-import type { InputValue } from "@/studio/types"
-import { docsProblems, filterComponents, groupedComponents, LIBRARY_LABEL, noDocs, playgroundValue, playgroundValues, SECTIONS, undeclaredDocs, type SectionId } from "./model"
+import type { InputValue, LibraryComponent } from "@/studio/types"
+import { docsProblems, filterComponents, groupedComponents, homePath, LIBRARY_LABEL, sectionedComponents, noDocs, playgroundValue, playgroundValues, SECTIONS, undeclaredDocs, type SectionId } from "./model"
 import type { ComponentDocs, PlaygroundProperty } from "./schema"
 import { AdjustedNote, InlineText, OpenComponent, Rich } from "./rich-text"
 import { BudgetContext, PreviewBlock, useBudget } from "./preview-block"
@@ -61,6 +61,50 @@ const edits = store<Record<string, Record<string, InputValue>>>({})
 const active = store<SectionId | null>(null)
 /** Scrolls the open page to a section; set by the page while it is open. */
 const scrollTo: { current: ((id: SectionId, smooth: boolean) => void) | null } = { current: null }
+
+/** The viewer's own section and group toggles, kept per viewer and per product like the Studio's other preferences. */
+const OPEN_KEY = `studio.${adapter.id}.library-open.v1`
+function readOpen(): Record<string, boolean> {
+  try {
+    const v: unknown = JSON.parse(localStorage.getItem(OPEN_KEY) ?? "null")
+    return v && typeof v === "object" && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).filter(([, b]) => typeof b === "boolean")) : {}
+  } catch {
+    return {}
+  }
+}
+function writeOpen(value: Record<string, boolean>) {
+  try {
+    localStorage.setItem(OPEN_KEY, JSON.stringify(value))
+  } catch {
+    /* per-viewer convenience only */
+  }
+}
+/**
+ * Which sections and groups are open (keys `section:<id>` and `group:<id>`): closed by default. `open` starts from the
+ * viewer's kept toggles (`toggled`); each page opened opens its branch (its home section and group) in `open` only, so a
+ * branch the viewer closed opens again when a page in it opens, and a reload starts again from the viewer's toggles. While
+ * searching every branch with a match opens, and toggles made then (`searching`) are dropped when the search changes, so
+ * clearing it restores the open state from before.
+ */
+const disclosure = store(((toggled: Record<string, boolean>) => ({ toggled, open: toggled, searching: {} as Record<string, boolean> }))(readOpen()))
+type Disclosure = ReturnType<typeof disclosure.get>
+const isOpen = (d: Disclosure, key: string, searching: boolean) => (searching ? (d.searching[key] ?? true) : d.open[key] === true)
+function toggle(key: string, searching: boolean) {
+  const d = disclosure.get()
+  const next = !isOpen(d, key, searching)
+  if (searching) return disclosure.set({ ...d, searching: { ...d.searching, [key]: next } })
+  const toggled = { ...d.toggled, [key]: next }
+  writeOpen(toggled)
+  disclosure.set({ ...d, toggled, open: { ...d.open, [key]: next } })
+}
+/** Opens a page's branch: its home section and group. */
+function openBranch(id: string | null) {
+  const { section, group } = homePath(decl, id)
+  const d = disclosure.get()
+  if (!section || !group || (d.open[`section:${section.id}`] && d.open[`group:${group.id}`])) return
+  disclosure.set({ ...d, open: { ...d.open, [`section:${section.id}`]: true, [`group:${group.id}`]: true } })
+}
+
 
 type Loaded = { docs: ComponentDocs | null; problems: string[]; failed?: boolean }
 const loads = new Map<string, Promise<Loaded>>()
@@ -123,6 +167,8 @@ export function LibraryPage(props: PageProps) {
 function LibraryStage() {
   const s = useStudio()
   const [attempt, setAttempt] = React.useState(0)
+  // Each page opened opens its branch in the panel, also where the viewer closed it, before the panel paints.
+  React.useLayoutEffect(() => openBranch(s.library), [s.library])
   const c = decl.components.find((x) => x.id === s.library)
   if (!c) return null
   return (
@@ -325,11 +371,11 @@ function SectionBody({ id, docs, component, values }: { id: SectionId; docs: Com
   )
 }
 
-/** The context panel: components under their group headings, in the declared order, with search. */
+/** The context panel: components under their group headings (and sections, when declared), in the declared order, with search. */
 function LibraryPanel() {
-  const s = useStudio()
   const [query, setQuery] = React.useState("")
   const list = filterComponents(decl, query)
+  const tree = sectionedComponents(decl, list)
   return (
     <>
       <SidebarHeader className="gap-2 border-b p-3">
@@ -341,7 +387,18 @@ function LibraryPanel() {
         </div>
         <div data-kit>
           <InputGroup>
-            <InputGroupInput id="library-search" data-search value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search components" aria-label="Search components" className={INPUT} />
+            <InputGroupInput
+              id="library-search"
+              data-search
+              value={query}
+              onChange={(e) => {
+                if (Object.keys(disclosure.get().searching).length) disclosure.set({ ...disclosure.get(), searching: {} })
+                setQuery(e.target.value)
+              }}
+              placeholder="Search components"
+              aria-label="Search components"
+              className={INPUT}
+            />
             <InputGroupAddon>
               <SearchIcon />
             </InputGroupAddon>
@@ -350,25 +407,93 @@ function LibraryPanel() {
       </SidebarHeader>
       <SidebarContent data-kit>
         <nav aria-label="Components" className="py-1">
-          {groupedComponents(decl, list).map((g) => (
-            <SidebarGroup key={g.id} data-library-group={g.id}>
-              <h3 className="flex h-8 items-center px-3 text-xs font-medium text-muted-foreground">{g.label}</h3>
-              <SidebarMenu>
-                {g.components.map((c) => (
-                  <SidebarMenuItem key={c.id}>
-                    <SidebarMenuButton isActive={s.library === c.id} aria-current={s.library === c.id ? "page" : undefined} className="border border-transparent pointer-coarse:min-h-11" onClick={() => s.set({ library: c.id, libraryAt: null, mobilePanel: null })}>
-                      {c.label}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroup>
-          ))}
+          {tree ? (
+            <SectionTree tree={tree} searching={!!query.trim()} />
+          ) : (
+            groupedComponents(decl, list).map((g) => (
+              <SidebarGroup key={g.id} data-library-group={g.id}>
+                <h3 className="flex h-8 items-center px-3 text-xs font-medium text-muted-foreground">{g.label}</h3>
+                <ComponentList components={g.components} />
+              </SidebarGroup>
+            ))
+          )}
           {!list.length && <p className="px-4 py-3 text-sm text-muted-foreground">No component matches “{query}”.</p>}
         </nav>
       </SidebarContent>
     </>
   )
+}
+/** A group's components; while searching with sections, each says where it is listed. */
+function ComponentList({ components, path, nested }: { components: LibraryComponent[]; path?: string; nested?: boolean }) {
+  const s = useStudio()
+  return (
+    <SidebarMenu className={nested ? "pl-4" : undefined}>
+      {components.map((c) => (
+        <SidebarMenuItem key={c.id}>
+          <SidebarMenuButton isActive={s.library === c.id} aria-current={s.library === c.id ? "page" : undefined} className="border border-transparent pointer-coarse:min-h-11" onClick={() => s.set({ library: c.id, libraryAt: null, mobilePanel: null })}>
+            {path ? (
+              <>
+                <span className="min-w-0 truncate">{c.label}</span>
+                <span data-library-path className="ml-auto min-w-0 shrink truncate text-xs text-muted-foreground">
+                  {path}
+                </span>
+              </>
+            ) : (
+              c.label
+            )}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  )
+}
+
+const DISCLOSURE = "flex w-full items-center gap-1.5 rounded-md border border-transparent px-2 text-left hover:bg-sidebar-accent pointer-coarse:min-h-11"
+
+/** One disclosure: a native button naming the branch and how many listings it holds, and the region it opens. */
+function Disclosure({ level, id, label, count, open, onToggle, children }: { level: "section" | "group"; id: string; label: string; count: number; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+  const region = `${React.useId()}-${level}-${id}`
+  return (
+    <div data-library-section={level === "section" ? id : undefined} data-library-group={level === "group" ? id : undefined} className={level === "section" ? "px-2 py-1" : "pt-0.5 pl-2"}>
+      <button
+        type="button"
+        data-library-disclosure={level}
+        aria-expanded={open}
+        aria-controls={region}
+        onClick={onToggle}
+        className={cn(DISCLOSURE, level === "section" ? "min-h-8 text-sm font-medium text-sidebar-foreground" : "min-h-7 text-xs font-medium text-muted-foreground hover:text-foreground")}
+      >
+        <ChevronRightIcon aria-hidden className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none", open && "rotate-90")} />
+        <span className="min-w-0 flex-1 truncate">{label}</span>
+        <span data-library-count className="shrink-0 text-xs font-normal text-muted-foreground tabular-nums">
+          {count}
+        </span>
+      </button>
+      <div id={region} hidden={!open}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+/** Sections holding groups, each a disclosure; the open page's branch opens on navigation, and searching opens every match's branch. */
+function SectionTree({ tree, searching }: { tree: NonNullable<ReturnType<typeof sectionedComponents>>; searching: boolean }) {
+  const d = React.useSyncExternalStore(disclosure.subscribe, disclosure.get)
+  return tree.map((x) => {
+    const sectionKey = `section:${x.id}`
+    return (
+      <Disclosure key={x.id} level="section" id={x.id} label={x.label} count={x.groups.reduce((n, g) => n + g.components.length, 0)} open={isOpen(d, sectionKey, searching)} onToggle={() => toggle(sectionKey, searching)}>
+        {x.groups.map((g) => {
+          const groupKey = `group:${g.id}`
+          return (
+            <Disclosure key={g.id} level="group" id={g.id} label={g.label} count={g.components.length} open={isOpen(d, groupKey, searching)} onToggle={() => toggle(groupKey, searching)}>
+              <ComponentList nested components={g.components} path={searching ? `${x.label} › ${g.label}` : undefined} />
+            </Disclosure>
+          )
+        })}
+      </Disclosure>
+    )
+  })
 }
 
 /** Details on a library page: On this page, the playground and the preview theme. */
