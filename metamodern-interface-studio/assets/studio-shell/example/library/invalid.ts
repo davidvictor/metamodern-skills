@@ -12,6 +12,7 @@ export const adapter: StudioAdapter = {
     sections: [
       { id: "controls", label: "Controls" },
       { id: "controls", label: "Again" },
+      { id: "spare", label: "Spare" },
     ],
     groups: [
       { id: "actions", label: "Actions", section: "controls" },

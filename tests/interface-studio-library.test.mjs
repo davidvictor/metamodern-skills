@@ -462,6 +462,7 @@ test('0.14.0 invalid sections and alsoIn are named, and the panel, Go to and bre
   return loadPure('src/studio/library/model.ts').then(({ libraryProblems }) => {
     const problems = (decl) => libraryProblems(decl).join('\n');
     assert.match(problems({ ...sectioned, sections: [] }), /declares sections but lists none/);
+    assert.match(problems({ ...sectioned, sections: [...sectioned.sections, { id: 'spare', label: 'Spare' }] }), /Section "spare" holds no groups/);
     assert.match(problems({ ...sectioned, sections: [...sectioned.sections, { id: 'forms', label: ' ' }, { id: 'Bad', label: 'B' }] }), /Section ID "forms" is declared twice[\s\S]*Section "forms" has no label[\s\S]*Section ID "Bad" must be lowercase/);
     assert.match(problems({ ...sectioned, groups: [...sectioned.groups.slice(0, 2), { id: 'toggles', label: 'Toggles' }] }), /Group "toggles" names no section/);
     assert.match(problems({ ...sectioned, groups: [...sectioned.groups.slice(0, 2), { id: 'toggles', label: 'Toggles', section: 'nope' }] }), /Group "toggles" names section "nope", which the library does not declare/);
@@ -475,6 +476,8 @@ test('0.14.0 invalid sections and alsoIn are named, and the panel, Go to and bre
     assert.match(page, /aria-expanded=\{open\}/);
     assert.match(page, /aria-controls=\{region\}/);
     assert.match(page, /type="button"/);
+    assert.match(page, /const Heading = level === "section" \? "h3" : "h4"/, 'section and group buttons sit in headings');
+    assert.match(page, /"sr-only">\{count === 1 \? " component" : " components"\}/, 'the count is named');
     assert.match(page, /studio\.\$\{adapter\.id\}\.library-open\.v1/);
     assert.match(page, /React\.useLayoutEffect\(\(\) => openBranch\(s\.library\), \[s\.library\]\)/);
     const nav = read('src/studio/library/library-nav.tsx');

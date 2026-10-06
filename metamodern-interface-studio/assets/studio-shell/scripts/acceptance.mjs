@@ -3865,12 +3865,12 @@ const unfocused = async (p) => {
     window.__kitUnfocused = before
   })
 }
-const tabWalk = async (p, forced) => {
-  await p.evaluate(() => {
-    const h = document.querySelector("[data-kit] h1")
-    h.tabIndex = -1
+const tabWalk = async (p, forced, start = "[data-kit] h1") => {
+  await p.evaluate((sel) => {
+    const h = document.querySelector(sel)
+    if (h.tagName === "H1") h.tabIndex = -1
     h.focus()
-  })
+  }, start)
   const lost = []
   const faint = []
   const ratios = []
@@ -4648,13 +4648,21 @@ await check("LB-08", async () => {
   const notes = []
   const errors = []
   let ok = true
+  // The flat library, then the same library with sections, whose disclosures join the walk.
+  const openBuild = async (build, o) => {
+    servers[build].host = createMockHost()
+    const page = await open(build, { ...o, hash: "library=button" })
+    await poll(() => libTitle(page), Boolean, 8000)
+    return page
+  }
+  for (const build of ["library", "sections"])
   for (const appearance of ["light", "dark"]) {
-    const p = await openLibrary("library=button", { appearance })
+    const p = await openBuild(build, { appearance })
     await frameReady(p, "playground")
     await wait(600)
     const low = await contrast(p)
     await unfocused(p)
-    const focus = await tabWalk(p, false)
+    const focus = await tabWalk(p, false, build === "sections" ? "#library-search" : undefined)
     await p.emulateMedia({ reducedMotion: "reduce" })
     const moving = await p.evaluate(() => [...document.querySelectorAll("[data-kit], [data-kit] *")].filter((e) => {
       const s = getComputedStyle(e)
@@ -4662,13 +4670,13 @@ await check("LB-08", async () => {
     }).length)
     await p.emulateMedia({ reducedMotion: "reduce", forcedColors: "active" })
     await unfocused(p)
-    const forced = await tabWalk(p, true)
+    const forced = await tabWalk(p, true, build === "sections" ? "#library-search" : undefined)
     const borderless = await boundaryless(p)
     errors.push(...p.errors)
     await p.closeAll()
     const touch = {}
     for (const width of [390, 768]) {
-      const t = await openLibrary("library=button", { appearance, width, height: 844, touch: true })
+      const t = await openBuild(build, { appearance, width, height: 844, touch: true })
       await wait(800)
       if (width < 768) {
         await t.locator('header button[aria-label="Details"]').click()
@@ -4681,7 +4689,7 @@ await check("LB-08", async () => {
     const small = Object.entries(touch).flatMap(([w, m]) => [...m.small.map((x) => `${w}: ${x.n} ${x.w}x${x.h}`), ...m.smallText.map((x) => `${w}: ${x.n} text ${x.text}px`), ...(m.count ? [] : [`${w}: no controls`])])
     const fine = !low.length && focus.reached >= 6 && !focus.lost.length && !focus.faint.length && moving === 0 && forced.reached >= 6 && !forced.lost.length && !borderless.length && !small.length
     ok &&= fine
-    notes.push(`${appearance}: text below AA ${low.length ? low.slice(0, 4).join(", ") : "none"}; focus visible on ${focus.reached - focus.lost.length} of ${focus.reached} stops${focus.lost.length ? ` (none on ${focus.lost.join(", ")})` : ""}, lowest ${focus.min.toFixed(2)}:1${focus.faint.length ? ` (under 3:1 on ${focus.faint.join(", ")})` : ""}; ${moving} elements moving under reduced motion; in forced colors focus outlined on ${forced.reached - forced.lost.length} of ${forced.reached}${borderless.length ? `, without a drawn boundary ${borderless.slice(0, 4).join(", ")}` : ", every control keeps a boundary"}; touch ${small.length ? `misses ${small.slice(0, 6).join(", ")}` : "every target at least 44 px with 16 px input text at 390 px (Details open) and 768 px"}`)
+    notes.push(`${build === "sections" ? "with sections, " : ""}${appearance}: text below AA ${low.length ? low.slice(0, 4).join(", ") : "none"}; focus visible on ${focus.reached - focus.lost.length} of ${focus.reached} stops${focus.lost.length ? ` (none on ${focus.lost.join(", ")})` : ""}, lowest ${focus.min.toFixed(2)}:1${focus.faint.length ? ` (under 3:1 on ${focus.faint.join(", ")})` : ""}; ${moving} elements moving under reduced motion; in forced colors focus outlined on ${forced.reached - forced.lost.length} of ${forced.reached}${borderless.length ? `, without a drawn boundary ${borderless.slice(0, 4).join(", ")}` : ", every control keeps a boundary"}; touch ${small.length ? `misses ${small.slice(0, 6).join(", ")}` : "every target at least 44 px with 16 px input text at 390 px (Details open) and 768 px"}`)
   }
   if (errors.length) {
     ok = false
@@ -4791,18 +4799,29 @@ const outline = (p) =>
 const shape = (o) => o.map((d) => `${d.level === "group" ? "/" : ""}${d.label}(${d.count})${d.open ? "+" : "-"}${d.items ? `[${d.items.map((i) => `${i.label}${i.path ? ` @ ${i.path}` : ""}${i.current ? "*" : ""}`).join(", ")}]` : ""}`).join(" ")
 const disclosureOf = (p, label) => p.locator('nav[aria-label="Components"] [data-library-disclosure]', { hasText: label }).first()
 const crumbs = (p) => p.evaluate(() => [...document.querySelectorAll('[data-slot="breadcrumb-item"]')].map((e) => e.textContent.trim()).filter(Boolean).join(" › "))
-const goTo = async (p, text) => {
+/** The panel's shape once it reads `expected` (or the last reading when it never does). */
+const shapeWhen = (p, expected, ms = 5000) => poll(async () => shape(await outline(p)), (v) => v === expected, ms)
+const openGoTo = async (p) => {
   await p.keyboard.press("ControlOrMeta+k")
-  await wait(400)
+  await p.locator("[cmdk-input]").waitFor({ state: "visible", timeout: 5000 })
+  await poll(() => p.locator("[cmdk-group-heading]").count(), (n) => n > 0)
+}
+const closeGoTo = async (p) => {
+  await p.keyboard.press("Escape")
+  await p.locator("[cmdk-input]").waitFor({ state: "detached", timeout: 5000 })
+}
+const goTo = async (p, text) => {
+  await openGoTo(p)
   await p.keyboard.type(text)
-  await wait(300)
+  await poll(() => p.locator('[cmdk-item][data-selected="true"]').first().textContent({ timeout: 500 }).catch(() => ""), (t) => t.startsWith(text))
   await p.keyboard.press("Enter")
   await poll(() => libTitle(p), (t) => t === text, 8000)
-  await wait(300)
+  await p.locator("[cmdk-input]").waitFor({ state: "detached", timeout: 5000 })
 }
-const searchFor = async (p, text) => {
+/** Types a search and waits for the panel's count to follow it. */
+const searchFor = async (p, text, matches) => {
   await p.locator("#library-search").fill(text)
-  await wait(300)
+  await poll(() => p.evaluate(() => [...document.querySelectorAll("h2")].find((h) => h.textContent === "Library")?.nextElementSibling?.textContent ?? ""), (c) => c.startsWith(`${matches} of `))
 }
 
 // LB-11 Without sections the library is listed exactly as before: flat group headings in declared order, no disclosures, Go to
@@ -4817,11 +4836,10 @@ await check("LB-11", async () => {
     }
   })
   const crumb = await crumbs(p)
-  await p.keyboard.press("ControlOrMeta+k")
-  await wait(400)
+  await openGoTo(p)
   const headings = (await p.locator("[cmdk-group-heading]").allTextContents()).filter((h) => h.startsWith("Library"))
-  await p.keyboard.press("Escape")
-  await searchFor(p, "inputs")
+  await closeGoTo(p)
+  await searchFor(p, "inputs", 2)
   const found = await p.evaluate(() => [...document.querySelectorAll('nav[aria-label="Components"] li button')].map((b) => b.textContent).join(", "))
   const stored = await p.evaluate((k) => localStorage.getItem(k), OPEN_KEY)
   const errors = [...p.errors]
@@ -4835,12 +4853,16 @@ await check("LB-11", async () => {
 // listings beneath; Tab reaches them with a visible focus indicator, Enter and Space toggle them; touch targets are 44 px
 await check("LB-12", async () => {
   const p = await openSections("library=button")
-  const start = await outline(p)
+  const expectStart = "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)- /Inputs(2)-"
+  const expectFull = "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)+[Switch] Forms(2)+ /Inputs(2)+[Switch, Text field]"
+  const start = await poll(() => outline(p), (o) => shape(o) === expectStart)
   await p.locator("#library-search").focus()
   const walk = []
+  const active = () => p.evaluate(() => document.activeElement?.outerHTML.slice(0, 300) ?? "")
   const step = async (key) => {
+    const before = await active()
     await p.keyboard.press(key)
-    await wait(150)
+    await poll(active, (now) => now !== before)
     walk.push(
       await p.evaluate(() => {
         const e = document.activeElement
@@ -4854,13 +4876,12 @@ await check("LB-12", async () => {
     if (key === "Tab") await step(key)
     else {
       await p.keyboard.press(key)
-      await wait(200)
+      await poll(() => p.evaluate(() => document.activeElement?.getAttribute("aria-expanded")), (v) => v === "true")
     }
   }
-  const full = await outline(p)
+  const full = await poll(() => outline(p), (o) => shape(o) === expectFull)
   await p.keyboard.press("Enter")
-  await wait(200)
-  const closedByKey = (await outline(p)).find((d) => d.label === "Inputs")?.open === false
+  const closedByKey = (await poll(() => outline(p), (o) => o.find((d) => d.label === "Inputs")?.open === false)).find((d) => d.label === "Inputs")?.open === false
   const errors = [...p.errors]
   await p.closeAll()
   const t = await openSections("library=switch", { width: 390, height: 844, touch: true })
@@ -4868,8 +4889,6 @@ await check("LB-12", async () => {
   const heights = await t.evaluate(() => [...document.querySelectorAll("[data-library-disclosure]")].filter((b) => b.getClientRects().length).map((b) => Math.round(b.getBoundingClientRect().height)))
   errors.push(...t.errors)
   await t.closeAll()
-  const expectStart = "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)- /Inputs(2)-"
-  const expectFull = "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)+[Switch] Forms(2)+ /Inputs(2)+[Switch, Text field]"
   const order = walk.map((w) => w.name).join(", ")
   const ok =
     shape(start) === expectStart &&
@@ -4888,44 +4907,50 @@ await check("LB-12", async () => {
 // reloads; the open page's branch opens on every navigation, also where the viewer closed it, and branches opened stay open
 await check("LB-13", async () => {
   const p = await openSections("library=button")
-  const fresh = shape(await outline(p))
+  const want = {
+    fresh: "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)- /Inputs(2)-",
+    toggled: "Controls(3)+ /Actions(2)- /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]",
+    reloaded: "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]",
+    closedHere: "Controls(3)+ /Actions(2)- /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]",
+    toIcon: "Controls(3)+ /Actions(2)+[Button, Icon button*] /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]",
+    toSwitch: "Controls(3)+ /Actions(2)+[Button, Icon button] /Toggles(1)+[Switch*] Forms(2)+ /Inputs(2)+[Switch*, Text field]",
+    reloadedOnSwitch: "Controls(3)+ /Actions(2)- /Toggles(1)+[Switch*] Forms(2)+ /Inputs(2)+[Switch*, Text field]",
+    otherViewer: "Controls(3)+ /Actions(2)- /Toggles(1)+[Switch*] Forms(2)- /Inputs(2)-",
+  }
+  const fresh = await shapeWhen(p, want.fresh)
   await disclosureOf(p, "Forms").click()
   await disclosureOf(p, "Inputs").click()
   await disclosureOf(p, "Actions").click()
-  await wait(200)
-  const toggled = shape(await outline(p))
+  const toggled = await shapeWhen(p, want.toggled)
   const stored = await p.evaluate((k) => localStorage.getItem(k), OPEN_KEY)
   await p.reload()
   await poll(() => libTitle(p), Boolean, 8000)
-  await wait(800)
-  const reloaded = shape(await outline(p))
+  const reloaded = await shapeWhen(p, want.reloaded, 8000)
   await disclosureOf(p, "Actions").click()
-  await wait(200)
-  const closedHere = (await outline(p)).find((d) => d.label === "Actions")?.open === false
+  const closedHere = (await shapeWhen(p, want.closedHere)) === want.closedHere
   await goTo(p, "Icon button")
-  const toIcon = shape(await outline(p))
+  const toIcon = await shapeWhen(p, want.toIcon)
   await goTo(p, "Switch")
-  const toSwitch = shape(await outline(p))
+  const toSwitch = await shapeWhen(p, want.toSwitch)
   await p.reload()
   await poll(() => libTitle(p), Boolean, 8000)
-  await wait(800)
-  const reloadedOnSwitch = shape(await outline(p))
+  const reloadedOnSwitch = await shapeWhen(p, want.reloadedOnSwitch, 8000)
   const errors = [...p.errors]
   await p.closeAll()
   const other = await openSections("library=switch")
-  const otherViewer = shape(await outline(other))
+  const otherViewer = await shapeWhen(other, want.otherViewer)
   errors.push(...other.errors)
   await other.closeAll()
   const ok =
-    fresh === "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)- /Inputs(2)-" &&
-    toggled === "Controls(3)+ /Actions(2)- /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]" &&
+    fresh === want.fresh &&
+    toggled === want.toggled &&
     stored === JSON.stringify({ "section:forms": true, "group:inputs": true, "group:actions": false }) &&
-    reloaded === "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]" &&
+    reloaded === want.reloaded &&
     closedHere &&
-    toIcon === "Controls(3)+ /Actions(2)+[Button, Icon button*] /Toggles(1)- Forms(2)+ /Inputs(2)+[Switch, Text field]" &&
-    toSwitch === "Controls(3)+ /Actions(2)+[Button, Icon button] /Toggles(1)+[Switch*] Forms(2)+ /Inputs(2)+[Switch*, Text field]" &&
-    reloadedOnSwitch === "Controls(3)+ /Actions(2)- /Toggles(1)+[Switch*] Forms(2)+ /Inputs(2)+[Switch*, Text field]" &&
-    otherViewer === "Controls(3)+ /Actions(2)- /Toggles(1)+[Switch*] Forms(2)- /Inputs(2)-" &&
+    toIcon === want.toIcon &&
+    toSwitch === want.toSwitch &&
+    reloadedOnSwitch === want.reloadedOnSwitch &&
+    otherViewer === want.otherViewer &&
     !errors.length
   return [ok ? "pass" : "fail", `fresh on Button: ${fresh}; after opening Forms and Inputs and closing Actions: ${toggled}, stored under ${OPEN_KEY} as ${stored}; after a reload: ${reloaded}; closing Actions again held ${closedHere}; Go to Icon button: ${toIcon}; Go to Switch: ${toSwitch}; reloaded there: ${reloadedOnSwitch}; another viewer on Switch: ${otherViewer}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
@@ -4934,25 +4959,29 @@ await check("LB-13", async () => {
 // labels, and clearing it restores the open state from before, also after a branch was closed while searching
 await check("LB-14", async () => {
   const p = await openSections("library=button")
-  const before = shape(await outline(p))
-  await searchFor(p, "switch")
-  const matches = shape(await outline(p))
+  const want = {
+    matches: "Controls(1)+ /Toggles(1)+[Switch @ Controls › Toggles] Forms(1)+ /Inputs(1)+[Switch @ Forms › Inputs]",
+    closedWhileSearching: "Controls(1)+ /Toggles(1)+[Switch @ Controls › Toggles] Forms(1)- /Inputs(1)+",
+    bySection: "Controls(1)+ /Toggles(1)+[Switch @ Controls › Toggles] Forms(2)+ /Inputs(2)+[Switch @ Forms › Inputs, Text field @ Forms › Inputs]",
+  }
+  const before = await shapeWhen(p, "Controls(3)+ /Actions(2)+[Button*, Icon button] /Toggles(1)- Forms(2)- /Inputs(2)-")
+  await searchFor(p, "switch", 1)
+  const matches = await shapeWhen(p, want.matches)
   const count = await p.evaluate(() => [...document.querySelectorAll("h2")].find((h) => h.textContent === "Library")?.nextElementSibling?.textContent ?? "")
   await disclosureOf(p, "Forms").click()
-  await wait(200)
-  const closedWhileSearching = shape(await outline(p))
-  await searchFor(p, "forms")
-  const bySection = shape(await outline(p))
-  await searchFor(p, "")
-  const after = shape(await outline(p))
+  const closedWhileSearching = await shapeWhen(p, want.closedWhileSearching)
+  await searchFor(p, "forms", 2)
+  const bySection = await shapeWhen(p, want.bySection)
+  await searchFor(p, "", 4)
+  const after = await shapeWhen(p, before)
   const stored = await p.evaluate((k) => localStorage.getItem(k), OPEN_KEY)
   const errors = [...p.errors]
   await p.closeAll()
   const ok =
-    matches === "Controls(1)+ /Toggles(1)+[Switch @ Controls › Toggles] Forms(1)+ /Inputs(1)+[Switch @ Forms › Inputs]" &&
+    matches === want.matches &&
     /1 of 4/.test(count) &&
-    closedWhileSearching === "Controls(1)+ /Toggles(1)+[Switch @ Controls › Toggles] Forms(1)- /Inputs(1)+" &&
-    bySection === "Controls(1)+ /Toggles(1)+[Switch @ Controls › Toggles] Forms(2)+ /Inputs(2)+[Switch @ Forms › Inputs, Text field @ Forms › Inputs]" &&
+    closedWhileSearching === want.closedWhileSearching &&
+    bySection === want.bySection &&
     after === before &&
     stored === null &&
     !errors.length
@@ -4966,23 +4995,22 @@ await check("LB-15", async () => {
   const inputs = p.locator('nav[aria-label="Components"] [data-library-group="inputs"] li button', { hasText: "Switch" })
   await inputs.click()
   await poll(() => libTitle(p), (t) => t === "Switch", 8000)
-  await wait(300)
+  await poll(() => crumbs(p), (c) => c.endsWith("Switch"))
   const fromInputs = { hash: await p.evaluate(() => location.hash), crumb: await crumbs(p), current: (await outline(p)).flatMap((d) => d.items ?? []).filter((i) => i.current).map((i) => i.label).join(", ") }
   // Back to Text field, then Switch from its home listing.
   await p.locator('nav[aria-label="Components"] [data-library-group="inputs"] li button', { hasText: "Text field" }).click()
   await poll(() => libTitle(p), (t) => t === "Text field", 8000)
   await p.locator('nav[aria-label="Components"] [data-library-group="toggles"] li button', { hasText: "Switch" }).click()
   await poll(() => libTitle(p), (t) => t === "Switch", 8000)
-  await wait(300)
+  await poll(() => crumbs(p), (c) => c.endsWith("Switch"))
   const fromToggles = { hash: await p.evaluate(() => location.hash), crumb: await crumbs(p), title: await libTitle(p) }
-  await p.keyboard.press("ControlOrMeta+k")
-  await wait(400)
+  await openGoTo(p)
   const goToLib = await p.evaluate(() =>
     [...document.querySelectorAll("[cmdk-group]")]
       .filter((g) => g.querySelector("[cmdk-group-heading]")?.textContent.startsWith("Library"))
       .map((g) => `${g.querySelector("[cmdk-group-heading]").textContent}: ${[...g.querySelectorAll("[cmdk-item]")].map((i) => [...i.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim()).join(", ")}`)
   )
-  await p.keyboard.press("Escape")
+  await closeGoTo(p)
   const urls = []
   for (const f of p.frames()) urls.push(f.url(), ...(await f.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name)).catch(() => [])))
   const foreign = [...new Set(urls.filter((u) => u && !u.startsWith(servers.sections.url) && !u.startsWith("data:") && u !== "about:blank"))]
@@ -5004,13 +5032,14 @@ await check("LB-15", async () => {
   return [ok ? "pass" : "fail", `Switch under Inputs opened ${fromInputs.hash} with the breadcrumb ${fromInputs.crumb}, both listings current (${fromInputs.current}); from Text field, Switch under Toggles opened ${fromToggles.hash} (${fromToggles.title}) with ${fromToggles.crumb}; Go to: ${goToLib.join(" | ")}, Switch ${switches} time${switches === 1 ? "" : "s"}; requests outside the Studio's origin ${foreign.length ? foreign.slice(0, 3).join(", ") : "none"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
-// LB-16 An invalid sectioned declaration fails the build, naming every problem: a duplicate section, a group naming an unknown section, a
-// group without a section, a component listing its home group in alsoIn and one naming an unknown group
+// LB-16 An invalid sectioned declaration fails the build, naming every problem: a duplicate section, a section holding no groups, a group
+// naming an unknown section, a group without a section, a component listing its home group in alsoIn and one naming an unknown group
 await check("LB-16", async () => {
   const b = spawnSync("npx", ["vite", "build", "--outDir", join(root, ".acceptance", "invalid-sections"), "--emptyOutDir", "--logLevel", "error"], { cwd: root, encoding: "utf8", env: { ...process.env, VITE_STUDIO_ADAPTER: "sections", VITE_STUDIO_LIBRARY: "invalid" } })
   const out = `${b.stdout}${b.stderr}`
   const expected = [
     'Section ID "controls" is declared twice',
+    'Section "spare" holds no groups',
     'Group "toggles" names section "nowhere", which the library does not declare',
     'Group "inputs" names no section; when the library declares sections every group needs one',
     'Component "button" lists its home group "actions" in alsoIn',

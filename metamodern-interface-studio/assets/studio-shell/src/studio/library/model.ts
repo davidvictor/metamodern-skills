@@ -65,6 +65,7 @@ export function libraryProblems(decl: LibraryDeclaration | undefined): string[] 
     else if (!sections.has(g.section)) out.push(`Group "${g.id}" names section "${g.section}", which the library does not declare`)
     groups.add(g.id)
   }
+  for (const x of sections) if (!decl.groups.some((g) => g.section === x)) out.push(`Section "${x}" holds no groups`)
   const ids = new Set<string>()
   for (const c of decl.components) {
     if (!ID.test(c.id)) out.push(`Component ID "${c.id}" must be lowercase letters, digits and hyphens`)

@@ -452,22 +452,27 @@ const DISCLOSURE = "flex w-full items-center gap-1.5 rounded-md border border-tr
 /** One disclosure: a native button naming the branch and how many listings it holds, and the region it opens. */
 function Disclosure({ level, id, label, count, open, onToggle, children }: { level: "section" | "group"; id: string; label: string; count: number; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   const region = `${React.useId()}-${level}-${id}`
+  // Headings wrap the buttons (sections h3, groups h4), so heading navigation reaches them as in an accordion.
+  const Heading = level === "section" ? "h3" : "h4"
   return (
     <div data-library-section={level === "section" ? id : undefined} data-library-group={level === "group" ? id : undefined} className={level === "section" ? "px-2 py-1" : "pt-0.5 pl-2"}>
-      <button
-        type="button"
-        data-library-disclosure={level}
-        aria-expanded={open}
-        aria-controls={region}
-        onClick={onToggle}
-        className={cn(DISCLOSURE, level === "section" ? "min-h-8 text-sm font-medium text-sidebar-foreground" : "min-h-7 text-xs font-medium text-muted-foreground hover:text-foreground")}
-      >
-        <ChevronRightIcon aria-hidden className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none", open && "rotate-90")} />
-        <span className="min-w-0 flex-1 truncate">{label}</span>
-        <span data-library-count className="shrink-0 text-xs font-normal text-muted-foreground tabular-nums">
-          {count}
-        </span>
-      </button>
+      <Heading>
+        <button
+          type="button"
+          data-library-disclosure={level}
+          aria-expanded={open}
+          aria-controls={region}
+          onClick={onToggle}
+          className={cn(DISCLOSURE, level === "section" ? "min-h-8 text-sm font-medium text-sidebar-foreground" : "min-h-7 text-xs font-medium text-muted-foreground hover:text-foreground")}
+        >
+          <ChevronRightIcon aria-hidden className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none", open && "rotate-90")} />
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+          <span data-library-count className="shrink-0 text-xs font-normal text-muted-foreground tabular-nums">
+            {count}
+          </span>
+          <span className="sr-only">{count === 1 ? " component" : " components"}</span>
+        </button>
+      </Heading>
       <div id={region} hidden={!open}>
         {children}
       </div>
