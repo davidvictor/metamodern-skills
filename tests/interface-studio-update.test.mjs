@@ -74,7 +74,7 @@ test('UP-01 a created Studio is stamped with the shell files only', () => {
   assert.equal(lock.shell, '1.0.0');
   const files = tree(dir);
   for (const [path, hash] of Object.entries(lock.files)) assert.equal(files[path], hash, path);
-  for (const product of ['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'package.json', 'package-lock.json', 'studio-shell.lock.json']) assert.ok(!(product in lock.files), `${product} must not be locked as a shell file`);
+  for (const product of ['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'src/library/index.ts', 'package.json', 'package-lock.json', 'studio-shell.lock.json']) assert.ok(!(product in lock.files), `${product} must not be locked as a shell file`);
   assert.ok(SHELL_FILE in lock.files && 'vite.config.ts' in lock.files && 'index.html' in lock.files);
   assert.deepEqual(lock.package.scripts, pkgOf(base).scripts);
 });
@@ -345,13 +345,35 @@ test('UP-13 acceptance is skipped with a reason when the workspace example it lo
   };
   const whole = create(starter);
   assert.equal(checks(whole).ok, true, 'a Studio with the whole example runs acceptance');
-  for (const missing of ['example/workspace/mock-host.mjs', 'example/workspace/adapter.ts']) {
+  for (const missing of ['example/workspace/mock-host.mjs', 'example/workspace/adapter.ts', 'example/library/adapter.ts']) {
     const dir = create(starter);
     rmSync(join(dir, missing));
     const acceptance = checks(dir, '--keep', missing, '--reason', 'removed for the test');
     assert.ok(acceptance.skipped, `acceptance is skipped without ${missing}`);
     assert.match(acceptance.skipped, /example\/workspace\//);
   }
+});
+
+test('UP-14 the library seed is created once, and nothing in src/library/ is ever compared or updated', () => {
+  const old = shell('old', (d) => rmSync(join(d, 'src/library'), { recursive: true }));
+  const dir = create(old);
+  assert.ok(!existsSync(join(dir, 'src/library/index.ts')));
+  const r = update(dir, shell('next'), '1.1.0', '--apply');
+  assert.equal(r.code, 0, r.err || r.out);
+  assert.ok(r.data.actions.some((a) => a.kind === 'seed' && a.path === 'src/library/index.ts'));
+  assert.match(readFileSync(join(dir, 'src/library/index.ts'), 'utf8'), /export default defineLibrary\(\{\}\)/);
+  assert.ok(!Object.keys(lockOf(dir).files).some((p) => p.startsWith('src/library/')), 'nothing under src/library/ is a shell file');
+  writeFileSync(join(dir, 'src/library/index.ts'), 'export default "product"\n');
+  writeFileSync(join(dir, 'src/library/button.ts'), 'export default {}\n');
+  const later = shell('later', (d) => {
+    writeFileSync(join(d, 'src/library/index.ts'), '// the shell changed its seed\n');
+    writeFileSync(join(d, 'src/library/extra.ts'), 'export const extra = 1\n');
+  });
+  const again = update(dir, later, '1.2.0', '--apply');
+  assert.equal(again.code, 0, again.err || again.out);
+  assert.equal(readFileSync(join(dir, 'src/library/index.ts'), 'utf8'), 'export default "product"\n');
+  assert.equal(readFileSync(join(dir, 'src/library/button.ts'), 'utf8'), 'export default {}\n');
+  assert.ok(!existsSync(join(dir, 'src/library/extra.ts')), 'the shell never adds files to the product folder');
 });
 
 test('release fingerprints include the current shell', () => {
