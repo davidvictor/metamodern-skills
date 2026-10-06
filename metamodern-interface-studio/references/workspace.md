@@ -36,7 +36,7 @@ workspace: {
 - `unavailable: "<reason>"` on a module shows the reason instead of the module.
 - `operations` is a path on the Studio's own origin, absolute (`/api/studio`) or relative to the Studio page (`./__studio/ops`), over http or https, with no query string or fragment. A base with `?` or `#`, another origin or another scheme is refused without a request.
 - Without `operations` every module is unavailable, with that reason. With it, a module whose host does not answer says so; nothing is simulated.
-- `module` and `section` are reserved link keys (`RESERVED_LINK_KEYS` in `src/studio/input.ts`). A component property with one of these IDs is rejected, and a dock input with one is left out of links with a console error. Rename it.
+- `module`, `section` and `item` are reserved link keys (`RESERVED_LINK_KEYS` in `src/studio/input.ts`). A component property with one of these IDs is rejected, and a dock input with one is left out of links with a console error. Rename it.
 
 ## Write modules in `src/workspace/`
 

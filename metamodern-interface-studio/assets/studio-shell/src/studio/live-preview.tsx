@@ -98,7 +98,11 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   const latest = React.useRef({ draft, onStatus, inputs, sync, gesture })
   latest.current = { draft, onStatus, inputs, sync, gesture }
   const replies = React.useRef(new Map<string, (r: { ok: boolean; reason?: string }) => void>())
-  const expectedOrigin = origin ?? (location.origin === "null" ? "null" : new URL(src, location.href).origin)
+  // A sandbox without allow-same-origin gives the frame an opaque origin ("null") wherever it is served, https included,
+  // whatever origin is declared; so does a Studio opened from a local file (its own origin is "null") for a frame without a declared origin. Then the
+  // sending frame element is checked instead of an origin.
+  const sandboxed = isolation?.sandbox !== undefined && !isolation.sandbox.split(/\s+/).includes("allow-same-origin")
+  const expectedOrigin = sandboxed ? "null" : (origin ?? (location.origin === "null" ? "null" : new URL(src, location.href).origin))
 
   const post = React.useCallback(
     (instance: string, message: ShellBody) => {

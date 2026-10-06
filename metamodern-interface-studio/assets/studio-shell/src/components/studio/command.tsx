@@ -115,6 +115,9 @@ export function ShortcutsDialog() {
               <dd><KbdGroup>{keys.map((k, i) => <Kbd key={i}>{k}</Kbd>)}</KbdGroup></dd>
             </div>
           ))}
+          <Slot>
+            <WorkspaceNav part="shortcuts" />
+          </Slot>
         </dl>
       </DialogContent>
     </Dialog>

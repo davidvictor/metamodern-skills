@@ -57,6 +57,12 @@ const render = (values: Values) => {
   app.innerHTML = `<div class="lib">${SCENES[scenario](values)}</div>`
 }
 
+/**
+ * A frame sandboxed without allow-same-origin runs at an opaque origin, so it cannot default to its own origin: the page
+ * names the Studio's origin in `<meta name="studio-allowed-origins">` (a static host writes it into the page; the
+ * acceptance suite's static build does). Without it the frame keeps the default, its own origin.
+ */
+const allowedOrigins = document.querySelector<HTMLMetaElement>('meta[name="studio-allowed-origins"]')?.content.split(/\s+/).filter(Boolean)
 connectStudioFrame({
   mount: (inputs) => {
     if (!SCENES[inputs.scenario]) throw new Error(`${inputs.scenario} has no preview in the example library`)
@@ -73,7 +79,7 @@ connectStudioFrame({
     testing.__libValues = inputs.values
   },
   code: (inputs) => ({ language: "tsx", text: buttonCode(fromValues(inputs.values)) }),
-})
+}, allowedOrigins?.length ? { allowedOrigins } : {})
 
 // Opened directly, outside the Studio: show the button styles.
 if (window.parent === window) render({})

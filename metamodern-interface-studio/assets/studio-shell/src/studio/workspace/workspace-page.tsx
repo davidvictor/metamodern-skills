@@ -16,6 +16,7 @@ import { ConfirmDialog, EmptyState, ModulePage } from "@/kit"
 import type { ModuleDefinition } from "./api"
 import { ModuleContext, type ModuleInfo } from "./context"
 import { resolveModules, undeclaredDefinitions } from "./declaration"
+import { validItem } from "./link"
 import { answered, guards, hostStatus, retryHost } from "./stores"
 
 const defined = Object.keys(workspace.modules)
@@ -38,13 +39,16 @@ export function WorkspacePage(props: PageProps) {
 
 /** The open module as its components see it, why it cannot open, and its definition. */
 function useOpenModule(): { info: ModuleInfo | null; reason: string | null; hostDown: boolean; def: ModuleDefinition | undefined } {
-  const { module, section, set } = useStudio()
+  const { module, section, item, set } = useStudio()
   const host = React.useSyncExternalStore(hostStatus.subscribe, hostStatus.get)
   const started = React.useSyncExternalStore(answered.subscribe, answered.get)
   const unsaved = React.useSyncExternalStore(guards.subscribe, guards.active)
   const m = modules.find((x) => x.id === module)
   // `uses` is the declaration's own array, so operation clients built from it keep their identity across renders.
-  const info = React.useMemo<ModuleInfo | null>(() => (m ? { id: m.id, label: m.label, sections: m.sections, section, go: (next) => set({ section: next }), uses: m.uses, operations: adapter.workspace?.operations } : null), [m, section, set])
+  const info = React.useMemo<ModuleInfo | null>(
+    () => (m ? { id: m.id, label: m.label, sections: m.sections, section, go: (next) => set({ section: next, item: null }), item, setItem: (next) => set({ item: validItem(next) }), uses: m.uses, operations: adapter.workspace?.operations } : null),
+    [m, section, item, set]
+  )
   // A missing host stops a module only before the host has answered it, and never while it has unsaved changes:
   // the page is not swapped out under an edit. Otherwise each operation reports it (stores.ts).
   const down = m && !started[m.id] && !unsaved ? (host[m.id] ?? null) : null

@@ -4,7 +4,7 @@
  */
 import type { StudioIcon, WorkspaceDeclaration, WorkspaceOperationUse } from "../types"
 
-export const NO_OPERATIONS = "This Studio declares no operations host (workspace.operations in the adapter), so its modules cannot reach the product."
+export const NO_OPERATIONS = "This Studio declares no operations host (workspace.operations in the adapter), and this module calls the product's operations, so it cannot open."
 export const noComponent = (id: string) => `No component for the "${id}" module in src/workspace/index.ts. Add one with defineWorkspace.`
 
 export type ResolvedModule = {
@@ -12,14 +12,20 @@ export type ResolvedModule = {
   label: string
   icon: StudioIcon
   sections: { id: string; label: string }[]
+  /** Empty for a host-free module, which calls nothing and so never needs an operations host. */
   uses: WorkspaceOperationUse[]
+  /** The module's group, for the dividers between groups; undefined counts as its own group. */
+  group?: string
   /** Why the module cannot open, when it cannot. */
   unavailable?: string
 }
 
+/** One shared empty list, so a host-free module's `uses` keeps its identity across renders. */
+const NO_USES: WorkspaceOperationUse[] = []
+
 /**
  * Modules in declaration order with the first reason each cannot open: a declared reason, then a missing
- * operations host, then a missing component. `defined` is the module IDs src/workspace/index.ts defines,
+ * operations host (only for a module that declares `uses`; a host-free module never needs one), then a missing component. `defined` is the module IDs src/workspace/index.ts defines,
  * or null before that file has loaded.
  */
 export function resolveModules(decl: WorkspaceDeclaration | undefined, defined: string[] | null): ResolvedModule[] {
@@ -29,9 +35,15 @@ export function resolveModules(decl: WorkspaceDeclaration | undefined, defined: 
     label: m.label,
     icon: m.icon,
     sections: m.sections ?? [],
-    uses: m.uses,
-    unavailable: m.unavailable ?? (!decl.operations ? NO_OPERATIONS : defined && !defined.includes(m.id) ? noComponent(m.id) : undefined),
+    uses: m.uses?.length ? m.uses : NO_USES,
+    ...(m.group !== undefined ? { group: m.group } : {}),
+    unavailable: m.unavailable ?? (!decl.operations && m.uses?.length ? NO_OPERATIONS : defined && !defined.includes(m.id) ? noComponent(m.id) : undefined),
   }))
+}
+
+/** Whether a divider separates this module from the one before it: their groups differ (undefined is its own group). */
+export function startsGroup(modules: { group?: string }[], index: number) {
+  return index > 0 && modules[index].group !== modules[index - 1].group
 }
 
 /** Module IDs src/workspace/index.ts defines that the adapter does not declare. The build fails on any. */
@@ -98,6 +110,7 @@ export function workspaceProblems(decl: WorkspaceDeclaration | undefined) {
     if (!ID.test(m.id)) out.push(`Module ID "${m.id}" must be lowercase letters, digits and hyphens`)
     if (modules.has(m.id)) out.push(`Module ID "${m.id}" is declared twice`)
     modules.add(m.id)
+    if (m.group !== undefined && (typeof m.group !== "string" || !ID.test(m.group))) out.push(`Group "${String(m.group)}" of "${m.id}" must be lowercase letters, digits and hyphens`)
     const sections = new Set<string>()
     for (const s of m.sections ?? []) {
       if (!ID.test(s.id)) out.push(`Section ID "${m.id}/${s.id}" must be lowercase letters, digits and hyphens`)
@@ -105,7 +118,7 @@ export function workspaceProblems(decl: WorkspaceDeclaration | undefined) {
       sections.add(s.id)
     }
     const names = new Set<string>()
-    for (const u of m.uses) {
+    for (const u of m.uses ?? []) {
       if (!OPERATION.test(u.name)) out.push(`Operation "${u.name}" in "${m.id}" must be lowercase letters, digits, dots and hyphens`)
       if (names.has(u.name)) out.push(`Operation "${u.name}" is listed twice in "${m.id}"`)
       names.add(u.name)

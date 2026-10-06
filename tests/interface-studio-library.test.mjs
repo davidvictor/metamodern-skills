@@ -291,7 +291,7 @@ test('LM-14 the core shell reaches the library only through lazy slots, and libr
   }
   assert.match(read('src/store.tsx'), /from "@\/studio\/library\/link"/);
   assert.match(read('src/store.tsx'), /q\.set\("library", state\.library\)/);
-  assert.match(read('src/studio/input.ts'), /"module", "section", "library"\]/);
+  assert.match(read('src/studio/input.ts'), /"module", "section", "library", "item"\]/);
   assert.match(read('src/studio/library/library-page.tsx'), /from "@\/library"/);
   const app = read('src/App.tsx');
   assert.match(app, /hasWorkspace \? \([\s\S]*?WorkspaceNav part="tab"[\s\S]*?\) : hasLibrary \? \([\s\S]*?LibraryNav part="tab"/, 'one place entry on the phone bar');
@@ -306,7 +306,7 @@ test('LM-16 the library reference documents the contract and SKILL.md routes to 
   assert.match(skillDoc, /component library/);
   assert.match(read('UPDATING.md'), /^## 0\.13\.0$/m);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /## Component library previews/);
-  assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /`section` and `library` \(`RESERVED_LINK_KEYS`/);
+  assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /`section`, `library` and `item` \(`RESERVED_LINK_KEYS`/);
   assert.match(readFileSync(new URL('references/updating.md', skill), 'utf8'), /`src\/library\/`/);
   const shellDoc = readFileSync(new URL('references/shell.md', skill), 'utf8');
   assert.match(shellDoc, /LB-01 to LB-16/);

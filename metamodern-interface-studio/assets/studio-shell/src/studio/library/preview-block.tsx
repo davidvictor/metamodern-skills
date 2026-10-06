@@ -111,7 +111,15 @@ export type BlockSpec = { id: string; label: string; description?: Text; width: 
 
 const sizeOf = (spec: BlockSpec, phone: boolean) => ({ w: phone ? MOBILE_WIDTH : spec.width, h: phone ? (spec.mobileHeight ?? spec.height) : spec.height })
 
-export function PreviewBlock({ component, spec, values, pinned, liveCode }: { component: string; spec: BlockSpec; values?: Record<string, InputValue>; pinned?: boolean; liveCode?: boolean }) {
+/**
+ * A wide component's preview and code (LibraryComponent.wide): 1.5 times the text column, or the page's width inside
+ * its gutters when that is less, centred on the column. The page is the size container (`100cqw`) and names its gutter
+ * (`--library-gutter`); percentages are of the column. The column is centred on the page, so the block breaks out
+ * evenly on both sides and its left edge never passes the gutter.
+ */
+const WIDE: React.CSSProperties = { width: "min(150%, 100cqw - 2 * var(--library-gutter))", marginLeft: "calc(50% - min(75%, 50cqw - var(--library-gutter)))", maxWidth: "none" }
+
+export function PreviewBlock({ component, spec, values, pinned, liveCode, wide }: { component: string; spec: BlockSpec; values?: Record<string, InputValue>; pinned?: boolean; liveCode?: boolean; wide?: boolean }) {
   const s = useStudio()
   const page = React.useContext(BudgetContext)
   const key = `${component}/${spec.id}`
@@ -218,7 +226,7 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode }: { co
             Code
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="preview" keepMounted className="grid gap-2">
+        <TabsContent value="preview" keepMounted className="grid gap-2" style={wide ? WIDE : undefined} data-wide={wide ? "" : undefined}>
           <div ref={box} className="stage-surface flex justify-center overflow-hidden rounded-xl p-6">
             <Boundary w={w} h={h} scale={scale} profile={{ kind: phone ? "phone" : "desktop" }} appearance={status?.appearance} empty={empty} loading={!!frame && (!status || status.status === "loading")} label={label}>
               {capture ? (
@@ -254,7 +262,7 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode }: { co
             </span>
           </p>
         </TabsContent>
-        <TabsContent value="code">{code ? <CodeBlock code={code.code} language={code.language} title={`${spec.label} code`} /> : <p className="text-sm text-muted-foreground">No code for this preview.</p>}</TabsContent>
+        <TabsContent value="code" style={wide ? WIDE : undefined}>{code ? <CodeBlock code={code.code} language={code.language} title={`${spec.label} code`} /> : <p className="text-sm text-muted-foreground">No code for this preview.</p>}</TabsContent>
       </Tabs>
       <AdjustedNote reason={spec.adjusted} />
       <Dialog open={expanded} onOpenChange={(open) => !open && collapse()}>

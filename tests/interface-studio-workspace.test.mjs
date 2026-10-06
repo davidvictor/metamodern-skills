@@ -58,6 +58,25 @@ test('WM-01 modules resolve in declaration order with the first reason each cann
   assert.equal(hostless[0].unavailable, NO_OPERATIONS);
   assert.equal(hostless[1].unavailable, NO_OPERATIONS);
   assert.equal(hostless[2].unavailable, 'Billing tools arrive with the billing host.');
+  // Host-free modules (uses empty or omitted) open without an operations host; one that declares uses still cannot.
+  const free = resolveModules({ modules: [{ id: 'notes', label: 'Notes', icon: 'file-text' }, { id: 'guide', label: 'Guide', icon: 'flag', uses: [] }, { id: 'sync', label: 'Sync', icon: 'plug', uses: [{ name: 'sync.read', kind: 'read' }] }] }, ['notes', 'guide']);
+  assert.deepEqual(free.map((m) => m.unavailable), [undefined, undefined, NO_OPERATIONS]);
+  assert.deepEqual(free[0].uses, []);
+  assert.equal(free[0].uses, free[1].uses, 'every host-free module shares one empty list, so clients keep their identity');
+  assert.equal(resolveModules({ modules: [{ id: 'notes', label: 'Notes', icon: 'file-text' }] }, [])[0].unavailable, noComponent('notes'));
+});
+
+test('WM-01b module groups draw a divider only between consecutive modules whose groups differ', async () => {
+  const { resolveModules, startsGroup, workspaceProblems } = await loadPure('src/studio/workspace/declaration.ts');
+  const groups = (list) => {
+    const modules = resolveModules({ modules: list.map((group, i) => ({ id: `m${i}`, label: `M${i}`, icon: 'flag', ...(group === undefined ? {} : { group }) })) }, null);
+    return modules.map((_, i) => startsGroup(modules, i));
+  };
+  assert.deepEqual(groups([undefined, undefined, undefined]), [false, false, false], 'no groups: nothing changes');
+  assert.deepEqual(groups(['a', 'a', 'b', 'b', 'a']), [false, false, true, false, true]);
+  assert.deepEqual(groups([undefined, 'a', undefined]), [false, true, true], 'undefined counts as its own group');
+  assert.deepEqual(workspaceProblems({ modules: [{ id: 'm', label: 'M', icon: 'flag', group: 'Review' }] }), ['Group "Review" of "m" must be lowercase letters, digits and hyphens']);
+  assert.deepEqual(workspaceProblems({ modules: [{ id: 'm', label: 'M', icon: 'flag', group: 'review-2' }] }), []);
 });
 
 test('WM-02 a module file and the adapter must agree, and the declaration must be well formed', async () => {
@@ -82,13 +101,32 @@ test('WM-02 a module file and the adapter must agree, and the declaration must b
 });
 
 test('WM-03 links name a module and a section; a missing section falls back, an unknown module is reported', async () => {
-  const { parseModuleLink } = await loadPure('src/studio/workspace/link.ts');
-  assert.deepEqual(parseModuleLink('#view=inspect', decl), { module: null, section: null });
-  assert.deepEqual(parseModuleLink('#module=site&section=secrets', decl), { module: 'site', section: 'secrets' });
-  assert.deepEqual(parseModuleLink('#module=site&section=nope', decl), { module: 'site', section: 'general' });
-  assert.deepEqual(parseModuleLink('#module=audit', decl), { module: 'audit', section: null });
-  assert.deepEqual(parseModuleLink('#module=ghost', decl), { module: null, section: null, unknown: 'ghost' });
-  assert.deepEqual(parseModuleLink('#module=site', undefined), { module: null, section: null, unknown: 'site' });
+  const { parseModuleLink, moduleHash, validItem } = await loadPure('src/studio/workspace/link.ts');
+  assert.deepEqual(parseModuleLink('#view=inspect', decl), { module: null, section: null, item: null });
+  assert.deepEqual(parseModuleLink('#module=site&section=secrets', decl), { module: 'site', section: 'secrets', item: null });
+  assert.deepEqual(parseModuleLink('#module=site&section=nope', decl), { module: 'site', section: 'general', item: null });
+  assert.deepEqual(parseModuleLink('#module=audit', decl), { module: 'audit', section: null, item: null });
+  assert.deepEqual(parseModuleLink('#module=ghost', decl), { module: null, section: null, item: null, unknown: 'ghost' });
+  assert.deepEqual(parseModuleLink('#module=site', undefined), { module: null, section: null, item: null, unknown: 'site' });
+  // Items: up to 128 of [A-Za-z0-9._:-]; anything else is dropped with a console error.
+  assert.deepEqual(parseModuleLink('#module=site&section=secrets&item=auth:invite.v2_A-1', decl), { module: 'site', section: 'secrets', item: 'auth:invite.v2_A-1' });
+  const errors = [];
+  const error = console.error;
+  console.error = (m) => errors.push(String(m));
+  try {
+    assert.equal(parseModuleLink('#module=site&item=bad%20id', decl).item, null);
+    assert.equal(validItem('x'.repeat(129)), null);
+    assert.equal(validItem('../etc'), null, 'a slash is not an item character');
+  } finally {
+    console.error = error;
+  }
+  assert.equal(errors.length, 3);
+  assert.match(errors[0], /is not an item ID/);
+  assert.equal(validItem('x'.repeat(128)), 'x'.repeat(128));
+  assert.equal(validItem(''), null);
+  assert.equal(validItem(null), null);
+  assert.equal(moduleHash({ module: 'site', section: 'general', item: 'a:b' }), '#module=site&section=general&item=a%3Ab');
+  assert.equal(moduleHash({ module: 'audit', section: null, item: null }), '#module=audit');
 });
 
 test('WM-04 undeclared names, kind mismatches, cross-origin and missing hosts are refused without a request', async () => {
