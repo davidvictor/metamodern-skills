@@ -29,11 +29,11 @@ try {
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
 const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace", library: "library" }
-// WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.13.0), gzipped, built with the example
+// WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.13.1), gzipped, built with the example
 // product. A Studio that declares neither a workspace nor a library may grow by at most 3 KB over it. Each release moves
 // it to the release before it.
-const STUDIO_CHUNK_BASELINE = "0.13.0"
-const STUDIO_CHUNK_BASELINE_GZ = 299004
+const STUDIO_CHUNK_BASELINE = "0.13.1"
+const STUDIO_CHUNK_BASELINE_GZ = 299062
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 const serve = (out, host) =>
@@ -4351,21 +4351,26 @@ await check("LB-04", async () => {
   const returned = await p.evaluate(() => document.activeElement?.getAttribute("aria-label"))
   const errors = [...p.errors]
   await p.closeAll()
-  // Keys typed into a field inside a preview stay there: Home, End and the page keys never scroll the library page (on
-  // Apple platforms, where they scroll even in a field, the frame client cancels that scroll and moves the caret for Home
-  // and End; elsewhere they move the caret natively), so the preview is not scrolled away and remounted. Home moves the
-  // caret to the start and Shift+Home still selects to it. It runs twice: on this platform, and with the preview frames
-  // told they are on a Mac, so the Apple branch is exercised on any OS. The second run adds a textarea (Home at 0 before a
-  // leading line break stays at 0, Home on line 2 goes to its start, the client cancels each scroll), a field whose
-  // product cancels Home (left alone), and a combobox and an aria-activedescendant field (their keys reach the product).
-  const keyRun = async (forceApple) => {
+  // Keys typed into a field inside a preview stay there: Home, End and the page keys never scroll the library page, so the
+  // preview is not scrolled away and remounted. On Apple platforms, where all four scroll even in a field, the frame
+  // client cancels that scroll and moves the caret for Home and End. Elsewhere Home and End move the caret natively, and
+  // Page Up and Page Down scroll (in Chromium) from a single-line field and from a textarea whose caret is already at that
+  // end: the client cancels those and leaves the caret, and a Page Down that moves a textarea's caret stays native. The
+  // page starts 100 px down so a Page Up that escapes shows too. Home moves the caret to the start and Shift+Home still
+  // selects to it. It runs three times: on this platform; with the preview frames told they are on a Mac, so the Apple
+  // branch is exercised on any OS; and told they are on Linux, so the other branch is too. The Mac run adds a textarea
+  // (Home at 0 before a leading line break stays at 0, Home on line 2 goes to its start, the client cancels each scroll),
+  // a field whose product cancels Home (left alone), and a combobox and an aria-activedescendant field (their keys reach
+  // the product). The Linux run records which page keys the client cancels in a field, a textarea and a combobox; it skips
+  // the typed keys, since on a Mac Home and End in a field really do scroll.
+  const keyRun = async (mode) => {
     const t = await openLibrary("library=text-field")
-    if (forceApple) {
-      await t.context().addInitScript(() => {
+    if (mode !== "native") {
+      await t.context().addInitScript((os) => {
         if (window === window.top) return
-        Object.defineProperty(Navigator.prototype, "platform", { configurable: true, get: () => "MacIntel" })
-        Object.defineProperty(Navigator.prototype, "userAgentData", { configurable: true, get: () => ({ platform: "macOS", mobile: false, brands: [] }) })
-      })
+        Object.defineProperty(Navigator.prototype, "platform", { configurable: true, get: () => (os === "apple" ? "MacIntel" : "Linux x86_64") })
+        Object.defineProperty(Navigator.prototype, "userAgentData", { configurable: true, get: () => ({ platform: os === "apple" ? "macOS" : "Linux", mobile: false, brands: [] }) })
+      }, mode)
       await t.reload()
       await t.waitForSelector("header", { timeout: 15000 })
     }
@@ -4373,62 +4378,82 @@ await check("LB-04", async () => {
     const fieldFrame = await t.locator('[data-library-page] [data-preview-block="states"] iframe.opacity-100').elementHandle()
     const frame = await fieldFrame.contentFrame()
     const platform = await frame.evaluate(() => navigator.userAgentData?.platform || navigator.platform)
+    const applePlatform = /mac|iphone|ipad|ipod|ios/i.test(platform)
     const field = frame.locator("input:not([disabled])").first()
     await field.click()
     await field.fill("abc")
     const pageTop = () => t.evaluate(() => document.querySelector("[data-library-page]").scrollTop)
+    await t.evaluate(() => (document.querySelector("[data-library-page]").scrollTop = 100))
+    await wait(300)
     const keysAt = await pageTop()
     const tops = []
-    for (const key of ["End", "Home", "PageDown", "PageUp", "End"]) {
-      await t.keyboard.press(key)
-      await wait(250)
-      tops.push(await pageTop())
-    }
     const fieldValue = () => fieldFrame.contentFrame().then((f) => f.evaluate(() => ({ tag: document.activeElement?.tagName, value: document.activeElement?.value ?? "" }))).catch(() => ({ tag: "frame gone", value: "" }))
-    await t.keyboard.press("End")
-    await t.keyboard.press("Home")
-    await t.keyboard.type("X")
-    const caret = await fieldValue()
-    await t.keyboard.press("End")
-    await t.keyboard.press("Shift+Home")
-    await t.keyboard.type("Y")
-    await wait(600)
-    tops.push(await pageTop())
-    const selected = await fieldValue()
-    let area = null
-    if (forceApple) {
-      // Test fields fixed at the top, so the frame's page has no scroll to take. A window listener added after the frame
-      // client's records whether each key arrived cancelled, then cancels it so no browser scroll muddies the next step.
-      await frame.evaluate(() => {
-        const add = (tag, id, attrs, onKey) => {
-          const el = document.createElement(tag)
-          el.id = id
-          for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
-          el.style.cssText = "position: fixed; top: 0; left: 0; width: 12rem"
-          if (onKey) el.addEventListener("keydown", onKey)
-          document.body.append(el)
-        }
-        window.__lb04 = []
-        const got = (id) => (e) => (e.key === "Home" || e.key === "End") && window.__lb04.push(`${id} got ${e.key}`)
-        add("textarea", "lb04-area", { rows: "6" })
-        add("input", "lb04-own", {}, (e) => { got("own")(e); if (e.key === "Home" || e.key === "End") e.preventDefault() })
-        add("input", "lb04-combo", { role: "combobox", "aria-expanded": "true" }, got("combo"))
-        add("input", "lb04-active", { "aria-activedescendant": "lb04-option" }, got("active"))
+    let caret = null
+    let selected = null
+    if (mode !== "other") {
+      for (const key of ["End", "Home", "PageDown", "PageUp", "End"]) {
+        await t.keyboard.press(key)
+        await wait(250)
+        tops.push(await pageTop())
+      }
+      await t.keyboard.press("End")
+      await t.keyboard.press("Home")
+      await t.keyboard.type("X")
+      caret = await fieldValue()
+      await t.keyboard.press("End")
+      await t.keyboard.press("Shift+Home")
+      await t.keyboard.type("Y")
+      await wait(600)
+      tops.push(await pageTop())
+      selected = await fieldValue()
+    }
+    // Test fields fixed at the top, so the frame's page has no scroll to take. In the forced runs a window listener added
+    // after the frame client's records whether each key arrived cancelled, then cancels it so no browser scroll or caret
+    // move muddies the next step.
+    await frame.evaluate((record) => {
+      const add = (tag, id, attrs, onKey) => {
+        const el = document.createElement(tag)
+        el.id = id
+        for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
+        el.style.cssText = "position: fixed; top: 0; left: 0; width: 12rem"
+        if (onKey) el.addEventListener("keydown", onKey)
+        document.body.append(el)
+      }
+      window.__lb04 = []
+      const got = (id) => (e) => (e.key === "Home" || e.key === "End") && window.__lb04.push(`${id} got ${e.key}`)
+      add("textarea", "lb04-area", { rows: "6" })
+      add("input", "lb04-line", {})
+      add("input", "lb04-own", {}, (e) => { got("own")(e); if (e.key === "Home" || e.key === "End") e.preventDefault() })
+      add("input", "lb04-combo", { role: "combobox", "aria-expanded": "true" }, got("combo"))
+      add("input", "lb04-active", { "aria-activedescendant": "lb04-option" }, got("active"))
+      if (record)
         window.addEventListener("keydown", (e) => {
-          if (!e.target.id?.startsWith("lb04-") || (e.key !== "Home" && e.key !== "End")) return
+          if (!e.target.id?.startsWith("lb04-") || !["Home", "End", "PageUp", "PageDown"].includes(e.key)) return
           window.__lb04.push(`${e.target.id.slice(5)} ${e.key}:${e.defaultPrevented}`)
           e.preventDefault()
         })
-        document.scrollingElement.scrollTop = 0
-      })
-      const at = async (id, value, caretAt, key, typed) => {
-        const el = frame.locator(`#${id}`)
-        await el.focus()
-        await el.evaluate((n, [v, c]) => { n.value = v; n.setSelectionRange(c, c) }, [value, caretAt])
-        await t.keyboard.press(key)
-        await t.keyboard.type(typed)
-        return el.inputValue()
-      }
+      document.scrollingElement.scrollTop = 0
+    }, mode !== "native")
+    const at = async (id, value, caretAt, key, typed) => {
+      const el = frame.locator(`#${id}`)
+      await el.focus()
+      await el.evaluate((n, [v, c]) => { n.value = v; n.setSelectionRange(c, c) }, [value, caretAt])
+      await t.keyboard.press(key)
+      await wait(150)
+      await t.keyboard.type(typed)
+      return el.inputValue()
+    }
+    let area = null
+    if (mode === "native") {
+      // Real keys, nothing recorded: Page Down with a textarea's caret at the end, then from line 1. On Apple platforms the
+      // client cancels both (Page Down scrolls there and never moves the caret); elsewhere the second moves the caret to
+      // the end natively.
+      const end = await at("lb04-area", "ab\ncd", 5, "PageDown", "")
+      const mid = await at("lb04-area", end, 2, "PageDown", "Q")
+      await wait(300)
+      tops.push(await pageTop())
+      area = { value: mid, want: applePlatform ? "abQ\ncd" : "ab\ncdQ" }
+    } else if (mode === "apple") {
       const z = await at("lb04-area", "\nab", 0, "Home", "Z")
       const w = await at("lb04-area", z, z.length, "Home", "W")
       const own = await at("lb04-own", "abc", 1, "Home", "Q")
@@ -4437,24 +4462,50 @@ await check("LB-04", async () => {
       await wait(300)
       tops.push(await pageTop())
       area = { value: w, own, combo, active, seen: await frame.evaluate(() => window.__lb04) }
+    } else {
+      const line = await at("lb04-line", "abc", 1, "PageDown", "Q")
+      const values = [
+        await at("lb04-area", "ab\ncd", 5, "PageDown", "Q"),
+        await at("lb04-area", "ab\ncd", 0, "PageUp", "Q"),
+        await at("lb04-area", "ab\ncd", 2, "PageDown", "Q"),
+        await at("lb04-area", "ab\ncd", 4, "PageUp", "Q"),
+        await at("lb04-area", "ab\ncd", 4, "Home", "Q"),
+      ]
+      const combo = await at("lb04-combo", "abc", 1, "PageDown", "Q")
+      await wait(300)
+      tops.push(await pageTop())
+      area = { line, values, combo, seen: await frame.evaluate(() => window.__lb04) }
     }
     const kept = await fieldFrame.evaluate((n) => n.isConnected && n.classList.contains("opacity-100"))
     errors.push(...t.errors)
     await t.closeAll()
-    const applePlatform = /mac|iphone|ipad|ipod|ios/i.test(platform)
-    const pass =
-      tops.every((x) => x === keysAt) && kept && caret.tag === "INPUT" && caret.value === "Xabc" && selected.tag === "INPUT" && selected.value === "Y" &&
-      (!forceApple ||
-        (applePlatform && area?.value === "Z\nWab" && area.own === "aQbc" && area.combo.join() === "aQbc,aQbc" && area.active === "aQbc" &&
-          area.seen.join() === "area Home:true,area Home:true,own got Home,own Home:true,combo got Home,combo Home:false,combo got End,combo End:false,active got End,active End:false"))
-    const detail = `${forceApple ? "forced Apple" : "native"} run on ${platform} (${applePlatform ? "the frame client cancels the scroll and moves the caret" : "not Apple: native caret moves, the frame client does nothing"}): the page stayed at ${[...new Set(tops)].join(", ")} px (from ${keysAt}), the frame ${kept ? "stayed mounted" : "was unmounted"}, Home then X gave "${caret.value}", Shift+Home then Y gave "${selected.value}"${area ? `; the client moved a textarea's caret (${JSON.stringify(area.value)}), left a field whose product cancels Home alone ("${area.own}") and gave Home and End to a combobox ("${area.combo.join('", "')}") and an aria-activedescendant field ("${area.active}"): ${area.seen.join(", ")}` : ""}`
-    return { pass, detail }
+    const typedOk = mode === "other" || (caret.tag === "INPUT" && caret.value === "Xabc" && selected.tag === "INPUT" && selected.value === "Y")
+    const runOk =
+      mode === "native"
+        ? area.value === area.want
+        : mode === "apple"
+          ? applePlatform && area.value === "Z\nWab" && area.own === "aQbc" && area.combo.join() === "aQbc,aQbc" && area.active === "aQbc" &&
+            area.seen.join() === "area Home:true,area Home:true,own got Home,own Home:true,combo got Home,combo Home:false,combo got End,combo End:false,active got End,active End:false"
+          : !applePlatform && area.line === "aQbc" && area.values.join("|") === "ab\ncdQ|Qab\ncd|abQ\ncd|ab\ncQd|ab\ncQd" && area.combo === "aQbc" &&
+            area.seen.join() === "line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,combo PageDown:false"
+    const pass = tops.every((x) => x === keysAt) && kept && typedOk && runOk
+    const what = mode === "native" ? "native" : mode === "apple" ? "forced Apple" : "forced Linux"
+    const branch = applePlatform ? "the frame client cancels the scroll and moves the caret" : "not Apple: Home and End are native, the client cancels Page Up and Page Down only where they would scroll"
+    const typed = mode === "other" ? "" : `, Home then X gave "${caret.value}", Shift+Home then Y gave "${selected.value}"`
+    const extra =
+      mode === "native"
+        ? `; Page Down in a textarea at its end, then on line 1, then Q gave ${JSON.stringify(area.value)}`
+        : mode === "apple"
+          ? `; the client moved a textarea's caret (${JSON.stringify(area.value)}), left a field whose product cancels Home alone ("${area.own}") and gave Home and End to a combobox ("${area.combo.join('", "')}") and an aria-activedescendant field ("${area.active}"): ${area.seen.join(", ")}`
+          : `; Page Down in a field gave "${area.line}", a textarea gave ${JSON.stringify(area.values)}, a combobox "${area.combo}": ${area.seen.join(", ")}`
+    return { pass, detail: `${what} run on ${platform} (${branch}): the page stayed at ${[...new Set(tops)].join(", ")} px (from ${keysAt}), the frame ${kept ? "stayed mounted" : "was unmounted"}${typed}${extra}` }
   }
-  const nativeKeys = await keyRun(false)
-  const appleKeys = await keyRun(true)
-  const keys = nativeKeys.pass && appleKeys.pass
+  const nativeKeys = await keyRun("native")
+  const appleKeys = await keyRun("apple")
+  const otherKeys = await keyRun("other")
+  const keys = nativeKeys.pass && appleKeys.pass && otherKeys.pass
   const ok = groups.join() === "playground:Playground:1,styles:Styles:1,sizes:Sizes:1,states:States:1" && variants === 3 && phone.width === "390px" && phone.frames === 1 && inside.mounts === mounts && inside.width === 390 && code.spans > 0 && copied === code.text && copied.includes('variant="danger"') && entered && left && expanded.dialog === 1 && expanded.page === 0 && returned === "Expand Styles" && keys && !errors.length
-  return [ok ? "pass" : "fail", `groups ${groups.join(", ")}; the Styles frame shows ${variants} variants; Phone width set the frame to ${phone.width} with ${phone.frames} frame, mounts ${mounts} then ${inside.mounts}, inner width ${inside.width}; Code drew ${code.spans} token spans and Copy ${copied === code.text ? "copied it exactly" : `copied "${copied.slice(0, 30)}"`}; focus ${entered ? "entered the frame" : "never entered the frame"} and ${left ? "left it" : "stayed"}; Expand showed ${expanded.dialog} frame in the dialog and ${expanded.page} on the page; Esc returned focus to ${returned}; End, Home, Page Down, Page Up and Shift+Home in a Text field preview: ${nativeKeys.detail}; ${appleKeys.detail}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  return [ok ? "pass" : "fail", `groups ${groups.join(", ")}; the Styles frame shows ${variants} variants; Phone width set the frame to ${phone.width} with ${phone.frames} frame, mounts ${mounts} then ${inside.mounts}, inner width ${inside.width}; Code drew ${code.spans} token spans and Copy ${copied === code.text ? "copied it exactly" : `copied "${copied.slice(0, 30)}"`}; focus ${entered ? "entered the frame" : "never entered the frame"} and ${left ? "left it" : "stayed"}; Expand showed ${expanded.dialog} frame in the dialog and ${expanded.page} on the page; Esc returned focus to ${returned}; End, Home, Page Down, Page Up and Shift+Home in a Text field preview: ${nativeKeys.detail}; ${appleKeys.detail}; ${otherKeys.detail}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 // LB-05 Frames mount only near the viewport, never more than LIVE_FRAMES at rest, nearest first; frames far above unmount when
