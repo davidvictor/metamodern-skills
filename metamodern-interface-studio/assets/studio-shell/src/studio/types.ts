@@ -351,6 +351,39 @@ export type WorkspaceDeclaration = {
   modules: WorkspaceModuleDeclaration[]
 }
 
+/** A group of the component library, in the product's own taxonomy (references/library.md). */
+export type LibraryGroup = { id: string; label: string }
+
+/** A component in the library's index. Its documentation is a product module in src/library/, loaded when its page opens. */
+export type LibraryComponent = {
+  /** Stable ID: lowercase letters, digits and hyphens. Links carry it as `library=`. */
+  id: string
+  label: string
+  /** The ID of one of the library's groups. */
+  group: string
+  /** One sentence, shown under the title and searched; at most 200 characters. */
+  summary: string
+  /** More words search finds it by. */
+  keywords?: string[]
+}
+
+/** A component library beside the views, declared as data (references/library.md). Documentation lives in src/library/index.ts. */
+export type LibraryDeclaration = {
+  /** The rail item's and the breadcrumb's name. Defaults to "Library". */
+  label?: string
+  /** From the shell's fixed icon set. Defaults to "layers". */
+  icon?: StudioIcon
+  /**
+   * The preview entry for library frames, resolved against the Studio page like `frameEntry` and refused unless it is
+   * on the frame entry's origin. Defaults to `frameEntry`; without either, previews show their code and captures only.
+   */
+  entry?: string
+  /** In the order the panel and Go to list them. */
+  groups: LibraryGroup[]
+  /** In the order each group lists them. */
+  components: LibraryComponent[]
+}
+
 export type StudioAdapter = {
   id: string
   version: string
@@ -415,4 +448,6 @@ export type StudioAdapter = {
   presentationOverrides?: { id: string; label: string }[]
   /** Product workspace tools beside the views, declared as data (references/workspace.md). Without it the Studio has no workspace. */
   workspace?: WorkspaceDeclaration
+  /** A component library with one documentation page per component (references/library.md). Without it the Studio has no library. */
+  library?: LibraryDeclaration
 }
