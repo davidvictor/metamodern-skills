@@ -321,6 +321,13 @@ test('acceptance script covers the workspace criteria', () => {
   assert.match(script, /workspace: "workspace"/);
 });
 
+test('acceptance script covers the library criteria', () => {
+  const script = read('scripts/acceptance.mjs');
+  for (let i = 1; i <= 10; i++) assert.match(script, new RegExp(`"LB-${String(i).padStart(2, '0')}"`), `LB-${i} is not checked`);
+  assert.match(script, /library: "library"/);
+  assert.match(script, /e\.tagName === "IFRAME"\) return null/, 'the focus walk skips preview frames');
+});
+
 test('0.12.1 touch and focus floors: stacked controls keep their own targets and focus is drawn whole', () => {
   const script = read('scripts/acceptance.mjs');
   for (const id of ['AC-65', 'AC-66']) assert.match(script, new RegExp(`check\\("${id}"`), `${id} is not checked`);
