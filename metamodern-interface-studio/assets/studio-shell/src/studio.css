@@ -181,3 +181,16 @@
 /* Measured floors: the kit's ring (--ring) reaches 3:1 or more against the page, card, popover and muted grounds in both appearances. */
 [data-kit] { --ring: oklch(0.556 0 0); --kit-danger-ink: oklch(0.5 0.19 27); }
 .dark [data-kit] { --kit-danger-ink: var(--danger); }
+
+/* Library code samples (src/studio/library/code-block.tsx): every token keeps 4.5:1 on the code ground in both appearances. */
+.library-code { --tok-keyword: oklch(0.47 0.17 300); --tok-string: oklch(0.46 0.12 150); --tok-number: oklch(0.48 0.13 55); --tok-tag: oklch(0.46 0.14 255); --tok-attr: oklch(0.48 0.13 30); }
+.dark .library-code { --tok-keyword: oklch(0.8 0.13 300); --tok-string: oklch(0.8 0.13 150); --tok-number: oklch(0.82 0.12 70); --tok-tag: oklch(0.8 0.11 250); --tok-attr: oklch(0.82 0.11 40); }
+.library-code .tok-keyword { color: var(--tok-keyword); }
+.library-code .tok-string { color: var(--tok-string); }
+.library-code .tok-number { color: var(--tok-number); }
+.library-code .tok-tag { color: var(--tok-tag); }
+.library-code .tok-attr { color: var(--tok-attr); }
+.library-code .tok-comment { color: var(--muted-foreground); font-style: italic; }
+@media (forced-colors: active) {
+  .library-code [class^="tok-"] { color: CanvasText; }
+}

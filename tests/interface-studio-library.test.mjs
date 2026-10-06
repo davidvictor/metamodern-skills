@@ -253,3 +253,21 @@ test('LM-12 the example library is a valid declaration, and every documented com
   assert.ok(!('performance' in (await loadPure('example/library/text-field.ts')).default), 'Text field leaves Performance out');
   for (const scenario of ['button:playground', 'button:styles', 'button:sizes', 'button:states', 'button:with-icon', 'button:in-a-row', 'icon-button:sizes', 'text-field:states']) assert.ok(read('example/library/frame.ts').includes(`"${scenario}"`), `the example entry renders ${scenario}`);
 });
+
+test('LM-13 library pages render documentation as React text, load frames only from the adapter, and never remount for values', () => {
+  for (const file of ['rich-text.tsx', 'code-block.tsx', 'preview-block.tsx']) {
+    const text = read(`src/studio/library/${file}`);
+    assert.doesNotMatch(text, /innerHTML|dangerouslySetInnerHTML/, `${file} injects HTML`);
+    assert.doesNotMatch(text, /<a[\s>]|<iframe/, `${file} draws a link or a frame itself`);
+  }
+  const block = read('src/studio/library/preview-block.tsx');
+  assert.match(block, /const SOURCE = previewSource\(adapter, location\.href\)/);
+  assert.match(block, /src=\{frame\.src\}\s+origin=\{frame\.origin\}\s+isolation=\{adapter\.frameIsolation\}/);
+  assert.match(block, /mountKey=\{JSON\.stringify\(\[frame\.scenario, s\.theme, retry\]\)\}/, 'values and width never remount');
+  assert.match(block, /pickLive\(/);
+  assert.match(block, /rootMargin: `\$\{NEAR_PX\}px 0px`/);
+  assert.match(block, /captureSource\(spec\.capture\.src, location\.href\)/);
+  assert.match(read('src/studio/library/code-block.tsx'), /tokenize\(code, language\)/);
+  assert.match(read('src/studio/library/rich-text.tsx'), /data-inline/);
+  assert.match(read('src/studio.css'), /\.library-code \.tok-keyword/);
+});
