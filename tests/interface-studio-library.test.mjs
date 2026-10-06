@@ -393,6 +393,8 @@ test('0.13.1 Home, End and the page keys typed in a field inside a frame never s
   assert.match(gestures, /if \(!field \|\| canTake\(field, "y", dir\)\) return\n    e\.preventDefault\(\)\n    if \(e\.key === "Home" \|\| e\.key === "End"\) moveCaret\(field, dir\)/, 'only a scroll nothing in the frame can take is cancelled, and Home and End move the caret');
   assert.match(gestures, /e\.shiftKey \|\| e\.metaKey \|\| e\.ctrlKey \|\| e\.altKey \|\| !apple\(\)\) return/, 'modifier keys and other platforms are left alone');
   assert.match(gestures, /userAgentData\?\.platform/);
+  assert.match(gestures, /window\.addEventListener\("keydown", onKeyDown, true\)\n  return \(\) => window\.removeEventListener\("keydown", onKeyDown, true\)/, 'capture phase, so a product stopPropagation cannot bypass it');
+  assert.match(gestures, /multi && at > 0 \? v\.lastIndexOf\("\\n", at - 1\) \+ 1 : 0/, 'Home at 0 stays at 0 before a leading line break');
   const typing = gestures.slice(gestures.indexOf('const TYPING'), gestures.indexOf('const SCROLL_KEYS'));
   for (const owner of ['select', 'listbox', 'combobox', 'spinbutton']) assert.ok(!typing.includes(owner), `${owner} keeps its keys`);
   assert.doesNotMatch(read('src/studio/frame-client.ts'), /overscrollBehavior/, 'a wheel over a preview still reaches the page');
@@ -403,6 +405,8 @@ test('0.13.1 Home, End and the page keys typed in a field inside a frame never s
   const script = read('scripts/acceptance.mjs');
   assert.match(script, /for \(const key of \["End", "Home", "PageDown", "PageUp", "End"\]\)/);
   assert.match(script, /caret\.value === "Xabc" && selected\.tag === "INPUT" && selected\.value === "Y"/);
+  assert.match(script, /const appleKeys = await keyRun\(true\)/, 'the Apple branch runs on any OS');
+  assert.match(script, /area\?\.value === "Z\\nWab" && area\.seen\.join\(\) === "Home:true,Home:true"/);
   assert.match(script, /beforeNav\.lib === 0 && beforeNav\.top === afterNav/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /Keys typed into a field stay in the frame/);
 });

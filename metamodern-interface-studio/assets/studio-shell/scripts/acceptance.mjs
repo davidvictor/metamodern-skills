@@ -4354,40 +4354,87 @@ await check("LB-04", async () => {
   // Keys typed into a field inside a preview stay there: Home, End and the page keys never scroll the library page (on
   // Apple platforms, where they scroll even in a field, the frame client cancels that scroll and moves the caret for Home
   // and End; elsewhere they move the caret natively), so the preview is not scrolled away and remounted. Home moves the
-  // caret to the start and Shift+Home still selects to it, on every platform.
-  const t = await openLibrary("library=text-field")
-  await frameReady(t, "states")
-  const platform = await t.evaluate(() => navigator.userAgentData?.platform || navigator.platform)
-  const applePlatform = /mac|iphone|ipad|ipod|ios/i.test(platform)
-  const fieldFrame = await t.locator('[data-library-page] [data-preview-block="states"] iframe.opacity-100').elementHandle()
-  const field = (await fieldFrame.contentFrame()).locator("input:not([disabled])").first()
-  await field.click()
-  await field.fill("abc")
-  const pageTop = () => t.evaluate(() => document.querySelector("[data-library-page]").scrollTop)
-  const keysAt = await pageTop()
-  const tops = []
-  for (const key of ["End", "Home", "PageDown", "PageUp", "End"]) {
-    await t.keyboard.press(key)
-    await wait(250)
+  // caret to the start and Shift+Home still selects to it. It runs twice: on this platform, and with the preview frames
+  // told they are on a Mac, so the Apple branch is exercised on any OS. The second run adds a textarea whose product
+  // handler stops propagation: Home at 0 before a leading line break stays at 0, Home on line 2 goes to its start, and
+  // the frame client still sees each key (it cancels the scroll it would cause).
+  const keyRun = async (forceApple) => {
+    const t = await openLibrary("library=text-field")
+    if (forceApple) {
+      await t.context().addInitScript(() => {
+        if (window === window.top) return
+        Object.defineProperty(Navigator.prototype, "platform", { configurable: true, get: () => "MacIntel" })
+        Object.defineProperty(Navigator.prototype, "userAgentData", { configurable: true, get: () => ({ platform: "macOS", mobile: false, brands: [] }) })
+      })
+      await t.reload()
+      await t.waitForSelector("header", { timeout: 15000 })
+    }
+    await frameReady(t, "states")
+    const fieldFrame = await t.locator('[data-library-page] [data-preview-block="states"] iframe.opacity-100').elementHandle()
+    const frame = await fieldFrame.contentFrame()
+    const platform = await frame.evaluate(() => navigator.userAgentData?.platform || navigator.platform)
+    const field = frame.locator("input:not([disabled])").first()
+    await field.click()
+    await field.fill("abc")
+    const pageTop = () => t.evaluate(() => document.querySelector("[data-library-page]").scrollTop)
+    const keysAt = await pageTop()
+    const tops = []
+    for (const key of ["End", "Home", "PageDown", "PageUp", "End"]) {
+      await t.keyboard.press(key)
+      await wait(250)
+      tops.push(await pageTop())
+    }
+    const fieldValue = () => fieldFrame.contentFrame().then((f) => f.evaluate(() => ({ tag: document.activeElement?.tagName, value: document.activeElement?.value ?? "" }))).catch(() => ({ tag: "frame gone", value: "" }))
+    await t.keyboard.press("End")
+    await t.keyboard.press("Home")
+    await t.keyboard.type("X")
+    const caret = await fieldValue()
+    await t.keyboard.press("End")
+    await t.keyboard.press("Shift+Home")
+    await t.keyboard.type("Y")
+    await wait(600)
     tops.push(await pageTop())
+    const selected = await fieldValue()
+    let area = null
+    if (forceApple) {
+      await frame.evaluate(() => {
+        const a = document.createElement("textarea")
+        a.rows = 6
+        a.id = "lb04-area"
+        a.addEventListener("keydown", (e) => e.stopPropagation())
+        a.addEventListener("keydown", (e) => (window.__lb04 ??= []).push(`${e.key}:${e.defaultPrevented}`))
+        // Fixed at the top, so the frame's page has no scroll to take and the client must cancel the one Home would cause.
+        a.style.cssText = "position: fixed; top: 0; left: 0; width: 12rem"
+        document.body.append(a)
+        document.scrollingElement.scrollTop = 0
+      })
+      const textarea = frame.locator("#lb04-area")
+      await textarea.focus()
+      await textarea.evaluate((a) => { a.value = "\nab"; a.setSelectionRange(0, 0) })
+      await t.keyboard.press("Home")
+      await t.keyboard.type("Z")
+      await textarea.evaluate((a) => a.setSelectionRange(a.value.length, a.value.length))
+      await t.keyboard.press("Home")
+      await t.keyboard.type("W")
+      await wait(300)
+      tops.push(await pageTop())
+      area = await frame.evaluate(() => ({ value: document.querySelector("#lb04-area").value, seen: (window.__lb04 ?? []).filter((k) => k.startsWith("Home")) }))
+    }
+    const kept = await fieldFrame.evaluate((n) => n.isConnected && n.classList.contains("opacity-100"))
+    errors.push(...t.errors)
+    await t.closeAll()
+    const applePlatform = /mac|iphone|ipad|ipod|ios/i.test(platform)
+    const pass =
+      tops.every((x) => x === keysAt) && kept && caret.tag === "INPUT" && caret.value === "Xabc" && selected.tag === "INPUT" && selected.value === "Y" &&
+      (!forceApple || (applePlatform && area?.value === "Z\nWab" && area.seen.join() === "Home:true,Home:true"))
+    const detail = `${forceApple ? "forced Apple" : "native"} run on ${platform} (${applePlatform ? "the frame client cancels the scroll and moves the caret" : "not Apple: native caret moves, the frame client does nothing"}): the page stayed at ${[...new Set(tops)].join(", ")} px (from ${keysAt}), the frame ${kept ? "stayed mounted" : "was unmounted"}, Home then X gave "${caret.value}", Shift+Home then Y gave "${selected.value}"${area ? `, the textarea read ${JSON.stringify(area.value)} with Home ${area.seen.join(", ")} past a product stopPropagation` : ""}`
+    return { pass, detail }
   }
-  const fieldValue = () => fieldFrame.contentFrame().then((f) => f.evaluate(() => ({ tag: document.activeElement?.tagName, value: document.activeElement?.value ?? "" }))).catch(() => ({ tag: "frame gone", value: "" }))
-  await t.keyboard.press("End")
-  await t.keyboard.press("Home")
-  await t.keyboard.type("X")
-  const caret = await fieldValue()
-  await t.keyboard.press("End")
-  await t.keyboard.press("Shift+Home")
-  await t.keyboard.type("Y")
-  await wait(600)
-  tops.push(await pageTop())
-  const selected = await fieldValue()
-  const kept = await fieldFrame.evaluate((n) => n.isConnected && n.classList.contains("opacity-100"))
-  errors.push(...t.errors)
-  await t.closeAll()
-  const keys = tops.every((x) => x === keysAt) && kept && caret.tag === "INPUT" && caret.value === "Xabc" && selected.tag === "INPUT" && selected.value === "Y"
+  const nativeKeys = await keyRun(false)
+  const appleKeys = await keyRun(true)
+  const keys = nativeKeys.pass && appleKeys.pass
   const ok = groups.join() === "playground:Playground:1,styles:Styles:1,sizes:Sizes:1,states:States:1" && variants === 3 && phone.width === "390px" && phone.frames === 1 && inside.mounts === mounts && inside.width === 390 && code.spans > 0 && copied === code.text && copied.includes('variant="danger"') && entered && left && expanded.dialog === 1 && expanded.page === 0 && returned === "Expand Styles" && keys && !errors.length
-  return [ok ? "pass" : "fail", `groups ${groups.join(", ")}; the Styles frame shows ${variants} variants; Phone width set the frame to ${phone.width} with ${phone.frames} frame, mounts ${mounts} then ${inside.mounts}, inner width ${inside.width}; Code drew ${code.spans} token spans and Copy ${copied === code.text ? "copied it exactly" : `copied "${copied.slice(0, 30)}"`}; focus ${entered ? "entered the frame" : "never entered the frame"} and ${left ? "left it" : "stayed"}; Expand showed ${expanded.dialog} frame in the dialog and ${expanded.page} on the page; Esc returned focus to ${returned}; on ${platform} (${applePlatform ? "Apple: the frame client cancels the scroll and moves the caret" : "not Apple: these keys are native caret moves, the frame client does nothing"}) End, Home, Page Down, Page Up and Shift+Home typed in a Text field preview left the page at ${[...new Set(tops)].join(", ")} px (from ${keysAt}), the frame ${kept ? "stayed mounted" : "was unmounted"}, Home then X gave "${caret.value}" and Shift+Home then Y gave "${selected.value}" with focus on ${selected.tag}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  return [ok ? "pass" : "fail", `groups ${groups.join(", ")}; the Styles frame shows ${variants} variants; Phone width set the frame to ${phone.width} with ${phone.frames} frame, mounts ${mounts} then ${inside.mounts}, inner width ${inside.width}; Code drew ${code.spans} token spans and Copy ${copied === code.text ? "copied it exactly" : `copied "${copied.slice(0, 30)}"`}; focus ${entered ? "entered the frame" : "never entered the frame"} and ${left ? "left it" : "stayed"}; Expand showed ${expanded.dialog} frame in the dialog and ${expanded.page} on the page; Esc returned focus to ${returned}; End, Home, Page Down, Page Up and Shift+Home in a Text field preview: ${nativeKeys.detail}; ${appleKeys.detail}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 // LB-05 Frames mount only near the viewport, never more than LIVE_FRAMES at rest, nearest first; frames far above unmount when

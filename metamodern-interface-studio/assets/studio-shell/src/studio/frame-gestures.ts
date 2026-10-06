@@ -60,7 +60,8 @@ function moveCaret(t: Element, dir: number) {
       const v = t.value
       const at = dir < 0 ? (t.selectionStart ?? 0) : (t.selectionEnd ?? v.length)
       const multi = t instanceof HTMLTextAreaElement
-      const to = dir < 0 ? (multi ? v.lastIndexOf("\n", at - 1) + 1 : 0) : multi ? (v.indexOf("\n", at) < 0 ? v.length : v.indexOf("\n", at)) : v.length
+      // lastIndexOf with a negative start still finds a line break at 0, so a caret at 0 stays there.
+      const to = dir < 0 ? (multi && at > 0 ? v.lastIndexOf("\n", at - 1) + 1 : 0) : multi ? (v.indexOf("\n", at) < 0 ? v.length : v.indexOf("\n", at)) : v.length
       t.setSelectionRange(to, to)
     } catch {
       // A field type without a text selection keeps its caret.
@@ -91,8 +92,9 @@ export function keepFieldKeys() {
     e.preventDefault()
     if (e.key === "Home" || e.key === "End") moveCaret(field, dir)
   }
-  window.addEventListener("keydown", onKeyDown)
-  return () => window.removeEventListener("keydown", onKeyDown)
+  // Capture phase, so a product field handler that stops propagation cannot bypass it.
+  window.addEventListener("keydown", onKeyDown, true)
+  return () => window.removeEventListener("keydown", onKeyDown, true)
 }
 
 export function createFrameGestures(send: (g: StageGesture) => void) {
