@@ -506,5 +506,4 @@ test('WM-16 the workspace files ship with the starter', () => {
   for (const path of ['src/studio/workspace/declaration.ts', 'src/studio/workspace/link.ts', 'src/studio/workspace/operations.ts', 'src/studio/workspace/stores.ts', 'src/studio/workspace/context.ts', 'src/studio/workspace/api.ts', 'src/studio/workspace/slots.tsx', 'src/studio/workspace/workspace-nav.tsx', 'src/studio/workspace/workspace-page.tsx', 'src/kit/index.ts', 'src/workspace/index.ts', 'scripts/workspace-boundary.mjs', 'example/workspace/adapter.ts', 'example/workspace/index.ts', 'example/workspace/orphan.ts', 'example/workspace/site.tsx', 'example/workspace/mock-host.mjs']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
-  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.12.2');
 });

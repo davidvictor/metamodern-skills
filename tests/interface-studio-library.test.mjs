@@ -304,3 +304,11 @@ test('LM-16 the library reference documents the contract and SKILL.md routes to 
   for (let i = 1; i <= 10; i++) assert.match(shellDoc, new RegExp(`^\\| LB-${String(i).padStart(2, '0')} \\|`, 'm'), `shell.md has no LB-${i} row`);
   assert.match(read('README.md'), /src\/library\//);
 });
+
+test('LM-17 the library files ship with the starter', () => {
+  const root = fileURLToPath(shell);
+  for (const path of ['src/studio/library/schema.ts', 'src/studio/library/model.ts', 'src/studio/library/link.ts', 'src/studio/library/highlight.ts', 'src/studio/library/api.ts', 'src/studio/library/slots.tsx', 'src/studio/library/library-nav.tsx', 'src/studio/library/library-page.tsx', 'src/studio/library/rich-text.tsx', 'src/studio/library/code-block.tsx', 'src/studio/library/preview-block.tsx', 'src/library/index.ts', 'scripts/library-boundary.mjs', 'example/library/declaration.ts', 'example/library/adapter.ts', 'example/library/index.ts', 'example/library/button.ts', 'example/library/icon-button.ts', 'example/library/text-field.ts', 'example/library/frame.html', 'example/library/frame.ts', 'example/library/library.css']) {
+    assert.ok(existsSync(join(root, path)), `${path} is missing`);
+  }
+  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.13.0');
+});
