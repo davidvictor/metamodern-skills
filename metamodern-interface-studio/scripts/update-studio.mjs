@@ -28,9 +28,9 @@ const LOCK = 'studio-shell.lock.json';
 const LOCK_SCHEMA = 'studio-shell-lock/1';
 
 /** Created once and then owned by the product. */
-const SEEDS = new Set(['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts']);
+const SEEDS = new Set(['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'src/library/index.ts']);
 /** Folders that belong to the product: never compared, added to or removed from (a seed inside is created when missing). */
-const PRODUCT_DIRS = ['src/workspace/'];
+const PRODUCT_DIRS = ['src/workspace/', 'src/library/'];
 /** Replaced from the shell every time, then refreshed by npm install. */
 const REGENERATED = new Set(['package-lock.json']);
 /** Shell files a Studio may delete on purpose; recorded under `removed`. */
@@ -385,8 +385,8 @@ function runChecks(dir, log) {
     if (pkg.scripts?.[script]) run(script, ['run', script]);
     else results.push({ name: script, skipped: 'no such script in package.json' });
   }
-  const acceptanceReady = pkg.scripts?.acceptance && ['scripts/acceptance.mjs', 'example/index.html', 'example/workspace/mock-host.mjs', 'example/workspace/adapter.ts', 'src/adapters/synthetic.ts'].every((p) => existsSync(join(dir, p)));
-  if (!acceptanceReady) results.push({ name: 'acceptance', skipped: 'needs the acceptance script, the example product (with example/workspace/), and the acceptance adapters' });
+  const acceptanceReady = pkg.scripts?.acceptance && ['scripts/acceptance.mjs', 'example/index.html', 'example/workspace/mock-host.mjs', 'example/workspace/adapter.ts', 'example/library/adapter.ts', 'src/adapters/synthetic.ts'].every((p) => existsSync(join(dir, p)));
+  if (!acceptanceReady) results.push({ name: 'acceptance', skipped: 'needs the acceptance script, the example product (with example/workspace/ and example/library/), and the acceptance adapters' });
   else if (!hasPlaywright(dir)) results.push({ name: 'acceptance', skipped: 'Playwright is not installed (npm i -D playwright, or set PLAYWRIGHT_MODULE)' });
   else run('acceptance', ['run', 'acceptance']);
   return results;

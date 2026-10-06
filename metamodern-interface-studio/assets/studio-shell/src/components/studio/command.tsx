@@ -10,6 +10,7 @@ import { areaLabel, useStudio } from "@/store"
 import { VIEWS } from "./rail-panel"
 import { isMac } from "./stage-nav"
 import { Slot, WorkspaceNav } from "@/studio/workspace/slots"
+import { LibraryNav, LibrarySlot } from "@/studio/library/slots"
 
 export function CommandMenu() {
   const s = useStudio()
@@ -25,8 +26,8 @@ export function CommandMenu() {
           <CommandGroup heading="Scenarios">
             {adapter.scenarios.map((x) => (
               <CommandItem key={x.id} value={`${areaLabel(x.area)} ${x.label} ${x.surface} ${x.id}`} onSelect={run(() => {
-                // From a workspace module, the scenario and the view change together, after any question about unsaved changes.
-                if (s.module) return s.selectScenario(x.id, { view: "inspect" })
+                // From a workspace module or a library page, the scenario and the view change together, after any question about unsaved changes.
+                if (s.module || s.library) return s.selectScenario(x.id, { view: "inspect" })
                 s.selectScenario(x.id)
                 if (s.view === "gallery") s.set({ view: "inspect" })
               })}>
@@ -49,6 +50,9 @@ export function CommandMenu() {
           <Slot>
             <WorkspaceNav part="commands" onDone={close} />
           </Slot>
+          <LibrarySlot>
+            <LibraryNav part="commands" onDone={close} />
+          </LibrarySlot>
           <CommandSeparator />
           <CommandGroup heading="Actions">
             <CommandItem value="reset preview" onSelect={run(s.reset)}><RotateCcwIcon />Reset preview<CommandShortcut>R</CommandShortcut></CommandItem>

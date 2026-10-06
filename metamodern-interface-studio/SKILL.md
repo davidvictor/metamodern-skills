@@ -22,6 +22,8 @@ Select the requested operation; compose operations only within the authorized sc
 
 When a product asks for its own workspace tools in its Studio, such as environment configuration, a schema explorer, email previews or translations, also read [workspace](references/workspace.md). No other request needs it; Inspect, Build and Update are otherwise unchanged.
 
+When a product asks for a component library in its Studio (one documentation page per component, with live, grouped previews and a playground), also read [library](references/library.md). No other request needs it.
+
 ## Non-negotiable boundaries
 
 - Preserve the fixed product identity and existing kit. Do not invent a new brand direction or redesign the application as a side effect. Keep the shell and the product apart: product tokens never style the shell, shell tokens never reach a preview, and product needs go in the adapter rather than in shell components. Follow the project's accepted design authority where available; missing authority is an evidence gap, not permission to claim approval.

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /*
  * Measures the shell against the acceptance criteria in the skill's shell.md.
- * It builds the Studio four ways (the example product, a 1,000-scenario stress
- * adapter, a capture-only adapter, and the example with its synthetic workspace),
- * serves them locally (the workspace build also without its operations host),
+ * It builds the Studio five ways (the example product, a 1,000-scenario stress
+ * adapter, a capture-only adapter, the example with its synthetic workspace, and
+ * the example with that workspace and a synthetic component library), serves them
+ * locally (the workspace build also without its operations host),
  * and drives them in headless Chromium. It needs Playwright: `npm i -D playwright` and
  * `npx playwright install chromium`, or set PLAYWRIGHT_MODULE to an existing
  * install. Results print as a table and are written to acceptance-report.json.
@@ -27,11 +28,12 @@ try {
 }
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
-const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace" }
-// WS-01: the initial Studio chunk of the previous release's shell (0.12.1), gzipped, built with the example product. A
-// Studio that declares no workspace may grow by at most 3 KB over it. Each release moves it to the release before it.
-const STUDIO_CHUNK_BASELINE = "0.12.1"
-const STUDIO_CHUNK_BASELINE_GZ = 297733
+const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace", library: "library" }
+// WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.12.2), gzipped, built with the example
+// product. A Studio that declares neither a workspace nor a library may grow by at most 3 KB over it. Each release moves
+// it to the release before it.
+const STUDIO_CHUNK_BASELINE = "0.12.2"
+const STUDIO_CHUNK_BASELINE_GZ = 298530
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 const serve = (out, host) =>
@@ -51,8 +53,9 @@ const listen = async (name, server) => {
 for (const [name, variant] of Object.entries(builds)) {
   const out = join(root, ".acceptance", name)
   execFileSync("npx", ["vite", "build", "--outDir", out, "--emptyOutDir", "--logLevel", "error"], { cwd: root, env: { ...process.env, ...(variant ? { VITE_STUDIO_ADAPTER: variant } : {}) }, stdio: "inherit" })
-  if (name === "workspace") servers.workspace = { host: createMockHost() }
-  await listen(name, serve(out, name === "workspace" ? () => servers.workspace.host : null))
+  // The library build carries the example workspace too, so it is served with its own mock host.
+  if (name === "workspace" || name === "library") servers[name] = { host: createMockHost() }
+  await listen(name, serve(out, name === "workspace" || name === "library" ? () => servers[name].host : null))
 }
 await listen("nohost", serve(join(root, ".acceptance", "workspace"), null))
 
@@ -3285,7 +3288,7 @@ const ops = async (name, body, actor) => {
 /** Kit controls smaller than 44 px (a switch counts its hit area), and kit inputs under 16 px text. */
 const kitTargets = (p) =>
   p.evaluate(() => {
-    const kit = [...document.querySelectorAll('[data-kit] button, [data-kit] input, [data-kit] [role="combobox"], [data-kit] [role="switch"], [data-kit] [role="option"]')].filter((e) => {
+    const kit = [...document.querySelectorAll('[data-kit] button:not([data-inline]), [data-kit] input, [data-kit] [role="combobox"], [data-kit] [role="switch"], [data-kit] [role="option"]')].filter((e) => {
       const r = e.getBoundingClientRect()
       return r.width > 2 && r.height > 2
     })
@@ -3787,20 +3790,106 @@ await check("WS-08", async () => {
   return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : "at 360, 390 and 430 px the bottom bar's Workspace entry (Details in the top bar) opened a drawer listing Site; every bar, header and drawer target is at least 44 px, and every kit control is at least 44 px with 16 px input text on the General section as loaded, with an unsaved edit (Discard, Save), with the Region list open, in a conflict (Use current value, Save mine again) and in the leave dialog, and on the Secrets section (the secret field and Reveal); the drawer closed on choosing, nothing scrolls sideways, and no page errors. Real devices and swipe are not covered."]
 })
 
-// WS-09 Kit components meet the contrast, focus, target, reduced-motion and forced-color floors in both appearances
-await check("WS-09", async () => {
-  const contrast = (p) =>
-    p.evaluate(() => {
+// Floors shared by WS-09 and LB-08: AA text in [data-kit], a focus walk that measures the indicator focus adds (a preview
+// frame is skipped: its product draws its own focus), and drawn control boundaries for forced colors.
+const contrast = (p) =>
+  p.evaluate(() => {
+    const canvas = document.createElement("canvas")
+    canvas.width = canvas.height = 1
+    const g = canvas.getContext("2d", { willReadFrequently: true })
+    const rgb = (layers) => {
+      g.clearRect(0, 0, 1, 1)
+      for (const c of layers) {
+        g.fillStyle = c
+        g.fillRect(0, 0, 1, 1)
+      }
+      return Array.from(g.getImageData(0, 0, 1, 1).data.slice(0, 3))
+    }
+    const lum = (c) => {
+      const f = (v) => {
+        v /= 255
+        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+      }
+      return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
+    }
+    const ratio = (a, b) => {
+      const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
+      return (x + 0.05) / (y + 0.05)
+    }
+    const low = []
+    for (const el of document.querySelectorAll("[data-kit] *")) {
+      if (!el.getClientRects().length) continue
+      if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue
+      if (el.closest(":disabled, [aria-disabled='true'], [data-disabled]")) continue
+      const chain = []
+      for (let a = el; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+      const bg = rgb(["#ffffff", ...chain])
+      const st = getComputedStyle(el)
+      const fg = rgb([`rgb(${bg.join(",")})`, st.color])
+      const size = parseFloat(st.fontSize)
+      const need = size >= 24 || (size >= 18.66 && Number(st.fontWeight) >= 700) ? 3 : 4.5
+      const r = ratio(fg, bg)
+      if (r < need) low.push(`"${el.textContent.trim().slice(0, 24)}" ${r.toFixed(2)}`)
+    }
+    // Typed values and placeholders are text too.
+    for (const el of document.querySelectorAll('[data-kit] input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), [data-kit] textarea')) {
+      if (!el.getClientRects().length || el.disabled) continue
+      const text = el.value || el.placeholder
+      if (!text) continue
+      const chain = []
+      for (let a = el; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+      const bg = rgb(["#ffffff", ...chain])
+      const st = getComputedStyle(el, el.value ? null : "::placeholder")
+      const fg = rgb([`rgb(${bg.join(",")})`, st.color])
+      const size = parseFloat(getComputedStyle(el).fontSize)
+      const r = ratio(fg, bg)
+      if (r < (size >= 24 ? 3 : 4.5)) low.push(`${el.value ? "value" : "placeholder"} "${text.slice(0, 24)}" ${r.toFixed(2)}`)
+    }
+    return low
+  })
+// Tailwind gives every ring utility a computed box-shadow even unfocused, so "has a box-shadow" proves nothing: record each kit
+// element's outline and shadow layers unfocused, then count a focus indicator only where focus adds a visible layer.
+// Controls transition their ring in: read styles once the running transitions end (infinite animations such as spinners are skipped).
+const settle = (p) => p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => null))))
+const unfocused = async (p) => {
+  await p.mouse.move(0, 0)
+  await p.evaluate(() => document.activeElement?.blur?.())
+  await settle(p)
+  await p.evaluate(() => {
+    const before = new WeakMap()
+    for (const e of document.querySelectorAll("[data-kit] *")) {
+      const s = getComputedStyle(e)
+      before.set(e, { outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} ${s.outlineOffset}`, shadow: s.boxShadow })
+    }
+    window.__kitUnfocused = before
+  })
+}
+const tabWalk = async (p, forced) => {
+  await p.evaluate(() => {
+    const h = document.querySelector("[data-kit] h1")
+    h.tabIndex = -1
+    h.focus()
+  })
+  const lost = []
+  const faint = []
+  const ratios = []
+  let reached = 0
+  for (let i = 0; i < 14; i++) {
+    await p.keyboard.press("Tab")
+    await settle(p)
+    const f = await p.evaluate(() => {
+      const e = document.activeElement
+      if (!e?.closest("[data-kit]") || e.tagName === "IFRAME") return null
       const canvas = document.createElement("canvas")
       canvas.width = canvas.height = 1
       const g = canvas.getContext("2d", { willReadFrequently: true })
-      const rgb = (layers) => {
+      const paint = (layers) => {
         g.clearRect(0, 0, 1, 1)
         for (const c of layers) {
           g.fillStyle = c
           g.fillRect(0, 0, 1, 1)
         }
-        return Array.from(g.getImageData(0, 0, 1, 1).data.slice(0, 3))
+        return Array.from(g.getImageData(0, 0, 1, 1).data)
       }
       const lum = (c) => {
         const f = (v) => {
@@ -3813,140 +3902,57 @@ await check("WS-09", async () => {
         const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
         return (x + 0.05) / (y + 0.05)
       }
-      const low = []
-      for (const el of document.querySelectorAll("[data-kit] *")) {
-        if (!el.getClientRects().length) continue
-        if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue
-        if (el.closest(":disabled, [aria-disabled='true'], [data-disabled]")) continue
+      // The backdrop the indicator is drawn on: the parent's for an outer ring, the element's own for an inset one.
+      const backdrop = (inside) => {
         const chain = []
-        for (let a = el; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
-        const bg = rgb(["#ffffff", ...chain])
-        const st = getComputedStyle(el)
-        const fg = rgb([`rgb(${bg.join(",")})`, st.color])
-        const size = parseFloat(st.fontSize)
-        const need = size >= 24 || (size >= 18.66 && Number(st.fontWeight) >= 700) ? 3 : 4.5
-        const r = ratio(fg, bg)
-        if (r < need) low.push(`"${el.textContent.trim().slice(0, 24)}" ${r.toFixed(2)}`)
+        for (let a = inside ? e : e.parentElement; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
+        return paint(["#ffffff", ...chain]).slice(0, 3)
       }
-      // Typed values and placeholders are text too.
-      for (const el of document.querySelectorAll('[data-kit] input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), [data-kit] textarea')) {
-        if (!el.getClientRects().length || el.disabled) continue
-        const text = el.value || el.placeholder
-        if (!text) continue
-        const chain = []
-        for (let a = el; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
-        const bg = rgb(["#ffffff", ...chain])
-        const st = getComputedStyle(el, el.value ? null : "::placeholder")
-        const fg = rgb([`rgb(${bg.join(",")})`, st.color])
-        const size = parseFloat(getComputedStyle(el).fontSize)
-        const r = ratio(fg, bg)
-        if (r < (size >= 24 ? 3 : 4.5)) low.push(`${el.value ? "value" : "placeholder"} "${text.slice(0, 24)}" ${r.toFixed(2)}`)
+      const split = (v) => (v === "none" ? [] : v.split(/,(?![^(]*\))/).map((x) => x.trim()))
+      const s = getComputedStyle(e)
+      const before = window.__kitUnfocused?.get(e) ?? { outline: "none", shadow: "none" }
+      const marks = []
+      const outline = `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} ${s.outlineOffset}`
+      if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0 && outline !== before.outline && paint([s.outlineColor])[3] > 0) marks.push({ kind: "outline", color: s.outlineColor, inside: parseFloat(s.outlineOffset) < 0 })
+      const was = split(before.shadow)
+      for (const layer of split(s.boxShadow)) {
+        if (was.includes(layer)) continue
+        const color = /^(rgba?|oklch|oklab|lab|lch|color|hsla?)\([^)]*\)/.exec(layer)?.[0] ?? /^#\w+/.exec(layer)?.[0]
+        const lengths = layer.replace(color ?? "", "").match(/-?[\d.]+px/g)?.map(parseFloat) ?? []
+        const [, , blur = 0, spread = 0] = lengths
+        if (color && paint([color])[3] > 0 && (spread > 0 || blur > 0)) marks.push({ kind: "ring", color, inside: /\binset\b/.test(layer) })
       }
-      return low
+      const best = marks.map((m) => {
+        const bg = backdrop(m.inside)
+        return ratio(paint([`rgb(${bg.join(",")})`, m.color]).slice(0, 3), bg)
+      }).sort((a, b) => b - a)[0]
+      return { n: e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16) || e.id, outline: marks.some((m) => m.kind === "outline"), visible: marks.length > 0, ratio: best ?? 0 }
     })
-  // Tailwind gives every ring utility a computed box-shadow even unfocused, so "has a box-shadow" proves nothing: record each kit
-  // element's outline and shadow layers unfocused, then count a focus indicator only where focus adds a visible layer.
-  // Controls transition their ring in: read styles once the running transitions end (infinite animations such as spinners are skipped).
-  const settle = (p) => p.evaluate(() => Promise.all(document.getAnimations().filter((a) => a instanceof CSSTransition).map((a) => a.finished.catch(() => null))))
-  const unfocused = async (p) => {
-    await p.mouse.move(0, 0)
-    await p.evaluate(() => document.activeElement?.blur?.())
-    await settle(p)
-    await p.evaluate(() => {
-      const before = new WeakMap()
-      for (const e of document.querySelectorAll("[data-kit] *")) {
-        const s = getComputedStyle(e)
-        before.set(e, { outline: `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} ${s.outlineOffset}`, shadow: s.boxShadow })
-      }
-      window.__kitUnfocused = before
-    })
-  }
-  const tabWalk = async (p, forced) => {
-    await p.evaluate(() => {
-      const h = document.querySelector("[data-kit] h1")
-      h.tabIndex = -1
-      h.focus()
-    })
-    const lost = []
-    const faint = []
-    const ratios = []
-    let reached = 0
-    for (let i = 0; i < 14; i++) {
-      await p.keyboard.press("Tab")
-      await settle(p)
-      const f = await p.evaluate(() => {
-        const e = document.activeElement
-        if (!e?.closest("[data-kit]")) return null
-        const canvas = document.createElement("canvas")
-        canvas.width = canvas.height = 1
-        const g = canvas.getContext("2d", { willReadFrequently: true })
-        const paint = (layers) => {
-          g.clearRect(0, 0, 1, 1)
-          for (const c of layers) {
-            g.fillStyle = c
-            g.fillRect(0, 0, 1, 1)
-          }
-          return Array.from(g.getImageData(0, 0, 1, 1).data)
-        }
-        const lum = (c) => {
-          const f = (v) => {
-            v /= 255
-            return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
-          }
-          return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2])
-        }
-        const ratio = (a, b) => {
-          const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m)
-          return (x + 0.05) / (y + 0.05)
-        }
-        // The backdrop the indicator is drawn on: the parent's for an outer ring, the element's own for an inset one.
-        const backdrop = (inside) => {
-          const chain = []
-          for (let a = inside ? e : e.parentElement; a; a = a.parentElement) chain.unshift(getComputedStyle(a).backgroundColor)
-          return paint(["#ffffff", ...chain]).slice(0, 3)
-        }
-        const split = (v) => (v === "none" ? [] : v.split(/,(?![^(]*\))/).map((x) => x.trim()))
-        const s = getComputedStyle(e)
-        const before = window.__kitUnfocused?.get(e) ?? { outline: "none", shadow: "none" }
-        const marks = []
-        const outline = `${s.outlineStyle} ${s.outlineWidth} ${s.outlineColor} ${s.outlineOffset}`
-        if (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0 && outline !== before.outline && paint([s.outlineColor])[3] > 0) marks.push({ kind: "outline", color: s.outlineColor, inside: parseFloat(s.outlineOffset) < 0 })
-        const was = split(before.shadow)
-        for (const layer of split(s.boxShadow)) {
-          if (was.includes(layer)) continue
-          const color = /^(rgba?|oklch|oklab|lab|lch|color|hsla?)\([^)]*\)/.exec(layer)?.[0] ?? /^#\w+/.exec(layer)?.[0]
-          const lengths = layer.replace(color ?? "", "").match(/-?[\d.]+px/g)?.map(parseFloat) ?? []
-          const [, , blur = 0, spread = 0] = lengths
-          if (color && paint([color])[3] > 0 && (spread > 0 || blur > 0)) marks.push({ kind: "ring", color, inside: /\binset\b/.test(layer) })
-        }
-        const best = marks.map((m) => {
-          const bg = backdrop(m.inside)
-          return ratio(paint([`rgb(${bg.join(",")})`, m.color]).slice(0, 3), bg)
-        }).sort((a, b) => b - a)[0]
-        return { n: e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16) || e.id, outline: marks.some((m) => m.kind === "outline"), visible: marks.length > 0, ratio: best ?? 0 }
-      })
-      if (!f) continue
-      reached++
-      if (forced ? !f.outline : !f.visible) lost.push(f.n)
-      else if (!forced) {
-        ratios.push(f.ratio)
-        if (f.ratio < 3) faint.push(`${f.n} ${f.ratio.toFixed(2)}`)
-      }
+    if (!f) continue
+    reached++
+    if (forced ? !f.outline : !f.visible) lost.push(f.n)
+    else if (!forced) {
+      ratios.push(f.ratio)
+      if (f.ratio < 3) faint.push(`${f.n} ${f.ratio.toFixed(2)}`)
     }
-    return { reached, lost, faint, min: ratios.length ? Math.min(...ratios) : 0 }
   }
-  // A control's boundary in forced colors is a drawn border; a control inside an input group uses the group's.
-  const boundaryless = (p) =>
-    p.evaluate(() => {
-      const drawn = (e) => {
-        const s = getComputedStyle(e)
-        return s.borderTopStyle !== "none" && parseFloat(s.borderTopWidth) > 0
-      }
-      return [...document.querySelectorAll('[data-kit] button, [data-kit] input, [data-kit] [role="switch"], [data-kit] [role="combobox"]')].filter((e) => e.getBoundingClientRect().width > 2).filter((e) => {
-        const group = e.closest('[data-slot="input-group"]')
-        return !drawn(e) && !(group && drawn(group))
-      }).map((e) => e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16) || e.id)
-    })
+  return { reached, lost, faint, min: ratios.length ? Math.min(...ratios) : 0 }
+}
+// A control's boundary in forced colors is a drawn border; a control inside an input group uses the group's.
+const boundaryless = (p) =>
+  p.evaluate(() => {
+    const drawn = (e) => {
+      const s = getComputedStyle(e)
+      return s.borderTopStyle !== "none" && parseFloat(s.borderTopWidth) > 0
+    }
+    return [...document.querySelectorAll('[data-kit] button:not([data-inline]), [data-kit] input, [data-kit] [role="switch"], [data-kit] [role="combobox"]')].filter((e) => e.getBoundingClientRect().width > 2).filter((e) => {
+      const group = e.closest('[data-slot="input-group"]')
+      return !drawn(e) && !(group && drawn(group))
+    }).map((e) => e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16) || e.id)
+  })
+
+// WS-09 Kit components meet the contrast, focus, target, reduced-motion and forced-color floors in both appearances
+await check("WS-09", async () => {
   const notes = []
   const errors = []
   let ok = true
@@ -4090,6 +4096,468 @@ await check("WS-10", async () => {
   }
   if (errors.length) bad.push(`page errors ${errors.slice(0, 2).join(" | ")}`)
   return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : `390 px with touch: ${notes.join("; ")}.`]
+})
+
+// ---------- Component library (LB-01 to LB-10, references/library.md) ----------
+
+const LIBRARY_SECTIONS = ["Preview", "When to use", "When not to use", "Usage", "Examples", "API reference", "Keyboard", "Accessibility", "Motion", "Responsive behavior", "Performance", "Notes for AI"]
+const railLibrary = (p) => p.locator('[aria-label="Studio"] nav[aria-label="Library"] button')
+const libTitle = (p) => p.locator("[data-library-page] h1").first().textContent({ timeout: 500 }).catch(() => "")
+/** Opens the library build (with its workspace host) at a link, waiting for the page title when the link names a component. */
+const openLibrary = async (hash, o = {}) => {
+  servers.library.host = createMockHost()
+  const p = await open("library", { ...o, hash })
+  if (/library=/.test(hash)) await poll(() => libTitle(p), Boolean, 8000)
+  return p
+}
+const blockFrame = async (p, id) => (await p.locator(`[data-library-page] [data-preview-block="${id}"] iframe.opacity-100`).first().elementHandle())?.contentFrame()
+const frameReady = (p, id, ms = 15000) => poll(() => p.locator(`[data-library-page] [data-preview-block="${id}"] iframe.opacity-100`).count(), (n) => n === 1, ms)
+const toSection = (p, id) =>
+  p.evaluate((section) => {
+    const page = document.querySelector("[data-library-page]")
+    page.scrollTop += document.querySelector(`#lib-${section}`).getBoundingClientRect().top - page.getBoundingClientRect().top
+  }, id)
+
+// LB-01 Without a library nothing changes: no library chunk is built or requested, no rail item or Go to group, at most 3 KB more
+// initial chunk; with one, the navigation chunk loads at start, the page chunk when the library opens, and only that component's docs
+await check("LB-01", async () => {
+  const dir = join(root, ".acceptance", "normal", "assets")
+  const files = readdirSync(dir)
+  const gz = gzipSync(readFileSync(join(dir, files.find((f) => /^studio-.*\.js$/.test(f))))).length
+  const growth = gz - STUDIO_CHUNK_BASELINE_GZ
+  const built = files.filter((f) => /^(library-|example-library)/.test(f))
+  const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  for (const name of ["Compare", "Gallery", "Design", "Inspect"]) {
+    await railView(p, name).click()
+    await wait(400)
+  }
+  await p.keyboard.press("ControlOrMeta+k")
+  await wait(400)
+  const headings = await p.locator("[cmdk-group-heading]").allTextContents()
+  await p.keyboard.press("Escape")
+  const requested = (await resources(p)).filter((u) => /\/(library-|example-library)/.test(u))
+  const rail = await p.locator('nav[aria-label="Library"]').count()
+  const errors = [...p.errors]
+  await p.closeAll()
+  const l = await openLibrary("view=inspect&scenario=tasks.list")
+  const start = await resources(l)
+  const navEarly = start.some((u) => /\/library-nav-/.test(u))
+  const pageEarly = start.some((u) => /\/library-page-/.test(u))
+  await railLibrary(l).click()
+  await poll(() => libTitle(l), (t) => t === "Button", 8000)
+  const after = await resources(l)
+  const pageAfter = after.some((u) => /\/library-page-/.test(u))
+  const button = after.some((u) => /\/button-[\w-]+\.js$/.test(u))
+  const others = after.filter((u) => /\/(icon-button|text-field)-[\w-]+\.js$/.test(u)).length
+  errors.push(...l.errors)
+  await l.closeAll()
+  const goTo = headings.some((h) => /Library/.test(h))
+  const ok = growth <= 3072 && !built.length && !requested.length && rail === 0 && !goTo && navEarly && !pageEarly && pageAfter && button && others === 0 && !errors.length
+  return [ok ? "pass" : "fail", `initial Studio chunk ${gz} bytes gzipped, ${growth >= 0 ? "+" : ""}${growth} against the ${STUDIO_CHUNK_BASELINE} baseline of ${STUDIO_CHUNK_BASELINE_GZ} (budget 3,072); without a library the build has ${built.length} library chunks, ${requested.length} were requested across the views and Go to, the rail has ${rail} library items and Go to ${goTo ? "lists" : "has no"} library group; with one, the navigation chunk loaded at start ${navEarly}, the page chunk before opening ${pageEarly} and after ${pageAfter}, the opened component's documentation ${button} and others ${others}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-02 The library follows the workspace modules after a second divider with the views' marker and focus; Tab and Enter, the grouped
+// list and its search, Go to, links and Back reach components; a view key leaves; leaving unsaved module changes asks; unknown links are named
+await check("LB-02", async () => {
+  const p = await openLibrary("view=inspect&scenario=tasks.list")
+  const rail = await p.evaluate(() => {
+    const studio = document.querySelector('[aria-label="Studio"]')
+    const lib = studio.querySelector('nav[aria-label="Library"]')
+    return { navs: [...studio.querySelectorAll("nav")].map((n) => n.getAttribute("aria-label")), divider: lib?.previousElementSibling?.getAttribute("role") === "separator", dividers: studio.querySelectorAll('[role="separator"]').length }
+  })
+  const marker = (selector) =>
+    p.locator(selector).first().evaluate((el) => {
+      const b = getComputedStyle(el, "::before")
+      return `${b.width} ${b.backgroundColor}`
+    })
+  const viewMarker = await marker('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]')
+  await railModule(p, "Audit").focus()
+  await p.keyboard.press("Tab")
+  const focused = await p.evaluate(() => {
+    const s = getComputedStyle(document.activeElement)
+    return { text: document.activeElement?.textContent?.trim(), ring: s.outlineStyle !== "none" && parseFloat(s.outlineWidth) >= 2 && parseFloat(s.outlineOffset) < 0 ? `inset outline ${s.outlineWidth} ${s.outlineColor}` : s.boxShadow }
+  })
+  await p.keyboard.press("Enter")
+  await poll(() => libTitle(p), (t) => t === "Button", 8000)
+  const libMarker = await marker('[aria-label="Studio"] nav[aria-label="Library"] button[aria-pressed="true"]')
+  const opened = await p.evaluate(() => ({ hash: location.hash, crumbs: document.querySelector("header")?.innerText.replace(/\s+/g, " ") ?? "", views: document.querySelectorAll('[aria-label="Studio"] nav[aria-label="Views"] button[aria-pressed="true"]').length }))
+  const list = await p.evaluate(() => [...document.querySelectorAll('nav[aria-label="Components"] [data-library-group]')].map((g) => `${g.querySelector("h3")?.textContent.trim()}:${[...g.querySelectorAll("button")].map((b) => b.textContent.trim()).join("|")}`))
+  await p.locator("#library-search").fill("textbox")
+  await wait(250)
+  const found = await p.locator('nav[aria-label="Components"] button').allTextContents()
+  await p.locator("#library-search").fill("")
+  await p.locator('nav[aria-label="Components"] button', { hasText: "Text field" }).click()
+  await poll(() => libTitle(p), (t) => t === "Text field")
+  const back = []
+  const place = () => p.evaluate(() => ({ hash: location.hash, title: document.querySelector("[data-library-page] h1")?.textContent ?? null }))
+  // Each Back is read once the page shows where it should land (or the time runs out): Button, then the view.
+  for (const arrived of [(b) => b.title === "Button", (b) => /view=inspect/.test(b.hash) && b.title === null]) {
+    await p.evaluate(() => history.back())
+    back.push(await poll(place, arrived, 8000))
+  }
+  await p.keyboard.press("ControlOrMeta+k")
+  await wait(400)
+  await p.keyboard.type("library icon button")
+  await wait(300)
+  await p.keyboard.press("Enter")
+  await poll(() => libTitle(p), (t) => t === "Icon button")
+  const viaGoTo = await p.evaluate(() => location.hash)
+  await p.evaluate(() => document.activeElement?.blur())
+  await p.keyboard.press("2")
+  await wait(700)
+  const left = await p.evaluate(() => ({ hash: location.hash, page: !!document.querySelector("[data-library-page]") }))
+  await railModule(p, "Site").click()
+  await poll(() => siteName(p).isVisible().catch(() => false), Boolean)
+  await siteName(p).fill("Unsaved")
+  await railLibrary(p).click()
+  const asked = await poll(() => p.getByRole("dialog", { name: "Leave without saving?" }).isVisible().catch(() => false), Boolean, 3000)
+  await p.keyboard.press("Escape")
+  await wait(400)
+  const stayed = await p.evaluate(() => ({ hash: location.hash, page: !!document.querySelector("[data-library-page]") }))
+  const errors = [...p.errors]
+  await p.closeAll()
+  const l = await openLibrary("library=text-field&section=api")
+  await wait(900)
+  const linked = await l.evaluate(() => ({ title: document.querySelector("[data-library-page] h1")?.textContent, top: Math.round(document.querySelector("#lib-api").getBoundingClientRect().top - document.querySelector("[data-library-page]").getBoundingClientRect().top), pressed: !!document.querySelector('[aria-label="Studio"] nav[aria-label="Library"] button[aria-pressed="true"]') }))
+  errors.push(...l.errors)
+  await l.closeAll()
+  const u = await openLibrary("library=nope")
+  const named = await poll(() => u.getByText("That link names a component this Studio's library does not have").isVisible().catch(() => false), Boolean)
+  await u.closeAll()
+  const ok =
+    rail.navs.join() === "Views,Workspace,Library" && rail.divider && rail.dividers === 2 && /^2px /.test(viewMarker) && libMarker === viewMarker && focused.text === "Library" && /inset/.test(focused.ring) &&
+    /library=button/.test(opened.hash) && /Library/.test(opened.crumbs) && /Actions/.test(opened.crumbs) && /Button/.test(opened.crumbs) && opened.views === 0 &&
+    list.join(";") === "Actions:Button|Icon button;Inputs:Text field|Switch" && found.join() === "Text field" &&
+    back[0].title === "Button" && /view=inspect/.test(back[1].hash) && back[1].title === null && /library=icon-button/.test(viaGoTo) && /view=compare/.test(left.hash) && !left.page &&
+    asked && /module=site/.test(stayed.hash) && !stayed.page && linked.title === "Text field" && linked.top >= -2 && linked.top < 80 && linked.pressed && named && !errors.length
+  return [ok ? "pass" : "fail", `rail ${rail.navs.join(", ")} with ${rail.dividers} dividers${rail.divider ? ", one before the library" : ""}; marker ${viewMarker} on a view and ${libMarker} on the library; Tab from the last module reached "${focused.text}" with ${/inset/.test(focused.ring) ? "the inset ring" : "no ring"}; Enter opened ${opened.hash} (views pressed ${opened.views}; breadcrumb "${opened.crumbs.slice(0, 70)}"); the list read ${list.join("; ")}; "textbox" found ${found.join(", ")}; Back went to ${back.map((b) => b.title ?? b.hash).join(", then ")}; Go to opened ${viaGoTo}; the 2 key left to ${left.hash}; leaving unsaved Site changes for the library ${asked ? "asked" : "did not ask"} and Esc stayed on ${stayed.hash}; a link to API opened "${linked.title}" with the heading ${linked.top} px from the top; an unknown component link ${named ? "was named in a toast" : "was not named"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-03 Twelve sections in order with a matching outline of buttons; choosing an entry scrolls there and writes section= without a
+// history entry; scrolling marks the section on screen; rich text renders; a missing section and missing documentation say so
+await check("LB-03", async () => {
+  const p = await openLibrary("library=button")
+  const headings = await poll(() => p.evaluate(() => [...document.querySelectorAll("[data-library-page] section[data-section] > h2")].map((h) => h.textContent.trim())), (h) => h.length === LIBRARY_SECTIONS.length)
+  const outline = await p.locator('nav[aria-label="On this page"] button').allTextContents()
+  const anchors = await p.evaluate(() => document.querySelectorAll('[data-library-page] a, nav[aria-label="On this page"] a').length)
+  const before = await p.evaluate(() => history.length)
+  await p.locator('nav[aria-label="On this page"] button', { hasText: "Accessibility" }).click()
+  // Read once the scroll has landed and the outline caught up (a smooth scroll takes a moment), or when the time runs out.
+  const jumped = await poll(
+    () => p.evaluate(() => ({ top: Math.round(document.querySelector("#lib-accessibility").getBoundingClientRect().top - document.querySelector("[data-library-page]").getBoundingClientRect().top), hash: location.hash, length: history.length, current: document.querySelector('nav[aria-label="On this page"] [aria-current="location"]')?.textContent?.trim() })),
+    (j) => j.top >= -2 && j.top <= 40 && /section=accessibility/.test(j.hash) && j.current === "Accessibility"
+  )
+  await toSection(p, "motion")
+  const spy = await poll(() => p.evaluate(() => document.querySelector('nav[aria-label="On this page"] [aria-current="location"]')?.textContent?.trim()), (t) => t === "Motion")
+  const rich = await p.evaluate(() => {
+    const page = document.querySelector("[data-library-page]")
+    return { lists: page.querySelectorAll("section[data-section] ul, section[data-section] ol").length, tables: page.querySelectorAll("section[data-section] table").length, inline: page.querySelectorAll("section[data-section] p code").length, code: page.querySelectorAll("section[data-section] .library-code pre").length, callouts: page.querySelectorAll('section[data-section] [role="note"]').length, refs: page.querySelectorAll("section[data-section] button[data-inline]").length }
+  })
+  await p.locator("[data-library-page] button[data-inline]", { hasText: "Icon button" }).first().click()
+  const followed = await poll(() => libTitle(p), (t) => t === "Icon button")
+  const errors = [...p.errors]
+  await p.closeAll()
+  const t = await openLibrary("library=text-field")
+  const gaps = await t.evaluate(() => [...document.querySelectorAll("[data-library-page] section[data-section]")].filter((s) => s.textContent.includes("Not documented yet.")).map((s) => s.dataset.section))
+  errors.push(...t.errors)
+  await t.closeAll()
+  const w = await openLibrary("library=switch")
+  const none = await w.getByText("Switch has no documentation yet").isVisible().catch(() => false)
+  errors.push(...w.errors)
+  await w.closeAll()
+  const ok = headings.join("|") === LIBRARY_SECTIONS.join("|") && outline.join("|") === LIBRARY_SECTIONS.join("|") && anchors === 0 && jumped.top >= -2 && jumped.top <= 40 && /section=accessibility/.test(jumped.hash) && jumped.length === before && jumped.current === "Accessibility" && spy === "Motion" && rich.lists >= 2 && rich.tables >= 2 && rich.inline >= 1 && rich.code >= 1 && rich.callouts >= 1 && rich.refs >= 1 && followed === "Icon button" && gaps.join() === "performance" && none && !errors.length
+  return [ok ? "pass" : "fail", `headings ${headings.length} (${headings.join(", ")}); outline ${outline.length} buttons, ${anchors} anchors; Accessibility scrolled to ${jumped.top} px with ${jumped.hash} and history ${before} then ${jumped.length}, marked ${jumped.current}; scrolling to Motion marked ${spy}; rich text ${JSON.stringify(rich)}; the inline reference opened ${followed}; Text field gaps ${gaps.join(", ") || "none"}; Switch ${none ? "says it has no documentation yet" : "gave no reason"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-04 Each preview group is one labelled frame with all its variants; Phone width resizes the same runtime; Code shows highlighted code
+// and Copy copies it exactly; focus enters the frame from the tabs and leaves it; Expand shows one frame in a dialog and none on the page
+await check("LB-04", async () => {
+  const p = await openLibrary("library=button")
+  await p.context().grantPermissions(["clipboard-read", "clipboard-write"])
+  for (const id of ["playground", "styles", "sizes", "states"]) await frameReady(p, id)
+  const groups = await p.evaluate(() => [...document.querySelectorAll("#lib-preview [data-preview-block]")].map((b) => `${b.dataset.previewBlock}:${b.querySelector("h3")?.textContent.trim()}:${b.querySelectorAll("iframe").length}`))
+  const styles = await blockFrame(p, "styles")
+  const variants = await styles.evaluate(() => document.querySelectorAll("[data-sample]").length)
+  const mounts = await styles.evaluate(() => window.__libMounts)
+  const block = p.locator('[data-library-page] [data-preview-block="styles"]')
+  await block.getByRole("button", { name: "Phone width" }).click()
+  await wait(900)
+  const phone = await p.evaluate(() => ({ width: document.querySelector('[data-library-page] [data-preview-block="styles"] iframe.opacity-100')?.style.width, frames: document.querySelectorAll('[data-library-page] [data-preview-block="styles"] iframe').length }))
+  const inside = await (await blockFrame(p, "styles")).evaluate(() => ({ mounts: window.__libMounts, width: innerWidth }))
+  await block.getByRole("tab", { name: "Code" }).click()
+  await wait(300)
+  const code = await block.evaluate((b) => {
+    const pre = b.querySelector(".library-code pre")
+    return { spans: pre?.querySelectorAll("span[class^='tok-']").length ?? 0, text: pre?.textContent ?? "" }
+  })
+  await block.locator("button", { hasText: "Copy" }).click()
+  await wait(300)
+  const copied = await p.evaluate(() => navigator.clipboard.readText())
+  await block.getByRole("tab", { name: "Preview" }).click()
+  await wait(300)
+  await block.getByRole("tab", { name: "Preview" }).focus()
+  let entered = false
+  let left = false
+  for (let i = 0; i < 4 && !entered; i++) {
+    await p.keyboard.press("Tab")
+    entered = await p.evaluate(() => document.activeElement?.tagName === "IFRAME")
+  }
+  for (let i = 0; i < 12 && entered && !left; i++) {
+    await p.keyboard.press("Tab")
+    left = await p.evaluate(() => document.activeElement?.tagName !== "IFRAME" && document.activeElement !== document.body)
+  }
+  const expand = block.getByRole("button", { name: "Expand Styles" })
+  await expand.focus()
+  await p.keyboard.press("Enter")
+  await poll(() => p.locator('[role="dialog"] iframe.opacity-100').count(), (n) => n === 1, 15000)
+  const expanded = await p.evaluate(() => ({ dialog: document.querySelectorAll('[role="dialog"] iframe').length, page: document.querySelectorAll("[data-library-page] iframe").length }))
+  await p.keyboard.press("Escape")
+  await wait(700)
+  const returned = await p.evaluate(() => document.activeElement?.getAttribute("aria-label"))
+  const errors = [...p.errors]
+  await p.closeAll()
+  const ok = groups.join() === "playground:Playground:1,styles:Styles:1,sizes:Sizes:1,states:States:1" && variants === 3 && phone.width === "390px" && phone.frames === 1 && inside.mounts === mounts && inside.width === 390 && code.spans > 0 && copied === code.text && copied.includes('variant="danger"') && entered && left && expanded.dialog === 1 && expanded.page === 0 && returned === "Expand Styles" && !errors.length
+  return [ok ? "pass" : "fail", `groups ${groups.join(", ")}; the Styles frame shows ${variants} variants; Phone width set the frame to ${phone.width} with ${phone.frames} frame, mounts ${mounts} then ${inside.mounts}, inner width ${inside.width}; Code drew ${code.spans} token spans and Copy ${copied === code.text ? "copied it exactly" : `copied "${copied.slice(0, 30)}"`}; focus ${entered ? "entered the frame" : "never entered the frame"} and ${left ? "left it" : "stayed"}; Expand showed ${expanded.dialog} frame in the dialog and ${expanded.page} on the page; Esc returned focus to ${returned}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-05 Frames mount only near the viewport, never more than LIVE_FRAMES at rest, nearest first; frames far above unmount when
+// scrolling down; every preview keeps its height whether live or not
+await check("LB-05", async () => {
+  const p = await openLibrary("library=button")
+  await frameReady(p, "playground")
+  await wait(2500)
+  const sample = () =>
+    p.evaluate(() => {
+      const blocks = [...document.querySelectorAll("[data-library-page] [data-preview-block]")]
+      return { frames: document.querySelectorAll("[data-library-page] iframe").length, live: blocks.filter((b) => b.dataset.live === "true").map((b) => b.dataset.previewBlock), blocks: blocks.map((b) => b.dataset.previewBlock), heights: Object.fromEntries(blocks.map((b) => [b.dataset.previewBlock, Math.round(b.querySelector(".stage-surface").getBoundingClientRect().height)])) }
+    })
+  const top = await sample()
+  const target = await p.evaluate(() => {
+    const page = document.querySelector("[data-library-page]")
+    return page.scrollTop + document.querySelector("#lib-examples").getBoundingClientRect().top - page.getBoundingClientRect().top
+  })
+  const counts = []
+  for (let i = 1; i <= 6; i++) {
+    await p.evaluate(([y, k]) => {
+      document.querySelector("[data-library-page]").scrollTop = (y * k) / 6
+    }, [target, i])
+    await wait(450)
+    counts.push((await sample()).frames)
+  }
+  await wait(2500)
+  const end = await sample()
+  const errors = [...p.errors]
+  await p.closeAll()
+  const kept = Object.keys(top.heights).every((id) => Math.abs(top.heights[id] - end.heights[id]) <= 1)
+  // A long section: Text field stacks six examples. Scrolling through it in small steps keeps several previews inside the
+  // near margin the whole time, so only re-measuring tells which are nearest now. At rest the live ones must be the
+  // nearest four (of the previews within the margin), and the page never holds more than four frames: a swap mounts
+  // and unmounts in the same render, so no transient fifth frame is allowed.
+  const t = await openLibrary("library=text-field")
+  const nearest = () =>
+    t.evaluate((near) => {
+      const page = document.querySelector("[data-library-page]")
+      const r = page.getBoundingClientRect()
+      const middle = r.top + r.height / 2
+      const blocks = [...page.querySelectorAll("[data-preview-block]")].map((b) => ({ id: b.dataset.previewBlock, live: b.dataset.live === "true", rect: b.getBoundingClientRect() }))
+      const within = blocks.filter((b) => b.rect.bottom >= r.top - near && b.rect.top <= r.bottom + near).sort((a, c) => Math.abs(a.rect.top + a.rect.height / 2 - middle) - Math.abs(c.rect.top + c.rect.height / 2 - middle))
+      return { frames: page.querySelectorAll("iframe").length, live: blocks.filter((b) => b.live).map((b) => b.id).sort().join(), expected: within.slice(0, 4).map((b) => b.id).sort().join(), count: blocks.length }
+    }, 400)
+  const settled = (x) => x.live === x.expected && x.frames <= 4
+  await toSection(t, "examples")
+  const atExamples = await poll(nearest, settled, 15000)
+  const longCounts = []
+  for (let i = 0; i < 10; i++) {
+    await t.evaluate(() => {
+      document.querySelector("[data-library-page]").scrollTop += 120
+    })
+    await wait(120)
+    longCounts.push((await nearest()).frames)
+  }
+  const atRest = await poll(nearest, settled, 15000)
+  errors.push(...t.errors)
+  await t.closeAll()
+  const long = atExamples.count >= 7 && settled(atExamples) && settled(atRest) && atRest.live !== atExamples.live && Math.max(...longCounts) <= 4
+  const ok = top.blocks.join() === "playground,styles,sizes,states,with-icon,in-a-row" && top.live.length === 4 && top.frames === 4 && !top.live.includes("in-a-row") && Math.max(...counts) <= 4 && end.live.includes("with-icon") && end.live.includes("in-a-row") && !end.live.includes("playground") && end.frames <= 4 && kept && long && !errors.length
+  return [ok ? "pass" : "fail", `${top.blocks.length} previews; at the top ${top.frames} frames live (${top.live.join(", ")}); while scrolling to Examples ${counts.join(", ")} frames; at Examples ${end.frames} live (${end.live.join(", ")}); every preview kept its height ${kept}; Text field (${atExamples.count} previews) at its Examples had ${atExamples.live} live (nearest ${atExamples.expected}), while scrolling 1,200 px in small steps ${longCounts.join(", ")} frames, and at rest ${atRest.live} live (nearest ${atRest.expected}), ${atRest.frames} frames; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-06 The playground changes the frame in place (one mount), sends only declared properties, refuses an over-long label with a
+// reason, resets, and the theme and Contrast controls reach every frame
+await check("LB-06", async () => {
+  const p = await openLibrary("library=button")
+  await frameReady(p, "playground")
+  await frameReady(p, "styles")
+  const state = async () =>
+    (await blockFrame(p, "playground"))?.evaluate(() => {
+      const b = document.querySelector("[data-sample]")
+      return { mounts: window.__libMounts, values: window.__libValues, text: b?.textContent.trim(), variant: b?.dataset.variant, disabled: b?.disabled, theme: document.documentElement.dataset.theme }
+    })
+  const before = await state()
+  const details = p.locator('aside[aria-label="Details"]')
+  await details.getByLabel("Label", { exact: true }).fill("Publish")
+  await details.getByRole("combobox", { name: "Variant" }).click()
+  await p.getByRole("option", { name: "Danger" }).click()
+  await details.getByRole("switch", { name: "Disabled" }).click()
+  const after = await poll(state, (s) => s?.text === "Publish" && s?.variant === "danger" && s?.disabled === true)
+  await details.getByLabel("Label", { exact: true }).fill("x".repeat(81))
+  // Read once the reason shows and the frame has been sent the default in place of the refused label (or the time runs out).
+  const refusal = await poll(
+    async () => ({ reason: await details.getByText("At most 80 characters on one line").isVisible().catch(() => false), frame: await state() }),
+    (r) => r.reason && r.frame?.text === "Save changes"
+  )
+  const reason = refusal.reason
+  const refused = refusal.frame
+  await details.getByRole("button", { name: "Reset" }).click()
+  const reset = await poll(state, (s) => s?.text === "Save changes" && s?.variant === "primary" && s?.disabled === false)
+  await details.getByRole("combobox", { name: "Theme" }).click()
+  await p.getByRole("option", { name: "Dark", exact: true }).click()
+  const dark = await poll(state, (s) => s?.theme === "dark", 15000)
+  await details.getByRole("switch", { name: "Contrast" }).click()
+  const contrast = await poll(state, (s) => s?.theme === "dark-contrast", 15000)
+  const styles = await poll(async () => (await blockFrame(p, "styles"))?.evaluate(() => document.documentElement.dataset.theme), (t) => t === "dark-contrast", 15000)
+  const errors = [...p.errors]
+  await p.closeAll()
+  const keys = Object.keys(after?.values ?? {}).sort().join()
+  const ok = before?.mounts === 1 && after?.mounts === 1 && keys === "disabled,label,size,variant" && refused?.mounts === 1 && refused?.text === "Save changes" && refused?.values?.label === "Save changes" && reason && reset?.mounts === 1 && dark?.theme === "dark" && contrast?.theme === "dark-contrast" && styles === "dark-contrast" && !errors.length
+  return [ok ? "pass" : "fail", `before ${JSON.stringify(before)}; after editing ${JSON.stringify(after)} (sent ${keys}); an 81-character label left the frame on "${refused?.text}" with ${reason ? "the reason shown" : "no reason"} after ${refused?.mounts} mount; Reset showed "${reset?.text}" after ${reset?.mounts} mount; theme ${dark?.theme}, then Contrast ${contrast?.theme}, Styles ${styles}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-07 An adapted page states its source, version and notice; every adjusted section, item, row and example says so in visible text;
+// a hand-written page shows no source
+await check("LB-07", async () => {
+  const p = await openLibrary("library=button")
+  const source = await p.locator("[data-provenance]").innerText().catch(() => "")
+  const notice = await p.getByText("Adapted from the Example UI 2.4.0 documentation.").count()
+  const marks = await p.evaluate(() => [...document.querySelectorAll("[data-library-page] [data-adjusted]")].map((e) => ({ text: e.textContent.replace(/\s+/g, " ").trim(), shown: e.getBoundingClientRect().height > 0 && getComputedStyle(e).visibility !== "hidden" })))
+  const errors = [...p.errors]
+  await p.closeAll()
+  const h = await openLibrary("library=icon-button")
+  const hand = await h.evaluate(() => ({ source: document.querySelectorAll("[data-provenance]").length, marks: document.querySelectorAll("[data-library-page] [data-adjusted]").length }))
+  errors.push(...h.errors)
+  await h.closeAll()
+  const expected = ["Busy shows a spinner and keeps its label", "Points to this product's Icon button", "Actions sit at the end of the row in this product", "Defaults to button, so it never submits a form by accident", "Touch targets are at least 44 px in this product"]
+  const reasons = marks.map((m) => m.text.replace(/^Adjusted for Example Tasks: /, ""))
+  const ok = /^Documentation from Example UI 2\.4\.0, adjusted for Example Tasks where marked\.$/.test(source.trim()) && notice === 1 && marks.length === 5 && marks.every((m) => m.shown && /^Adjusted for Example Tasks: \S/.test(m.text)) && expected.every((r) => reasons.includes(r)) && hand.source === 0 && hand.marks === 0 && !errors.length
+  return [ok ? "pass" : "fail", `source "${source.trim()}", notice shown ${notice}; ${marks.length} adjusted marks: ${marks.map((m) => m.text).join(" | ")}; the hand-written page shows ${hand.source} source lines and ${hand.marks} marks; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-08 Library pages, the component list and the sidebar meet the AA text, visible focus, 44 px and 16 px touch, reduced-motion and
+// forced-color floors in both appearances
+await check("LB-08", async () => {
+  const notes = []
+  const errors = []
+  let ok = true
+  for (const appearance of ["light", "dark"]) {
+    const p = await openLibrary("library=button", { appearance })
+    await frameReady(p, "playground")
+    await wait(600)
+    const low = await contrast(p)
+    await unfocused(p)
+    const focus = await tabWalk(p, false)
+    await p.emulateMedia({ reducedMotion: "reduce" })
+    const moving = await p.evaluate(() => [...document.querySelectorAll("[data-kit], [data-kit] *")].filter((e) => {
+      const s = getComputedStyle(e)
+      return (s.animationName !== "none" && parseFloat(s.animationDuration) > 0) || s.transitionDuration.split(",").some((d) => parseFloat(d) > 0)
+    }).length)
+    await p.emulateMedia({ reducedMotion: "reduce", forcedColors: "active" })
+    await unfocused(p)
+    const forced = await tabWalk(p, true)
+    const borderless = await boundaryless(p)
+    errors.push(...p.errors)
+    await p.closeAll()
+    const touch = {}
+    for (const width of [390, 768]) {
+      const t = await openLibrary("library=button", { appearance, width, height: 844, touch: true })
+      await wait(800)
+      if (width < 768) {
+        await t.locator('header button[aria-label="Details"]').click()
+        await wait(700)
+      }
+      touch[width] = await kitTargets(t)
+      errors.push(...t.errors)
+      await t.closeAll()
+    }
+    const small = Object.entries(touch).flatMap(([w, m]) => [...m.small.map((x) => `${w}: ${x.n} ${x.w}x${x.h}`), ...m.smallText.map((x) => `${w}: ${x.n} text ${x.text}px`), ...(m.count ? [] : [`${w}: no controls`])])
+    const fine = !low.length && focus.reached >= 6 && !focus.lost.length && !focus.faint.length && moving === 0 && forced.reached >= 6 && !forced.lost.length && !borderless.length && !small.length
+    ok &&= fine
+    notes.push(`${appearance}: text below AA ${low.length ? low.slice(0, 4).join(", ") : "none"}; focus visible on ${focus.reached - focus.lost.length} of ${focus.reached} stops${focus.lost.length ? ` (none on ${focus.lost.join(", ")})` : ""}, lowest ${focus.min.toFixed(2)}:1${focus.faint.length ? ` (under 3:1 on ${focus.faint.join(", ")})` : ""}; ${moving} elements moving under reduced motion; in forced colors focus outlined on ${forced.reached - forced.lost.length} of ${forced.reached}${borderless.length ? `, without a drawn boundary ${borderless.slice(0, 4).join(", ")}` : ", every control keeps a boundary"}; touch ${small.length ? `misses ${small.slice(0, 6).join(", ")}` : "every target at least 44 px with 16 px input text at 390 px (Details open) and 768 px"}`)
+  }
+  if (errors.length) {
+    ok = false
+    notes.push(`page errors ${errors.slice(0, 2).join(" | ")}`)
+  }
+  return [ok ? "pass" : "fail", `${notes.join("; ")}. Forced colors is Chromium's emulation; assistive technologies are not covered.`]
+})
+
+// LB-09 At 360 to 430 px the library opens from the bottom bar, its list from the Panel drawer and its outline from the top bar's
+// Details, with 44 px targets and no sideways scroll
+await check("LB-09", async () => {
+  const bad = []
+  const errors = []
+  for (const width of [360, 390, 430]) {
+    const p = await openLibrary("view=inspect&scenario=tasks.list", { width, height: 844, touch: true })
+    const bar = await p.evaluate(() => ({ entries: [...document.querySelectorAll('nav[aria-label="Views"] button')].map((b) => b.textContent.trim()), doc: document.documentElement.scrollWidth, iw: innerWidth }))
+    await p.locator('nav[aria-label="Views"] button', { hasText: "Workspace" }).click()
+    await wait(700)
+    await p.getByRole("dialog").getByRole("button", { name: "Library", exact: true }).click()
+    await wait(900)
+    const listed = await p.getByRole("dialog").locator('nav[aria-label="Components"] button').allTextContents()
+    const small = await p.evaluate(() =>
+      [...document.querySelectorAll('[role="dialog"] button:not([data-inline]), nav[aria-label="Views"] button, header button')]
+        .filter((e) => e.offsetParent)
+        .map((e) => {
+          const r = e.getBoundingClientRect()
+          return { n: e.getAttribute("aria-label") || e.textContent.trim().slice(0, 16), w: Math.round(r.width), h: Math.round(r.height) }
+        })
+        .filter((r) => r.w < 44 || r.h < 44)
+    )
+    await p.getByRole("dialog").locator('nav[aria-label="Components"] button', { hasText: "Text field" }).click()
+    await poll(() => libTitle(p), (t) => t === "Text field")
+    await wait(700)
+    const page = await p.evaluate(() => {
+      const wide = [...document.querySelectorAll("body *")].filter((e) => e.scrollWidth > innerWidth + 1 && !["auto", "scroll"].includes(getComputedStyle(e).overflowX) && !e.closest(".preview-frame, pre, [role='region']"))
+      return { doc: document.documentElement.scrollWidth, iw: innerWidth, wide: wide.map((e) => `${e.tagName.toLowerCase()}.${String(e.className).slice(0, 24)}`).slice(0, 4), dialogs: document.querySelectorAll('[role="dialog"]').length }
+    })
+    await p.locator('header button[aria-label="Details"]').click()
+    await wait(700)
+    const outline = await p.getByRole("dialog").locator('nav[aria-label="On this page"] button').count()
+    const sidebar = await kitTargets(p)
+    errors.push(...p.errors)
+    await p.closeAll()
+    const fine = bar.doc <= bar.iw && bar.entries.includes("Workspace") && !bar.entries.includes("Library") && listed.join() === "Button,Icon button,Text field,Switch" && !small.length && page.doc <= page.iw && !page.wide.length && page.dialogs === 0 && outline === 12 && !sidebar.small.length && !sidebar.smallText.length
+    if (!fine) bad.push(`${width}: ${JSON.stringify({ bar, listed, small, page, outline, small2: sidebar.small, text: sidebar.smallText })}`)
+  }
+  if (errors.length) bad.push(`page errors ${errors.slice(0, 2).join(" | ")}`)
+  return [bad.length ? "fail" : "pass", bad.length ? bad.join("; ") : "at 360, 390 and 430 px the bottom bar's Workspace drawer listed Library, which opened its component list (Button, Icon button, Text field, Switch) in the Panel drawer; choosing Text field closed it; the top bar's Details opened On this page with 12 entries and the playground; every bar, header, drawer and sidebar target is at least 44 px with 16 px input text; nothing scrolls sideways (code and tables scroll inside themselves). Real devices and swipe are not covered."]
+})
+
+// LB-10 The built Studio, served as static files, renders documentation and live previews; every frame loads the declared entry on the
+// frame origin; a capture shows its image labelled Static capture with no frame; no request leaves the Studio's origin
+await check("LB-10", async () => {
+  const p = await openLibrary("library=button")
+  await frameReady(p, "playground")
+  await toSection(p, "examples")
+  await wait(2500)
+  const entry = `${servers.library.url}example/library/frame.html`
+  const srcs = await p.evaluate(() => [...document.querySelectorAll("iframe")].map((f) => f.src))
+  const urls = []
+  for (const f of p.frames()) urls.push(f.url(), ...(await f.evaluate(() => performance.getEntriesByType("resource").map((e) => e.name)).catch(() => [])))
+  const foreign = [...new Set(urls.filter((u) => u && !u.startsWith(servers.library.url) && !u.startsWith("data:") && u !== "about:blank"))]
+  const docs = await p.evaluate(() => ({ sections: document.querySelectorAll("[data-library-page] section[data-section]").length, code: document.querySelectorAll("[data-library-page] .library-code").length }))
+  const errors = [...p.errors]
+  await p.closeAll()
+  const c = await openLibrary("library=icon-button")
+  await wait(1500)
+  const capture = await c.evaluate(() => {
+    const b = document.querySelector('[data-library-page] [data-preview-block="pressed"]')
+    const img = b?.querySelector("img")
+    return { frames: b?.querySelectorAll("iframe").length ?? -1, loaded: !!img && img.complete && img.naturalWidth > 0, alt: img?.alt ?? "", label: !!b?.textContent.includes("Static capture") }
+  })
+  errors.push(...c.errors)
+  await c.closeAll()
+  const ok = srcs.length >= 1 && srcs.every((s) => s === entry) && !foreign.length && docs.sections === 12 && docs.code >= 1 && capture.frames === 0 && capture.loaded && !!capture.alt && capture.label && !errors.length
+  return [ok ? "pass" : "fail", `served from the built files: ${docs.sections} sections and ${docs.code} code samples; ${srcs.length} frames, ${srcs.every((s) => s === entry) ? "every one" : "not every one"} at ${entry.replace(servers.library.url, "./")}; requests off the Studio's origin ${foreign.length ? foreign.slice(0, 3).join(", ") : "none"}; the Pressed capture loaded ${capture.loaded} with alt "${capture.alt}", ${capture.frames} frames and ${capture.label ? "the Static capture label" : "no label"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 await browser.close()

@@ -132,3 +132,13 @@ Nothing to do by hand, unless a product's own checks pin the markup below. Fixes
 - In forced colors the highlight is a 2 px `Highlight` outline (box shadows are dropped there, so 0.12.1 drew nothing) and the label a `Canvas` and `CanvasText` pair.
 - A Compare side's header is as wide as its preview (at least 60 px, so Reset's target fits): it wraps, a long value name truncates with its full name as its title, and below 7rem its status shows only the dot or icon, with the word kept as its accessible name. On a 768 px tablet side B's header no longer runs off the stage's right edge, and 3-up at 1440 px no longer scrolls the stage sideways.
 - Acceptance adds AC-67 (the anchor label's contrast and placement, and the highlight in forced colors) and AC-68 (AA text in Present and Compare, and whole Compare headers with nothing scrolling sideways). WS-01 now measures the initial chunk against 0.12.1.
+
+## 0.13.0
+
+Nothing to do by hand for a Studio that declares no library, apart from the two checks below. Library mode is new and optional.
+
+- A product can add a component library beside the views, declared under `library` in the adapter, with each component's documentation as data in `src/library/` (see `references/library.md` in the skill). A Studio whose adapter declares no `library` builds without any library code, provided Vite can load the adapter at build time.
+- The updater creates `src/library/index.ts`, an empty `defineLibrary({})`, when it is missing. That file and everything in `src/library/` belong to the product; updates never compare or change them. `npm run lint` keeps files there to `@studio/library` and their own imports, and to `.ts`, `.js` or `.mjs` (documentation is data, so `.tsx` and `.jsx` are refused).
+- `library` is now a reserved link key. A component property with that ID is rejected, as for the other link keys; a dock input with it keeps working but no longer travels in links. Rename it.
+- `scripts/acceptance.mjs` builds a fifth Studio with the example library (`example/library/`, removed with `example/`; it also carries the example workspace) and measures LB-01 to LB-10. The updater skips acceptance, with the reason, when `example/library/` is missing. WS-01 and LB-01 now measure the initial chunk against 0.12.2.
+- The acceptance focus walk shared by WS-09 and LB-08 skips preview frames, and its target and boundary checks skip inline text references (`data-inline`). Product checks built on copies of those helpers should do the same.

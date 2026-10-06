@@ -1,0 +1,20 @@
+/* The example library's preview entry: each scenario's variants side by side, centred at their natural size. */
+html, body { margin: 0; background: var(--ex-ground); color: var(--ex-ink); font: var(--ex-text) / var(--ex-leading) var(--ex-font); }
+.lib { box-sizing: border-box; min-height: 100vh; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; padding: 16px; }
+.lib .row { display: flex; gap: 8px; justify-content: flex-end; }
+.btn { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-weight: 600; cursor: pointer; }
+.btn.danger { background: var(--ex-danger); color: #ffffff; }
+.btn.sm { padding: 5px 10px; font-size: 13px; }
+.btn.lg { padding: 12px 18px; font-size: 17px; }
+.btn:focus-visible, .icon-btn:focus-visible, .lib-field input:focus-visible { outline: none; box-shadow: var(--ex-focus); }
+.spin { width: 12px; height: 12px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+.icon-btn { display: inline-grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--ex-line); border-radius: var(--ex-radius); background: var(--ex-surface); color: var(--ex-ink); }
+.icon-btn.sm { width: 28px; height: 28px; }
+.icon-btn.lg { width: 44px; height: 44px; }
+.lib-field { display: grid; gap: 4px; width: 240px; font-size: 14px; }
+.lib-field input { font: inherit; padding: 8px 10px; border: 1px solid var(--ex-line); border-radius: var(--ex-radius); background: var(--ex-surface); color: var(--ex-ink); }
+.lib-field input[aria-invalid="true"] { border-color: var(--ex-danger); }
+.lib-field small { color: var(--ex-danger); }
+.narrow { max-width: 240px; }

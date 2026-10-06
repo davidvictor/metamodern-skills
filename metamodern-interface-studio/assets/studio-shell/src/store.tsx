@@ -13,6 +13,7 @@ import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import { applyPresenterOverlay, isPresenterOverlay, type PresenterOverlay, type PresenterWalkthrough, updateOverlay } from "@/studio/presenter-overlay"
 import { parseModuleLink } from "@/studio/workspace/link"
+import { parseLibraryLink } from "@/studio/library/link"
 
 /** One draft layer, as a preview receives it. */
 export type Draft = { tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>> }
@@ -77,6 +78,9 @@ export type State = {
   section: string | null
   /** Whether the open module has a Details slot, reported by the workspace layer once the module loads. */
   moduleDetails: boolean
+  /** The open component library page, and the section a link or On this page asked for; null shows the view or module. */
+  library: string | null
+  libraryAt: string | null
   mobilePanel: null | "panel" | "details" | "workspace"
 }
 
@@ -162,6 +166,8 @@ function readHash(stored: Record<string, Edits>): Partial<State> {
   const out: Partial<State> = {}
   const link = parseModuleLink(location.hash, A.workspace)
   if (link.module) Object.assign(out, { module: link.module, section: link.section })
+  const lib = parseLibraryLink(location.hash, A.library)
+  if (lib.library) Object.assign(out, { library: lib.library, libraryAt: lib.at })
   const view = q.get("view")
   if (view && VIEWS.includes(view as View)) out.view = view as View
   // The Design view grew out of Tokens; old links land on its Tokens tab.
@@ -333,6 +339,8 @@ const initial: State = {
   module: null,
   section: null,
   moduleDetails: false,
+  library: null,
+  libraryAt: null,
 }
 
 type Ctx = State & {
@@ -444,16 +452,18 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     current.current = state
   })
   const set: Ctx["set"] = React.useCallback((patch) => {
-    // Applied as an update, so patches queued in one tick each see the state before them. Choosing a view closes an open module.
+    // Applied as an update, so patches queued in one tick each see the state before them. Choosing a view closes an open
+    // module or library page; opening a module closes the library page, and opening a library page closes the module.
     const apply = (x: State) => {
       const p = typeof patch === "function" ? patch(x) : patch
-      return { ...x, ...p, ...("view" in p ? { module: null, section: null } : {}) }
+      const closes = "view" in p ? { module: null, section: null, library: null, libraryAt: null } : p.module ? { library: null, libraryAt: null } : p.library ? { module: null, section: null } : {}
+      return { ...x, ...p, ...closes }
     }
     const s = current.current
     if (!s.module || !leaveGuard.ask) return setState(apply)
-    // Choosing a view, or another module, leaves the open module; with unsaved changes the workspace layer asks first.
+    // Choosing a view, another module or a library page leaves the open module; with unsaved changes the workspace layer asks first.
     const p = typeof patch === "function" ? patch(s) : patch
-    if ("view" in p || ("module" in p && p.module !== s.module)) return leaveGuard.ask(() => setState(apply))
+    if ("view" in p || ("module" in p && p.module !== s.module) || !!p.library) return leaveGuard.ask(() => setState(apply))
     setState(apply)
   }, [])
   React.useEffect(() => {
@@ -483,6 +493,14 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       if (state.section) q.set("section", state.section)
       return history.replaceState(null, "", `#${q}`)
     }
+    // An open library page's link names the component, the section asked for, and the theme its previews use.
+    if (state.library) {
+      const q = new URLSearchParams()
+      q.set("library", state.library)
+      if (state.libraryAt) q.set("section", state.libraryAt)
+      q.set("theme", state.theme)
+      return history.replaceState(null, "", `#${q}`)
+    }
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })
     if (state.size) q.set("size", `${state.size.w}x${state.size.h}`)
     for (const i of A.axes.inputs) if (i.placement === "dock" && !isProperty(i) && !RESERVED_LINK_KEYS.includes(i.id) && state.values[i.id] !== undefined) q.set(i.id, String(state.values[i.id]))
@@ -506,7 +524,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme), state.theme)
     if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive, state.module, state.section])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive, state.module, state.section, state.library, state.libraryAt])
   // Unsaved Responsive edits stay in this browser until saved or reverted.
   React.useEffect(() => {
     const { resetNonce: _, ...keep } = state.responsive
@@ -578,7 +596,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       }),
     resetProps: () => set((s) => ({ props: { ...s.props, [s.scenario]: {} }, propsNote: null, propsHold: s.propsHold?.scenario === s.scenario ? null : s.propsHold })),
     setSavedStates: (list) => set({ savedStates: joinSaved(list) }),
-    setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v && !s.module ? !s.panelOpen : true })),
+    setView: (v) => set((s) => ({ view: v, panelOpen: s.view === v && !s.module && !s.library ? !s.panelOpen : true })),
     reset: () => {
       set((s) => ({ resetNonce: s.resetNonce + 1, preview: { ...s.preview, status: "loading", modified: false, canGoBack: false } }))
       toast.success("Preview reset", { description: "Product state and navigation restored to the scenario." })
