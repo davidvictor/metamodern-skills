@@ -1,8 +1,8 @@
 /*
  * The component library's place in the Studio's navigation, loaded with the Studio only when the adapter declares a
- * library: its rail group after a divider (after the workspace's, when there is one), Go to entries by group, the
- * breadcrumb, the phone entries and Details button, and history for Back. Pages load separately, when the library
- * opens (library-page.tsx).
+ * library: its rail item first, above the views, with a divider after it; Go to entries by group, after Scenarios and
+ * before the views; the breadcrumb, the phone entries and Details button, and history for Back. Pages load separately,
+ * when the library opens (library-page.tsx).
  */
 import * as React from "react"
 import { InfoIcon } from "lucide-react"
@@ -53,22 +53,22 @@ export function LibraryNav(props: NavProps) {
   }
 }
 
-/** After the views (and the workspace's modules): a divider, then the library as one square item with the views' marker, focus ring and label. */
+/** First in the rail, above the views: the library as one square item with the views' marker, focus ring and label, then a divider. */
 function RailItem({ labels }: { labels: boolean }) {
   const s = useStudio()
   return (
     <>
-      <div role="separator" aria-orientation="horizontal" className="mx-2 my-1 h-px shrink-0 bg-sidebar-border" />
       <nav aria-label={LABEL} className="flex flex-col py-1">
         <RailButton label={LABEL} labels={labels} active={!!s.library} onClick={() => s.set(s.library ? { panelOpen: !s.panelOpen } : openPatch(last ?? first))}>
           <Icon name={ICON} />
         </RailButton>
       </nav>
+      <div role="separator" aria-orientation="horizontal" className="mx-2 my-1 h-px shrink-0 bg-sidebar-border" />
     </>
   )
 }
 
-/** One Go to group per library group, in the declared order. */
+/** One Go to group per library group, in the declared order, each after a separator (Go to places them after Scenarios). */
 function Commands({ onDone }: { onDone: () => void }) {
   const s = useStudio()
   return (

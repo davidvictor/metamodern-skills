@@ -319,7 +319,7 @@ test('LM-17 the library files ship with the starter', () => {
   for (const path of ['src/studio/library/schema.ts', 'src/studio/library/model.ts', 'src/studio/library/link.ts', 'src/studio/library/highlight.ts', 'src/studio/library/api.ts', 'src/studio/library/slots.tsx', 'src/studio/library/library-nav.tsx', 'src/studio/library/library-page.tsx', 'src/studio/library/rich-text.tsx', 'src/studio/library/code-block.tsx', 'src/studio/library/preview-block.tsx', 'src/library/index.ts', 'scripts/library-boundary.mjs', 'example/library/declaration.ts', 'example/library/adapter.ts', 'example/library/index.ts', 'example/library/button.ts', 'example/library/icon-button.ts', 'example/library/text-field.ts', 'example/library/frame.html', 'example/library/frame.ts', 'example/library/library.css']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
-  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.13.0');
+  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.13.1');
 });
 
 test('LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported', async () => {
@@ -357,4 +357,58 @@ test('LM-18 malformed documentation yields problems, never an exception, and und
   const block = read('src/studio/library/preview-block.tsx');
   assert.match(block, /distance: s\.near \? distance\(s\.el\) : Infinity/, 'the budget measures near previews afresh');
   assert.match(block, /el\?\.addEventListener\("scroll", onMove/, 'the budget follows the page scroll');
+});
+
+test('0.13.1 the library comes first in the rail with a divider after it, and its Go to groups precede the views', () => {
+  const rail = read('src/components/studio/rail-panel.tsx');
+  const content = rail.slice(rail.indexOf('<SidebarContent>'), rail.indexOf('</SidebarContent>'));
+  const at = (s) => content.indexOf(s);
+  assert.ok(at('<LibraryNav part="rail"') > -1 && at('<LibraryNav part="rail"') < at('aria-label="Views"'), 'the library precedes the views');
+  assert.ok(at('aria-label="Views"') < at('<WorkspaceNav part="rail"'), 'the workspace still follows the views');
+  assert.match(content, /<div aria-hidden className=\{cn\("shrink-0", labels \? "h-16" : "h-12"\)\} \/>\s*<div aria-hidden className="mx-2 my-1 h-px shrink-0" \/>/, 'the rail holds the item\'s and the divider\'s places while it loads');
+  const nav = read('src/studio/library/library-nav.tsx');
+  const item = nav.slice(nav.indexOf('function RailItem'), nav.indexOf('function Commands'));
+  assert.ok(item.indexOf('<nav aria-label={LABEL}') < item.indexOf('role="separator"'), 'the divider follows the library item');
+  assert.equal(item.match(/role="separator"/g)?.length, 1);
+  assert.match(read('src/studio/library/slots.tsx'), /export function LibrarySlot\(\{ children, fallback = null \}/);
+  const command = read('src/components/studio/command.tsx');
+  const pos = (s) => command.indexOf(s);
+  assert.ok(pos('heading="Scenarios"') < pos('<LibraryNav part="commands"') && pos('<LibraryNav part="commands"') < pos('heading="Views"') && pos('heading="Views"') < pos('<WorkspaceNav part="commands"'), 'Go to: Scenarios, library groups, Views, Workspace');
+  const app = read('src/App.tsx');
+  assert.match(app, /hasWorkspace \? \([\s\S]*?WorkspaceNav part="tab"[\s\S]*?\) : hasLibrary \? \([\s\S]*?LibraryNav part="tab"/, 'the phone keeps one place entry');
+  const script = read('scripts/acceptance.mjs');
+  assert.match(script, /rail\.navs\.join\(\) === "Library,Views,Workspace"/);
+  assert.match(script, /goToGroups\.slice\(0, 4\)\.join\(\) === "Scenarios,Library: Actions,Library: Inputs,Views"/);
+  assert.match(script, /nextStop === "Inspect" && backStop === "Library"/);
+  const doc = readFileSync(new URL('references/library.md', skill), 'utf8');
+  assert.match(doc, /The rail shows the library first, as one item above the views with a divider after it/);
+  assert.doesNotMatch(readFileSync(new URL('references/shell.md', skill), 'utf8'), /another divider and the library|after a second divider/);
+  assert.match(read('UPDATING.md'), /^## 0\.13\.1$/m);
+});
+
+test('0.13.1 Home, End and the page keys typed in a field inside a frame never scroll the Studio around it', () => {
+  const gestures = read('src/studio/frame-gestures.ts');
+  assert.match(gestures, /export function keepFieldKeys\(\)/);
+  assert.match(gestures, /const SCROLL_KEYS: Record<string, number> = \{ Home: -1, PageUp: -1, End: 1, PageDown: 1 \}/);
+  assert.match(gestures, /\|\| canTake\(field, "y", dir\)\) return\n    e\.preventDefault\(\)\n    if \(e\.key === "Home" \|\| e\.key === "End"\) moveCaret\(field, dir\)/, 'only a scroll nothing in the frame can take is cancelled, and Home and End move the caret');
+  assert.match(gestures, /e\.shiftKey \|\| e\.metaKey \|\| e\.ctrlKey \|\| e\.altKey \|\| !apple\(\)\) return/, 'modifier keys and other platforms are left alone');
+  assert.match(gestures, /userAgentData\?\.platform/);
+  assert.match(gestures, /window\.addEventListener\("keydown", onKeyDown\)\n  return \(\) => window\.removeEventListener\("keydown", onKeyDown\)/, 'bubble phase, after the product handlers');
+  assert.match(gestures, /field\.matches\("\[role=combobox\], \[aria-activedescendant\]"\)/, 'list fields keep their keys');
+  assert.match(gestures, /multi && at > 0 \? v\.lastIndexOf\("\\n", at - 1\) \+ 1 : 0/, 'Home at 0 stays at 0 before a leading line break');
+  const typing = gestures.slice(gestures.indexOf('const TYPING'), gestures.indexOf('const SCROLL_KEYS'));
+  for (const owner of ['select', 'listbox', 'combobox', 'spinbutton']) assert.ok(!typing.includes(owner), `${owner} keeps its keys`);
+  assert.doesNotMatch(read('src/studio/frame-client.ts'), /overscrollBehavior/, 'a wheel over a preview still reaches the page');
+  const client = read('src/studio/frame-client.ts');
+  assert.match(client, /const releaseFieldKeys = keepFieldKeys\(\)/);
+  assert.ok(client.indexOf('keepFieldKeys()') > client.indexOf('options.gestures === false'), 'on with gestures off too');
+  assert.match(client, /releaseFieldKeys\(\)\n/);
+  const script = read('scripts/acceptance.mjs');
+  assert.match(script, /for \(const key of \["End", "Home", "PageDown", "PageUp", "End"\]\)/);
+  assert.match(script, /caret\.value === "Xabc" && selected\.tag === "INPUT" && selected\.value === "Y"/);
+  assert.match(script, /const appleKeys = await keyRun\(true\)/, 'the Apple branch runs on any OS');
+  assert.match(script, /area\?\.value === "Z\\nWab" && area\.own === "aQbc" && area\.combo\.join\(\) === "aQbc,aQbc"/);
+  assert.match(script, /combo got Home,combo Home:false/);
+  assert.match(script, /beforeNav\.lib === 0 && beforeNav\.top === afterNav/);
+  assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /Keys typed into a field stay in the frame/);
 });

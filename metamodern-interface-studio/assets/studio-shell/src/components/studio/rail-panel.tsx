@@ -119,6 +119,18 @@ export function Rail({ labels }: { labels: boolean }) {
         </Tooltip>
       </SidebarHeader>
       <SidebarContent>
+        {/* The library comes first, above the views, with a divider after it. While its chunk loads, two blocks the size of
+            the item and the divider hold their places in the same gaps, so the views do not move when it arrives. */}
+        <LibrarySlot
+          fallback={
+            <>
+              <div aria-hidden className={cn("shrink-0", labels ? "h-16" : "h-12")} />
+              <div aria-hidden className="mx-2 my-1 h-px shrink-0" />
+            </>
+          }
+        >
+          <LibraryNav part="rail" labels={labels} />
+        </LibrarySlot>
         <nav aria-label="Views" className="flex flex-col py-1">
           {VIEWS.map((v) => (
             <RailButton key={v.id} label={v.label} keyHint={v.key} labels={labels} active={!s.module && !s.library && s.view === v.id} onClick={() => s.setView(v.id)}>
@@ -129,9 +141,6 @@ export function Rail({ labels }: { labels: boolean }) {
         <Slot>
           <WorkspaceNav part="rail" labels={labels} />
         </Slot>
-        <LibrarySlot>
-          <LibraryNav part="rail" labels={labels} />
-        </LibrarySlot>
       </SidebarContent>
       <SidebarFooter className="gap-0 p-0 pb-2">
         <RailButton label="Go to scenario" keyHint="⌘K" onClick={() => s.set({ commandOpen: true })}>
