@@ -28,10 +28,11 @@ try {
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
 const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace" }
-// WS-01: the initial Studio chunk of the previous release's shell (0.12.1), gzipped, built with the example product. A
-// Studio that declares no workspace may grow by at most 3 KB over it. Each release moves it to the release before it.
-const STUDIO_CHUNK_BASELINE = "0.12.1"
-const STUDIO_CHUNK_BASELINE_GZ = 297733
+// WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.12.2), gzipped, built with the example
+// product. A Studio that declares neither a workspace nor a library may grow by at most 3 KB over it. Each release moves
+// it to the release before it.
+const STUDIO_CHUNK_BASELINE = "0.12.2"
+const STUDIO_CHUNK_BASELINE_GZ = 298530
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 const serve = (out, host) =>
