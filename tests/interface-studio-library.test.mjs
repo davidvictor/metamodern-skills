@@ -189,3 +189,47 @@ test('LM-07 code is tokenized losslessly into kinds the page draws as text', asy
   assert.deepEqual(tokenize('<b>', 'text'), [{ kind: 'plain', text: '<b>' }]);
   assert.doesNotMatch(read('src/studio/library/highlight.ts'), /^import /m, 'the tokenizer imports nothing');
 });
+
+test('LM-10 documentation files import only @studio/library and their own files', async () => {
+  const { libraryImportProblem, createLibraryBoundary, libraryBoundary } = await import(new URL('scripts/library-boundary.mjs', shell).href);
+  const cwd = '/studio';
+  const file = '/studio/src/library/button.ts';
+  for (const ok of ['@studio/library', './shared', '../library/text-field', '@/library/button', '/src/library/x']) assert.equal(libraryImportProblem(file, ok, cwd), null, ok);
+  for (const bad of ['react', '@studio/kit', '@studio/workspace', '@/store', '../studio/types', '@/library/../store', 'lucide-react', 'node:fs']) assert.match(libraryImportProblem(file, bad, cwd), /is outside the library boundary/, bad);
+  assert.match(libraryImportProblem('/studio/example/library/button.ts', '@/library', cwd), /under example\/library\//);
+  const lint = (node) => {
+    const reports = [];
+    createLibraryBoundary(cwd).rules.imports.create({ filename: file, report: (r) => reports.push(r.message) })[node.type](node);
+    return reports;
+  };
+  const literal = (value) => ({ type: 'Literal', value });
+  assert.deepEqual(lint({ type: 'ImportDeclaration', source: literal('@studio/library') }), []);
+  assert.match(lint({ type: 'ImportDeclaration', source: literal('react') })[0], /react is outside the library boundary/);
+  assert.match(lint({ type: 'ExportAllDeclaration', source: literal('@/store') })[0], /outside the library boundary/);
+  assert.deepEqual(lint({ type: 'ImportExpression', source: literal('./button') }), []);
+  assert.match(lint({ type: 'ImportExpression', source: { type: 'Identifier', name: 'target' } })[0], /not a string literal/);
+  const glob = { type: 'CallExpression', callee: { type: 'MemberExpression', computed: false, object: { type: 'MetaProperty', meta: { name: 'import' }, property: { name: 'meta' } }, property: { type: 'Identifier', name: 'glob' } }, arguments: [literal('./*.ts')] };
+  assert.match(lint(glob)[0], /may not use import\.meta\.glob/);
+  assert.match(lint({ type: 'TSImportType', argument: { type: 'TSLiteralType', literal: literal('@/store') } })[0], /outside the library boundary/);
+  const reports = [];
+  libraryBoundary.rules.imports.create({ filename: join(fileURLToPath(shell), 'src/library/index.ts'), report: (r) => reports.push(r.message) }).ImportDeclaration({ type: 'ImportDeclaration', source: literal('./button') });
+  assert.deepEqual(reports, [], 'the shared plugin checks against the Studio that holds it');
+});
+
+test('LM-11 the product seed is empty, the API is the published surface, and the build and lint know the library', () => {
+  assert.equal(read('src/library/index.ts').match(/^(?!\s*\*|\/\*).+$/gm).join('\n'), 'import { defineLibrary } from "@studio/library"\nexport default defineLibrary({})');
+  const api = read('src/studio/library/api.ts');
+  assert.match(api, /export const LIBRARY_VERSION = "studio-library\/1"/);
+  assert.match(api, /export function defineLibrary\b/);
+  assert.match(api, /export type \{[^}]*ComponentDocs[^}]*\} from "\.\/schema"/);
+  assert.doesNotMatch(api, /^import (?!type )/m, 'documentation can import the API without loading shell code');
+  const vite = read('vite.config.ts');
+  assert.match(vite, /@studio\\\/library/);
+  assert.match(vite, /__STUDIO_LIBRARY__: JSON\.stringify\(!loaded \|\| "error" in loaded \|\| !!loaded\.adapter\.library\)/);
+  assert.match(vite, /which the adapter does not declare in library\.components/);
+  assert.match(vite, /"example-library": path\.resolve\(root, "example\/library\/frame\.html"\)/);
+  for (const config of ['tsconfig.json', 'tsconfig.app.json']) assert.match(read(config), /"@studio\/library": \["\.\/src\/studio\/library\/api\.ts"\]/, config);
+  const eslint = read('eslint.config.js');
+  assert.match(eslint, /'library\/imports': 'error'/);
+  assert.match(eslint, /'src\/library\/\*\*\/\*\.\{ts,tsx,js,jsx,mjs\}'/);
+});

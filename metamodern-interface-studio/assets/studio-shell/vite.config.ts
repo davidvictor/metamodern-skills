@@ -13,6 +13,7 @@ import { pathToFileURL } from "url"
 import type { StudioAdapter } from "./src/studio/types"
 import { savedFileMiddleware } from "./scripts/saved-file"
 import { astLang, definedModules, undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
+import { definedDocs, libraryProblems, undeclaredDocs } from "./src/studio/library/model"
 
 // Shell owned: product settings come from studio.config.ts, so an update can
 // replace this file. The Studio (index.html) builds with any extra pages the
@@ -57,21 +58,25 @@ const scenarios = () => savedFile({ file: "scenarios.json", route: "/__studio/sc
 // npm run acceptance builds the stress and capture-only adapters by pointing
 // "@/adapter" at the acceptance module; a normal build never includes them.
 const variant = process.env.VITE_STUDIO_ADAPTER
-const acceptance = variant && variant !== "workspace" ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, variant === "example" ? "src/adapters/example.ts" : "src/adapters/synthetic.ts") }] : []
+const acceptance = variant && variant !== "workspace" && variant !== "library" ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, variant === "example" ? "src/adapters/example.ts" : "src/adapters/synthetic.ts") }] : []
 // The starter's example workspace (VITE_STUDIO_ADAPTER=workspace): its adapter and module map, or with
-// VITE_STUDIO_WORKSPACE=orphan a map that defines an undeclared module, which must fail the build.
+// VITE_STUDIO_WORKSPACE=orphan a map that defines an undeclared module, which must fail the build. The example
+// library (VITE_STUDIO_ADAPTER=library) carries the same workspace and adds its documentation map.
 const exampleWorkspace =
-  variant === "workspace"
+  variant === "workspace" || variant === "library"
     ? [
-        { find: /^@\/adapter$/, replacement: path.resolve(root, "example/workspace/adapter.ts") },
+        { find: /^@\/adapter$/, replacement: path.resolve(root, variant === "library" ? "example/library/adapter.ts" : "example/workspace/adapter.ts") },
         { find: /^@\/workspace$/, replacement: path.resolve(root, process.env.VITE_STUDIO_WORKSPACE === "orphan" ? "example/workspace/orphan.ts" : "example/workspace/index.ts") },
+        ...(variant === "library" ? [{ find: /^@\/library$/, replacement: path.resolve(root, "example/library/index.ts") }] : []),
       ]
     : []
 
-// The surfaces workspace modules import (references/workspace.md); everything else under src/ is shell internals.
+// The surfaces workspace modules and library documentation import (references/workspace.md, references/library.md);
+// everything else under src/ is shell internals.
 const studioAliases = [
   { find: /^@studio\/kit$/, replacement: path.resolve(root, "src/kit/index.ts") },
   { find: /^@studio\/workspace$/, replacement: path.resolve(root, "src/studio/workspace/api.ts") },
+  { find: /^@studio\/library$/, replacement: path.resolve(root, "src/studio/library/api.ts") },
 ]
 const aliases = [...exampleWorkspace, ...acceptance, ...studioAliases, { find: "@", replacement: path.resolve(root, "./src") }]
 
@@ -119,6 +124,39 @@ const workspaceCheck = (): Plugin => ({
   },
 })
 
+// The component library, as the workspace above (references/library.md): a build whose adapter declares no library
+// leaves the library layer out entirely (__STUDIO_LIBRARY__ false); the dev server and an unloadable adapter keep it.
+const libraryFlag = (): Plugin => ({
+  name: "studio-library-flag",
+  async config(_, env) {
+    const loaded = env.command === "build" ? await loadAdapter() : null
+    if (loaded && "error" in loaded) console.warn(`Interface Studio: could not load the adapter to tell whether it declares a library, so the build keeps the library layer: ${loaded.error}`)
+    return { define: { __STUDIO_LIBRARY__: JSON.stringify(!loaded || "error" in loaded || !!loaded.adapter.library) } }
+  },
+})
+
+// An invalid library declaration, or a documentation map that names a component the adapter does not declare, fails
+// the build with what is wrong. When Vite cannot load the adapter the check only warns.
+const libraryCheck = (): Plugin => ({
+  name: "studio-library-check",
+  apply: "build",
+  async buildStart() {
+    const loaded = await loadAdapter()
+    if ("error" in loaded) return this.warn(`Could not load the adapter to check the library: ${loaded.error}`)
+    const decl = loaded.adapter.library
+    if (!decl) return
+    const problems = libraryProblems(decl)
+    if (problems.length) return this.error(`The adapter's library declaration is invalid:\n  ${problems.join("\n  ")}`)
+    const file = (await this.resolve("@/library"))?.id
+    if (!file) return this.error("The adapter declares a library, but src/library/index.ts is missing. The skill's update-studio.mjs creates it.")
+    const rel = path.relative(root, file)
+    const defined = definedDocs(parseAst(readFileSync(file, "utf8"), { lang: astLang(file) }))
+    if (typeof defined === "string") return this.error(`${rel}: ${defined}`)
+    const orphans = undeclaredDocs(decl, defined)
+    if (orphans.length) this.error(`${rel} documents ${orphans.map((id) => `"${id}"`).join(", ")}, which the adapter does not declare in library.components. Declare it there or remove it.`)
+  },
+})
+
 // The example workspace's operations, served by the dev server only while it runs that example. A real
 // Studio's operations live in the product's host (references/workspace.md); none ships in a build. The
 // mock applies the same guard as the endpoints above: same-origin JSON POSTs of 64 KB at most. It is loaded
@@ -129,7 +167,7 @@ const workspaceMock = (): Plugin => ({
   name: "studio-workspace-mock",
   apply: "serve",
   async configureServer(server) {
-    if (variant !== "workspace" || !existsSync(mockHostFile)) return
+    if ((variant !== "workspace" && variant !== "library") || !existsSync(mockHostFile)) return
     const { createMockMiddleware } = (await import(pathToFileURL(mockHostFile).href)) as { createMockMiddleware: () => MockMiddleware }
     server.middlewares.use("/__studio/ops", createMockMiddleware())
   },
@@ -137,7 +175,7 @@ const workspaceMock = (): Plugin => ({
 
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceFlag(), workspaceCheck(), workspaceMock()],
+  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
     emptyOutDir: true,
@@ -147,6 +185,8 @@ export default defineConfig({
         studio: path.resolve(root, "index.html"),
         ...Object.fromEntries(Object.entries(studio.inputs ?? {}).map(([name, file]) => [name, path.resolve(root, file)])),
         ...(process.env.VITE_STUDIO_ADAPTER ? { example: path.resolve(root, "example/index.html") } : {}),
+        // The example library's preview entry, built only with the example library.
+        ...(variant === "library" ? { "example-library": path.resolve(root, "example/library/frame.html") } : {}),
       },
     },
   },
