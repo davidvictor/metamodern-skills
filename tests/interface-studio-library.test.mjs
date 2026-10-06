@@ -233,3 +233,23 @@ test('LM-11 the product seed is empty, the API is the published surface, and the
   assert.match(eslint, /'library\/imports': 'error'/);
   assert.match(eslint, /'src\/library\/\*\*\/\*\.\{ts,tsx,js,jsx,mjs\}'/);
 });
+
+test('LM-12 the example library is a valid declaration, and every documented component has valid documentation', async () => {
+  const { libraryProblems, docsProblems, undeclaredDocs } = await loadPure('src/studio/library/model.ts');
+  const { exampleLibrary } = await loadPure('example/library/declaration.ts');
+  assert.deepEqual(libraryProblems(exampleLibrary), []);
+  assert.deepEqual(exampleLibrary.components.map((c) => `${c.group}/${c.id}`), ['actions/button', 'actions/icon-button', 'inputs/text-field', 'inputs/switch']);
+  const index = read('example/library/index.ts');
+  const documented = [...index.matchAll(/^\s+"?([a-z][a-z0-9-]*)"?: \(\) => import\("\.\/([a-z-]+)"\)/gm)].map((m) => m[1]);
+  assert.deepEqual(documented, ['button', 'icon-button', 'text-field'], 'Switch is declared without documentation on purpose');
+  assert.deepEqual(undeclaredDocs(exampleLibrary, documented), []);
+  for (const id of documented) {
+    const { default: docs } = await loadPure(`example/library/${id}.ts`);
+    assert.deepEqual(docsProblems(docs), [], id);
+  }
+  const { default: button } = await loadPure('example/library/button.ts');
+  assert.equal(button.source.version, '2.4.0');
+  assert.deepEqual(button.preview.groups.map((g) => g.id).concat(button.examples.items.map((g) => g.id)), ['styles', 'sizes', 'states', 'with-icon', 'in-a-row']);
+  assert.ok(!('performance' in (await loadPure('example/library/text-field.ts')).default), 'Text field leaves Performance out');
+  for (const scenario of ['button:playground', 'button:styles', 'button:sizes', 'button:states', 'button:with-icon', 'button:in-a-row', 'icon-button:sizes', 'text-field:states']) assert.ok(read('example/library/frame.ts').includes(`"${scenario}"`), `the example entry renders ${scenario}`);
+});
