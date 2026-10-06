@@ -164,3 +164,28 @@ test('LM-09 the library model files stay pure and the adapter type declares the 
   assert.match(types, /library\?: LibraryDeclaration/);
   assert.match(types, /export type LibraryDeclaration = \{/);
 });
+
+test('LM-07 code is tokenized losslessly into kinds the page draws as text', async () => {
+  const { tokenize } = await loadPure('src/studio/library/highlight.ts');
+  const samples = [
+    ['tsx', 'import { Button } from "./button"\n// Save\nconst size = 2\nexport const Save = () => <Button variant="primary">Save</Button>'],
+    ['html', '<!-- note -->\n<button class="btn" disabled>Save</button>'],
+    ['css', '/* ring */\n.btn { padding: 9px 14px; --ex-radius: 10px; }'],
+    ['json', '{ "size": 2, "on": true, "name": "x" }'],
+    ['bash', '# install\nnpm run acceptance | tee log'],
+    ['text', 'plain words <b>'],
+  ];
+  for (const [language, code] of samples) {
+    const tokens = tokenize(code, language);
+    assert.equal(tokens.map((t) => t.text).join(''), code, `${language} round-trips`);
+    assert.ok(tokens.every((t, i) => t.text && !(t.kind === 'plain' && tokens[i + 1]?.kind === 'plain')), `${language} merges plain runs`);
+  }
+  const kinds = (code, language) => tokenize(code, language).filter((t) => t.kind !== 'plain' && t.kind !== 'punct').map((t) => `${t.kind}:${t.text}`);
+  assert.deepEqual(kinds('const a = "b" // c', 'tsx'), ['keyword:const', 'string:"b"', 'comment:// c']);
+  assert.ok(kinds('<Button size="sm" />', 'jsx').includes('tag:<Button'));
+  assert.deepEqual(kinds('<a href="x">', 'html'), ['tag:<a', 'attr:href', 'string:"x"', 'tag:>']);
+  assert.deepEqual(kinds('{ "a": 1, "b": null }', 'json'), ['string:"a"', 'number:1', 'string:"b"', 'keyword:null']);
+  assert.deepEqual(kinds('# hi\necho "x"', 'sh'), ['comment:# hi', 'string:"x"']);
+  assert.deepEqual(tokenize('<b>', 'text'), [{ kind: 'plain', text: '<b>' }]);
+  assert.doesNotMatch(read('src/studio/library/highlight.ts'), /^import /m, 'the tokenizer imports nothing');
+});
