@@ -46,6 +46,8 @@ function canTake(start: Element | null, axis: "x" | "y", delta: number) {
  */
 const TYPING =
   "input:is(:not([type]), [type=''], [type=text], [type=search], [type=url], [type=tel], [type=email], [type=password]), textarea, [contenteditable=''], [contenteditable='true'], [contenteditable='plaintext-only'], [role=textbox], [role=searchbox]"
+/** A number field has no caret page move either: Chromium scrolls on Page Up and Page Down there and keeps the value. */
+const PAGE_ONLY = "input[type=number]"
 /**
  * Keys that scroll from inside a text field. Apple platforms scroll on all four even there. Elsewhere Home and End are
  * caret moves, and Page Up and Page Down are too while the caret can move that way in a multi-line field; in a
@@ -79,6 +81,8 @@ function moveCaret(t: Element, dir: number) {
  * Whether Page Up (dir -1) or Page Down (1) has no caret move left in the field, which is when a browser outside Apple
  * platforms scrolls instead: always in a single-line field, and in a multi-line one when the selection already reaches
  * the start or the end. There the browser leaves the caret where it is, so cancelling the scroll keeps it there too.
+ * That includes a selection that is not collapsed: measured in Linux Chromium, Page Down with a selection reaching the
+ * end (or Page Up with one from the start) scrolls and leaves the selection as it was, so it counts as at that end.
  */
 function pageAtEnd(t: Element, dir: number) {
   if (t instanceof HTMLInputElement) return true
@@ -122,7 +126,7 @@ export function keepFieldKeys() {
     const page = e.key === "PageUp" || e.key === "PageDown"
     if (!mac && !page) return
     const t = e.target instanceof Element ? e.target : null
-    const field = t?.closest(TYPING)
+    const field = t?.closest(TYPING) ?? (page ? t?.closest(PAGE_ONLY) : null)
     if (!field || field.matches("[role=combobox], [aria-activedescendant]") || canTake(field, "y", dir)) return
     if (!mac && !pageAtEnd(field, dir)) return
     e.preventDefault()

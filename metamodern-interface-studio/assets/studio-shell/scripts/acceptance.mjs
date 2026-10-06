@@ -4423,6 +4423,7 @@ await check("LB-04", async () => {
       const got = (id) => (e) => (e.key === "Home" || e.key === "End") && window.__lb04.push(`${id} got ${e.key}`)
       add("textarea", "lb04-area", { rows: "6" })
       add("input", "lb04-line", {})
+      add("input", "lb04-number", { type: "number", step: "1" })
       add("input", "lb04-own", {}, (e) => { got("own")(e); if (e.key === "Home" || e.key === "End") e.preventDefault() })
       add("input", "lb04-combo", { role: "combobox", "aria-expanded": "true" }, got("combo"))
       add("input", "lb04-active", { "aria-activedescendant": "lb04-option" }, got("active"))
@@ -4437,7 +4438,10 @@ await check("LB-04", async () => {
     const at = async (id, value, caretAt, key, typed) => {
       const el = frame.locator(`#${id}`)
       await el.focus()
-      await el.evaluate((n, [v, c]) => { n.value = v; n.setSelectionRange(c, c) }, [value, caretAt])
+      await el.evaluate((n, [v, c]) => {
+        n.value = v
+        if (n.type !== "number") n.setSelectionRange(...(Array.isArray(c) ? c : [c, c]))
+      }, [value, caretAt])
       await t.keyboard.press(key)
       await wait(150)
       await t.keyboard.type(typed)
@@ -4450,9 +4454,13 @@ await check("LB-04", async () => {
       // the end natively.
       const end = await at("lb04-area", "ab\ncd", 5, "PageDown", "")
       const mid = await at("lb04-area", end, 2, "PageDown", "Q")
+      // A selection reaching the end is at the end too: Chromium scrolls and keeps the selection, so the client cancels the
+      // scroll and the selection stays for Q to replace. A number field scrolls on the page keys and keeps its value.
+      const selection = await at("lb04-area", "ab\ncd", [2, 5], "PageDown", "Q")
+      const number = [await at("lb04-number", "5", 0, "PageDown", ""), await at("lb04-number", "5", 0, "PageUp", "")]
       await wait(300)
       tops.push(await pageTop())
-      area = { value: mid, want: applePlatform ? "abQ\ncd" : "ab\ncdQ" }
+      area = { value: mid, want: applePlatform ? "abQ\ncd" : "ab\ncdQ", selection, number }
     } else if (mode === "apple") {
       const z = await at("lb04-area", "\nab", 0, "Home", "Z")
       const w = await at("lb04-area", z, z.length, "Home", "W")
@@ -4470,11 +4478,14 @@ await check("LB-04", async () => {
         await at("lb04-area", "ab\ncd", 2, "PageDown", "Q"),
         await at("lb04-area", "ab\ncd", 4, "PageUp", "Q"),
         await at("lb04-area", "ab\ncd", 4, "Home", "Q"),
+        await at("lb04-area", "ab\ncd", [2, 5], "PageDown", "Q"),
+        await at("lb04-area", "ab\ncd", [0, 3], "PageUp", "Q"),
       ]
+      const number = await at("lb04-number", "5", 0, "PageDown", "")
       const combo = await at("lb04-combo", "abc", 1, "PageDown", "Q")
       await wait(300)
       tops.push(await pageTop())
-      area = { line, values, combo, seen: await frame.evaluate(() => window.__lb04) }
+      area = { line, values, number, combo, seen: await frame.evaluate(() => window.__lb04) }
     }
     const kept = await fieldFrame.evaluate((n) => n.isConnected && n.classList.contains("opacity-100"))
     errors.push(...t.errors)
@@ -4482,22 +4493,22 @@ await check("LB-04", async () => {
     const typedOk = mode === "other" || (caret.tag === "INPUT" && caret.value === "Xabc" && selected.tag === "INPUT" && selected.value === "Y")
     const runOk =
       mode === "native"
-        ? area.value === area.want
+        ? area.value === area.want && area.selection === "abQ" && area.number.join() === "5,5"
         : mode === "apple"
           ? applePlatform && area.value === "Z\nWab" && area.own === "aQbc" && area.combo.join() === "aQbc,aQbc" && area.active === "aQbc" &&
             area.seen.join() === "area Home:true,area Home:true,own got Home,own Home:true,combo got Home,combo Home:false,combo got End,combo End:false,active got End,active End:false"
-          : !applePlatform && area.line === "aQbc" && area.values.join("|") === "ab\ncdQ|Qab\ncd|abQ\ncd|ab\ncQd|ab\ncQd" && area.combo === "aQbc" &&
-            area.seen.join() === "line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,combo PageDown:false"
+          : !applePlatform && area.line === "aQbc" && area.values.join("|") === "ab\ncdQ|Qab\ncd|abQ\ncd|ab\ncQd|ab\ncQd|abQ|Qcd" && area.number === "5" && area.combo === "aQbc" &&
+            area.seen.join() === "line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,area PageDown:true,area PageUp:true,number PageDown:true,combo PageDown:false"
     const pass = tops.every((x) => x === keysAt) && kept && typedOk && runOk
     const what = mode === "native" ? "native" : mode === "apple" ? "forced Apple" : "forced Linux"
     const branch = applePlatform ? "the frame client cancels the scroll and moves the caret" : "not Apple: Home and End are native, the client cancels Page Up and Page Down only where they would scroll"
     const typed = mode === "other" ? "" : `, Home then X gave "${caret.value}", Shift+Home then Y gave "${selected.value}"`
     const extra =
       mode === "native"
-        ? `; Page Down in a textarea at its end, then on line 1, then Q gave ${JSON.stringify(area.value)}`
+        ? `; Page Down in a textarea at its end, then on line 1, then Q gave ${JSON.stringify(area.value)}; Page Down with \\ncd selected then Q gave ${JSON.stringify(area.selection)}; Page Down and Page Up in a number field left ${area.number.join(", ")}`
         : mode === "apple"
           ? `; the client moved a textarea's caret (${JSON.stringify(area.value)}), left a field whose product cancels Home alone ("${area.own}") and gave Home and End to a combobox ("${area.combo.join('", "')}") and an aria-activedescendant field ("${area.active}"): ${area.seen.join(", ")}`
-          : `; Page Down in a field gave "${area.line}", a textarea gave ${JSON.stringify(area.values)}, a combobox "${area.combo}": ${area.seen.join(", ")}`
+          : `; Page Down in a field gave "${area.line}", a textarea gave ${JSON.stringify(area.values)}, a number field "${area.number}", a combobox "${area.combo}": ${area.seen.join(", ")}`
     return { pass, detail: `${what} run on ${platform} (${branch}): the page stayed at ${[...new Set(tops)].join(", ")} px (from ${keysAt}), the frame ${kept ? "stayed mounted" : "was unmounted"}${typed}${extra}` }
   }
   const nativeKeys = await keyRun("native")

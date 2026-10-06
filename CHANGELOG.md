@@ -2,7 +2,7 @@
 
 ## 1.16.2 — 2026-10-06
 
-- Interface Studio 0.13.2 keeps Page Up and Page Down typed in a preview's text field from scrolling the Studio outside Apple platforms. Chromium there (measured on Linux) scrolls on those keys from a single-line field, and from a textarea or editable region whose caret is already at that end, and the scroll reached the library page around the frame (745 px on a Text field page), which could unmount the preview. The frame client now cancels exactly those scrolls on every platform and leaves the caret where the browser leaves it; a page key that moves a textarea's caret, and Home and End outside Apple platforms, stay native, and Apple platforms behave as in 0.13.1.
+- Interface Studio 0.13.2 keeps Page Up and Page Down typed in a preview's text field from scrolling the Studio outside Apple platforms. Chromium there (measured on Linux) scrolls on those keys from a single-line or number field, and from a textarea or editable region whose selection already reaches that end, and the scroll reached the library page around the frame (745 px on a Text field page), which could unmount the preview. The frame client now cancels exactly those scrolls on every platform and leaves the caret where the browser leaves it; a page key that moves a textarea's caret, and Home and End outside Apple platforms, stay native, and Apple platforms behave as in 0.13.1.
 - LB-04 starts the library page scrolled, checks a textarea's native Page Down, and adds a run with the preview frames told they are on Linux, so the non-Apple branch is checked on any OS; it passes on macOS and in Linux Chromium. WS-01 and LB-01 measure the initial chunk against 0.13.1.
 
 ## 1.16.1 — 2026-10-06

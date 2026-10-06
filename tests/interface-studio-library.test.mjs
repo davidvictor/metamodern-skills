@@ -420,11 +420,14 @@ test('0.13.2 Page Up and Page Down typed in a field never scroll the Studio on a
   assert.match(gestures, /if \(t instanceof HTMLInputElement\) return true/, 'a single-line field has no page caret move, so its page keys always scroll');
   assert.match(gestures, /return dir < 0 \? t\.selectionStart === 0 : t\.selectionEnd === t\.value\.length/, 'a textarea scrolls only with the caret already at that end');
   assert.match(gestures, /return !rest\.toString\(\)/, 'an editable region likewise');
+  assert.match(gestures, /const PAGE_ONLY = "input\[type=number\]"/);
+  assert.match(gestures, /t\?\.closest\(TYPING\) \?\? \(page \? t\?\.closest\(PAGE_ONLY\) : null\)/, 'number fields get the page keys only');
   const script = read('scripts/acceptance.mjs');
   assert.match(script, /const otherKeys = await keyRun\("other"\)/, 'the other branch runs on any OS');
   assert.match(script, /scrollTop = 100\)\)/, 'the page starts scrolled so an escaping Page Up shows');
   assert.match(script, /want: applePlatform \? "abQ\\ncd" : "ab\\ncdQ"/, 'a native Page Down that moves a textarea caret stays native');
-  assert.match(script, /line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,combo PageDown:false/);
+  assert.match(script, /line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,area PageDown:true,area PageUp:true,number PageDown:true,combo PageDown:false/);
+  assert.match(script, /area\.selection === "abQ" && area\.number\.join\(\) === "5,5"/, 'a selection reaching the end and a number field, natively');
   assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.13\.1"/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /Outside Apple platforms Home and End are native caret moves/);
   assert.match(read('UPDATING.md'), /^## 0\.13\.2$/m);
