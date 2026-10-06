@@ -74,6 +74,7 @@ export function libraryProblems(decl: LibraryDeclaration | undefined): string[] 
     if (!c.label.trim()) out.push(`Component "${c.id}" has no label`)
     if (!groups.has(c.group)) out.push(`Component "${c.id}" names group "${c.group}", which the library does not declare`)
     if (c.summary.length > 200) out.push(`Component "${c.id}" has a summary over 200 characters`)
+    if (c.wide !== undefined && typeof c.wide !== "boolean") out.push(`Component "${c.id}": wide must be true or false`)
     if (c.alsoIn === undefined) continue
     if (!Array.isArray(c.alsoIn)) {
       out.push(`Component "${c.id}": alsoIn must be a list of group IDs`)

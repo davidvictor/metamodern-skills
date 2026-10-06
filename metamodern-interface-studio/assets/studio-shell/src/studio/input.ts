@@ -4,7 +4,7 @@ import type { InputValue, Scenario, ScenarioInput } from "./types"
  * Keys the Studio's own links use. Values travel in links under the input ID, so a property with one of these IDs
  * would overwrite, or be overwritten by, the Studio's own state; such a property is rejected.
  */
-export const RESERVED_LINK_KEYS: readonly string[] = ["view", "scenario", "theme", "profile", "size", "tab", "design", "layout", "frames", "height", "arrange", "vp", "sync", "edited", "module", "section", "library"]
+export const RESERVED_LINK_KEYS: readonly string[] = ["view", "scenario", "theme", "profile", "size", "tab", "design", "layout", "frames", "height", "arrange", "vp", "sync", "edited", "module", "section", "library", "item"]
 
 const reported = new Set<string>()
 /** A property on a reserved link key: inert everywhere (no row, no value), named once in the console. */

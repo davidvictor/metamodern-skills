@@ -338,15 +338,23 @@ export type WorkspaceModuleDeclaration = {
   icon: StudioIcon
   /** Listed in the context panel and Go to; links carry the ID as `section=`. */
   sections?: { id: string; label: string }[]
-  /** Operation names this module may call; anything else is refused. */
-  uses: WorkspaceOperationUse[]
+  /**
+   * Same ID rules as `id`. The rail and the phone's Workspace drawer draw a divider between two consecutive modules
+   * whose groups differ (a module without one counts as its own group). Without groups nothing changes.
+   */
+  group?: string
+  /**
+   * Operation names this module may call; anything else is refused. Empty or omitted, the module is host-free: it
+   * calls nothing, so it opens without `workspace.operations` (for example in a Studio published as static files).
+   */
+  uses?: WorkspaceOperationUse[]
   /** A reason, shown instead of the module. */
   unavailable?: string
 }
 
 /** Product workspace tools beside the views (the skill's references/workspace.md). Data only: module code lives in src/workspace/index.ts. */
 export type WorkspaceDeclaration = {
-  /** Same-origin base URL of the host's operation endpoints. Without it every module is unavailable with the reason. */
+  /** Same-origin base URL of the host's operation endpoints. Without it every module that declares `uses` is unavailable with the reason; host-free modules still open. */
   operations?: string
   modules: WorkspaceModuleDeclaration[]
 }
@@ -375,6 +383,11 @@ export type LibraryComponent = {
   summary: string
   /** More words search finds it by. */
   keywords?: string[]
+  /**
+   * Lays every preview block on the component's page out wider than the text column: up to 1.5 times its width, centred
+   * on it and within the page's gutters. Previews still fit their box and never show above their natural size.
+   */
+  wide?: boolean
 }
 
 /** A component library beside the views, declared as data (references/library.md). Documentation lives in src/library/index.ts. */

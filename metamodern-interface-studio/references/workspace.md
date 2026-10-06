@@ -26,17 +26,21 @@ workspace: {
       icon: "server", // the shell's fixed icon set: StudioIcon in src/studio/types.ts
       sections: [{ id: "variables", label: "Variables" }, { id: "secrets", label: "Secrets" }],
       uses: [{ name: "env.read", kind: "read" }, { name: "env.write", kind: "write" }],
+      group: "product", // optional: a divider separates modules whose groups differ
     },
+    { id: "emails", label: "Emails", icon: "mail", group: "review" }, // host-free: no uses, so no host is needed
   ],
 }
 ```
 
 - Module and section IDs start with a lowercase letter and use lowercase letters, digits and hyphens; operation names may also use dots. IDs must be unique (sections within their module, operation names within their module's `uses`). Links carry module and section IDs, so keep them stable. A build fails on an invalid declaration once `src/workspace/index.ts` defines a module.
 - `uses` lists every operation a module may call and whether it reads or writes. Anything else is refused before a request is made.
+- A module whose `uses` is empty or omitted is host-free: it calls nothing, so it opens without `operations`. Build such a module from data bundled with the Studio (generated files, fixtures); it is the only kind that works in a Studio published as static files (see [verification](verification.md#publishing-to-a-static-host)).
+- `group` (optional, the same ID rules as module IDs) sorts modules into groups. The rail and the phone's Workspace drawer draw a divider between two consecutive modules whose groups differ; a module without a group counts as its own group, so a workspace without groups looks as before. Modules stay in declaration order, so declare each group's modules together.
 - `unavailable: "<reason>"` on a module shows the reason instead of the module.
 - `operations` is a path on the Studio's own origin, absolute (`/api/studio`) or relative to the Studio page (`./__studio/ops`), over http or https, with no query string or fragment. A base with `?` or `#`, another origin or another scheme is refused without a request.
-- Without `operations` every module is unavailable, with that reason. With it, a module whose host does not answer says so; nothing is simulated.
-- `module` and `section` are reserved link keys (`RESERVED_LINK_KEYS` in `src/studio/input.ts`). A component property with one of these IDs is rejected, and a dock input with one is left out of links with a console error. Rename it.
+- Without `operations` every module that declares `uses` is unavailable, with that reason, and host-free modules open. A workspace of host-free modules only may omit `operations`. With it, a module whose host does not answer says so; nothing is simulated.
+- `module`, `section` and `item` are reserved link keys (`RESERVED_LINK_KEYS` in `src/studio/input.ts`). A component property with one of these IDs is rejected, and a dock input with one is left out of links with a console error. Rename it.
 
 ## Write modules in `src/workspace/`
 
@@ -63,7 +67,8 @@ export default defineWorkspace({
 | Export | Use |
 | --- | --- |
 | `defineWorkspace(modules)` | The default export of `src/workspace/index.ts`. |
-| `useModule()` | The open module: `id`, `label`, `sections`, the current `section` (null without sections), `go(section)`, its `uses` and the `operations` base. |
+| `useModule()` | The open module: `id`, `label`, `sections`, the current `section` (null without sections), `go(section)` (which clears the item), the open `item` (or null) and `setItem(id \| null)`, its `uses` and the `operations` base. |
+| `useStepKeys(onPrevious, onNext)` | Binds `j` (next) and `k` (previous), without modifiers, while the module is open. Ignored in fields and editable regions, in menus, while a dialog is open, and for a key another handler already used (`preventDefault`); a `SelectList` uses j and k itself. The Studio's keyboard shortcuts list names the keys while a module binds them. |
 | `useOperation(name)` | `read(input)` or `write(input, { expectedRevision })` for one declared operation, each resolving to the result, with `status` (`idle`, `running`, `done`) and the last `result`. Only the latest call sets them. |
 | `useDirtyGuard(dirty, message?)` | While `dirty`, leaving the module (the rail, view keys, Go to, Back or Forward) or closing the tab asks first; Stay or Esc keeps the edits. Moving between the module's own sections does not ask: the Page stays mounted. |
 | `useModuleState(key, initial)` | A value shared by the module's Page, Panel and Details until the Studio reloads. |
@@ -79,6 +84,7 @@ Types `ModuleDefinition`, `WorkspaceDefinition`, `ModuleInfo`, `OperationResult`
 | `Field` | `kind: "text"`, `"select"`, `"switch"` or `"secret"` (masked, with Reveal, and ignored by password managers), with label, description and error. |
 | `PropertyList` | Label and value pairs. |
 | `DataTable` | Rows with sortable columns (announced), an optional filter and windowed rendering with one tab stop for any size. |
+| `SelectList` | A grouped list to step through: `{ label, groups: { id, label, items: { id, label, description?, meta? }[] }[], value, onChange(id), filterable?, filterLabel?, emptyLabel? }`. A listbox with grouped options under their headings, `aria-selected` and one tab stop; selection follows focus, so ArrowUp and ArrowDown (and k and j) move and select, Home and End go to the ends. The filter narrows every group by label, description and meta, ignoring case, and keeps the selection while it matches. The selected item scrolls into view. Pair it with `item` and `setItem` so the selection travels in links; item IDs must then follow the item ID rule (up to 128 of `A-Za-z0-9._:-`), or the selection becomes null. |
 | `StatusTile`, `StatusBadge` | A figure with its state; a state in a glyph and a word (`ok`, `warning`, `error`, `info`, `neutral`). |
 | `SaveBar` | `clean`, `dirty`, `saving`, `saved`, `conflict` (the current value beside the kept edit, with Use current value and Save mine again) and `error` with Retry. |
 | `ConfirmDialog` | A question with a safe default: focus opens on the cancel button, and Esc cancels. |
@@ -89,11 +95,32 @@ Types `ModuleDefinition`, `WorkspaceDefinition`, `ModuleInfo`, `OperationResult`
 
 Kit components meet the shell's floors: 44 px targets on coarse pointers, 16 px input text, AA text contrast, a visible focus outline of at least 3:1 (also in forced colors) and no motion under reduced motion, in both Studio appearances. The floors apply inside a `ModulePage` (or `EmptyState`, `PreviewFrame`, `ConfirmDialog`), so build every module page on `ModulePage`.
 
-A kit change that breaks a module is a new major version and a breaking shell release. The updater reports it and applies it only with `--accept-kit <new version>` (see [updating](updating.md#studio-ui-kit-versions)).
+`SelectList` (0.15.0) is additive within `studio-kit/1`. A kit change that breaks a module is a new major version and a breaking shell release. The updater reports it and applies it only with `--accept-kit <new version>` (see [updating](updating.md#studio-ui-kit-versions)).
 
 ## Navigation
 
-Modules follow the views in the rail after a divider, as square items with the views' marker, inset focus ring and labels; a module the declaration makes unavailable (a declared reason, or no operations host) names that reason in the tooltip, while a missing component or a host that does not answer is explained on the module's page. Choosing the open module again shows or hides the panel. The context panel lists the open module's sections, then its Panel. The breadcrumb reads product, module, section. Go to (⌘K) lists modules and sections. Links carry `module=` and `section=` instead of the view and scenario, and opening a module or a section adds a history entry, so Back returns. A link to a section the module lacks opens its first section; a link to a module the Studio lacks opens the Studio as usual with a toast. On a phone the bottom bar's Workspace entry takes Details' place and opens a drawer of modules, listing the sections of a module that has more than one, and Details moves to the top bar (only in a Studio that declares a workspace). A module's page sits on the Studio surface; product output sits on the grey stage only inside a `PreviewFrame`.
+Modules follow the views in the rail after a divider, as square items with the views' marker, inset focus ring and labels; a module the declaration makes unavailable (a declared reason, or no operations host) names that reason in the tooltip, while a missing component or a host that does not answer is explained on the module's page. Choosing the open module again shows or hides the panel. The context panel lists the open module's sections, then its Panel. The breadcrumb reads product, module, section. Go to (⌘K) lists modules and sections. Links carry `module=`, `section=` and `item=` instead of the view and scenario, and opening a module or a section adds a history entry, so Back returns. A link to a section the module lacks opens its first section; a link to a module the Studio lacks opens the Studio as usual with a toast. On a phone the bottom bar's Workspace entry takes Details' place and opens a drawer of modules, listing the sections of a module that has more than one, and Details moves to the top bar (only in a Studio that declares a workspace). A module's page sits on the Studio surface; product output sits on the grey stage only inside a `PreviewFrame`.
+
+## Items
+
+A module that shows one thing at a time from a list (an email, a record, a page) keeps it in the link as its item. `useModule().item` is the open item, null when there is none; `setItem(id)` opens another and `setItem(null)` clears it.
+
+- The link reads `module=…&section=…&item=…`, and a link with an item opens it: the module reads `item` when it mounts.
+- Opening a module or a section adds a history entry, as before. Changing only the item replaces the current entry, so stepping through a hundred items leaves Back one step from the list's module or section, and Back to that entry restores its item.
+- `go(section)` clears the item, as does opening another module or a view.
+- An item ID is up to 128 characters of `A-Z`, `a-z`, `0-9`, `.`, `_`, `:` and `-`. Anything else, from a link or `setItem`, is dropped (the item becomes null) with a console error.
+- The shell does not check that the item exists. The module does, and shows its own notice for one it lacks (for example an `EmptyState`), leaving the link as it is.
+
+A typical stepping module combines them:
+
+```tsx
+const { item, setItem } = useModule()
+const flat = groups.flatMap((g) => g.items)
+const at = flat.findIndex((x) => x.id === item)
+const step = (by: number) => flat.length && setItem(flat[Math.min(flat.length - 1, Math.max(0, at + by))].id)
+useStepKeys(() => step(-1), () => step(1))
+return <SelectList label="Emails" groups={groups} value={item} onChange={setItem} filterable />
+```
 
 ## The operation contract
 
@@ -122,6 +149,6 @@ A build decides once whether to include the workspace layer: it loads the adapte
 
 ## Verify
 
-Shell acceptance WS-01 to WS-10, WS-05b and WS-06b in [shell](shell.md#acceptance-criteria) measure the layer with the starter's synthetic example workspace (`example/workspace/`), also served without its host; `VITE_STUDIO_ADAPTER=workspace npm run dev` runs it with its mock host. A product's own modules and host need the product's own checks: each operation's authorization and validation, conflicts against real data, and the kit floors on the module's pages.
+Shell acceptance WS-01 to WS-15, WS-05b and WS-06b in [shell](shell.md#acceptance-criteria) measure the layer with the starter's synthetic example workspace (`example/workspace/`), also served without its host; `VITE_STUDIO_ADAPTER=workspace npm run dev` runs it with its mock host. WS-11 to WS-15 use the static build (`example/static-adapter.ts`, `VITE_STUDIO_ADAPTER=static`): grouped, host-free modules without operations, and a Catalog module with item links, a `SelectList` and step keys. A product's own modules and host need the product's own checks: each operation's authorization and validation, conflicts against real data, and the kit floors on the module's pages.
 
 Out of scope: third-party plugins, module code loaded at runtime, a server inside the shell, and moving product UI out of preview frames.

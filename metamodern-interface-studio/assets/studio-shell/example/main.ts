@@ -311,6 +311,12 @@ const testing = window as unknown as {
 function rejectTitle(values: MountInputs["values"]) {
   if (testing.__studioStrictTitle && values.title === "Reject this title") throw new Error("The Task card cannot show this title")
 }
+/**
+ * A frame sandboxed without allow-same-origin runs at an opaque origin, so it cannot default to its own origin: the page
+ * names the Studio's origin in `<meta name="studio-allowed-origins">` (a static host writes it into the page; the
+ * acceptance suite's static build does). Without it the frame keeps the default, its own origin.
+ */
+const allowedOrigins = document.querySelector<HTMLMetaElement>('meta[name="studio-allowed-origins"]')?.content.split(/\s+/).filter(Boolean)
 const frame = connectStudioFrame(
   {
     mount,
@@ -345,7 +351,7 @@ const frame = connectStudioFrame(
     canGoBack: () => s.location.length > 1 || !!s.dialog,
     location: () => here() + (s.dialog ? " (New task)" : ""),
   },
-  { sync: !testing.__studioLegacy }
+  { sync: !testing.__studioLegacy, ...(allowedOrigins?.length ? { allowedOrigins } : {}) }
 )
 
 // Opened directly, outside the Studio: show the default scenario.

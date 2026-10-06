@@ -12,7 +12,7 @@ import type { SavedScenario, ScenariosFile } from "@/studio/scenarios"
 import { savedComparison } from "@/studio/compare"
 import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import { applyPresenterOverlay, isPresenterOverlay, type PresenterOverlay, type PresenterWalkthrough, updateOverlay } from "@/studio/presenter-overlay"
-import { parseModuleLink } from "@/studio/workspace/link"
+import { moduleHash, parseModuleLink } from "@/studio/workspace/link"
 import { parseLibraryLink } from "@/studio/library/link"
 
 /** One draft layer, as a preview receives it. */
@@ -76,6 +76,8 @@ export type State = {
   /** The open workspace module and its section; null shows the view. */
   module: string | null
   section: string | null
+  /** The open module's item (useModule().item), carried in its link; changing only it replaces the history entry. */
+  item: string | null
   /** Whether the open module has a Details slot, reported by the workspace layer once the module loads. */
   moduleDetails: boolean
   /** The open component library page, and the section a link or On this page asked for; null shows the view or module. */
@@ -165,7 +167,7 @@ function readHash(stored: Record<string, Edits>): Partial<State> {
   const q = new URLSearchParams(location.hash.slice(1))
   const out: Partial<State> = {}
   const link = parseModuleLink(location.hash, A.workspace)
-  if (link.module) Object.assign(out, { module: link.module, section: link.section })
+  if (link.module) Object.assign(out, { module: link.module, section: link.section, item: link.item })
   const lib = parseLibraryLink(location.hash, A.library)
   if (lib.library) Object.assign(out, { library: lib.library, libraryAt: lib.at })
   const view = q.get("view")
@@ -338,6 +340,7 @@ const initial: State = {
   mobilePanel: null,
   module: null,
   section: null,
+  item: null,
   moduleDetails: false,
   library: null,
   libraryAt: null,
@@ -456,8 +459,10 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     // module or library page; opening a module closes the library page, and opening a library page closes the module.
     const apply = (x: State) => {
       const p = typeof patch === "function" ? patch(x) : patch
-      const closes = "view" in p ? { module: null, section: null, library: null, libraryAt: null } : p.module ? { library: null, libraryAt: null } : p.library ? { module: null, section: null } : {}
-      return { ...x, ...p, ...closes }
+      const closes = "view" in p ? { module: null, section: null, item: null, library: null, libraryAt: null } : p.module ? { library: null, libraryAt: null } : p.library ? { module: null, section: null, item: null } : {}
+      // An item belongs to one module and section: moving to another clears it unless the same change names one.
+      const moved = ("module" in p && p.module !== x.module) || ("section" in p && p.section !== x.section)
+      return { ...x, ...p, ...closes, ...(moved && !("item" in p) ? { item: null } : {}) }
     }
     const s = current.current
     if (!s.module || !leaveGuard.ask) return setState(apply)
@@ -486,13 +491,8 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => writeJSON(PRESENT_PREFS_KEY, { speed: state.present.speed, focus: state.present.focus }), [state.present.speed, state.present.focus])
   React.useEffect(() => writeJSON(DESIGN_KEY, { version: 1, values: state.design.values, valuesByTheme: state.design.valuesByTheme }), [state.design.values, state.design.valuesByTheme])
   React.useEffect(() => {
-    // An open workspace module's link names only the module and its section.
-    if (state.module) {
-      const q = new URLSearchParams()
-      q.set("module", state.module)
-      if (state.section) q.set("section", state.section)
-      return history.replaceState(null, "", `#${q}`)
-    }
+    // An open workspace module's link names only the module, its section and its item.
+    if (state.module) return history.replaceState(null, "", moduleHash({ module: state.module, section: state.section, item: state.item }))
     // An open library page's link names the component, the section asked for, and the theme its previews use.
     if (state.library) {
       const q = new URLSearchParams()
@@ -524,7 +524,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme), state.theme)
     if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive, state.module, state.section, state.library, state.libraryAt])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive, state.module, state.section, state.item, state.library, state.libraryAt])
   // Unsaved Responsive edits stay in this browser until saved or reverted.
   React.useEffect(() => {
     const { resetNonce: _, ...keep } = state.responsive

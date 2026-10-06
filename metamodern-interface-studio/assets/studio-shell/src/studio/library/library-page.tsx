@@ -11,6 +11,7 @@ import library from "@/library"
 import { adapter } from "@/adapter"
 import { cn } from "@/lib/utils"
 import { useStudio } from "@/store"
+import { useMedia } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import { Field as UIField, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -197,6 +198,9 @@ function ComponentPage({ id, retry }: { id: string; retry: () => void }) {
   const s = useStudio()
   const { docs, problems, failed } = React.use(docsFor(id))
   const c = decl.components.find((x) => x.id === id)!
+  const wide = c.wide === true
+  // A wide component's page is the size its preview blocks measure against, with the article's gutter (md:px-8).
+  const gutter = useMedia("(min-width: 48rem)") ? "2rem" : "1rem"
   const scroller = React.useRef<HTMLDivElement>(null)
   const budget = useBudget()
   const page = React.useMemo(() => ({ budget, root: scroller }), [budget])
@@ -249,7 +253,7 @@ function ComponentPage({ id, retry }: { id: string; retry: () => void }) {
   return (
     <OpenComponent.Provider value={(next) => s.set({ library: next, libraryAt: null })}>
       <BudgetContext.Provider value={page}>
-        <div ref={scroller} data-library-page className="min-h-0 flex-1 overflow-y-auto">
+        <div ref={scroller} data-library-page data-wide={wide ? "" : undefined} className="min-h-0 flex-1 overflow-y-auto" style={wide ? ({ containerType: "inline-size", "--library-gutter": gutter } as React.CSSProperties) : undefined}>
           <article className="mx-auto grid w-full max-w-3xl gap-12 px-4 pt-6 md:px-8 md:pt-10">
             <header className="grid gap-2">
               <h1 className="font-heading text-2xl leading-tight font-semibold text-balance">{c.label}</h1>
@@ -274,7 +278,7 @@ function ComponentPage({ id, retry }: { id: string; retry: () => void }) {
                   <h2 id={`lib-${section.id}-title`} tabIndex={-1} className="font-heading text-lg font-semibold">
                     {section.label}
                   </h2>
-                  <SectionBody id={section.id} docs={docs} component={id} values={values} />
+                  <SectionBody id={section.id} docs={docs} component={id} values={values} wide={wide} />
                 </section>
               ))
             )}
@@ -295,15 +299,15 @@ function ComponentPage({ id, retry }: { id: string; retry: () => void }) {
 
 const NONE = <p className="text-sm text-muted-foreground">Not documented yet.</p>
 
-function SectionBody({ id, docs, component, values }: { id: SectionId; docs: ComponentDocs; component: string; values?: Record<string, InputValue> }) {
+function SectionBody({ id, docs, component, values, wide }: { id: SectionId; docs: ComponentDocs; component: string; values?: Record<string, InputValue>; wide: boolean }) {
   if (id === "preview") {
     const pg = docs.preview.playground
     return (
       <div className="grid gap-10">
         <AdjustedNote reason={docs.preview.adjusted} />
-        {pg && <PreviewBlock component={component} spec={{ ...pg, id: "playground", label: "Playground" }} values={values} pinned liveCode />}
+        {pg && <PreviewBlock component={component} spec={{ ...pg, id: "playground", label: "Playground" }} values={values} pinned liveCode wide={wide} />}
         {docs.preview.groups.map((g) => (
-          <PreviewBlock key={g.id} component={component} spec={g} />
+          <PreviewBlock key={g.id} component={component} spec={g} wide={wide} />
         ))}
       </div>
     )
@@ -315,7 +319,7 @@ function SectionBody({ id, docs, component, values }: { id: SectionId; docs: Com
         <AdjustedNote reason={docs.examples.adjusted} />
         <Rich blocks={docs.examples.intro} />
         {docs.examples.items.map((g) => (
-          <PreviewBlock key={g.id} component={component} spec={g} />
+          <PreviewBlock key={g.id} component={component} spec={g} wide={wide} />
         ))}
       </div>
     )

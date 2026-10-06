@@ -385,7 +385,7 @@ function runChecks(dir, log) {
     if (pkg.scripts?.[script]) run(script, ['run', script]);
     else results.push({ name: script, skipped: 'no such script in package.json' });
   }
-  const acceptanceReady = pkg.scripts?.acceptance && ['scripts/acceptance.mjs', 'example/index.html', 'example/workspace/mock-host.mjs', 'example/workspace/adapter.ts', 'example/library/adapter.ts', 'example/library/sections.ts', 'src/adapters/synthetic.ts'].every((p) => existsSync(join(dir, p)));
+  const acceptanceReady = pkg.scripts?.acceptance && ['scripts/acceptance.mjs', 'example/index.html', 'example/workspace/mock-host.mjs', 'example/workspace/adapter.ts', 'example/library/adapter.ts', 'example/library/sections.ts', 'example/static-adapter.ts', 'src/adapters/synthetic.ts'].every((p) => existsSync(join(dir, p)));
   if (!acceptanceReady) results.push({ name: 'acceptance', skipped: 'needs the acceptance script, the example product (with example/workspace/ and example/library/), and the acceptance adapters' });
   else if (!hasPlaywright(dir)) results.push({ name: 'acceptance', skipped: 'Playwright is not installed (npm i -D playwright, or set PLAYWRIGHT_MODULE)' });
   else run('acceptance', ['run', 'acceptance']);

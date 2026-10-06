@@ -58,20 +58,23 @@ const scenarios = () => savedFile({ file: "scenarios.json", route: "/__studio/sc
 // npm run acceptance builds the stress and capture-only adapters by pointing
 // "@/adapter" at the acceptance module; a normal build never includes them.
 const variant = process.env.VITE_STUDIO_ADAPTER
-const withLibrary = variant === "library" || variant === "sections"
+// The static build (VITE_STUDIO_ADAPTER=static) is the example as published to a static host: opaque frames, a
+// workspace without operations, module groups and a wide library component (example/static-adapter.ts).
+const withLibrary = variant === "library" || variant === "sections" || variant === "static"
 const acceptance = variant && variant !== "workspace" && !withLibrary ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, variant === "example" ? "src/adapters/example.ts" : "src/adapters/synthetic.ts") }] : []
 // The starter's example workspace (VITE_STUDIO_ADAPTER=workspace): its adapter and module map, or with
 // VITE_STUDIO_WORKSPACE=orphan a map that defines an undeclared module, which must fail the build. The example
 // library (VITE_STUDIO_ADAPTER=library) carries the same workspace and adds its documentation map; the same library
 // declared with sections (VITE_STUDIO_ADAPTER=sections) does too, or with VITE_STUDIO_LIBRARY=invalid a declaration
 // that must fail the build.
-const libraryAdapterFile = variant === "sections" ? (process.env.VITE_STUDIO_LIBRARY === "invalid" ? "example/library/invalid.ts" : "example/library/sections.ts") : "example/library/adapter.ts"
+const libraryAdapterFile = variant === "static" ? "example/static-adapter.ts" : variant === "sections" ? (process.env.VITE_STUDIO_LIBRARY === "invalid" ? "example/library/invalid.ts" : "example/library/sections.ts") : "example/library/adapter.ts"
+const workspaceFile = variant === "static" ? "example/workspace/static.ts" : process.env.VITE_STUDIO_WORKSPACE === "orphan" ? "example/workspace/orphan.ts" : "example/workspace/index.ts"
 const exampleWorkspace =
   variant === "workspace" || withLibrary
     ? [
         { find: /^@\/adapter$/, replacement: path.resolve(root, withLibrary ? libraryAdapterFile : "example/workspace/adapter.ts") },
-        { find: /^@\/workspace$/, replacement: path.resolve(root, process.env.VITE_STUDIO_WORKSPACE === "orphan" ? "example/workspace/orphan.ts" : "example/workspace/index.ts") },
-        ...(withLibrary ? [{ find: /^@\/library$/, replacement: path.resolve(root, "example/library/index.ts") }] : []),
+        { find: /^@\/workspace$/, replacement: path.resolve(root, workspaceFile) },
+        ...(withLibrary ? [{ find: /^@\/library$/, replacement: path.resolve(root, variant === "static" ? "example/library/static.ts" : "example/library/index.ts") }] : []),
       ]
     : []
 
@@ -171,7 +174,7 @@ const workspaceMock = (): Plugin => ({
   name: "studio-workspace-mock",
   apply: "serve",
   async configureServer(server) {
-    if ((variant !== "workspace" && !withLibrary) || !existsSync(mockHostFile)) return
+    if ((variant !== "workspace" && !withLibrary) || variant === "static" || !existsSync(mockHostFile)) return
     const { createMockMiddleware } = (await import(pathToFileURL(mockHostFile).href)) as { createMockMiddleware: () => MockMiddleware }
     server.middlewares.use("/__studio/ops", createMockMiddleware())
   },

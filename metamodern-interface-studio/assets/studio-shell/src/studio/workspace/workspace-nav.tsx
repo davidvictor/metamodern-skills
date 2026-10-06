@@ -14,9 +14,11 @@ import { Button } from "@/components/ui/button"
 import { BreadcrumbItem, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { CommandGroup, CommandItem, CommandSeparator } from "@/components/ui/command"
 import { Icon } from "@/kit/icons"
-import { resolveModules, type ResolvedModule } from "./declaration"
-import { parseModuleLink } from "./link"
+import { Kbd, KbdGroup } from "@/components/ui/kbd"
+import { resolveModules, startsGroup, type ResolvedModule } from "./declaration"
+import { moduleHash, parseModuleLink } from "./link"
 import { openingLink } from "./slots"
+import { stepKeys } from "./stores"
 import { hasLibrary, LibraryNav, LibrarySlot } from "@/studio/library/slots"
 
 // Without the module file: only reasons the declaration gives (a declared reason, no operations host). A
@@ -28,12 +30,13 @@ const RING = "outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--sidebar-r
 const openPatch = (m: ResolvedModule, open: string | null, section?: string): Partial<State> => ({
   module: m.id,
   section: section ?? m.sections[0]?.id ?? null,
+  item: null,
   ...(open !== m.id ? { moduleDetails: false } : {}),
   panelOpen: true,
   mobilePanel: null,
 })
 
-export type NavProps = { part: "rail"; labels: boolean } | { part: "commands"; onDone: () => void } | { part: "tab" | "drawer" | "crumbs" | "details-button" | "runtime" }
+export type NavProps = { part: "rail"; labels: boolean } | { part: "commands"; onDone: () => void } | { part: "tab" | "drawer" | "crumbs" | "details-button" | "runtime" | "shortcuts" }
 
 export function WorkspaceNav(props: NavProps) {
   switch (props.part) {
@@ -51,20 +54,45 @@ export function WorkspaceNav(props: NavProps) {
       return <DetailsButton />
     case "runtime":
       return <Runtime />
+    case "shortcuts":
+      return <StepShortcuts />
   }
 }
 
-/** After the views: a divider, then the modules as square items with the views' marker, focus ring and labels. */
+/** A divider between two groups of modules, as the one before the first module. */
+const GroupDivider = ({ className }: { className?: string }) => <div role="separator" aria-orientation="horizontal" data-module-group-divider className={cn("h-px shrink-0 bg-sidebar-border", className)} />
+
+/** In the keyboard shortcuts list while an open module binds j and k (useStepKeys). */
+function StepShortcuts() {
+  const bound = React.useSyncExternalStore(stepKeys.subscribe, stepKeys.get)
+  if (!bound) return null
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <dt className="text-muted-foreground">Module: next and previous item</dt>
+      <dd>
+        <KbdGroup>
+          <Kbd>J</Kbd>
+          <Kbd>K</Kbd>
+        </KbdGroup>
+      </dd>
+    </div>
+  )
+}
+
+/** After the views: a divider, then the modules as square items with the views' marker, focus ring and labels, with a divider between groups. */
 function RailItems({ labels }: { labels: boolean }) {
   const s = useStudio()
   return (
     <>
       <div role="separator" aria-orientation="horizontal" className="mx-2 my-1 h-px shrink-0 bg-sidebar-border" />
       <nav aria-label="Workspace" className="flex flex-col py-1">
-        {modules.map((m) => (
-          <RailButton key={m.id} label={m.label} labels={labels} active={s.module === m.id} hint={m.unavailable} onClick={() => s.set(s.module === m.id ? { panelOpen: !s.panelOpen } : openPatch(m, s.module))}>
-            <Icon name={m.icon} />
-          </RailButton>
+        {modules.map((m, i) => (
+          <React.Fragment key={m.id}>
+            {startsGroup(modules, i) && <GroupDivider className="mx-2 my-1" />}
+            <RailButton label={m.label} labels={labels} active={s.module === m.id} hint={m.unavailable} onClick={() => s.set(s.module === m.id ? { panelOpen: !s.panelOpen } : openPatch(m, s.module))}>
+              <Icon name={m.icon} />
+            </RailButton>
+          </React.Fragment>
         ))}
       </nav>
     </>
@@ -117,8 +145,9 @@ function ModuleDrawer() {
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-sidebar p-3 text-sidebar-foreground">
       <h2 className="px-1 pb-2 text-sm font-semibold">Workspace</h2>
       <ul className="grid gap-1">
-        {modules.map((m) => (
+        {modules.map((m, i) => (
           <li key={m.id} className="grid gap-0.5">
+            {startsGroup(modules, i) && <GroupDivider className="mx-1 my-1" />}
             <button aria-current={s.module === m.id ? "page" : undefined} className={cn("flex min-h-11 items-center gap-3 rounded-lg px-3 text-left text-sm font-medium hover:bg-sidebar-accent", RING, s.module === m.id && "bg-sidebar-accent")} onClick={() => s.set(openPatch(m, s.module))}>
               <Icon name={m.icon} className="size-5 shrink-0" />
               <span className="grid min-w-0">
@@ -182,20 +211,22 @@ function DetailsButton() {
 }
 
 /**
- * Opening or leaving a module or section adds a history entry, so Back returns. Back out of a module with
- * unsaved changes asks first; Back between the open module's sections never asks (its Page stays mounted).
+ * Opening or leaving a module or section adds a history entry, so Back returns; changing only the item replaces the
+ * current entry (the Studio writes the link over it), so stepping through items never fills Back. Back out of a module
+ * with unsaved changes asks first; Back between the open module's sections never asks (its Page stays mounted).
  */
 function Runtime() {
-  const { set, module, section } = useStudio()
-  const shown = React.useRef({ module, section })
+  const { set, module, section, item } = useStudio()
+  const shown = React.useRef({ module, section, item })
   const fromHistory = React.useRef(false)
   React.useEffect(() => {
-    if (module === shown.current.module && section === shown.current.section) return
-    shown.current = { module, section }
+    const at = shown.current
+    shown.current = { module, section, item }
+    if (module === at.module && section === at.section) return
     // Keep the place being left as its own entry; the Studio then writes the new place over the top one.
     if (fromHistory.current) fromHistory.current = false
     else history.pushState(null, "", location.href)
-  }, [module, section])
+  }, [module, section, item])
   React.useEffect(() => {
     const link = parseModuleLink(openingLink, adapter.workspace)
     if (link.unknown) toast.warning("That link names a workspace module this Studio does not have", { id: "studio-unknown-module", description: `${link.unknown} is not declared in this Studio's workspace.`, duration: 12000 })
@@ -203,21 +234,19 @@ function Runtime() {
       const at = shown.current
       const to = parseModuleLink(location.hash, adapter.workspace)
       // Between two view entries: views keep no history of their own.
-      if (to.module === at.module && (!to.module || to.section === at.section)) return
+      if (to.module === at.module && (!to.module || (to.section === at.section && to.item === at.item))) return
       const view = VIEWS.find((v) => v.id === new URLSearchParams(location.hash.slice(1)).get("view"))?.id
-      const patch: Partial<State> = to.module ? { module: to.module, section: to.section, ...(to.module !== at.module ? { moduleDetails: false } : {}) } : { module: null, section: null, ...(view ? { view } : {}) }
+      const patch: Partial<State> = to.module ? { module: to.module, section: to.section, item: to.item, ...(to.module !== at.module ? { moduleDetails: false } : {}) } : { module: null, section: null, item: null, ...(view ? { view } : {}) }
       const go = () => {
-        fromHistory.current = true
+        // Only a move between modules or sections pushes; one that changes only the item has nothing to skip.
+        if (to.module !== at.module || to.section !== at.section) fromHistory.current = true
         set(patch)
       }
       if (!leaveGuard.ask || to.module === at.module) return go()
       // Unsaved changes: put the module's place back on top of the entry reached (Back, Forward or several steps)
       // until the person decides. Leaving then steps back onto that entry, which this handler applies, so no
       // duplicate entry remains.
-      const q = new URLSearchParams()
-      q.set("module", at.module ?? "")
-      if (at.section) q.set("section", at.section)
-      history.pushState(null, "", `#${q}`)
+      history.pushState(null, "", moduleHash({ module: at.module ?? "", section: at.section, item: at.item }))
       leaveGuard.ask(() => history.back())
     }
     window.addEventListener("popstate", onPop)

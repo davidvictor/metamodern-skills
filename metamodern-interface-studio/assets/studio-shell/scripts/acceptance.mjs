@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 /*
  * Measures the shell against the acceptance criteria in the skill's shell.md.
- * It builds the Studio five ways (the example product, a 1,000-scenario stress
- * adapter, a capture-only adapter, the example with its synthetic workspace, and
- * the example with that workspace and a synthetic component library), serves them
- * locally (the workspace build also without its operations host),
+ * It builds the Studio seven ways (the example product, a 1,000-scenario stress
+ * adapter, a capture-only adapter, the example with its synthetic workspace, the
+ * example with that workspace and a synthetic component library, that library
+ * declared with sections, and the example as published to a static host), serves them
+ * locally (the workspace build also without its operations host; the static build
+ * with CORS headers and the Studio's origin written into its preview pages),
  * and drives them in headless Chromium. It needs Playwright: `npm i -D playwright` and
  * `npx playwright install chromium`, or set PLAYWRIGHT_MODULE to an existing
  * install. Results print as a table and are written to acceptance-report.json.
@@ -28,15 +30,15 @@ try {
 }
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
-const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace", library: "library", sections: "sections" }
-// WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.13.2), gzipped, built with the example
+const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace", library: "library", sections: "sections", static: "static" }
+// WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.14.0), gzipped, built with the example
 // product. A Studio that declares neither a workspace nor a library may grow by at most 3 KB over it. Each release moves
 // it to the release before it.
-const STUDIO_CHUNK_BASELINE = "0.13.2"
-const STUDIO_CHUNK_BASELINE_GZ = 299062
+const STUDIO_CHUNK_BASELINE = "0.14.0"
+const STUDIO_CHUNK_BASELINE_GZ = 299064
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
-const serve = (out, host) =>
+const serve = (out, host, staticHost = false) =>
   createServer((req, res) => {
     const pathname = decodeURIComponent(new URL(req.url, "http://x").pathname)
     // The example workspace's mock operations host, as the dev server serves it; "nohost" serves the same build without one.
@@ -44,6 +46,12 @@ const serve = (out, host) =>
     const path = normalize(join(out, pathname))
     const file = path.startsWith(out) && existsSync(path) && statSync(path).isFile() ? path : join(out, "index.html")
     res.setHeader("content-type", mime[extname(file)] ?? "application/octet-stream")
+    if (staticHost) {
+      // As a static host for opaque frames must: frames at origin "null" load scripts, styles and fonts cross-origin, and each
+      // preview page names the Studio's origin for the frame client (references/verification.md, Publishing to a static host).
+      res.setHeader("access-control-allow-origin", "*")
+      if (/\/example\/.*\.html$/.test(file)) return res.end(readFileSync(file, "utf8").replace("<head>", `<head><meta name="studio-allowed-origins" content="http://${req.headers.host}">`))
+    }
     createReadStream(file).pipe(res)
   })
 const listen = async (name, server) => {
@@ -56,7 +64,7 @@ for (const [name, variant] of Object.entries(builds)) {
   // The library builds carry the example workspace too, so each is served with its own mock host.
   const hosted = name === "workspace" || name === "library" || name === "sections"
   if (hosted) servers[name] = { host: createMockHost() }
-  await listen(name, serve(out, hosted ? () => servers[name].host : null))
+  await listen(name, serve(out, hosted ? () => servers[name].host : null, name === "static"))
 }
 await listen("nohost", serve(join(root, ".acceptance", "workspace"), null))
 
@@ -69,8 +77,9 @@ const record = (id, status, detail) => {
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 async function open(name, { width = 1440, height = 900, touch = false, hash = "", appearance, brand } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, hasTouch: touch, isMobile: touch, colorScheme: appearance ?? "light" })
-  if (appearance) await context.addInitScript((a) => localStorage.setItem("studio.appearance", a), appearance)
-  if (brand) await context.addInitScript((b) => localStorage.setItem("studio.example-tasks.brand", b), brand)
+  // Init scripts run in every frame too; a frame sandboxed without allow-same-origin (the static build) has no storage to write.
+  if (appearance) await context.addInitScript((a) => { try { localStorage.setItem("studio.appearance", a) } catch { /* an opaque frame */ } }, appearance)
+  if (brand) await context.addInitScript((b) => { try { localStorage.setItem("studio.example-tasks.brand", b) } catch { /* an opaque frame */ } }, brand)
   const page = await context.newPage()
   const errors = []
   page.on("pageerror", (e) => errors.push(String(e)))
@@ -5049,6 +5058,316 @@ await check("LB-16", async () => {
   rmSync(join(root, ".acceptance", "invalid-sections"), { recursive: true, force: true })
   const ok = b.status !== 0 && /The adapter's library declaration is invalid/.test(out) && named.length === expected.length
   return [ok ? "pass" : "fail", `the build ${b.status !== 0 ? "failed" : "succeeded"}${/The adapter's library declaration is invalid/.test(out) ? " with the library declaration invalid" : ""}, naming ${named.length} of ${expected.length} problems${named.length < expected.length ? `; missing ${expected.filter((e) => !named.includes(e)).join("; ")}` : ""}`]
+})
+
+// ---------- 0.15.0: module groups, host-free modules, item links, SelectList, step keys, wide previews, opaque frames (WS-11 to WS-15, LB-17, AC-69) ----------
+/** The rail's Workspace entries in order, with "|" for a group divider. */
+const railModules = (p) => p.evaluate(() => [...(document.querySelector('[aria-label="Studio"] nav[aria-label="Workspace"]')?.children ?? [])].map((e) => (e.getAttribute("role") === "separator" ? "|" : e.textContent.trim())))
+const catalogHash = (p) => p.evaluate(() => Object.fromEntries(new URLSearchParams(location.hash.slice(1))))
+const selectedOption = (p) => p.evaluate(() => document.querySelector('[data-kit] [role="listbox"] [role="option"][aria-selected="true"]')?.querySelector("span span")?.textContent ?? null)
+const focusedOption = (p) => p.evaluate(() => (document.activeElement?.getAttribute("role") === "option" ? document.activeElement.querySelector("span span")?.textContent : null))
+const openStatic = (hash, o = {}) => open("static", { ...o, hash })
+
+// WS-11 Module groups: without groups the rail and drawer are unchanged; with them a divider separates each pair of consecutive modules whose groups differ, in the rail and the phone's Workspace drawer
+await check("WS-11", async () => {
+  const errors = []
+  servers.workspace.host = createMockHost()
+  const plain = await open("workspace", { hash: "view=inspect&scenario=tasks.list" })
+  const plainRail = await railModules(plain)
+  const plainBefore = await plain.evaluate(() => document.querySelector('[aria-label="Studio"] nav[aria-label="Workspace"]')?.previousElementSibling?.getAttribute("role"))
+  const plainDividers = await plain.locator("[data-module-group-divider]").count()
+  errors.push(...plain.errors)
+  await plain.closeAll()
+  const p = await openStatic("view=inspect&scenario=tasks.list")
+  const rail = await railModules(p)
+  const before = await p.evaluate(() => document.querySelector('[aria-label="Studio"] nav[aria-label="Workspace"]')?.previousElementSibling?.getAttribute("role"))
+  // Tab walks the modules in order across a divider: the divider takes no focus.
+  await railModule(p, "Catalog").focus()
+  const tabbed = [await p.evaluate(() => document.activeElement?.textContent?.trim())]
+  for (let i = 0; i < 2; i++) {
+    await p.keyboard.press("Tab")
+    tabbed.push(await p.evaluate(() => document.activeElement?.textContent?.trim()))
+  }
+  errors.push(...p.errors)
+  await p.closeAll()
+  const phone = await openStatic("view=inspect&scenario=tasks.list", { width: 390, height: 844, touch: true })
+  await phone.locator('nav[aria-label="Views"] button', { hasText: "Workspace" }).click()
+  await poll(() => phone.getByRole("dialog").getByRole("button", { name: "Catalog", exact: true }).count(), (n) => n === 1)
+  const drawer = await phone.evaluate(() => [...(document.querySelector('[role="dialog"] ul')?.children ?? [])].map((li) => `${li.querySelector("[data-module-group-divider]") ? "| " : ""}${li.querySelector("button span > span")?.textContent.trim()}`))
+  errors.push(...phone.errors)
+  await phone.closeAll()
+  const ok = plainRail.join() === "Site,Audit" && plainBefore === "separator" && plainDividers === 0 && rail.join() === "Catalog,Notes,|,Sync" && before === "separator" && tabbed.join() === "Catalog,Notes,Sync" && drawer.join() === "Catalog,Notes,| Sync" && !errors.length
+  return [ok ? "pass" : "fail", `without groups the rail lists ${plainRail.join(", ")} after a ${plainBefore ?? "missing"} divider with ${plainDividers} group dividers; with groups it lists ${rail.join(" ")} after a ${before ?? "missing"} divider, and Tab walks ${tabbed.join(", ")}; the phone's Workspace drawer lists ${drawer.join(", ")}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// WS-12 Host-free modules: in a Studio that declares no operations host, a module without uses opens its page and sends no request; a module with uses stays unavailable with the reason
+await check("WS-12", async () => {
+  const p = await openStatic("module=notes")
+  const sent = []
+  p.on("request", (r) => {
+    const url = new URL(r.url())
+    if (r.method() !== "GET" || r.resourceType() === "fetch" || r.resourceType() === "xhr" || url.pathname.startsWith("/__studio")) sent.push(`${r.method()} ${url.pathname}`)
+  })
+  await p.reload()
+  await p.waitForSelector("header")
+  const notes = await poll(() => p.evaluate(() => ({ h1: document.querySelector("[data-kit] h1")?.textContent, unavailable: /is unavailable|declares no operations host/.test(document.body.innerText) })), (m) => m.h1 === "Notes")
+  await railModule(p, "Catalog").click()
+  const catalog = await poll(() => p.evaluate(() => ({ h1: document.querySelector("[data-kit] h1")?.textContent, list: !!document.querySelector('[data-kit] [role="listbox"]') })), (m) => m.h1 === "Catalog" && m.list)
+  await railModule(p, "Sync").click()
+  const sync = await poll(() => p.evaluate(() => document.body.innerText), (t) => /Sync is unavailable/.test(t))
+  const reason = /declares no operations host \(workspace\.operations in the adapter\), and this module calls the product's operations/.test(sync)
+  const built = readdirSync(join(root, ".acceptance", "static", "assets")).some((f) => /^workspace-page-/.test(f))
+  const errors = [...p.errors]
+  await p.closeAll()
+  const ok = notes.h1 === "Notes" && !notes.unavailable && catalog.h1 === "Catalog" && catalog.list && reason && built && sent.length === 0 && !errors.length
+  return [ok ? "pass" : "fail", `the static build (no workspace.operations) ${built ? "built with its workspace layer" : "has no workspace layer"}; Notes (no uses) opened titled "${notes.h1}"${notes.unavailable ? " but said it is unavailable" : ""}, Catalog (uses omitted) opened ${catalog.list ? "with its list" : "without its list"}; Sync (with uses) ${reason ? "is unavailable with the reason" : "gave no reason"}; requests other than static GETs: ${sent.length ? sent.slice(0, 4).join(", ") : "none"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// WS-13 Item links: a link with an item restores it, changing only the item replaces the history entry, a section change clears it,
+// Back returns to the item, an item the module lacks is the module's to report, and an invalid item ID is dropped with a console error
+await check("WS-13", async () => {
+  const errors = []
+  const p = await openStatic("module=catalog&section=screens&item=task.detail")
+  const restored = await poll(() => selectedOption(p), (v) => v === "Task")
+  const title = await p.locator("[data-kit] h2").first().textContent()
+  const start = await p.evaluate(() => history.length)
+  await p.evaluate(() => document.querySelector("[data-kit] h1")?.setAttribute("tabindex", "-1"))
+  await p.locator("[data-kit] h1").focus()
+  for (let i = 0; i < 3; i++) await p.keyboard.press("j")
+  const stepped = await poll(() => catalogHash(p), (h) => h.item === "help.guide")
+  await p.getByRole("option", { name: /Welcome/ }).click()
+  const clicked = await poll(() => catalogHash(p), (h) => h.item === "help.welcome")
+  const afterItems = await p.evaluate(() => history.length)
+  await p.locator('nav[aria-label="Sections"] button', { hasText: "States" }).click()
+  const section = await poll(() => catalogHash(p), (h) => h.section === "states")
+  const afterSection = await p.evaluate(() => history.length)
+  await p.evaluate(() => history.back())
+  const back = await poll(() => catalogHash(p), (h) => h.section === "screens")
+  const backSelected = await poll(() => selectedOption(p), (v) => v === "Welcome")
+  errors.push(...p.errors)
+  await p.closeAll()
+  const ghost = await openStatic("module=catalog&section=screens&item=ghost")
+  const notice = await poll(() => ghost.evaluate(() => /Not in this list/.test(document.body.innerText) && new URLSearchParams(location.hash.slice(1)).get("item")), (v) => v === "ghost")
+  errors.push(...ghost.errors)
+  await ghost.closeAll()
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  const bad = await context.newPage()
+  const consoleErrors = []
+  bad.on("console", (m) => m.type() === "error" && consoleErrors.push(m.text()))
+  await bad.goto(`${servers.static.url}#module=catalog&section=screens&item=${encodeURIComponent("bad id!")}`)
+  await bad.waitForSelector("[data-kit] h1")
+  const badHash = await poll(() => bad.evaluate(() => location.hash), (h) => /module=catalog/.test(h))
+  const badSelected = await bad.locator('[data-kit] [role="option"][aria-selected="true"]').count()
+  await context.close()
+  const dropped = !/item=/.test(badHash) && consoleErrors.some((t) => /is not an item ID/.test(t))
+  const ok = restored === "Task" && title === "Task" && stepped.item === "help.guide" && clicked.item === "help.welcome" && afterItems === start && section.section === "states" && !("item" in section) && afterSection === start + 1 && back.item === "help.welcome" && backSelected === "Welcome" && notice === "ghost" && dropped && badSelected === 0 && !errors.length
+  return [ok ? "pass" : "fail", `a link to task.detail selected "${restored}" titled "${title}"; j three times reached ${stepped.item} and a click ${clicked.item} with history ${start} then ${afterItems} entries; States opened section=${section.section}${"item" in section ? ` keeping item=${section.item}` : " without an item"} at ${afterSection} entries; Back returned to ${back.section} item=${back.item} with "${backSelected}" selected; an unknown item stayed in the link (${notice}) for the module's notice; "bad id!" left ${badHash} with ${badSelected} selected and ${dropped ? "a console error" : "no console error"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// WS-14 SelectList: listbox semantics with grouped options and one tab stop, selection follows focus (arrows, j and k, Home and End),
+// the filter narrows across groups and keeps a matching selection, and the kit floors (44 px coarse targets, 16 px input, AA text,
+// a 3:1 focus outline, forced colors, reduced motion)
+await check("WS-14", async () => {
+  const errors = []
+  const p = await openStatic("module=catalog&section=screens&item=tasks.list")
+  await poll(() => selectedOption(p), (v) => v === "Today")
+  const shape = await p.evaluate(() => {
+    const box = document.querySelector('[data-kit] [role="listbox"]')
+    const groups = [...box.querySelectorAll('[role="group"]')].map((g) => document.getElementById(g.getAttribute("aria-labelledby"))?.textContent)
+    return { name: box.getAttribute("aria-label"), groups, options: box.querySelectorAll('[role="option"]').length, stops: box.querySelectorAll('[tabindex="0"]').length, stopIsSelected: box.querySelector('[tabindex="0"]')?.getAttribute("aria-selected") === "true", selected: box.querySelectorAll('[aria-selected="true"]').length }
+  })
+  await p.locator('[data-kit] [role="option"][tabindex="0"]').focus()
+  const keys = []
+  for (const key of ["ArrowDown", "j", "k", "End", "Home", "ArrowUp"]) {
+    await p.keyboard.press(key)
+    const h = await poll(() => catalogHash(p), (x) => !!x.item)
+    keys.push(`${key}→${await focusedOption(p)}/${await selectedOption(p)}/${h.item}`)
+  }
+  const want = ["ArrowDown→New task/New task/tasks.new", "j→Task/Task/task.detail", "k→New task/New task/tasks.new", "End→Welcome/Welcome/help.welcome", "Home→Today/Today/tasks.list", "ArrowUp→Today/Today/tasks.list"]
+  await p.getByRole("option", { name: /Settings/ }).click()
+  const filter = p.getByRole("searchbox", { name: "Filter Screens" })
+  const narrowed = {}
+  const listed = () => p.evaluate(() => ({ options: [...document.querySelectorAll('[data-kit] [role="listbox"] [role="option"]')].map((o) => o.querySelector("span span").textContent).join("+"), groups: document.querySelectorAll('[data-kit] [role="listbox"] [role="group"]').length, selected: document.querySelector('[data-kit] [role="option"][aria-selected="true"] span span')?.textContent ?? "-", empty: /Nothing matches/.test(document.querySelector("[data-select-list]").innerText) }))
+  // Each query waits until the list shows what it should, so a slow render reads as a failure only after the poll's time.
+  for (const [q, options] of [["SET", "Settings"], ["notifications", "Settings"], ["dialog", "New task"], ["zzz", ""], ["", "Today+New task+Task+Settings+Sign in+Getting started+Welcome"]]) {
+    await filter.fill(q)
+    narrowed[q || "(cleared)"] = await poll(listed, (v) => v.options === options)
+  }
+  const filterOk = narrowed.SET.options === "Settings" && narrowed.SET.selected === "Settings" && narrowed.notifications.options === "Settings" && narrowed.dialog.options === "New task" && narrowed.dialog.selected === "-" && narrowed.zzz.options === "" && narrowed.zzz.empty && narrowed["(cleared)"].groups === 4 && narrowed["(cleared)"].selected === "Settings"
+  errors.push(...p.errors)
+  await p.closeAll()
+  // Floors: AA text and a visible focus outline in both appearances, an outline in forced colors with the selection painted in system colors, no motion under reduced motion.
+  const floors = []
+  for (const appearance of ["light", "dark"]) {
+    const f = await openStatic("module=catalog&section=screens&item=account.settings", { appearance })
+    await poll(() => selectedOption(f), (v) => v === "Settings")
+    const low = await contrast(f)
+    await unfocused(f)
+    const walk = await tabWalk(f, false)
+    await f.emulateMedia({ reducedMotion: "reduce", forcedColors: "active" })
+    await wait(300)
+    const forced = await tabWalk(f, true)
+    const sel = await f.evaluate(() => {
+      const o = document.querySelector('[data-kit] [role="option"][aria-selected="true"]')
+      const s = getComputedStyle(o)
+      return { adjust: s.forcedColorAdjust, bg: s.backgroundColor, color: s.color, transition: s.transitionDuration }
+    })
+    floors.push({ appearance, low, walk, forced, sel })
+    errors.push(...f.errors)
+    await f.closeAll()
+  }
+  const touch = await openStatic("module=catalog&section=screens&item=tasks.list", { width: 768, height: 1024, touch: true })
+  await poll(() => selectedOption(touch), (v) => v === "Today")
+  const coarse = await touch.evaluate(() => ({ options: [...document.querySelectorAll('[data-kit] [role="option"]')].map((o) => Math.round(o.getBoundingClientRect().height)), input: (() => { const i = document.querySelector("[data-select-list] input"); return { h: Math.round(i.getBoundingClientRect().height), text: parseFloat(getComputedStyle(i).fontSize) } })() }))
+  errors.push(...touch.errors)
+  await touch.closeAll()
+  const floorsOk = floors.every((f) => !f.low.length && f.walk.reached >= 2 && !f.walk.lost.length && !f.walk.faint.length && !f.forced.lost.length && f.sel.adjust === "none" && f.sel.bg !== "rgba(0, 0, 0, 0)" && /^0s/.test(f.sel.transition)) && coarse.options.every((h) => h >= 44) && coarse.input.h >= 44 && coarse.input.text >= 16
+  const ok = shape.name === "Screens" && shape.groups.join() === "Tasks,Task detail,Account,Help" && shape.options === 7 && shape.stops === 1 && shape.stopIsSelected && shape.selected === 1 && keys.join() === want.join() && filterOk && floorsOk && !errors.length
+  return [ok ? "pass" : "fail", `listbox "${shape.name}" with groups ${shape.groups.join(", ")}, ${shape.options} options, ${shape.stops} tab stop${shape.stopIsSelected ? " on the selection" : ""}; keys ${keys.join(", ")}; filter ${Object.entries(narrowed).map(([q, v]) => `${q}: [${v.options}] selected ${v.selected}`).join("; ")}; ${floors.map((f) => `${f.appearance}: low text ${f.low.length ? f.low.slice(0, 2).join(", ") : "none"}, focus at ${f.walk.reached - f.walk.lost.length} of ${f.walk.reached} stops (lowest ${f.walk.min.toFixed(2)}:1), forced colors outlined at ${f.forced.reached - f.forced.lost.length} of ${f.forced.reached} with the selection ${f.sel.adjust === "none" ? `in system colors ${f.sel.bg}` : "not in system colors"}, transitions ${f.sel.transition}`).join("; ")}; coarse option heights ${Math.min(...coarse.options)} px and up, filter ${coarse.input.h} px with ${coarse.input.text} px text; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// WS-15 useStepKeys: j and k step the module's selection from the page, never from a field, with a dialog open, with a modifier or
+// after a handler used the key; the keyboard shortcuts list names them only while a module binds them
+await check("WS-15", async () => {
+  const p = await openStatic("module=catalog&section=screens&item=tasks.list")
+  await poll(() => selectedOption(p), (v) => v === "Today")
+  const item = async () => (await catalogHash(p)).item
+  await p.evaluate(() => document.querySelector("[data-kit] h1")?.setAttribute("tabindex", "-1"))
+  await p.locator("[data-kit] h1").focus()
+  await p.keyboard.press("j")
+  const page = await poll(item, (v) => v === "tasks.new")
+  await p.keyboard.press("k")
+  const pageBack = await poll(item, (v) => v === "tasks.list")
+  await p.keyboard.press("Shift+J")
+  await settleFrames(p)
+  const modified = await item()
+  const filter = p.getByRole("searchbox", { name: "Filter Screens" })
+  await filter.focus()
+  await p.keyboard.press("j")
+  await poll(() => filter.inputValue(), (v) => v === "j")
+  await settleFrames(p)
+  const inField = { item: await item(), value: await filter.inputValue() }
+  await filter.fill("")
+  await p.locator("[data-kit] h1").focus()
+  await p.keyboard.press("?")
+  const dialog = p.getByRole("dialog", { name: "Keyboard shortcuts" })
+  await poll(() => dialog.isVisible().catch(() => false), Boolean)
+  const listed = /Module: next and previous item\s*J\s*K/.test(await dialog.innerText())
+  await p.keyboard.press("j")
+  await settleFrames(p)
+  const inDialog = await item()
+  await p.keyboard.press("Escape")
+  await poll(() => dialog.count(), (n) => n === 0)
+  await railView(p, "Inspect").click()
+  await poll(() => p.evaluate(() => location.hash), (h) => /view=inspect/.test(h))
+  await p.keyboard.press("?")
+  await poll(() => dialog.isVisible().catch(() => false), Boolean)
+  const listedInView = /Module: next and previous item/.test(await dialog.innerText())
+  await p.keyboard.press("Escape")
+  const errors = [...p.errors]
+  await p.closeAll()
+  const ok = page === "tasks.new" && pageBack === "tasks.list" && modified === "tasks.list" && inField.item === "tasks.list" && inField.value === "j" && listed && inDialog === "tasks.list" && !listedInView && !errors.length
+  return [ok ? "pass" : "fail", `on the page j stepped to ${page} and k back to ${pageBack}; Shift+J left ${modified}; j in the filter typed "${inField.value}" and left ${inField.item}; the shortcuts list ${listed ? "names J and K" : "does not name J and K"} while the module binds them, and j with it open left ${inDialog}; in a view the list ${listedInView ? "still names them" : "leaves them out"}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// LB-17 Wide previews: on a wide component's page each preview block (and its Code tab) is min(1.5 × the column, the page inside
+// its gutters) wide, centred on the column, with headings and tabs in the column; previews fit but never exceed their natural size;
+// non-wide pages are laid out as before, Phone width is 390 px at actual size, and a phone keeps the column
+await check("LB-17", async () => {
+  const errors = []
+  const measure = (p, block) =>
+    p.evaluate((id) => {
+      const page = document.querySelector("[data-library-page]")
+      const article = page.querySelector("article")
+      const cs = getComputedStyle(article)
+      const a = article.getBoundingClientRect()
+      const col = { left: a.left + parseFloat(cs.paddingLeft), right: a.right - parseFloat(cs.paddingRight) }
+      const b = page.querySelector(`[data-preview-block="${id}"]`)
+      const panel = [...b.querySelectorAll('[data-slot="tabs-content"]')].find((e) => e.getClientRects().length)?.getBoundingClientRect()
+      const head = b.querySelector("h3").getBoundingClientRect()
+      const tabs = b.querySelector('[role="tablist"]').getBoundingClientRect()
+      const caption = b.querySelector(".tabular-nums")?.textContent ?? ""
+      const frame = b.querySelector("iframe.opacity-100")
+      const scale = frame ? Number(/scale\(([\d.]+)\)/.exec(frame.style.transform)?.[1] ?? 1) : null
+      const r = (n) => Math.round(n * 10) / 10
+      return { col: r(col.right - col.left), gutter: parseFloat(cs.paddingLeft), main: page.clientWidth, width: r(panel.width), left: r(col.left - panel.left), right: r(panel.right - col.right), head: r(head.left - col.left), tabs: r(tabs.left - col.left), caption, scale, frameW: frame ? parseFloat(frame.style.width) : null, sideways: page.scrollWidth > page.clientWidth + 1 }
+    }, block)
+  const expect = (m) => Math.min(1.5 * m.col, m.main - 2 * m.gutter)
+  const near = (a, b) => Math.abs(a - b) <= 1
+  const runs = {}
+  for (const width of [1440, 1920]) {
+    const p = await openStatic("library=button-row", { width })
+    await poll(() => p.locator('[data-preview-block="toolbar"] iframe.opacity-100').count(), (n) => n === 1, 15000)
+    await poll(() => p.locator('[data-preview-block="pair"] iframe.opacity-100').count(), (n) => n === 1, 15000)
+    const toolbar = await measure(p, "toolbar")
+    const pair = await measure(p, "pair")
+    await p.locator('[data-preview-block="toolbar"]').getByRole("tab", { name: "Code" }).click()
+    await wait(300)
+    const code = await measure(p, "toolbar")
+    await p.locator('[data-preview-block="toolbar"]').getByRole("tab", { name: "Preview" }).click()
+    await p.locator('[data-preview-block="toolbar"]').getByRole("button", { name: "Phone width" }).click()
+    await poll(() => measure(p, "toolbar"), (m) => m.frameW === 390)
+    const phoneWidth = await measure(p, "toolbar")
+    runs[width] = { toolbar, pair, code, phoneWidth }
+    errors.push(...p.errors)
+    await p.closeAll()
+  }
+  // A page that is not wide keeps the column, as in the flat library build, which declares no wide component.
+  const plain = await openStatic("library=button")
+  await poll(() => plain.locator('[data-preview-block="playground"] iframe.opacity-100').count(), (n) => n === 1, 15000)
+  const notWide = await measure(plain, "playground")
+  const notWideAttrs = await plain.evaluate(() => ({ style: document.querySelector("[data-library-page]").getAttribute("style"), wide: document.querySelectorAll("[data-wide]").length }))
+  errors.push(...plain.errors)
+  await plain.closeAll()
+  const flat = await openLibrary("library=button")
+  await poll(() => flat.locator('[data-preview-block="playground"] iframe.opacity-100').count(), (n) => n === 1, 15000)
+  const flatBlock = await measure(flat, "playground")
+  errors.push(...flat.errors)
+  await flat.closeAll()
+  const phone = await openStatic("library=button-row", { width: 390, height: 844, touch: true })
+  await poll(() => libTitle(phone), Boolean, 8000)
+  await wait(800)
+  const onPhone = await measure(phone, "toolbar")
+  errors.push(...phone.errors)
+  await phone.closeAll()
+  const wideOk = Object.values(runs).every(({ toolbar, pair, code, phoneWidth }) => {
+    const w = expect(toolbar)
+    const fit = Math.min(1, (toolbar.width - 48) / 1200)
+    return near(toolbar.width, w) && near(toolbar.left, toolbar.right) && toolbar.head === 0 && toolbar.tabs === 0 && toolbar.scale <= 1 && near(toolbar.scale * 100, fit * 100) && toolbar.caption.includes(`${Math.round(toolbar.scale * 100)}%`) && near(pair.width, w) && pair.scale === 1 && /actual size/.test(pair.caption) && near(code.width, w) && phoneWidth.frameW === 390 && phoneWidth.scale === 1 && !toolbar.sideways
+  })
+  const grows = runs[1920].toolbar.width > runs[1920].toolbar.col + 100 && near(runs[1920].toolbar.width, 1.5 * runs[1920].toolbar.col)
+  const plainOk = near(notWide.width, notWide.col) && notWide.left === 0 && notWideAttrs.style === null && notWideAttrs.wide === 0 && near(flatBlock.width, notWide.width) && near(flatBlock.col, notWide.col)
+  const phoneOk = near(onPhone.width, onPhone.col) && !onPhone.sideways
+  const ok = wideOk && grows && plainOk && phoneOk && !errors.length
+  const fmt = (m) => `${m.width} px on a ${m.col} px column (page ${m.main}, gutter ${m.gutter}; breakout ${m.left} and ${m.right}), heading and tabs at +${m.head}/+${m.tabs}, ${m.caption}`
+  return [ok ? "pass" : "fail", `${Object.entries(runs).map(([w, r]) => `${w} px: the 1200 px toolbar ${fmt(r.toolbar)} (scale ${r.toolbar.scale}); the 560 px pair ${r.pair.width} px at scale ${r.pair.scale}; Code ${r.code.width} px; Phone width ${r.phoneWidth.frameW} px at ${r.phoneWidth.scale}`).join("; ")}; a page that is not wide: block ${notWide.width} px on a ${notWide.col} px column, page style ${notWideAttrs.style ?? "none"}, ${notWideAttrs.wide} wide marks, the flat build's ${flatBlock.width} px; on a 390 px phone the toolbar is ${onPhone.width} px on a ${onPhone.col} px column${onPhone.sideways ? ", scrolling sideways" : ""}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+})
+
+// AC-69 Opaque frames on a static host: with a sandbox that leaves out allow-same-origin (and no frameOrigin), every preview frame runs
+// at origin "null" over http(s), and Inspect, a library preview and a module's kit PreviewFrame still mount and become ready
+await check("AC-69", async () => {
+  const errors = []
+  const sandboxes = new Set()
+  /** Opens the static build at a link and reads the first matching frame once its product mounted: its origin and mount count. */
+  const mounted = async (hash, holder) => {
+    const p = await openStatic(hash)
+    const pick = `${holder} iframe.opacity-100`
+    const f = await poll(async () => (await (await p.locator(pick).first().elementHandle({ timeout: 500 }).catch(() => null))?.contentFrame()) ?? null, Boolean, 15000)
+    // The document's own origin (window.origin), which a sandbox makes opaque; location.origin still reads the URL's.
+    const s = f ? await poll(() => f.evaluate(() => ({ origin: window.origin, mounts: window.__studioMounts ?? window.__libMounts ?? 0 })).catch(() => null), (x) => x?.mounts > 0, 15000) : null
+    const ready = await poll(() => p.evaluate((h) => !/Staging new preview|did not start/.test(document.querySelector(h)?.innerText ?? "Staging new preview"), holder), Boolean, 8000)
+    for (const box of await p.evaluate(() => [...document.querySelectorAll("iframe")].map((x) => x.getAttribute("sandbox")))) sandboxes.add(box)
+    errors.push(...p.errors)
+    await p.closeAll()
+    return { ...s, ready }
+  }
+  const inspect = await mounted("view=inspect&scenario=tasks.list", ".preview-frame")
+  const library = await mounted("library=button", '[data-preview-block="playground"]')
+  const kit = await mounted("module=catalog&section=screens&item=tasks.list", "[data-kit] figure")
+  const opaque = (s) => s.origin === "null" && s.mounts > 0 && s.ready
+  const ok = opaque(inspect) && opaque(library) && opaque(kit) && [...sandboxes].every((x) => x === "allow-scripts allow-forms") && !errors.length
+  const say = (s) => `origin ${s.origin} mounted ${s.mounts ?? 0} times${s.ready ? " and ready" : ", not ready"}`
+  return [ok ? "pass" : "fail", `frames sandboxed ${[...sandboxes].join(", ")}; Inspect's frame ${say(inspect)}; the library playground's ${say(library)}; the Catalog module's kit PreviewFrame ${say(kit)}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 await browser.close()

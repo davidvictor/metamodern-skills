@@ -89,3 +89,6 @@ export function createGuardRegistry(): GuardRegistry {
 
 /** The one registry the workspace layer and useDirtyGuard share. */
 export const guards = createGuardRegistry()
+
+/** How many mounted modules bind j and k (useStepKeys), so the keyboard shortcuts list names them only then. */
+export const stepKeys = createStore(0)

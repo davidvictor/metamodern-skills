@@ -58,6 +58,25 @@ test('WM-01 modules resolve in declaration order with the first reason each cann
   assert.equal(hostless[0].unavailable, NO_OPERATIONS);
   assert.equal(hostless[1].unavailable, NO_OPERATIONS);
   assert.equal(hostless[2].unavailable, 'Billing tools arrive with the billing host.');
+  // Host-free modules (uses empty or omitted) open without an operations host; one that declares uses still cannot.
+  const free = resolveModules({ modules: [{ id: 'notes', label: 'Notes', icon: 'file-text' }, { id: 'guide', label: 'Guide', icon: 'flag', uses: [] }, { id: 'sync', label: 'Sync', icon: 'plug', uses: [{ name: 'sync.read', kind: 'read' }] }] }, ['notes', 'guide']);
+  assert.deepEqual(free.map((m) => m.unavailable), [undefined, undefined, NO_OPERATIONS]);
+  assert.deepEqual(free[0].uses, []);
+  assert.equal(free[0].uses, free[1].uses, 'every host-free module shares one empty list, so clients keep their identity');
+  assert.equal(resolveModules({ modules: [{ id: 'notes', label: 'Notes', icon: 'file-text' }] }, [])[0].unavailable, noComponent('notes'));
+});
+
+test('WM-01b module groups draw a divider only between consecutive modules whose groups differ', async () => {
+  const { resolveModules, startsGroup, workspaceProblems } = await loadPure('src/studio/workspace/declaration.ts');
+  const groups = (list) => {
+    const modules = resolveModules({ modules: list.map((group, i) => ({ id: `m${i}`, label: `M${i}`, icon: 'flag', ...(group === undefined ? {} : { group }) })) }, null);
+    return modules.map((_, i) => startsGroup(modules, i));
+  };
+  assert.deepEqual(groups([undefined, undefined, undefined]), [false, false, false], 'no groups: nothing changes');
+  assert.deepEqual(groups(['a', 'a', 'b', 'b', 'a']), [false, false, true, false, true]);
+  assert.deepEqual(groups([undefined, 'a', undefined]), [false, true, true], 'undefined counts as its own group');
+  assert.deepEqual(workspaceProblems({ modules: [{ id: 'm', label: 'M', icon: 'flag', group: 'Review' }] }), ['Group "Review" of "m" must be lowercase letters, digits and hyphens']);
+  assert.deepEqual(workspaceProblems({ modules: [{ id: 'm', label: 'M', icon: 'flag', group: 'review-2' }] }), []);
 });
 
 test('WM-02 a module file and the adapter must agree, and the declaration must be well formed', async () => {
@@ -82,13 +101,32 @@ test('WM-02 a module file and the adapter must agree, and the declaration must b
 });
 
 test('WM-03 links name a module and a section; a missing section falls back, an unknown module is reported', async () => {
-  const { parseModuleLink } = await loadPure('src/studio/workspace/link.ts');
-  assert.deepEqual(parseModuleLink('#view=inspect', decl), { module: null, section: null });
-  assert.deepEqual(parseModuleLink('#module=site&section=secrets', decl), { module: 'site', section: 'secrets' });
-  assert.deepEqual(parseModuleLink('#module=site&section=nope', decl), { module: 'site', section: 'general' });
-  assert.deepEqual(parseModuleLink('#module=audit', decl), { module: 'audit', section: null });
-  assert.deepEqual(parseModuleLink('#module=ghost', decl), { module: null, section: null, unknown: 'ghost' });
-  assert.deepEqual(parseModuleLink('#module=site', undefined), { module: null, section: null, unknown: 'site' });
+  const { parseModuleLink, moduleHash, validItem } = await loadPure('src/studio/workspace/link.ts');
+  assert.deepEqual(parseModuleLink('#view=inspect', decl), { module: null, section: null, item: null });
+  assert.deepEqual(parseModuleLink('#module=site&section=secrets', decl), { module: 'site', section: 'secrets', item: null });
+  assert.deepEqual(parseModuleLink('#module=site&section=nope', decl), { module: 'site', section: 'general', item: null });
+  assert.deepEqual(parseModuleLink('#module=audit', decl), { module: 'audit', section: null, item: null });
+  assert.deepEqual(parseModuleLink('#module=ghost', decl), { module: null, section: null, item: null, unknown: 'ghost' });
+  assert.deepEqual(parseModuleLink('#module=site', undefined), { module: null, section: null, item: null, unknown: 'site' });
+  // Items: up to 128 of [A-Za-z0-9._:-]; anything else is dropped with a console error.
+  assert.deepEqual(parseModuleLink('#module=site&section=secrets&item=auth:invite.v2_A-1', decl), { module: 'site', section: 'secrets', item: 'auth:invite.v2_A-1' });
+  const errors = [];
+  const error = console.error;
+  console.error = (m) => errors.push(String(m));
+  try {
+    assert.equal(parseModuleLink('#module=site&item=bad%20id', decl).item, null);
+    assert.equal(validItem('x'.repeat(129)), null);
+    assert.equal(validItem('../etc'), null, 'a slash is not an item character');
+  } finally {
+    console.error = error;
+  }
+  assert.equal(errors.length, 3);
+  assert.match(errors[0], /is not an item ID/);
+  assert.equal(validItem('x'.repeat(128)), 'x'.repeat(128));
+  assert.equal(validItem(''), null);
+  assert.equal(validItem(null), null);
+  assert.equal(moduleHash({ module: 'site', section: 'general', item: 'a:b' }), '#module=site&section=general&item=a%3Ab');
+  assert.equal(moduleHash({ module: 'audit', section: null, item: null }), '#module=audit');
 });
 
 test('WM-04 undeclared names, kind mismatches, cross-origin and missing hosts are refused without a request', async () => {
@@ -469,8 +507,8 @@ test('WM-15 the workspace reference documents the contract and SKILL.md routes t
   assert.match(readFileSync(new URL('references/updating.md', skill), 'utf8'), /--accept-kit/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /## Product output in workspace modules/);
   const shellDoc = readFileSync(new URL('references/shell.md', skill), 'utf8');
-  assert.match(shellDoc, /WS-01 to WS-10/);
-  for (const id of ['WS-01', 'WS-02', 'WS-03', 'WS-04', 'WS-05', 'WS-05b', 'WS-06', 'WS-06b', 'WS-07', 'WS-08', 'WS-09', 'WS-10', 'AC-61', 'AC-62', 'AC-63', 'AC-64']) assert.match(shellDoc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
+  assert.match(shellDoc, /WS-01 to WS-15/);
+  for (const id of ['WS-01', 'WS-02', 'WS-03', 'WS-04', 'WS-05', 'WS-05b', 'WS-06', 'WS-06b', 'WS-07', 'WS-08', 'WS-09', 'WS-10', 'WS-11', 'WS-12', 'WS-13', 'WS-14', 'WS-15', 'AC-61', 'AC-62', 'AC-63', 'AC-64', 'AC-69']) assert.match(shellDoc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
   assert.match(shellDoc, /x-studio-expected-revision/);
   assert.match(read('README.md'), /src\/workspace\//);
 });
@@ -506,4 +544,47 @@ test('WM-16 the workspace files ship with the starter', () => {
   for (const path of ['src/studio/workspace/declaration.ts', 'src/studio/workspace/link.ts', 'src/studio/workspace/operations.ts', 'src/studio/workspace/stores.ts', 'src/studio/workspace/context.ts', 'src/studio/workspace/api.ts', 'src/studio/workspace/slots.tsx', 'src/studio/workspace/workspace-nav.tsx', 'src/studio/workspace/workspace-page.tsx', 'src/kit/index.ts', 'src/workspace/index.ts', 'scripts/workspace-boundary.mjs', 'example/workspace/adapter.ts', 'example/workspace/index.ts', 'example/workspace/orphan.ts', 'example/workspace/site.tsx', 'example/workspace/mock-host.mjs']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
+});
+
+test('WM-17 0.15.0: groups, host-free modules, items, SelectList and step keys are public, documented and measured', () => {
+  const kit = read('src/kit/index.ts');
+  assert.match(kit, /export \{ SelectList, type SelectListGroup, type SelectListItem, type SelectListProps \} from "\.\/select-list"/);
+  assert.match(kit, /KIT_VERSION = "studio-kit\/1"/, 'SelectList is additive within studio-kit/1');
+  const list = read('src/kit/select-list.tsx');
+  assert.match(list, /role="listbox"/);
+  assert.match(list, /role="group" aria-labelledby/);
+  assert.match(list, /aria-selected=\{selected\}/);
+  assert.match(list, /tabIndex=\{item\.id === stop \? 0 : -1\}/, 'one tab stop');
+  assert.match(list, /ArrowDown: "next", j: "next", ArrowUp: "previous", k: "previous", Home: "first", End: "last"/);
+  const api = read('src/studio/workspace/api.ts');
+  assert.match(api, /export function useStepKeys\(onPrevious: \(\) => void, onNext: \(\) => void\)/);
+  assert.match(api, /e\.defaultPrevented \|\| e\.isComposing \|\| e\.metaKey \|\| e\.ctrlKey \|\| e\.altKey \|\| e\.shiftKey/);
+  const context = read('src/studio/workspace/context.ts');
+  assert.match(context, /item: string \| null/);
+  assert.match(context, /setItem: \(item: string \| null\) => void/);
+  const page = read('src/studio/workspace/workspace-page.tsx');
+  assert.match(page, /go: \(next\) => set\(\{ section: next, item: null \}\)/, 'go(section) clears the item');
+  assert.match(page, /setItem: \(next\) => set\(\{ item: validItem\(next\) \}\)/);
+  const nav = read('src/studio/workspace/workspace-nav.tsx');
+  assert.match(nav, /if \(module === at\.module && section === at\.section\) return/, 'only a module or section change pushes history');
+  assert.match(nav, /startsGroup\(modules, i\)/);
+  const types = read('src/studio/types.ts');
+  assert.match(types, /group\?: string/);
+  assert.match(types, /uses\?: WorkspaceOperationUse\[\]/);
+  const script = read('scripts/acceptance.mjs');
+  for (const id of ['WS-11', 'WS-12', 'WS-13', 'WS-14', 'WS-15', 'LB-17', 'AC-69']) assert.match(script, new RegExp(`await check\\("${id}"`), `acceptance has no ${id}`);
+  assert.match(script, /static: "static"/);
+  assert.ok(existsSync(new URL('example/static-adapter.ts', shell)));
+  const doc = readFileSync(new URL('references/workspace.md', skill), 'utf8');
+  for (const term of ['group', 'host-free', 'setItem', 'item=', 'SelectList', 'useStepKeys', 'replaces the current entry']) assert.ok(doc.includes(term), `workspace.md lacks ${term}`);
+  const verification = readFileSync(new URL('references/verification.md', skill), 'utf8');
+  for (const term of ['## Publishing to a static host', 'allowedOrigins', 'Access-Control-Allow-Origin', 'frame-ancestors', 'connect-src', 'host-free']) assert.ok(verification.includes(term), `verification.md lacks ${term}`);
+  assert.doesNotMatch(verification, /[\u2013\u2014]/);
+  assert.match(read('UPDATING.md'), /^## 0\.15\.0$/m);
+});
+
+test('WM-18 a sandbox without allow-same-origin makes every preview frame opaque, wherever it is served', () => {
+  const host = read('src/studio/live-preview.tsx');
+  assert.match(host, /const sandboxed = isolation\?\.sandbox !== undefined && !isolation\.sandbox\.toLowerCase\(\)\.split\(\/\\s\+\/\)\.includes\("allow-same-origin"\)/);
+  assert.match(host, /const expectedOrigin = sandboxed \? "null" : \(origin \?\? \(location\.origin === "null" \? "null" : new URL\(src, location\.href\)\.origin\)\)/);
 });

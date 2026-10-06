@@ -139,13 +139,13 @@ test('every key the Studio writes to or reads from its links is reserved against
   assert.ok(ctor, 'the link writer starts from a URLSearchParams object');
   for (const m of ctor[1].matchAll(/(\w+):/g)) keys.add(m[1]);
   assert.ok(keys.has('edited') && keys.has('view') && keys.has('size'), `found ${[...keys].join(', ')}`);
-  // An open workspace module's link is written by the store too, with q.set, so the scan above sees its keys.
-  assert.ok(keys.has('module') && keys.has('section'), `the store's module link writer uses q.set("module") and q.set("section"); found ${[...keys].join(', ')}`);
+  // An open workspace module's link is written by the store through moduleHash in the workspace link module, scanned below.
+  assert.match(store, /moduleHash\(\{ module: state\.module, section: state\.section, item: state\.item \}\)/);
   assert.doesNotMatch(store, /new URLSearchParams\([^)]*\?\s*\{/, 'no link is written from a conditional object literal the scan cannot read');
-  // Workspace places (module=, section=) are read by the workspace link module before any workspace code loads.
+  // Workspace places (module=, section=, item=) are read and written by the workspace link module, which the core shell loads.
   const link = read('src/studio/workspace/link.ts');
   const linkKeys = [...link.matchAll(/\bq\.(?:get|set)\("([^"]+)"/g)].map((m) => m[1]);
-  assert.ok(linkKeys.includes('module') && linkKeys.includes('section'), `found ${linkKeys.join(', ')} in link.ts`);
+  assert.ok(linkKeys.includes('module') && linkKeys.includes('section') && linkKeys.includes('item'), `found ${linkKeys.join(', ')} in link.ts`);
   for (const key of linkKeys) keys.add(key);
   const input = read('src/studio/input.ts');
   const reserved = JSON.parse(/RESERVED_LINK_KEYS: readonly string\[\] = (\[[^\]]*\])/.exec(input)[1]);
@@ -388,9 +388,9 @@ test('0.12.2 Present anchor label and Compare headers: AA text, whole on the sta
   assert.match(script, /Compare Profile 3-up/);
   assert.match(script, /contents \$\{x\.spill\} px outside the header/);
   assert.match(script, /brand: "#fde68a" \}\)\n/);
-  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.13\.2"/);
+  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.14\.0"/);
   const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');
   for (const id of ['AC-67', 'AC-68']) assert.match(doc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
-  assert.match(doc, /AC-01 to AC-68/);
+  assert.match(doc, /AC-01 to AC-69/);
   assert.match(read('UPDATING.md'), /^## 0\.12\.2$/m);
 });

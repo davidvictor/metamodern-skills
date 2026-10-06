@@ -24,6 +24,7 @@ library: {
   groups: [{ id: "buttons", label: "Buttons" }, { id: "text-fields", label: "Text fields" }],
   components: [
     { id: "button", label: "Button", group: "buttons", summary: "Starts an action with one press.", keywords: ["action", "submit"] },
+    { id: "data-table", label: "Data table", group: "buttons", summary: "Rows and columns of records.", wide: true }, // previews wider than the column
   ],
 }
 ```
@@ -31,6 +32,7 @@ library: {
 - Group and component IDs start with a lowercase letter and use lowercase letters, digits and hyphens, unique within their list. Links carry the component ID as `library=`, so keep it stable.
 - Groups, and components within a group, appear in the order declared: the product's own taxonomy.
 - `summary` is one sentence of at most 200 characters, shown under the title. Search matches the label, ID, summary, keywords and group.
+- `wide: true` lays the component's preview blocks out wider than the text column (see [Wide previews](#wide-previews)). It must be a boolean.
 - A build fails on an invalid declaration and on documentation for a component the adapter does not declare. A declared component without documentation opens to the reason.
 - `library` is a reserved link key (`RESERVED_LINK_KEYS` in `src/studio/input.ts`); a component property or dock input with that ID is rejected or left out of links. Rename it.
 - The index is all the adapter carries. Keep each component's documentation in `src/library/`, so a library of hundreds of components adds only its index to the Studio's first load.
@@ -132,6 +134,10 @@ When documentation is adapted from another library, `source` names it with its v
 - A group may instead be a static capture: `capture: { src, alt }`, an image on the Studio's own origin or an inline data image, shown labelled Static capture. Use it for a state a live preview cannot hold and for exports without a preview entry.
 - The playground's `properties` are `text` (with `maxLength`, default 500), `select` (with `options`), `switch` and `number` (with `min`, `max`, `step`), each with a valid `default`, sent to the frame under their IDs as `values`. Property IDs start with a lowercase letter and use letters and digits. The Studio validates every edit against its property and sends only declared properties; an edit a property cannot take shows why and the frame keeps the default. Edits last until the Studio reloads and do not travel in links.
 
+### Wide previews
+
+A component whose natural size is wider than the documentation column (a table, a page layout, a toolbar) can declare `wide: true`. On its page every preview block (the playground, the preview groups and the examples) and its Code tab are laid out at min(1.5 times the column's content width, the page's width inside its gutters), centred on the column, so they break out evenly on both sides and never pass the page's gutters (16 px, 32 px from the `md` breakpoint). Headings, descriptions and the Preview and Code tabs stay in the column. The preview still fits its box and is never shown above its natural size: a 1200 px group on a 704 px column shows at 84% when the page has room for 1056 px instead of 56%, while a 560 px group stays at actual size; the size caption states the scale. Phone width (390 px) and Expand behave as on any page, a phone keeps the column (its page has no room beyond it), and a page that is not wide is laid out exactly as before. The layout is CSS on the page (a size container and inline styles), so offline and compiled builds behave the same.
+
 ## The preview entry
 
 Library previews are ordinary studio-preview/1 frames mounted by the same host as every view (see [frame protocol](frame-protocol.md#component-library-previews)): `frameIsolation`, exact origin, window and instance checks, the ready limit and Retry. Write one preview entry for the library, or let the product's `frameEntry` render library scenarios too:
@@ -153,7 +159,7 @@ The page is one centred documentation column on the Studio surface. Details hold
 
 Documentation is part of the Studio build, so a built Studio served from files renders every page with no dev server or host. Previews need a preview entry in the export. To include the library in an offline export, the product provides:
 
-1. In its offline adapter, the same `library` declaration with `entry` pointing at an offline preview document bundled beside the Studio page, on the same origin as the offline `frameEntry` and under the same isolation (for an opaque file document, `frameOrigin: "null"` and a sandbox without `allow-same-origin`).
+1. In its offline adapter, the same `library` declaration with `entry` pointing at an offline preview document bundled beside the Studio page, on the same origin as the offline `frameEntry` and under the same isolation (for an opaque file document, a sandbox without `allow-same-origin`, which implies `frameOrigin: "null"`).
 2. That document's script and styles in the export.
 3. Captures for any group that cannot run offline.
 
@@ -161,6 +167,6 @@ Without a preview entry, live groups show the reason and their code.
 
 ## Verify
 
-Shell acceptance LB-01 to LB-16 in [shell](shell.md#acceptance-criteria) measure the library with the starter's synthetic example (`example/library/`, which also carries the example workspace); `VITE_STUDIO_ADAPTER=library npm run dev` runs it, and `VITE_STUDIO_ADAPTER=sections npm run dev` runs the same library declared with sections and a cross-listed component (LB-11 to LB-16). A product's own library needs the product's checks: its preview entry's validation of scenarios and values, its documentation's accuracy and its components' floors.
+Shell acceptance LB-01 to LB-17 in [shell](shell.md#acceptance-criteria) measure the library with the starter's synthetic example (`example/library/`, which also carries the example workspace); `VITE_STUDIO_ADAPTER=library npm run dev` runs it, and `VITE_STUDIO_ADAPTER=sections npm run dev` runs the same library declared with sections and a cross-listed component (LB-11 to LB-16). LB-17 measures wide previews on the static build (`VITE_STUDIO_ADAPTER=static`), whose Button row is wide. A product's own library needs the product's checks: its preview entry's validation of scenarios and values, its documentation's accuracy and its components' floors.
 
 Out of scope: editing documentation in the Studio, playground values in links, and documentation code that runs in the Studio.
