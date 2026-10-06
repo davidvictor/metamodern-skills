@@ -20,7 +20,7 @@ import { FidelityBadge, lookOf } from "@/components/studio/bits"
 import { EmptyState, Field } from "@/kit"
 import { INPUT, TARGET } from "@/kit/layout"
 import type { InputValue, LibraryComponent } from "@/studio/types"
-import { docsProblems, filterComponents, groupedComponents, homePath, LIBRARY_LABEL, sectionedComponents, noDocs, playgroundValue, playgroundValues, SECTIONS, undeclaredDocs, type SectionId } from "./model"
+import { docsProblems, filterComponents, groupedComponents, homePath, LIBRARY_LABEL, noDocs, playgroundValue, playgroundValues, SECTIONS, sectionedComponents, undeclaredDocs, type SectionId } from "./model"
 import type { ComponentDocs, PlaygroundProperty } from "./schema"
 import { AdjustedNote, InlineText, OpenComponent, Rich } from "./rich-text"
 import { BudgetContext, PreviewBlock, useBudget } from "./preview-block"
@@ -104,7 +104,6 @@ function openBranch(id: string | null) {
   if (!section || !group || (d.open[`section:${section.id}`] && d.open[`group:${group.id}`])) return
   disclosure.set({ ...d, open: { ...d.open, [`section:${section.id}`]: true, [`group:${group.id}`]: true } })
 }
-
 
 type Loaded = { docs: ComponentDocs | null; problems: string[]; failed?: boolean }
 const loads = new Map<string, Promise<Loaded>>()
