@@ -68,7 +68,7 @@ export default defineWorkspace({
 | --- | --- |
 | `defineWorkspace(modules)` | The default export of `src/workspace/index.ts`. |
 | `useModule()` | The open module: `id`, `label`, `sections`, the current `section` (null without sections), `go(section)` (which clears the item), the open `item` (or null) and `setItem(id \| null)`, its `uses` and the `operations` base. |
-| `useStepKeys(onPrevious, onNext)` | Binds `j` (next) and `k` (previous), without modifiers, while the module is open. Ignored in fields and editable regions, while a dialog is open, and for a key another handler already used (`preventDefault`); a `SelectList` uses j and k itself. The Studio's keyboard shortcuts list names the keys while a module binds them. |
+| `useStepKeys(onPrevious, onNext)` | Binds `j` (next) and `k` (previous), without modifiers, while the module is open. Ignored in fields and editable regions, in menus, while a dialog is open, and for a key another handler already used (`preventDefault`); a `SelectList` uses j and k itself. The Studio's keyboard shortcuts list names the keys while a module binds them. |
 | `useOperation(name)` | `read(input)` or `write(input, { expectedRevision })` for one declared operation, each resolving to the result, with `status` (`idle`, `running`, `done`) and the last `result`. Only the latest call sets them. |
 | `useDirtyGuard(dirty, message?)` | While `dirty`, leaving the module (the rail, view keys, Go to, Back or Forward) or closing the tab asks first; Stay or Esc keeps the edits. Moving between the module's own sections does not ask: the Page stays mounted. |
 | `useModuleState(key, initial)` | A value shared by the module's Page, Panel and Details until the Studio reloads. |
@@ -84,7 +84,7 @@ Types `ModuleDefinition`, `WorkspaceDefinition`, `ModuleInfo`, `OperationResult`
 | `Field` | `kind: "text"`, `"select"`, `"switch"` or `"secret"` (masked, with Reveal, and ignored by password managers), with label, description and error. |
 | `PropertyList` | Label and value pairs. |
 | `DataTable` | Rows with sortable columns (announced), an optional filter and windowed rendering with one tab stop for any size. |
-| `SelectList` | A grouped list to step through: `{ label, groups: { id, label, items: { id, label, description?, meta? }[] }[], value, onChange(id), filterable?, filterLabel?, emptyLabel? }`. A listbox with grouped options under their headings, `aria-selected` and one tab stop; selection follows focus, so ArrowUp and ArrowDown (and k and j) move and select, Home and End go to the ends. The filter narrows every group by label, description and meta, ignoring case, and keeps the selection while it matches. The selected item scrolls into view. Pair it with `item` and `setItem` so the selection travels in links. |
+| `SelectList` | A grouped list to step through: `{ label, groups: { id, label, items: { id, label, description?, meta? }[] }[], value, onChange(id), filterable?, filterLabel?, emptyLabel? }`. A listbox with grouped options under their headings, `aria-selected` and one tab stop; selection follows focus, so ArrowUp and ArrowDown (and k and j) move and select, Home and End go to the ends. The filter narrows every group by label, description and meta, ignoring case, and keeps the selection while it matches. The selected item scrolls into view. Pair it with `item` and `setItem` so the selection travels in links; item IDs must then follow the item ID rule (up to 128 of `A-Za-z0-9._:-`), or the selection becomes null. |
 | `StatusTile`, `StatusBadge` | A figure with its state; a state in a glyph and a word (`ok`, `warning`, `error`, `info`, `neutral`). |
 | `SaveBar` | `clean`, `dirty`, `saving`, `saved`, `conflict` (the current value beside the kept edit, with Use current value and Save mine again) and `error` with Retry. |
 | `ConfirmDialog` | A question with a safe default: focus opens on the cancel button, and Esc cancels. |
@@ -117,7 +117,8 @@ A typical stepping module combines them:
 const { item, setItem } = useModule()
 const flat = groups.flatMap((g) => g.items)
 const at = flat.findIndex((x) => x.id === item)
-useStepKeys(() => setItem(flat[Math.max(0, at - 1)].id), () => setItem(flat[Math.min(flat.length - 1, at + 1)].id))
+const step = (by: number) => flat.length && setItem(flat[Math.min(flat.length - 1, Math.max(0, at + by))].id)
+useStepKeys(() => step(-1), () => step(1))
 return <SelectList label="Emails" groups={groups} value={item} onChange={setItem} filterable />
 ```
 

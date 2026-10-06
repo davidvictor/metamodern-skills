@@ -585,6 +585,6 @@ test('WM-17 0.15.0: groups, host-free modules, items, SelectList and step keys a
 
 test('WM-18 a sandbox without allow-same-origin makes every preview frame opaque, wherever it is served', () => {
   const host = read('src/studio/live-preview.tsx');
-  assert.match(host, /const sandboxed = isolation\?\.sandbox !== undefined && !isolation\.sandbox\.split\(\/\\s\+\/\)\.includes\("allow-same-origin"\)/);
+  assert.match(host, /const sandboxed = isolation\?\.sandbox !== undefined && !isolation\.sandbox\.toLowerCase\(\)\.split\(\/\\s\+\/\)\.includes\("allow-same-origin"\)/);
   assert.match(host, /const expectedOrigin = sandboxed \? "null" : \(origin \?\? \(location\.origin === "null" \? "null" : new URL\(src, location\.href\)\.origin\)\)/);
 });

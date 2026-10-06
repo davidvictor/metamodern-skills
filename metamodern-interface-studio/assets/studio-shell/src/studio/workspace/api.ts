@@ -98,7 +98,7 @@ export function useModuleState<T>(key: string, initial: T) {
 }
 
 /** Where j and k type or move something themselves: fields, editable regions, and an open dialog. */
-const KEEPS_KEYS = "input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='textbox'], [role='combobox'], [role='listbox'], [role='dialog'], [role='alertdialog']"
+const KEEPS_KEYS = "input, textarea, select, [contenteditable]:not([contenteditable='false']), [role='textbox'], [role='combobox'], [role='listbox'], [role='menu'], [role^='menuitem'], [role='dialog'], [role='alertdialog']"
 
 /**
  * Steps the module's selection with the keyboard: `j` calls `onNext` and `k` calls `onPrevious`, without modifiers,
