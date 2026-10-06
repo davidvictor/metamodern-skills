@@ -309,17 +309,17 @@ test('LM-16 the library reference documents the contract and SKILL.md routes to 
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /`section` and `library` \(`RESERVED_LINK_KEYS`/);
   assert.match(readFileSync(new URL('references/updating.md', skill), 'utf8'), /`src\/library\/`/);
   const shellDoc = readFileSync(new URL('references/shell.md', skill), 'utf8');
-  assert.match(shellDoc, /LB-01 to LB-10/);
-  for (let i = 1; i <= 10; i++) assert.match(shellDoc, new RegExp(`^\\| LB-${String(i).padStart(2, '0')} \\|`, 'm'), `shell.md has no LB-${i} row`);
+  assert.match(shellDoc, /LB-01 to LB-16/);
+  for (let i = 1; i <= 16; i++) assert.match(shellDoc, new RegExp(`^\\| LB-${String(i).padStart(2, '0')} \\|`, 'm'), `shell.md has no LB-${i} row`);
   assert.match(read('README.md'), /src\/library\//);
 });
 
 test('LM-17 the library files ship with the starter', () => {
   const root = fileURLToPath(shell);
-  for (const path of ['src/studio/library/schema.ts', 'src/studio/library/model.ts', 'src/studio/library/link.ts', 'src/studio/library/highlight.ts', 'src/studio/library/api.ts', 'src/studio/library/slots.tsx', 'src/studio/library/library-nav.tsx', 'src/studio/library/library-page.tsx', 'src/studio/library/rich-text.tsx', 'src/studio/library/code-block.tsx', 'src/studio/library/preview-block.tsx', 'src/library/index.ts', 'scripts/library-boundary.mjs', 'example/library/declaration.ts', 'example/library/adapter.ts', 'example/library/index.ts', 'example/library/button.ts', 'example/library/icon-button.ts', 'example/library/text-field.ts', 'example/library/frame.html', 'example/library/frame.ts', 'example/library/library.css']) {
+  for (const path of ['src/studio/library/schema.ts', 'src/studio/library/model.ts', 'src/studio/library/link.ts', 'src/studio/library/highlight.ts', 'src/studio/library/api.ts', 'src/studio/library/slots.tsx', 'src/studio/library/library-nav.tsx', 'src/studio/library/library-page.tsx', 'src/studio/library/rich-text.tsx', 'src/studio/library/code-block.tsx', 'src/studio/library/preview-block.tsx', 'src/library/index.ts', 'scripts/library-boundary.mjs', 'example/library/declaration.ts', 'example/library/adapter.ts', 'example/library/sections.ts', 'example/library/invalid.ts', 'example/library/index.ts', 'example/library/button.ts', 'example/library/icon-button.ts', 'example/library/text-field.ts', 'example/library/frame.html', 'example/library/frame.ts', 'example/library/library.css']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
-  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.13.2');
+  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.14.0');
 });
 
 test('LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported', async () => {
@@ -428,7 +428,68 @@ test('0.13.2 Page Up and Page Down typed in a field never scroll the Studio on a
   assert.match(script, /want: applePlatform \? "abQ\\ncd" : "ab\\ncdQ"/, 'a native Page Down that moves a textarea caret stays native');
   assert.match(script, /line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,area PageDown:true,area PageUp:true,number PageDown:true,combo PageDown:false/);
   assert.match(script, /area\.selection === "abQ" && area\.number\.join\(\) === "5,5"/, 'a selection reaching the end and a number field, natively');
-  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.13\.1"/);
+  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.13\.2"/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /Outside Apple platforms Home and End are native caret moves/);
   assert.match(read('UPDATING.md'), /^## 0\.13\.2$/m);
+});
+
+const sectioned = {
+  sections: [{ id: 'controls', label: 'Controls' }, { id: 'forms', label: 'Forms' }],
+  groups: [{ id: 'actions', label: 'Actions', section: 'controls' }, { id: 'inputs', label: 'Inputs', section: 'forms' }, { id: 'toggles', label: 'Toggles', section: 'controls' }],
+  components: [
+    { id: 'button', label: 'Button', group: 'actions', summary: 'Starts an action.' },
+    { id: 'switch', label: 'Switch', group: 'toggles', summary: 'Turns a setting on or off.', alsoIn: ['inputs'] },
+    { id: 'text-field', label: 'Text field', group: 'inputs', summary: 'One line of typed text.' },
+  ],
+};
+
+test('0.14.0 sections nest groups in declared order; alsoIn cross-lists at the component position; the home path names the section', async () => {
+  const { libraryProblems, groupedComponents, sectionedComponents, homePath, filterComponents } = await loadPure('src/studio/library/model.ts');
+  assert.deepEqual(libraryProblems(sectioned), []);
+  assert.equal(sectionedComponents(lib), null, 'no sections: the flat list');
+  assert.deepEqual(groupedComponents(lib).map((g) => g.id), ['actions', 'inputs'], 'flat order is unchanged');
+  const tree = sectionedComponents(sectioned).map((x) => `${x.label}: ${x.groups.map((g) => `${g.label} (${g.components.map((c) => c.id).join(', ')})`).join('; ')}`);
+  assert.deepEqual(tree, ['Controls: Actions (button); Toggles (switch)', 'Forms: Inputs (switch, text-field)'], 'sections order, then groups within each, then components; a cross-listed one keeps its place');
+  assert.deepEqual(groupedComponents(sectioned, sectioned.components, true).map((g) => `${g.id}:${g.components.map((c) => c.id).join('|')}`), ['actions:button', 'toggles:switch', 'inputs:text-field'], 'home only, for Go to: once each');
+  const home = homePath(sectioned, 'switch');
+  assert.deepEqual([home.section?.label, home.group?.label, home.component?.label], ['Controls', 'Toggles', 'Switch']);
+  assert.equal(homePath(lib, 'button').section, undefined);
+  assert.deepEqual(filterComponents(sectioned, 'forms').map((c) => c.id), ['switch', 'text-field'], 'section labels of every listing are searched');
+  assert.deepEqual(sectionedComponents(sectioned, filterComponents(sectioned, 'text')).map((x) => x.id), ['forms'], 'empty sections are left out');
+});
+
+test('0.14.0 invalid sections and alsoIn are named, and the panel, Go to and breadcrumb use them', () => {
+  return loadPure('src/studio/library/model.ts').then(({ libraryProblems }) => {
+    const problems = (decl) => libraryProblems(decl).join('\n');
+    assert.match(problems({ ...sectioned, sections: [] }), /declares sections but lists none/);
+    assert.match(problems({ ...sectioned, sections: [...sectioned.sections, { id: 'spare', label: 'Spare' }] }), /Section "spare" holds no groups/);
+    assert.match(problems({ ...sectioned, sections: [...sectioned.sections, { id: 'forms', label: ' ' }, { id: 'Bad', label: 'B' }] }), /Section ID "forms" is declared twice[\s\S]*Section "forms" has no label[\s\S]*Section ID "Bad" must be lowercase/);
+    assert.match(problems({ ...sectioned, groups: [...sectioned.groups.slice(0, 2), { id: 'toggles', label: 'Toggles' }] }), /Group "toggles" names no section/);
+    assert.match(problems({ ...sectioned, groups: [...sectioned.groups.slice(0, 2), { id: 'toggles', label: 'Toggles', section: 'nope' }] }), /Group "toggles" names section "nope", which the library does not declare/);
+    assert.match(problems({ ...lib, groups: [{ id: 'actions', label: 'Actions', section: 'controls' }, lib.groups[1]] }), /names section "controls", but the library declares no sections/);
+    const also = (alsoIn) => problems({ ...sectioned, components: [{ ...sectioned.components[0], alsoIn }, ...sectioned.components.slice(1)] });
+    assert.match(also(['actions']), /lists its home group "actions" in alsoIn/);
+    assert.match(also(['nope']), /also listed in group "nope", which the library does not declare/);
+    assert.match(also(['inputs', 'inputs']), /lists group "inputs" in alsoIn twice/);
+    assert.match(also('inputs'), /alsoIn must be a list of group IDs/);
+    const page = read('src/studio/library/library-page.tsx');
+    assert.match(page, /aria-expanded=\{open\}/);
+    assert.match(page, /aria-controls=\{region\}/);
+    assert.match(page, /type="button"/);
+    assert.match(page, /const Heading = level === "section" \? "h3" : "h4"/, 'section and group buttons sit in headings');
+    assert.match(page, /"sr-only">\{count === 1 \? " component" : " components"\}/, 'the count is named');
+    assert.match(page, /studio\.\$\{adapter\.id\}\.library-open\.v1/);
+    assert.match(page, /React\.useLayoutEffect\(\(\) => openBranch\(s\.library\), \[s\.library\]\)/);
+    const nav = read('src/studio/library/library-nav.tsx');
+    assert.match(nav, /groupedComponents\(decl, decl\.components, true\)/, 'Go to lists each component once, under its home group');
+    assert.match(nav, /homePath\(decl, s\.library\)/, 'the breadcrumb follows the home path');
+    const types = read('src/studio/types.ts');
+    assert.match(types, /export type LibrarySection = \{ id: string; label: string \}/);
+    assert.match(types, /alsoIn\?: string\[\]/);
+    assert.match(types, /sections\?: LibrarySection\[\]/);
+    const script = read('scripts/acceptance.mjs');
+    for (const id of ['LB-11', 'LB-12', 'LB-13', 'LB-14', 'LB-15', 'LB-16']) assert.match(script, new RegExp(`await check\\("${id}"`), `acceptance has no ${id}`);
+    assert.match(script, /sections: "sections"/);
+    assert.match(read('vite.config.ts'), /VITE_STUDIO_LIBRARY === "invalid"/);
+  });
 });

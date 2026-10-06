@@ -3,7 +3,7 @@
  * where previews may load from, documentation checks, playground values, and which previews hold a live frame.
  * Pure (types-only imports), so vite.config.ts and node tests load it.
  */
-import type { InputValue, LibraryComponent, LibraryDeclaration, LibraryGroup } from "../types"
+import type { InputValue, LibraryComponent, LibraryDeclaration, LibraryGroup, LibrarySection } from "../types"
 import type { ComponentDocs, PlaygroundProperty } from "./schema"
 
 /** The sections of every component page, in order. `id` is the anchor and the link's `section=` (link.ts lists the same IDs). */
@@ -44,13 +44,28 @@ export function libraryProblems(decl: LibraryDeclaration | undefined): string[] 
   const out: string[] = []
   if (!decl.groups.length) out.push("The library declares no groups")
   if (!decl.components.length) out.push("The library declares no components")
+  const sections = new Set<string>()
+  if (decl.sections !== undefined) {
+    if (!Array.isArray(decl.sections) || !decl.sections.length) out.push("The library declares sections but lists none; leave sections out for a flat list")
+    for (const x of Array.isArray(decl.sections) ? decl.sections : []) {
+      if (!ID.test(x.id)) out.push(`Section ID "${x.id}" must be lowercase letters, digits and hyphens`)
+      if (sections.has(x.id)) out.push(`Section ID "${x.id}" is declared twice`)
+      if (typeof x.label !== "string" || !x.label.trim()) out.push(`Section "${x.id}" has no label`)
+      sections.add(x.id)
+    }
+  }
   const groups = new Set<string>()
   for (const g of decl.groups) {
     if (!ID.test(g.id)) out.push(`Group ID "${g.id}" must be lowercase letters, digits and hyphens`)
     if (groups.has(g.id)) out.push(`Group ID "${g.id}" is declared twice`)
     if (!g.label.trim()) out.push(`Group "${g.id}" has no label`)
+    if (decl.sections === undefined) {
+      if (g.section !== undefined) out.push(`Group "${g.id}" names section "${g.section}", but the library declares no sections`)
+    } else if (g.section === undefined) out.push(`Group "${g.id}" names no section; when the library declares sections every group needs one`)
+    else if (!sections.has(g.section)) out.push(`Group "${g.id}" names section "${g.section}", which the library does not declare`)
     groups.add(g.id)
   }
+  for (const x of sections) if (!decl.groups.some((g) => g.section === x)) out.push(`Section "${x}" holds no groups`)
   const ids = new Set<string>()
   for (const c of decl.components) {
     if (!ID.test(c.id)) out.push(`Component ID "${c.id}" must be lowercase letters, digits and hyphens`)
@@ -59,25 +74,60 @@ export function libraryProblems(decl: LibraryDeclaration | undefined): string[] 
     if (!c.label.trim()) out.push(`Component "${c.id}" has no label`)
     if (!groups.has(c.group)) out.push(`Component "${c.id}" names group "${c.group}", which the library does not declare`)
     if (c.summary.length > 200) out.push(`Component "${c.id}" has a summary over 200 characters`)
+    if (c.alsoIn === undefined) continue
+    if (!Array.isArray(c.alsoIn)) {
+      out.push(`Component "${c.id}": alsoIn must be a list of group IDs`)
+      continue
+    }
+    const also = new Set<string>()
+    for (const g of c.alsoIn) {
+      if (g === c.group) out.push(`Component "${c.id}" lists its home group "${g}" in alsoIn`)
+      else if (!groups.has(g)) out.push(`Component "${c.id}" is also listed in group "${g}", which the library does not declare`)
+      if (also.has(g)) out.push(`Component "${c.id}" lists group "${g}" in alsoIn twice`)
+      also.add(g)
+    }
   }
   return out
 }
 
+const listedIn = (c: LibraryComponent, group: string) => c.group === group || (Array.isArray(c.alsoIn) && c.alsoIn.includes(group))
+
 export type LibraryEntry = LibraryGroup & { components: LibraryComponent[] }
-/** Groups in declared order, each with its components (of `list`) in declared order; empty groups are left out. */
-export function groupedComponents(decl: LibraryDeclaration | undefined, list: LibraryComponent[] = decl?.components ?? []): LibraryEntry[] {
+/**
+ * Groups in declared order (sections first, when there are sections), each with its components (of `list`) in declared
+ * order, a cross-listed component in each group it names; empty groups are left out. With `home`, only home groups.
+ */
+export function groupedComponents(decl: LibraryDeclaration | undefined, list: LibraryComponent[] = decl?.components ?? [], home = false): LibraryEntry[] {
   if (!decl) return []
-  return decl.groups.map((g) => ({ ...g, components: list.filter((c) => c.group === g.id) })).filter((g) => g.components.length > 0)
+  const order = decl.sections?.length ? decl.sections.flatMap((x) => decl.groups.filter((g) => g.section === x.id)) : decl.groups
+  return order.map((g) => ({ ...g, components: list.filter((c) => (home ? c.group === g.id : listedIn(c, g.id))) })).filter((g) => g.components.length > 0)
 }
 
-/** Components whose label, ID, summary, keywords or group label contain every word of the query. */
+export type LibraryBranch = LibrarySection & { groups: LibraryEntry[] }
+/** With sections: each section in declared order with its non-empty groups (as groupedComponents); empty sections are left out. Null without sections. */
+export function sectionedComponents(decl: LibraryDeclaration | undefined, list: LibraryComponent[] = decl?.components ?? []): LibraryBranch[] | null {
+  if (!decl?.sections?.length) return null
+  const groups = groupedComponents(decl, list)
+  return decl.sections.map((x) => ({ ...x, groups: groups.filter((g) => g.section === x.id) })).filter((x) => x.groups.length > 0)
+}
+
+/** A component's home: its section (with sections), its group and itself, for the breadcrumb and Go to. */
+export function homePath(decl: LibraryDeclaration | undefined, id: string | null) {
+  const component = decl?.components.find((c) => c.id === id)
+  const group = component && decl?.groups.find((g) => g.id === component.group)
+  const section = group && decl?.sections?.find((x) => x.id === group.section)
+  return { section, group, component }
+}
+
+/** Components whose label, ID, summary, keywords, or the labels of the groups listing it and their sections, contain every word of the query. */
 export function filterComponents(decl: LibraryDeclaration | undefined, query: string): LibraryComponent[] {
   if (!decl) return []
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
   if (!words.length) return decl.components
-  const groupLabel = new Map(decl.groups.map((g) => [g.id, g.label]))
+  const sectionLabel = new Map((decl.sections ?? []).map((x) => [x.id, x.label]))
+  const groupLabels = new Map(decl.groups.map((g) => [g.id, [g.label, g.section ? (sectionLabel.get(g.section) ?? "") : ""]]))
   return decl.components.filter((c) => {
-    const text = [c.label, c.id, c.summary, ...(c.keywords ?? []), groupLabel.get(c.group) ?? ""].join(" ").toLowerCase()
+    const text = [c.label, c.id, c.summary, ...(c.keywords ?? []), ...[c.group, ...(Array.isArray(c.alsoIn) ? c.alsoIn : [])].flatMap((g) => groupLabels.get(g) ?? [])].join(" ").toLowerCase()
     return words.every((w) => text.includes(w))
   })
 }
