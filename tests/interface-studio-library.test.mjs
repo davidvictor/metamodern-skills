@@ -287,3 +287,20 @@ test('LM-14 the core shell reaches the library only through lazy slots, and libr
   const app = read('src/App.tsx');
   assert.match(app, /hasWorkspace \? \([\s\S]*?WorkspaceNav part="tab"[\s\S]*?\) : hasLibrary \? \([\s\S]*?LibraryNav part="tab"/, 'one place entry on the phone bar');
 });
+
+test('LM-16 the library reference documents the contract and SKILL.md routes to it only for a component library', () => {
+  const doc = readFileSync(new URL('references/library.md', skill), 'utf8');
+  for (const term of ['studio-library/1', '@studio/library', 'defineLibrary', 'ComponentDocs', 'library.entry', 'frameOrigin', 'live-values', 'LIVE_FRAMES', 'section=', 'Static capture', 'Offline export', 'adjusted', 'LB-01', 'src/library/', 'import.meta.glob']) assert.ok(doc.includes(term), `library.md lacks ${term}`);
+  assert.doesNotMatch(doc, /[–—]/);
+  const skillDoc = readFileSync(new URL('SKILL.md', skill), 'utf8');
+  assert.equal(skillDoc.match(/references\/library\.md/g)?.length, 1);
+  assert.match(skillDoc, /component library/);
+  assert.match(read('UPDATING.md'), /^## 0\.13\.0$/m);
+  assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /## Component library previews/);
+  assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /`section` and `library` \(`RESERVED_LINK_KEYS`/);
+  assert.match(readFileSync(new URL('references/updating.md', skill), 'utf8'), /`src\/library\/`/);
+  const shellDoc = readFileSync(new URL('references/shell.md', skill), 'utf8');
+  assert.match(shellDoc, /LB-01 to LB-10/);
+  for (let i = 1; i <= 10; i++) assert.match(shellDoc, new RegExp(`^\\| LB-${String(i).padStart(2, '0')} \\|`, 'm'), `shell.md has no LB-${i} row`);
+  assert.match(read('README.md'), /src\/library\//);
+});
