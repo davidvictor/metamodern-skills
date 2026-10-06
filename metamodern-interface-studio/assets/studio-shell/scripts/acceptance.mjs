@@ -4355,9 +4355,9 @@ await check("LB-04", async () => {
   // Apple platforms, where they scroll even in a field, the frame client cancels that scroll and moves the caret for Home
   // and End; elsewhere they move the caret natively), so the preview is not scrolled away and remounted. Home moves the
   // caret to the start and Shift+Home still selects to it. It runs twice: on this platform, and with the preview frames
-  // told they are on a Mac, so the Apple branch is exercised on any OS. The second run adds a textarea whose product
-  // handler stops propagation: Home at 0 before a leading line break stays at 0, Home on line 2 goes to its start, and
-  // the frame client still sees each key (it cancels the scroll it would cause).
+  // told they are on a Mac, so the Apple branch is exercised on any OS. The second run adds a textarea (Home at 0 before a
+  // leading line break stays at 0, Home on line 2 goes to its start, the client cancels each scroll), a field whose
+  // product cancels Home (left alone), and a combobox and an aria-activedescendant field (their keys reach the product).
   const keyRun = async (forceApple) => {
     const t = await openLibrary("library=text-field")
     if (forceApple) {
@@ -4397,28 +4397,46 @@ await check("LB-04", async () => {
     const selected = await fieldValue()
     let area = null
     if (forceApple) {
+      // Test fields fixed at the top, so the frame's page has no scroll to take. A window listener added after the frame
+      // client's records whether each key arrived cancelled, then cancels it so no browser scroll muddies the next step.
       await frame.evaluate(() => {
-        const a = document.createElement("textarea")
-        a.rows = 6
-        a.id = "lb04-area"
-        a.addEventListener("keydown", (e) => e.stopPropagation())
-        a.addEventListener("keydown", (e) => (window.__lb04 ??= []).push(`${e.key}:${e.defaultPrevented}`))
-        // Fixed at the top, so the frame's page has no scroll to take and the client must cancel the one Home would cause.
-        a.style.cssText = "position: fixed; top: 0; left: 0; width: 12rem"
-        document.body.append(a)
+        const add = (tag, id, attrs, onKey) => {
+          const el = document.createElement(tag)
+          el.id = id
+          for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
+          el.style.cssText = "position: fixed; top: 0; left: 0; width: 12rem"
+          if (onKey) el.addEventListener("keydown", onKey)
+          document.body.append(el)
+        }
+        window.__lb04 = []
+        const got = (id) => (e) => (e.key === "Home" || e.key === "End") && window.__lb04.push(`${id} got ${e.key}`)
+        add("textarea", "lb04-area", { rows: "6" })
+        add("input", "lb04-own", {}, (e) => { got("own")(e); if (e.key === "Home" || e.key === "End") e.preventDefault() })
+        add("input", "lb04-combo", { role: "combobox", "aria-expanded": "true" }, got("combo"))
+        add("input", "lb04-active", { "aria-activedescendant": "lb04-option" }, got("active"))
+        window.addEventListener("keydown", (e) => {
+          if (!e.target.id?.startsWith("lb04-") || (e.key !== "Home" && e.key !== "End")) return
+          window.__lb04.push(`${e.target.id.slice(5)} ${e.key}:${e.defaultPrevented}`)
+          e.preventDefault()
+        })
         document.scrollingElement.scrollTop = 0
       })
-      const textarea = frame.locator("#lb04-area")
-      await textarea.focus()
-      await textarea.evaluate((a) => { a.value = "\nab"; a.setSelectionRange(0, 0) })
-      await t.keyboard.press("Home")
-      await t.keyboard.type("Z")
-      await textarea.evaluate((a) => a.setSelectionRange(a.value.length, a.value.length))
-      await t.keyboard.press("Home")
-      await t.keyboard.type("W")
+      const at = async (id, value, caretAt, key, typed) => {
+        const el = frame.locator(`#${id}`)
+        await el.focus()
+        await el.evaluate((n, [v, c]) => { n.value = v; n.setSelectionRange(c, c) }, [value, caretAt])
+        await t.keyboard.press(key)
+        await t.keyboard.type(typed)
+        return el.inputValue()
+      }
+      const z = await at("lb04-area", "\nab", 0, "Home", "Z")
+      const w = await at("lb04-area", z, z.length, "Home", "W")
+      const own = await at("lb04-own", "abc", 1, "Home", "Q")
+      const combo = [await at("lb04-combo", "abc", 1, "Home", "Q"), await at("lb04-combo", "abc", 1, "End", "Q")]
+      const active = await at("lb04-active", "abc", 1, "End", "Q")
       await wait(300)
       tops.push(await pageTop())
-      area = await frame.evaluate(() => ({ value: document.querySelector("#lb04-area").value, seen: (window.__lb04 ?? []).filter((k) => k.startsWith("Home")) }))
+      area = { value: w, own, combo, active, seen: await frame.evaluate(() => window.__lb04) }
     }
     const kept = await fieldFrame.evaluate((n) => n.isConnected && n.classList.contains("opacity-100"))
     errors.push(...t.errors)
@@ -4426,8 +4444,10 @@ await check("LB-04", async () => {
     const applePlatform = /mac|iphone|ipad|ipod|ios/i.test(platform)
     const pass =
       tops.every((x) => x === keysAt) && kept && caret.tag === "INPUT" && caret.value === "Xabc" && selected.tag === "INPUT" && selected.value === "Y" &&
-      (!forceApple || (applePlatform && area?.value === "Z\nWab" && area.seen.join() === "Home:true,Home:true"))
-    const detail = `${forceApple ? "forced Apple" : "native"} run on ${platform} (${applePlatform ? "the frame client cancels the scroll and moves the caret" : "not Apple: native caret moves, the frame client does nothing"}): the page stayed at ${[...new Set(tops)].join(", ")} px (from ${keysAt}), the frame ${kept ? "stayed mounted" : "was unmounted"}, Home then X gave "${caret.value}", Shift+Home then Y gave "${selected.value}"${area ? `, the textarea read ${JSON.stringify(area.value)} with Home ${area.seen.join(", ")} past a product stopPropagation` : ""}`
+      (!forceApple ||
+        (applePlatform && area?.value === "Z\nWab" && area.own === "aQbc" && area.combo.join() === "aQbc,aQbc" && area.active === "aQbc" &&
+          area.seen.join() === "area Home:true,area Home:true,own got Home,own Home:true,combo got Home,combo Home:false,combo got End,combo End:false,active got End,active End:false"))
+    const detail = `${forceApple ? "forced Apple" : "native"} run on ${platform} (${applePlatform ? "the frame client cancels the scroll and moves the caret" : "not Apple: native caret moves, the frame client does nothing"}): the page stayed at ${[...new Set(tops)].join(", ")} px (from ${keysAt}), the frame ${kept ? "stayed mounted" : "was unmounted"}, Home then X gave "${caret.value}", Shift+Home then Y gave "${selected.value}"${area ? `; the client moved a textarea's caret (${JSON.stringify(area.value)}), left a field whose product cancels Home alone ("${area.own}") and gave Home and End to a combobox ("${area.combo.join('", "')}") and an aria-activedescendant field ("${area.active}"): ${area.seen.join(", ")}` : ""}`
     return { pass, detail }
   }
   const nativeKeys = await keyRun(false)

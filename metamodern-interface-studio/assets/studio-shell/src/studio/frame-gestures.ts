@@ -77,9 +77,11 @@ function moveCaret(t: Element, dir: number) {
  * frame (a library page, say), which scrolls this preview away and unmounts it, losing what was typed and the focus.
  * There the scroll is cancelled, and Home and End move the caret to the start or end (of the line in a multi-line
  * field) instead. With Shift or any other modifier the key is left alone, so selection keeps its native behavior; a
- * scroll the frame's page or a scroller in it can take still happens; a select, listbox or combobox without a text
- * field keeps every key. Elsewhere these keys move the caret natively and are left alone. Always on, also with gestures
- * off. (overscroll-behavior on the frame's root would also stop wheel scrolls over a preview from reaching the page
+ * scroll the frame's page or a scroller in it can take still happens; a select or listbox, and any field that is a
+ * combobox or points at an active option (`aria-activedescendant`), keeps every key for its own list. It listens in the
+ * bubble phase, after the product's own handlers: a key the product cancelled is left alone, and a product that stops
+ * propagation is handling the key itself. Elsewhere these keys move the caret natively and are left alone. Always on,
+ * also with gestures off. (overscroll-behavior on the frame's root would also stop wheel scrolls over a preview from reaching the page
  * around it, and WebKit does not apply it to keyboard scrolls.)
  */
 export function keepFieldKeys() {
@@ -88,13 +90,13 @@ export function keepFieldKeys() {
     if (!dir || e.defaultPrevented || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey || !apple()) return
     const t = e.target instanceof Element ? e.target : null
     const field = t?.closest(TYPING)
-    if (!field || canTake(field, "y", dir)) return
+    if (!field || field.matches("[role=combobox], [aria-activedescendant]") || canTake(field, "y", dir)) return
     e.preventDefault()
     if (e.key === "Home" || e.key === "End") moveCaret(field, dir)
   }
-  // Capture phase, so a product field handler that stops propagation cannot bypass it.
-  window.addEventListener("keydown", onKeyDown, true)
-  return () => window.removeEventListener("keydown", onKeyDown, true)
+  // Bubble phase, after the product's handlers, so a key the product handles (cancelled or stopped) stays the product's.
+  window.addEventListener("keydown", onKeyDown)
+  return () => window.removeEventListener("keydown", onKeyDown)
 }
 
 export function createFrameGestures(send: (g: StageGesture) => void) {
