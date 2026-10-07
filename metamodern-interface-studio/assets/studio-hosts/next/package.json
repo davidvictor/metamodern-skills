@@ -7,11 +7,12 @@
     "dev": "tsx scripts/prepare-next.ts && next dev",
     "build": "tsx scripts/prepare-next.ts && tsc --noEmit && next build",
     "typecheck": "tsx scripts/prepare-next.ts && tsc --noEmit",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/lint-acceptance.mjs",
     "start": "next start",
     "preview": "next start",
     "acceptance": "node scripts/host-acceptance.mjs",
-    "acceptance:host": "node scripts/host-acceptance.mjs"
+    "acceptance:host": "node scripts/host-acceptance.mjs",
+    "acceptance:lint": "node scripts/lint-acceptance.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -47,6 +48,7 @@
     "typescript-eslint": "^8",
     "vite": "^8",
     "@tailwindcss/vite": "^4",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "@next/eslint-plugin-next": "^16.4.0"
   }
 }

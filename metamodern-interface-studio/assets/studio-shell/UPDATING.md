@@ -1,3 +1,7 @@
+## 0.16.1
+
+Next uses its official ESLint plugin and recommended rules, with mixed provider/hook/helper exports allowed. Vite keeps its existing refresh rules. The managed updater adds the Next plugin dependency and preserves product files. Run npm install after a skipped-check update. Nothing else to do by hand.
+
 ## 0.16.0
 
 The shell now composes one common UI source with Vite or Next host overlays. Existing lock/1 consumers remain Vite; updates write host-aware lock/2 and preserve product files. New Next consumers use `--create --host next`. Host changes require an explicit migration. Product-owned `src/design-runtime/index.ts` is seeded empty for opt-in data-only design compiler descriptors; legacy designDraft remains unchanged. Nothing else to do by hand.

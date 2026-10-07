@@ -54,8 +54,8 @@ export async function compileDesign(descriptor: DesignCompilerDescriptor, loader
   if (descriptor.sourceLockId && input.sourceLockId !== descriptor.sourceLockId) throw new Error("Direction source lock does not match compiler")
   const load = Object.hasOwn(loaders, descriptor.id) ? loaders[descriptor.id] : undefined
   if (typeof load !== "function") throw new Error(`No product compiler registered for ${descriptor.id}`)
-  const module = await load()
-  const compiled = await module.compile(input)
+  const compilerModule = await load()
+  const compiled = await compilerModule.compile(input)
   const problems = validateCompiledDesign(descriptor, compiled)
   if (problems.length) throw new Error(problems.join("; "))
   return compiled
