@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.19.0",
+  "collectionVersion": "1.19.1",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -19,7 +19,7 @@
     {
       "name": "metamodern-configure-engineering",
       "path": "metamodern-configure-engineering",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "delivery-and-engineering",
       "summary": "Configure portable engineering policy and native Codex and Claude Code routing while preserving project decisions."
     },

@@ -57,6 +57,8 @@ Exit `0` means the applicable local configuration checks passed; absence of prov
 
 Report evidence rather than collapsing these into one ready flag. A checker can succeed while availability or native discovery remains unverified. Missing credentials, unavailable host tooling, or a conflicting local override blocks only the corresponding claim.
 
+Before a provider turn, record the native client version as well as the selected model and effort. A model in a desktop catalog can still be unsupported by an older CLI. If a turn rejects a catalogued model, check current client compatibility before changing the routing policy. A task-local current client is useful evidence without upgrading the system installation; choose and record its exact version from current vendor sources rather than treating a version used in one project as a permanent minimum.
+
 For a live smoke check, use one small read-only evidence task per necessary route or effort class, within the task's authority and resources. Record selected versus effective models, effort, runtime version, success/failure, and limitations. Reuse prior evidence only when its scope and freshness still match. Do not repeatedly run provider tasks merely to make configuration evidence look stronger.
 
 ## Updating and recovery
