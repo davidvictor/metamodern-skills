@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { composeHost } from '../metamodern-interface-studio/scripts/compose-host.mjs';
 /**
  * Regenerate metamodern-interface-studio/assets/studio-shell.releases.json: the
  * file hashes of every released shell starter, read from Git history, plus the
@@ -45,14 +46,11 @@ for (const commit of git('log', '--first-parent', '--format=%H', 'main', '--', s
 
 // The working tree is the current release.
 const current = readFileSync(join(repo, skill, 'PACKAGE_VERSION'), 'utf8').trim().replace(/^.*@/, '');
-const root = join(repo, starter);
-const walk = (dir) => readdirSync(dir).flatMap((name) => {
-  const path = join(dir, name);
-  return statSync(path).isDirectory() ? (IGNORED_DIRS.has(name) ? [] : walk(path)) : [relative(root, path).split(sep).join('/')];
-});
-const files = Object.fromEntries(walk(root).filter((p) => !ignored(p)).sort().map((p) => [p, sha(readFileSync(join(root, p)))]));
-versions[current] = { commit: 'working tree', files, package: packageBase(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))) };
+const composed = composeHost('vite');
+const next = composeHost('next');
+const files = composed.composition.files;
+versions[current] = { commit: 'working tree', files, package: packageBase(JSON.parse(readFileSync(join(composed.dir, 'package.json'), 'utf8'))), hosts: { vite: { files, composition: composed.composition }, next: { files: next.composition.files, composition: next.composition, package: packageBase(JSON.parse(readFileSync(join(next.dir, 'package.json'), 'utf8'))) } } };
 
-const sorted = Object.fromEntries(Object.entries(versions).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([v, r]) => [v, { files: r.files, package: r.package }]));
+const sorted = Object.fromEntries(Object.entries(versions).sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true })).map(([v, r]) => [v, { files: r.files, package: r.package, ...(r.hosts ? { hosts: r.hosts } : {}) }]));
 writeFileSync(out, `${JSON.stringify({ schema: 'studio-shell-releases/1', versions: sorted }, null, 2)}\n`);
 console.log(`Wrote ${relative(repo, out)}: ${Object.keys(sorted).join(', ')}`);

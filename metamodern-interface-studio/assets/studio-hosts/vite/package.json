@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "preview": "vite preview",
-    "acceptance": "node scripts/acceptance.mjs"
+    "acceptance": "node scripts/acceptance.mjs",
+    "acceptance:host": "node scripts/host-acceptance.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

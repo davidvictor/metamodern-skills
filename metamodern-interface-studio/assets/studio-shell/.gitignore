@@ -28,3 +28,10 @@ dist-ssr
 acceptance-report.json
 .vercel
 .env*
+
+.next
+out
+.studio-generated
+public/assets
+public/example
+*.tsbuildinfo

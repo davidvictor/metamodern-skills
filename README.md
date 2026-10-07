@@ -151,7 +151,7 @@ npx --yes skills@1.7.0 add davidvictor/metamodern-skills \
   --global --agent codex --agent claude-code --yes
 ```
 
-Omit `--global` to install only in the current project. Invoke `$metamodern-interface-studio` in Codex or `/metamodern-interface-studio` in Claude Code. Start from the application repository so the agent can inspect its components, routes, tokens, assets, and tests. Build copies the [shell starter](./metamodern-interface-studio/assets/studio-shell/README.md) into the location you choose, connects your product, and removes the example. Every Studio shares the same shell; each product supplies only its adapter and preview entry.
+Omit `--global` to install only in the current project. Invoke `$metamodern-interface-studio` in Codex or `/metamodern-interface-studio` in Claude Code. Start from the application repository so the agent can inspect its components, routes, tokens, assets, and tests. Build composes the [common shell starter](./metamodern-interface-studio/assets/studio-shell/README.md) with a Vite or Next host overlay in the location you choose, connects your product, and removes the example. Every Studio shares the same React/style/protocol source; each product supplies only its adapter and preview entry.
 
 Start with a read-only inspection:
 

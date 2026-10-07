@@ -1,3 +1,4 @@
+import { host } from "@/studio-host"
 /*
  * Component properties in Details, loaded only when a scenario has them. Named states stay the unit of
  * review: a property edits the selected state, shows as a difference from it, and changes the live
@@ -29,7 +30,7 @@ import { inspectHandle } from "./preview"
 /** Coarse pointers: every row control reaches 44 px and text fields use 16 px text, so phones do not zoom. */
 const TOUCH = "pointer-coarse:min-h-11 pointer-coarse:text-base"
 /** Only the dev server can write scenarios.json (read here, not from the store, so this chunk stays the only importer of the saved-state file model). */
-const canSaveScenarios = import.meta.env.DEV
+const canSaveScenarios = host.canSave
 const WHY = "Saving needs the local Studio (npm run dev). A published Studio offers Copy as JSON instead."
 
 /**

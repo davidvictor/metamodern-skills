@@ -1,3 +1,4 @@
+import { studioSource } from './studio-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -8,7 +9,7 @@ import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const skill = fileURLToPath(new URL('../metamodern-interface-studio/', import.meta.url));
-const starter = join(skill, 'assets/studio-shell');
+const starter = studioSource;
 const updater = join(skill, 'scripts/update-studio.mjs');
 const IGNORED = new Set(['node_modules', 'dist', 'dist-ssr', '.acceptance', '.git', '.DS_Store', 'acceptance-report.json']);
 
@@ -70,7 +71,7 @@ test('UP-01 a created Studio is stamped with the shell files only', () => {
   const base = shell('base');
   const dir = create(base);
   const lock = lockOf(dir);
-  assert.equal(lock.schema, 'studio-shell-lock/1');
+  assert.equal(lock.schema, 'studio-shell-lock/2');
   assert.equal(lock.shell, '1.0.0');
   const files = tree(dir);
   for (const [path, hash] of Object.entries(lock.files)) assert.equal(files[path], hash, path);

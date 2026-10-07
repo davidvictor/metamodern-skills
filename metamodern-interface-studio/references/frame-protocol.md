@@ -109,3 +109,9 @@ A component library (see [library](library.md)) mounts its previews through the 
 ## Capture-only Studios
 
 Omit `frameEntry` and supply `captures` on scenarios with their provenance. The shell shows the capture, labels it static, disables product back and product commands, disables theme and profile values with no recorded capture, and shows an explicit empty state for a missing combination. A walkthrough step that needs commands stops with the reason. A native instrumented stream that is not a web page needs its own host behind the same handle contract; keep the declaration and the shell unchanged.
+
+## Opt-in product design compiler
+
+`StudioAdapter.design.compiler` may declare the data-only `studio-design-compiler/1` descriptor: `id`, `version`, `inputSchema`, optional `sourceLockId` and `outputSchema: "studio-compiled-design/1"`. Product functions never live on the adapter. A protected product-owned `src/design-runtime/index.ts` exports the explicit `designCompilers` build-time module loader map; absent descriptors keep the existing `designDraft` behavior.
+
+`src/studio/design-runtime.ts` exports `compileDesign(descriptor, loaders, input)`, `validateCompiledDesign`, `CompileDesignInput` and `CompiledDesign`. Input carries JSON direction data, theme and optional source lock. Output carries compiler identity, compiled fingerprint, optional source lock, string token maps, CSS, stylesheet URLs and optional neutral diagnostics. The loader is selected by exact compiler ID, and wrong identities/source locks, missing fingerprints or executable/cyclic/nonfinite data fail closed. Rich panel rendering, direction schema/domain validation and authoritative application/export receipts belong to the product's separately versioned Design controller. The product may project validated compiled tokens/CSS/stylesheets into the existing draft protocol; the generic host does not invent direction meaning or execute workflows.

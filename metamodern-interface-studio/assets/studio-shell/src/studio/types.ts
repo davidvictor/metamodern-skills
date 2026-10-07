@@ -7,6 +7,7 @@
  * product facts into shell components.
  */
 
+import type { DesignCompilerDescriptor } from "./design-runtime"
 import type { Preset, PresetFrame } from "./layouts"
 
 /** How one capability dimension of a preview behaves. */
@@ -471,7 +472,7 @@ export type StudioAdapter = {
   comparisons?: Comparison[]
   tokens?: TokenSet
   /** Parameters for the Design view's Adjust tab. Without them (and without tokens) there is no Design view. */
-  design?: { parameters: DesignParameter[] }
+  design?: { parameters: DesignParameter[]; compiler?: DesignCompilerDescriptor }
   /** Anything the Studio changes about product rendering, disclosed on every preview. */
   presentationOverrides?: { id: string; label: string }[]
   /** Product workspace tools beside the views, declared as data (references/workspace.md). Without it the Studio has no workspace. */

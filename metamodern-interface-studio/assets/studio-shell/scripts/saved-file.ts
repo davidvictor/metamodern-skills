@@ -64,7 +64,8 @@ export function savedFileMiddleware(o: SavedFileOptions) {
     const origin = req.headers.origin
     const sameOrigin = (() => {
       try {
-        return !!origin && new URL(origin).host === req.headers.host
+        const protocol = (req.socket as { encrypted?: boolean } | undefined)?.encrypted ? "https:" : "http:"
+        return !!origin && new URL(origin).origin === `${protocol}//${req.headers.host}`
       } catch {
         return false
       }
@@ -110,4 +111,45 @@ export function savedFileMiddleware(o: SavedFileOptions) {
       send(200, { ok: true }, hash(Buffer.from(text, "utf8")))
     })
   }
+}
+
+/** Fetch transport for Next development routes, sharing the exact Node middleware transaction. */
+export async function savedFileRequest(o: SavedFileOptions, request: Request): Promise<Response> {
+  const requestUrl = new URL(request.url)
+  const authority = request.headers.get("host") ?? requestUrl.host
+  if (request.method === "POST" && request.headers.get("origin") !== `${requestUrl.protocol}//${authority}`) return Response.json({ error: o.forbidden }, { status: 403 })
+  // Check the streamed byte budget before buffering; Content-Length is not trusted.
+  const body: Buffer[] = []
+  if (request.body) {
+    const reader = request.body.getReader()
+    let size = 0
+    while (true) {
+      const part = await reader.read()
+      if (part.done) break
+      size += part.value.byteLength
+      if (size > o.maxBytes) { await reader.cancel(); return Response.json({ error: o.tooBig }, { status: 413 }) }
+      body.push(Buffer.from(part.value))
+    }
+  }
+  const { Readable } = await import("node:stream")
+  const req = Readable.from(body) as IncomingMessage
+  req.method = request.method
+  req.headers = Object.fromEntries(request.headers)
+  // Next can normalize request.url to localhost; the incoming Host remains the HTTP authority. Never trust forwarded host.
+  req.headers.host = authority
+  req.socket = { encrypted: new URL(request.url).protocol === "https:" } as unknown as IncomingMessage["socket"]
+  return new Promise(resolve => {
+    const headers = new Headers()
+    const responseState = {
+      writableEnded: false, statusCode: 200,
+      setHeader(name: string, value: string) { headers.set(name, value) },
+      end(bytes: string) { this.writableEnded = true; resolve(new Response(bytes, { status: this.statusCode, headers })) },
+    }
+    savedFileMiddleware(o)(req, responseState as unknown as ServerResponse)
+  })
+}
+
+/** Reserved saved-file routes never accept inherited object properties. */
+export function isSavedFileName(file: string): file is "layouts" | "scenarios" {
+  return file === "layouts" || file === "scenarios"
 }

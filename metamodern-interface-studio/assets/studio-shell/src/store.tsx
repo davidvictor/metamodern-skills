@@ -1,3 +1,4 @@
+import { host } from "@/studio-host"
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
 import { toast } from "sonner"
@@ -115,9 +116,9 @@ const joinSaved = (list: unknown) => {
   return usable
 }
 /** Saved states bundled into a built Studio; the dev server serves the live file instead. Joined before the link is read, so a link to one resolves. */
-const bundledScenarios = Object.values(import.meta.glob("/scenarios.json", { eager: true, import: "default" }))[0] as ScenariosFile | undefined
+const bundledScenarios = host.scenarios as ScenariosFile | undefined
 const bundledSaved = hasProperties ? joinSaved(bundledScenarios?.scenarios) : []
-export const canSaveScenarios = import.meta.env.DEV
+export const canSaveScenarios = host.canSave
 /** Design shows the Adjust tab when the adapter declares parameters and the Tokens tab when it has a token source. */
 export const hasAdjust = !!A.design?.parameters.length
 export const hasDesign = hasAdjust || !!A.tokens
@@ -145,9 +146,9 @@ function writeJSON(key: string, value: unknown) {
 export const PRESETS: ResponsiveLayout[] = [...(A.axes.responsive?.presets ?? []), ...(A.axes.responsive?.replaceShellPresets ? [] : SHELL_PRESETS)].map((p) => fromPreset(p, A.axes.profiles))
 const RESPONSIVE_KEY = `studio.${A.id}.responsive`
 /** Saved layouts bundled into a built Studio; the dev server serves the live file instead. */
-const bundledLayouts = Object.values(import.meta.glob("/layouts.json", { eager: true, import: "default" }))[0] as LayoutsFile | undefined
+const bundledLayouts = host.layouts as LayoutsFile | undefined
 export const layoutsProblems = (data: unknown) => validateLayouts(data)
-export const canSaveLayouts = import.meta.env.DEV
+export const canSaveLayouts = host.canSave
 const initialResponsive = (): State["responsive"] => {
   const p = PRESETS[0]
   return { layout: p.id, name: p.name, frames: p.frames, arrangement: p.arrangement, height: p.height, sync: DEFAULT_SYNC, dirty: false, resetNonce: 0 }

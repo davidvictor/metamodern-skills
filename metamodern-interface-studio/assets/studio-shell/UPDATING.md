@@ -1,3 +1,7 @@
+## 0.16.0
+
+The shell now composes one common UI source with Vite or Next host overlays. Existing lock/1 consumers remain Vite; updates write host-aware lock/2 and preserve product files. New Next consumers use `--create --host next`. Host changes require an explicit migration. Product-owned `src/design-runtime/index.ts` is seeded empty for opt-in data-only design compiler descriptors; legacy designDraft remains unchanged. Nothing else to do by hand.
+
 # Updating this Studio
 
 The shell in this Studio comes from the `metamodern-interface-studio` skill. Bring it up to the newest shell with the skill's updater instead of copying files by hand. First install the skill update, then run, from anywhere:

@@ -1,9 +1,10 @@
+import { studioSource } from './studio-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 
-const shell = new URL('../metamodern-interface-studio/assets/studio-shell/', import.meta.url);
+const shell = new URL(`file://${studioSource}/`);
 const read = (path) => readFileSync(new URL(path, shell), 'utf8');
 const model = await import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(read('src/studio/compare.ts'), { mode: 'strip' })).toString('base64')}`);
 

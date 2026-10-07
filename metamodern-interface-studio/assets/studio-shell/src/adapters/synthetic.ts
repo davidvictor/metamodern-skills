@@ -1,3 +1,4 @@
+import { host } from "@/studio-host"
 /*
  * Stress adapter: 1,000 scenarios in 12 areas, 1,000 tokens in 14 families, and a
  * 40-step walkthrough with deliberately broken steps. It exists to measure the
@@ -67,4 +68,4 @@ export const capturesAdapter: StudioAdapter = {
 }
 
 /** What "@/adapter" resolves to in an acceptance build (see vite.config.ts): VITE_STUDIO_ADAPTER picks the stress or capture-only adapter. */
-export const adapter = import.meta.env.VITE_STUDIO_ADAPTER === "captures" ? capturesAdapter : syntheticAdapter
+export const adapter = host.variant === "captures" ? capturesAdapter : syntheticAdapter
