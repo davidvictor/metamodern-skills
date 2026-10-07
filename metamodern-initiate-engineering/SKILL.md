@@ -23,6 +23,12 @@ Project Preparation owns `PROJECT.md`, `REFERENCES.md`, and `AGENTS.md`; product
 
 Incomplete brand or interface direction does not block independent nonvisual engineering. Client-facing visual production follows the accepted Brand System and its owning capabilities.
 
+## Configure engineering when authorized
+
+In Initiate or authorized Resume setup, invoke `metamodern-configure-engineering` after verifying the project root and existing policy. It owns the portable testing policy, local profile, native Codex/Claude Code routing, and standalone configuration checker. Pass existing decisions and overrides; preview changes before applying them within the authorized scope. Reuse a current configured profile instead of regenerating it. Inspect mode reports the existing profile and gaps without installing it.
+
+Return profile provenance, configuration-check results, selected models/efforts, and availability evidence to the project core and first-task handoff. Preserve local policy and report conflicts. Keep structural checks separate from native discovery and observed successful provider turns; none establishes application readiness. Register the canonical capability and generated profile through Project Preparation's narrow portable-core-only merge. Do not route that call back into initiation or configuration.
+
 ## Define the first task
 
 Read [Interview](references/interview.md). Ask only small unresolved groups in dependency order. Separate discovered facts, reversible defaults, user-owned judgments, and deferred decisions. Stop when the selected task is sufficiently defined.

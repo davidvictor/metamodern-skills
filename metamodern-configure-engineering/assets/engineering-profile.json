@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "id": "metamodern-engineering",
+  "version": "1.0.0",
+  "lead": {
+    "codex": "gpt-6.1-sol",
+    "claude-code": "claude-opus-5-5",
+    "effort": "high"
+  },
+  "default": {
+    "codex": "gpt-6.1-sol",
+    "claude-code": "claude-opus-5-5",
+    "effort": "medium",
+    "sandbox_mode": "workspace-write"
+  },
+  "low_codex_candidates": [
+    "gpt-6.1-luna",
+    "gpt-6-luna"
+  ],
+  "low_codex_fallback": "gpt-6-luna",
+  "low_claude_model": "claude-sonnet-5",
+  "roles": {
+    "explorer": {
+      "effort": "low",
+      "sandbox_mode": "read-only",
+      "description": "Map files, symbols, and call paths without editing."
+    },
+    "vision": {
+      "effort": "low",
+      "sandbox_mode": "read-only",
+      "description": "Inspect screenshots and visual evidence without editing."
+    },
+    "analyst": {
+      "effort": "medium",
+      "sandbox_mode": "read-only",
+      "description": "Resolve requirements, acceptance criteria, and bounded ambiguity."
+    },
+    "planner": {
+      "effort": "medium",
+      "sandbox_mode": "read-only",
+      "description": "Sequence delivery work with clear ownership and acceptance checks."
+    },
+    "docs-researcher": {
+      "effort": "medium",
+      "sandbox_mode": "read-only",
+      "description": "Research current primary documentation and report source evidence."
+    },
+    "worker": {
+      "effort": "medium",
+      "sandbox_mode": "workspace-write",
+      "description": "Implement a bounded outcome with proportionate verification."
+    },
+    "test-engineer": {
+      "effort": "medium",
+      "sandbox_mode": "workspace-write",
+      "description": "Add meaningful tests for observable behavior and concrete failure risk."
+    },
+    "git-master": {
+      "effort": "medium",
+      "sandbox_mode": "workspace-write",
+      "description": "Manage authorized Git delivery and verify repository state."
+    },
+    "architect": {
+      "effort": "high",
+      "sandbox_mode": "read-only",
+      "description": "Review system boundaries, interfaces, and durable architectural choices."
+    },
+    "designer": {
+      "effort": "high",
+      "sandbox_mode": "read-only",
+      "description": "Define product interactions and implementation-ready visual direction."
+    },
+    "debugger": {
+      "effort": "high",
+      "sandbox_mode": "read-only",
+      "description": "Find the root cause from evidence before proposing a correction."
+    },
+    "reviewer": {
+      "effort": "high",
+      "sandbox_mode": "read-only",
+      "description": "Independently review integrated correctness, regressions, and maintainability."
+    },
+    "security-reviewer": {
+      "effort": "high",
+      "sandbox_mode": "read-only",
+      "description": "Review concrete trust boundaries and security risks."
+    },
+    "browser-debugger": {
+      "effort": "high",
+      "sandbox_mode": "workspace-write",
+      "description": "Investigate browser behavior with task-owned fixtures and evidence."
+    },
+    "build-fixer": {
+      "effort": "high",
+      "sandbox_mode": "workspace-write",
+      "description": "Repair build, dependency, compiler, and packaging failures."
+    },
+    "code-simplifier": {
+      "effort": "high",
+      "sandbox_mode": "workspace-write",
+      "description": "Simplify changed code while preserving observable behavior."
+    },
+    "verifier": {
+      "effort": "high",
+      "sandbox_mode": "workspace-write",
+      "description": "Verify outcome claims using focused checks and runtime evidence."
+    }
+  },
+  "instruction": "Read AGENTS.md and docs/engineering/testing-policy.md. Follow current task authority, preserve unrelated work, and report implementation, validation, review, delivery, and acceptance separately. Use task-owned fixtures and resources.",
+  "availability_max_age_hours": 24
+}

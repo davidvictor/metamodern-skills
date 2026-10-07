@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.18.0",
+  "collectionVersion": "1.19.0",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
       "path": "metamodern-bootstrap-app",
-      "version": "0.1.1",
+      "version": "0.2.0",
       "category": "delivery-and-engineering",
       "summary": "Prepare a current MakerKit application with a focused interview, starter cleanup, and verified local setup."
     },
@@ -15,6 +15,13 @@
       "version": "0.4.1",
       "category": "brand-and-design",
       "summary": "Develop a brand's visual world through director-approved gates on Higgsfield."
+    },
+    {
+      "name": "metamodern-configure-engineering",
+      "path": "metamodern-configure-engineering",
+      "version": "0.1.0",
+      "category": "delivery-and-engineering",
+      "summary": "Configure portable engineering policy and native Codex and Claude Code routing while preserving project decisions."
     },
     {
       "name": "metamodern-develop-brand",
@@ -47,7 +54,7 @@
     {
       "name": "metamodern-initiate-engineering",
       "path": "metamodern-initiate-engineering",
-      "version": "0.1.2",
+      "version": "0.2.0",
       "category": "delivery-and-engineering",
       "summary": "Establish proportional engineering instructions and a verified first-task handoff for web apps, mobile apps, and websites."
     },
@@ -82,7 +89,7 @@
     {
       "name": "metamodern-prepare-project",
       "path": "metamodern-prepare-project",
-      "version": "0.3.1",
+      "version": "0.4.0",
       "category": "project-and-evidence",
       "summary": "Prepare or adopt a portable project workspace with correct source boundaries."
     },

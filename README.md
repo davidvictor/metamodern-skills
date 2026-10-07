@@ -38,6 +38,26 @@ bash install.sh --skill metamodern-plan-development \
   --skill metamodern-review-development
 ```
 
+## Configure a project's engineering profile
+
+[Configure Engineering](./metamodern-configure-engineering/SKILL.md) is a standalone method for portable testing guidance and native Codex/Claude Code routing. Engineering initiation and MakerKit bootstrap use it when local engineering setup is authorized. Inspect, brand, prose, and general workspace preparation do not install the profile automatically.
+
+Install the shared skill for Codex and Claude Code:
+
+```bash
+npx --yes skills@1.7.0 add davidvictor/metamodern-skills \
+  --skill metamodern-configure-engineering \
+  --global --agent codex --agent claude-code --yes
+```
+
+Then invoke `$metamodern-configure-engineering` in the project you want to configure, or `/metamodern-configure-engineering` in Claude Code. The agent previews and applies the authorized local change while preserving existing policy and settings. The package generates `docs/engineering/profile.json`, a testing policy and guide, project-local native configuration, and a portable checker. Run `python3 scripts/check-engineering.py --project .` from the configured project.
+
+Differing existing lead/default routing is a conflict with no writes by default. A reviewed `--adopt-routing` invocation replaces only the mapped routing fields; unrelated settings remain preserved. Intentional later overrides and duplicate native project agent identities also remain explicit conflicts. See the adoption guide before replacing project decisions.
+
+Codex uses `gpt-6.1-sol` except low-effort explorer/vision roles, which choose the newest verified permitted low-cost candidate. Claude Code uses `claude-sonnet-5` for low effort and `claude-opus-5-5` for medium/high effort; the lead uses Opus at high effort. Effort and access boundaries remain explicit. Configuration checks, current provider availability, native discovery, and successful provider turns are reported separately. Installing files does not establish provider access or application readiness.
+
+The [profile contract](./metamodern-configure-engineering/references/profile-contract.md), [adoption guide](./metamodern-configure-engineering/references/adoption-and-verification.md), and [portable testing policy](./metamodern-configure-engineering/assets/testing-policy.md) document routing, safe updates, and risk-based proof. Existing project decisions and required commands retain authority; test frameworks come from the actual stack. This package is reusable without MakerKit or the private Agency repository.
+
 ## Start with a better prompt
 
 ```text
@@ -175,6 +195,7 @@ Update preserves stable identities and presenter work and reports unresolved cha
 | [Figma](./metamodern-work-in-figma/SKILL.md) · `$metamodern-work-in-figma` | Inspect, construct, revise, verify, and hand off editable design work. |
 | [App bootstrap](./metamodern-bootstrap-app/SKILL.md) · `$metamodern-bootstrap-app` | Prepare a MakerKit application and verify its local setup. |
 | [Engineering initiation](./metamodern-initiate-engineering/SKILL.md) · `$metamodern-initiate-engineering` | Establish proportional engineering preparation and a first-task handoff. |
+| [Engineering configuration](./metamodern-configure-engineering/SKILL.md) · `$metamodern-configure-engineering` | Adopt portable testing policy and native Codex/Claude Code routing with explicit evidence states. |
 | [Form delivery](./metamodern-setup-form-delivery/SKILL.md) · `$metamodern-setup-form-delivery` | Build durable database-first forms with Sheets and Slack delivery. |
 
 ### What you need beyond installation
@@ -227,7 +248,7 @@ metamodern-skills/
 │   ├── agents/openai.yaml          # Codex display and invocation metadata
 │   └── references/                 # Mode details, examples, model guidance
 ├── metamodern-refine-writing/      # Same package contract
-├── …                               # 15 independent packages total
+├── …                               # Independent packages listed in catalog.json
 ├── scripts/                        # Collection and package validators
 ├── tests/                          # Package contracts and failure cases
 └── install.sh                      # Validated local maintainer installation

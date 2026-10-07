@@ -25,6 +25,8 @@ Keep display name, technical slug, repository identity, and domain distinct. Reu
 
 Project Preparation owns `PROJECT.md`, `REFERENCES.md`, and `AGENTS.md`. Product, brand, and design capabilities own their corresponding artifacts. This skill records a scoped bootstrap map and evidence rather than authoring competing artifacts. In standalone or composed use, invoke Project Preparation only when the portable core is missing. Give that caller the known decisions and a portable-core-only scope; it must not dispatch engineering initiation or bootstrap again.
 
+For authorized setup, invoke `metamodern-configure-engineering` to install or reconcile the shared engineering profile, portable testing policy, native Codex/Claude Code routing, and standalone configuration checker. Reuse the caller's current profile when already configured. Preserve existing instructions, native settings, and intentional overrides; report adoption conflicts. Inspect-only work reports profile gaps read-only. Pass supported profile/source/check facts to Project Preparation when the core needs a narrow merge, without restarting initiation or configuration. Record real stack commands in `README.md`; select testing tools from the actual starter and affected risks rather than installing a generic dependency.
+
 ## Prepare deliberately
 
 Read [Starter preparation](references/starter-preparation.md). Produce a reviewable keep, adapt, hide, remove, or defer ledger before changing starter surfaces. Prefer configuration and supported extension points. Preserve authentication, account/RLS, error, localization, update, and necessary upstream paths unless a supported product decision changes them.

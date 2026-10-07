@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Configure Engineering"
+  short_description: "Configure portable policy and native agent routing"
+  default_prompt: "Use $metamodern-configure-engineering to configure and verify this project's shared engineering profile while preserving its local decisions."
