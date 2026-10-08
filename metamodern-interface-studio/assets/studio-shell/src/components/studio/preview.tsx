@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { adapter } from "@/adapter"
 import { captureFor, NO_DRAFT, propertyIds, resolveValues, useStudio, type Draft } from "@/store"
-import { appearanceFields, appearanceKey, liveAppearanceIds, withoutAppearance } from "@/studio/appearance"
+import { appearanceFields, appearanceKey, appearanceOverrides, liveAppearanceIds, withoutAppearance } from "@/studio/appearance"
 import { frameDesignValues, valuesForTheme } from "@/studio/design"
 import { LivePreview, type LivePreviewHandle, type LiveStatus, type PreviewSync } from "@/studio/live-preview"
 import type { Edits } from "@/studio/properties"
@@ -52,6 +52,8 @@ type Props = {
   values: Record<string, InputValue>
   /** The viewer's property edits for this preview. They reach a live frame without a remount. */
   props?: Edits
+  /** Validated per-preview live appearance overrides; never component properties or global state. */
+  designInputs?: Record<string, string | number>
   commands?: string[]
   /** The draft this preview shows; none by default. Present never passes one. */
   draft?: Draft
@@ -74,7 +76,7 @@ type Props = {
  * similar scenario, theme or profile.
  */
 export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(function ScenarioPreview(
-  { scenario, theme, profile, size, values, props, commands = [], draft = NO_DRAFT, sync, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
+  { scenario, theme, profile, size, values, props, designInputs, commands = [], draft = NO_DRAFT, sync, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
   ref
 ) {
   const studio = useStudio()
@@ -149,7 +151,8 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
     description: shownDraft.unavailable ?? (draft === NO_DRAFT ? "This basis has no valid compiled output. A working draft cannot substitute for the source or confirmed saved direction." : "No valid compiled output is available for this preview."),
     tone: "danger",
   }
-  const design = { ...appearanceFields(studio.designFor(theme).inputs, appearanceIds), ...(draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)) }
+  const appearanceOverride = appearanceOverrides(adapter, designInputs, theme)
+  const design = { ...appearanceFields(studio.designFor(theme).inputs, appearanceIds), ...(draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)), ...appearanceOverride.inputs }
   const mountKey = JSON.stringify([scenario, theme, profile, fixed, withoutAppearance(design, appearanceIds), commands, resetNonce, retry])
   const frameKey = JSON.stringify([scenario, theme, profile, fixed, withoutAppearance(design, appearanceIds), appearanceKey({ values: resolved, design }, appearanceIds), commands, resetNonce])
   // A failure belongs to the frame that reported it: another scenario, theme, profile or input mounts afresh.

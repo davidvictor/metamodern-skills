@@ -16,7 +16,7 @@ export type PresenterOverlay = {
   tours: Record<string, {
     name?: string
     goal?: string
-    steps?: Record<string, Partial<Pick<PresenterStep, "narration" | "duration" | "hidden" | "values">>>
+    steps?: Record<string, Partial<Pick<PresenterStep, "narration" | "duration" | "hidden" | "values" | "design">>>
   }>
 }
 
@@ -36,11 +36,12 @@ export function isPresenterOverlay(value: unknown): value is PresenterOverlay {
     if (!item.steps || typeof item.steps !== "object" || Array.isArray(item.steps)) return false
     return Object.values(item.steps as Record<string, unknown>).every((step) => {
       if (!step || typeof step !== "object" || Array.isArray(step)) return false
-      const patch = step as { narration?: unknown; duration?: unknown; hidden?: unknown; values?: unknown }
-      if (!Object.keys(patch).every((key) => key === "narration" || key === "duration" || key === "hidden" || key === "values")) return false
+      const patch = step as { narration?: unknown; duration?: unknown; hidden?: unknown; values?: unknown; design?: unknown }
+      if (!Object.keys(patch).every((key) => key === "narration" || key === "duration" || key === "hidden" || key === "values" || key === "design")) return false
       return (patch.narration === undefined || typeof patch.narration === "string") &&
         (patch.duration === undefined || (typeof patch.duration === "number" && Number.isFinite(patch.duration) && patch.duration > 0)) &&
         (patch.hidden === undefined || typeof patch.hidden === "boolean") &&
+        (patch.design === undefined || (typeof patch.design === "object" && patch.design !== null && !Array.isArray(patch.design) && Object.values(patch.design as Record<string, unknown>).every(v => typeof v === "string" || typeof v === "number" && Number.isFinite(v)))) &&
         (patch.values === undefined || (typeof patch.values === "object" && patch.values !== null && !Array.isArray(patch.values) && Object.values(patch.values as Record<string, unknown>).every((v) => typeof v === "string" || typeof v === "number")))
     })
   })
@@ -73,7 +74,7 @@ export function applyPresenterOverlay(tours: Walkthrough[], overlay: PresenterOv
       steps: tour.steps.map((step, index) => {
         const change = patch.steps?.[stepId(tour, step, index)]
         // Never spread imported JSON into generated scenario identity or commands.
-        return { ...step, ...(change?.narration !== undefined ? { narration: change.narration } : {}), ...(change?.duration !== undefined ? { duration: change.duration } : {}), ...(change?.hidden !== undefined ? { hidden: change.hidden } : {}), ...(change?.values !== undefined ? { values: change.values } : {}) }
+        return { ...step, ...(change?.narration !== undefined ? { narration: change.narration } : {}), ...(change?.duration !== undefined ? { duration: change.duration } : {}), ...(change?.hidden !== undefined ? { hidden: change.hidden } : {}), ...(change?.values !== undefined ? { values: change.values } : {}), ...(change?.design !== undefined ? { design: change.design } : {}) }
       }),
     }
   })

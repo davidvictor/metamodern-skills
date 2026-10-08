@@ -292,7 +292,7 @@ test('LM-14 the core shell reaches the library only through lazy slots, and libr
   }
   assert.match(read('src/store.tsx'), /from "@\/studio\/library\/link"/);
   assert.match(read('src/store.tsx'), /q\.set\("library", state\.library\)/);
-  assert.match(read('src/studio/input.ts'), /"module", "section", "library", "item"\]/);
+  assert.match(read('src/studio/input.ts'), /"module", "section", "library", "item", "compareAxis", "compareValues"\]/);
   assert.match(read('src/studio/library/library-page.tsx'), /from "@\/library"/);
   const app = read('src/App.tsx');
   assert.match(app, /hasWorkspace \? \([\s\S]*?WorkspaceNav part="tab"[\s\S]*?\) : hasLibrary \? \([\s\S]*?LibraryNav part="tab"/, 'one place entry on the phone bar');

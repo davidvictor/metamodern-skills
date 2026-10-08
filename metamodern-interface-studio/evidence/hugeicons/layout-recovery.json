@@ -1,0 +1,14 @@
+[
+  {
+    "check": "Free singleton exposes no appearance comparison axis",
+    "pass": true
+  },
+  {
+    "check": "stale appearance and deleted-layout reasons are both disclosed",
+    "pass": true
+  },
+  {
+    "check": "late valid layout response preserves intervening Responsive edits",
+    "pass": true
+  }
+]

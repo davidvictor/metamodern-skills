@@ -8,6 +8,10 @@ The shell and both framework hosts use semantic icon components backed by `@huge
 
 Input-backed Design parameters may declare `apply: { input: "iconStyle", live: true }`. A frame opts in separately with `updateAppearance(inputs)`, announcing `live-appearance`. Only explicitly declared appearance inputs bypass the mount boundary, and only a supporting frame updates in place. `live-values` alone does not qualify; older clients remount honestly. Refused appearance updates keep the last valid preview and show the reason; handlers must validate before mutating product UI. Refresh copied frame clients to use this capability. `stroke-rounded` names an appearance, not an entitlement. Alternate maps used in tests must be synthetic and labeled test-only.
 
+Live Design enums with multiple declared choices now offer independent Compare axis `appearance:<parameter-id>`; saved pairs use the existing `Comparison.values` tuple and share through reserved `compareAxis`/`compareValues` keys. Per-pane overrides stay in `inputs.design`, preserve other panes and global defaults, and allow duplicate styles. A singleton Free enum has no fake comparison axis. Presentation steps/overlay patches may declare `design` separately from component `values`; unsupported authored styles are diagnosed before playback. Refresh copied clients for live updates, and use 0.19 shell receivers for equivalent shared comparison playback.
+
+Saved-layout initial-load recovery now resolves the originally requested saved layout after the existing validated live read, if the viewer has not changed Responsive state. It restores only layout fields, never appearance, properties or navigation; missing layouts remain disclosed. No new timer, retry or loading gate is introduced.
+
 Nothing else to do by hand. Product adapters, saved directions and presenter files remain product owned.
 
 ## 0.17.1

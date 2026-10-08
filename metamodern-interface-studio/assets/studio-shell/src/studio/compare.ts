@@ -23,8 +23,13 @@ export function savedComparison(saved: { values?: string[]; a?: string; b?: stri
  * 4-up choice on a three-value axis shows three sides and waits for three. With fewer than two
  * distinct valid values the comparison is not `available`.
  */
-export function resolveComparison(options: string[], saved: string[], count: number, pair?: [string, string]) {
+export function resolveComparison(options: string[], saved: string[], count: number, pair?: [string, string], appearanceDefault?: string) {
   const valid = (id: string) => options.includes(id)
+  if (appearanceDefault !== undefined) {
+    const n = comparisonCount(count), fallback = valid(appearanceDefault) ? appearanceDefault : options[0] ?? ""
+    const compared = Array.from({ length: n }, (_, index) => valid(saved[index]) ? saved[index] : fallback)
+    return { a: compared[0], b: compared[1], compared, count: n, available: options.length > 1 }
+  }
   const a = pair ? pair[0] : valid(saved[0]) ? saved[0] : (options[0] ?? "")
   const b = pair ? pair[1] : valid(saved[1]) && saved[1] !== a ? saved[1] : (options.find((o) => o !== a) ?? "")
   const n = comparisonCount(Math.min(comparisonCount(count), options.length))
@@ -39,10 +44,10 @@ export function resolveComparison(options: string[], saved: string[], count: num
 }
 
 /** Put a value on one side. A value another side already shows trades places with it, so no two sides repeat. */
-export function chooseCompared(compared: string[], index: number, value: string) {
+export function chooseCompared(compared: string[], index: number, value: string, independent = false) {
   const values = [...compared]
   const other = values.indexOf(value)
-  if (other >= 0 && other !== index) values[other] = values[index]
+  if (!independent && other >= 0 && other !== index) values[other] = values[index]
   values[index] = value
   return values
 }

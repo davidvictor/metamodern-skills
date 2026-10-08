@@ -1,0 +1,10 @@
+[
+  {
+    "check": "theme-scoped Step.design validates against selected dark theme",
+    "pass": true
+  },
+  {
+    "check": "theme-scoped authored appearance is diagnosed outside supported theme",
+    "pass": true
+  }
+]

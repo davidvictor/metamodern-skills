@@ -269,12 +269,13 @@ function MobileShell() {
 function Shell() {
   const s = useStudio()
   const mobile = useIsMobile()
+  const notice = [s.designNotice, s.layoutNotice].filter(Boolean).join(" ")
   useGlobalKeys()
   usePresentFocus()
   return (
     <TooltipProvider delay={350}>
       {mobile ? <MobileShell /> : <DesktopShell />}
-      {s.designNotice && <div role="status" className="fixed bottom-4 left-4 z-50 max-w-sm rounded-lg border bg-background p-3 text-sm shadow-sm">{s.designNotice}<button type="button" className="ml-3 underline" onClick={() => s.set({ designNotice: null })}>Dismiss</button></div>}
+      {notice && <div role="status" className="fixed bottom-4 left-4 z-50 max-w-sm rounded-lg border bg-background p-3 text-sm shadow-sm">{notice}<button type="button" className="ml-3 underline" onClick={() => s.set({ designNotice: null, layoutNotice: null })}>Dismiss</button></div>}
       <CommandMenu />
       <ShortcutsDialog />
       <Slot>

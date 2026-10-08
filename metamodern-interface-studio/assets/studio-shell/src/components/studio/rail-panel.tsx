@@ -396,7 +396,7 @@ function PresentPanel() {
         label={(i) => tour.steps[i].narration}
         rowProps={(i) => {
           const st = tour.steps[i]
-          const problem = staticProblem(st)
+          const problem = staticProblem(st, s.theme)
           return {
             role: "listitem",
             "aria-current": i === s.present.step ? "step" : undefined,
@@ -408,7 +408,7 @@ function PresentPanel() {
         {(i) => {
           const st = tour.steps[i]
           const sc = adapter.scenarios.find((x) => x.id === st.scenario)
-          const problem = staticProblem(st)
+          const problem = staticProblem(st, s.theme)
           const current = i === s.present.step
           return (
             <>

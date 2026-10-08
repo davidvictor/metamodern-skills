@@ -169,6 +169,8 @@ export type Step = {
   commands?: string[]
   /** Scenario input values for this step. They supplement the scenario's designed values. */
   values?: Record<string, string | number>
+  /** Authored live appearance inputs, separate from scenario/component values. */
+  design?: Record<string, string | number>
   /** Optional playback duration in seconds. The presenter can still advance manually. */
   duration?: number
   /** Keep this step in the authored sequence without showing it in a public walkthrough. */
@@ -188,7 +190,7 @@ export type Walkthrough = {
   steps: Step[]
 }
 
-/** A saved pair on one axis: "theme" (default), "profile", or the ID of a scenario input. a and b are option IDs of that axis. */
+/** A saved pair on one axis: "theme" (default), "profile", the ID of a scenario input, or `appearance:<parameter-id>` for a comparable live Design enum. a and b are option IDs of that axis. */
 export type Comparison = {
   id: string
   label: string

@@ -88,6 +88,8 @@ test('all executable shell icons pass through the semantic Free map and both hos
   for (const p of walk(join(studioSource, 'src')).filter(p => /\.(tsx?|jsx?)$/.test(p))) assert.doesNotMatch(readFileSync(p, 'utf8'), /["']lucide-react["']/);
   const map = JSON.parse(read('src/icon-map.json'));
   assert.equal(map.style, 'stroke-rounded');
+  const notices = read('public/THIRD_PARTY_NOTICES.md');
+  for (const text of ['@hugeicons/react 1.1.10', '@hugeicons/core-free-icons 4.3.5', 'Copyright (c) 2025 Hugeicons', 'Permission is hereby granted']) assert.ok(notices.includes(text));
   assert.ok(Object.keys(map.icons).length > 80);
   const components = read('src/icons.tsx');
   assert.doesNotMatch(components, /import \*.*core-free-icons/);
@@ -96,4 +98,31 @@ test('all executable shell icons pass through the semantic Free map and both hos
     const pkg = JSON.parse(readFileSync(new URL(`../metamodern-interface-studio/assets/studio-hosts/${host}/package.json`, import.meta.url)));
     assert.ok(pkg.dependencies['@hugeicons/react']); assert.ok(pkg.dependencies['@hugeicons/core-free-icons']); assert.equal(pkg.dependencies['lucide-react'], undefined);
   }
+});
+
+test('only complete multi-choice live Design enums become appearance comparison axes', () => {
+  const adapter = { axes: { themes: [{ id: 'light' }, { id: 'dark' }, { id: 'contrast', contrastOf: 'dark' }] }, design: { parameters: [
+    { id: 'iconStyle', label: 'Icon style', kind: 'enum', default: 'free', defaultsByTheme: { dark: 'test-only' }, choices: [{ id: 'free', label: 'Free' }, { id: 'test-only', label: 'Synthetic' }], apply: { input: 'glyphStyle', live: true } },
+    { id: 'single', label: 'Single', kind: 'enum', default: 'free', choices: [{ id: 'free' }], apply: { input: 'single', live: true } },
+    { id: 'ordinary', kind: 'enum', choices: [{ id: 'a' }, { id: 'b' }], apply: { input: 'ordinary' } },
+  ] } };
+  const [axis] = appearance.comparableAppearances(adapter, 'light');
+  assert.equal(axis.id, 'appearance:iconStyle'); assert.equal(axis.input, 'glyphStyle');
+  assert.equal(appearance.comparableAppearances(adapter).length, 1, 'one Free style never makes a fake axis');
+  assert.equal(appearance.appearanceDefault(adapter, axis, 'contrast'), 'test-only');
+  const scoped = { ...adapter, design: { parameters: [{ ...adapter.design.parameters[0], themes: ['dark'] }] } };
+  assert.deepEqual(appearance.appearanceOverrides(scoped, { glyphStyle: 'test-only' }, 'dark').inputs, { glyphStyle: 'test-only' });
+  assert.deepEqual(appearance.appearanceOverrides(scoped, { glyphStyle: 'test-only' }, 'light').invalid, ['glyphStyle']);
+  const override = appearance.appearanceOverrides(adapter, { glyphStyle: 'test-only', ordinary: 'b', arbitrary: {} }, 'light');
+  assert.deepEqual(override.inputs, { glyphStyle: 'test-only' }); assert.deepEqual(override.invalid, ['ordinary', 'arbitrary']);
+  assert.deepEqual(appearance.appearanceOverrides(adapter, { glyphStyle: 'unavailable' }, 'light').inputs, { glyphStyle: 'free' });
+  const saved = { axis: axis.id, values: ['free', 'test-only'] };
+  const restored = appearance.readAppearanceComparison(adapter, saved.axis, JSON.stringify(saved.values), 'light');
+  assert.deepEqual(restored.comparison.values, saved.values); assert.equal(restored.notice, undefined);
+  const duplicate = appearance.readAppearanceComparison(adapter, axis.id, '["test-only","test-only"]', 'light');
+  assert.deepEqual(duplicate.comparison.values, ['test-only', 'test-only']);
+  const stale = appearance.readAppearanceComparison(adapter, axis.id, '["gone","test-only"]', 'light');
+  assert.deepEqual(stale.comparison.values, ['free', 'test-only']); assert.match(stale.notice, /restored/);
+  for (const text of ['{}', '["free"]', '["free",{}]', '["free",2]', 'broken']) assert.equal(appearance.readAppearanceComparison(adapter, axis.id, text, 'light').comparison, undefined);
+  assert.equal(appearance.readAppearanceComparison(adapter, 'appearance:single', '["free","free"]').comparison, undefined);
 });

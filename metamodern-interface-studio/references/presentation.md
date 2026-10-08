@@ -51,3 +51,5 @@ Manual advance and back work without autoplay. Resume after an ordinary pause mu
 ## Prepare and preserve
 
 Adapt collections, order, narration, comparisons, and emphasis to the requested audience using supported evidence and authorized fixture material. Keep presenter edits in the manual ownership layer so Update can report drift without overwriting them. Retain unresolved/stale steps and competing edits for deliberate reconciliation. Preparing a persuasive presentation does not change design approval, implementation status, publication, or user acceptance.
+
+For independent Design-only appearance comparisons, use the namespaced `appearance:<parameter-id>` axis and existing ordered `Comparison.values` tuple. Appearance is never saved as a component property. Authored steps and presenter overlay patches retain appearance in optional `Step.design`; import/export and effective-theme checks preserve its meaning. See [the exact contract](frame-protocol.md#appearance-comparisons-and-presentation). One installed style creates no fake comparison control, and share receivers require a capable shell.

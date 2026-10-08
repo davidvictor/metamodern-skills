@@ -94,3 +94,16 @@ test('Next live saved-file bootstrap resolves new scenario/layout IDs before com
   assert.deepEqual(host.directions, live.directions); assert.deepEqual(host.scenarios, live.scenarios); assert.deepEqual(host.layouts, live.layouts); assert.equal(calls.length, 3);
   host.canSave = false; await initializeHost(); assert.equal(calls.length, 3, 'review builds never fetch a development service');
 });
+
+test('live saved-layout read restores only the untouched initial requested selection', async t => {
+  const dir = mkdtempSync(join(tmpdir(), 'studio-layout-recovery-')); t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const source = readFileSync(new URL('../metamodern-interface-studio/assets/studio-shell/src/studio/layouts.ts', import.meta.url), 'utf8');
+  const file = join(dir, 'layouts.mjs'); writeFileSync(file, stripTypeScriptTypes(source, { mode: 'strip' }));
+  const { linkedLayoutRecovery } = await import(pathToFileURL(file).href);
+  const initial = { layout: 'default', frames: [] }, saved = { id: 'saved-layout', name: 'Saved', frames: [] };
+  assert.equal(linkedLayoutRecovery('saved-layout', initial, initial, [saved]).layout, saved);
+  assert.deepEqual(linkedLayoutRecovery('saved-layout', initial, { ...initial, layout: 'user-chosen' }, [saved]), { layout: undefined, missing: false });
+  assert.deepEqual(linkedLayoutRecovery('saved-layout', initial, { ...initial, frames: ['edited'] }, [saved]), { layout: undefined, missing: false });
+  assert.deepEqual(linkedLayoutRecovery('deleted-layout', initial, initial, [saved]), { layout: undefined, missing: true });
+  assert.deepEqual(linkedLayoutRecovery(null, initial, initial, [saved]), { layout: undefined, missing: false });
+});

@@ -256,3 +256,5 @@ These come from stress cases observed in real Studios and projected for larger p
 All shell icons use `src/icons.tsx`, with semantic names mapped in `src/icon-map.json` to named Hugeicons Free exports. Slots use `IconComponent` and `IconProps`, never a provider's component type. The two hosts declare `@hugeicons/react` and `@hugeicons/core-free-icons`; no Pro key is needed. Product icons remain product owned. Do not import an entire provider registry or reintroduce executable Lucide imports when extending shell UI.
 
 For an explicitly declared live appearance input, read [frame protocol](frame-protocol.md#declared-live-appearance-0190). A frame with only `live-values` still remounts for appearance. Refresh copied clients before claiming state preservation.
+
+Compiled Vite/Next hosts redistribute the installed Free icon/renderer MIT notices through `public/THIRD_PARTY_NOTICES.md`. Keep this asset with the output; products replacing the public directory must carry the exact notices into their own compiled/export artifacts. npm dependencies retain their original LICENSE.md files. No Pro assets or Pro license is bundled.

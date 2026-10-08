@@ -286,7 +286,7 @@ test('saved files carry a revision: a stale save gets 409 with the current file 
   assert.match(read('src/components/studio/responsive.tsx'), /"x-studio-expected-revision": revision/);
   assert.match(read('src/components/studio/properties.tsx'), /const revision = read\.headers\.get\("x-studio-revision"\)[\s\S]*"x-studio-expected-revision": revision/);
   const store = read('src/store.tsx');
-  assert.match(store, /set\(\{ saved: \(data as LayoutsFile\)\.layouts, layoutsRevision, layoutsLoad: "ready" \}\)/, 'the page keeps the revision of the layouts it loaded');
+  assert.match(store, /return \{ saved: layouts, layoutsRevision, layoutsLoad: "ready"/, 'the page keeps the revision of the layouts it loaded');
   assert.match(store, /x-studio-unreadable"\) === "1" \|\| validateLayouts\(data\)\.length\) return set\(\{ layoutsRevision, layoutsLoad: "unreadable" \}\)/, 'an unreadable layouts.json is never taken as an empty list to save over');
   assert.match(store, /layoutsLoad: "loading",/, 'the page starts without a revision and says so');
   const responsive = read('src/components/studio/responsive.tsx');
