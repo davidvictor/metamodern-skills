@@ -42,7 +42,7 @@ export function DesignEditorProvider({ children }: { children: React.ReactNode }
     return () => { active = false; lifecycle?.dispose() }
   }, [declaration])
   // A named-direction link must hydrate before the shared store can read/rewrite its URL.
-  if (adapter.design?.directions && !value.controller) return <div role={value.reason ? "alert" : "status"} className="p-4 text-sm">{value.reason ?? "Loading saved direction and recovery…"}</div>
+  if (adapter.design?.directions && !value.controller) return <div role={value.reason ? "alert" : "status"} className="min-w-0 max-w-full p-4 text-sm [overflow-wrap:anywhere]">{value.reason ?? "Loading saved direction and recovery…"}</div>
   return declaration ? <Context.Provider value={value}>{children}</Context.Provider> : children
 }
 export const useOptionalDesignEditor = () => React.useContext(Context)

@@ -1,0 +1,9 @@
+{
+  "name": "@base-ui/react",
+  "version": "1.8.0",
+  "documentation": "https://base-ui.com/react/components/popover#root",
+  "popupSourceHash": "1faac135ad4b6ca797a65835e7939afd83bf851cb6679a00e42362d5c494884f",
+  "closeSourceHash": "28c44208735d3ed099cf7e58e691d13c21b3ee0097956525afa171a57b3fb73b",
+  "predicate": "modal !== false && hasClosePart",
+  "mechanism": "Real Close part registration enables the vendor focus manager. No application Tab handler or hidden close control was introduced."
+}

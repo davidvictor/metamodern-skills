@@ -1,0 +1,482 @@
+[
+  {
+    "path": "README.md",
+    "sha256": "1af3c953404e47832cc1c11daf07308a17fad4c6e6f02b1c7292cbdf3527927b"
+  },
+  {
+    "path": "capture.mjs",
+    "sha256": "9e915edd7c8507dc6cffc51c8117602210948070446090c1d87d08c934562db2"
+  },
+  {
+    "path": "checks/final-vite-build.txt",
+    "sha256": "ad69e0aed9264ded807e643f60dbaab1739b655469972566b7ad2bf0a7422dd0"
+  },
+  {
+    "path": "checks/final-vite-lint.txt",
+    "sha256": "9452b8eea26c9160031e2491bde06b99d1f63a244071f863181d662a98181567"
+  },
+  {
+    "path": "checks/final-vite-type.txt",
+    "sha256": "829fdfe7a634fcb76b48f6856512f7579ffe6dc521df857e9f5eac4f864f55d8"
+  },
+  {
+    "path": "checks/next-build.txt",
+    "sha256": "545dbf9853a5cd3217c794db20ff077353d52a4aea6a9aeae9b03396166176f7"
+  },
+  {
+    "path": "checks/next-lineage.json",
+    "sha256": "f2df06c4e2cd1df41f985bbe8e497fad32009ce175beddbe918782b5e59880a0"
+  },
+  {
+    "path": "checks/next-lint.txt",
+    "sha256": "cf5282606d2dbaee21946261427e86976f921401530b825b8f95bbf3b26d8a1c"
+  },
+  {
+    "path": "checks/next-receipt.json",
+    "sha256": "6995e5bc71dfe48c38cec1b3a26182677430b7579807902b2677428b789e1ea4"
+  },
+  {
+    "path": "checks/next-type.txt",
+    "sha256": "a723326fbc361b3431356c7e8f2de10bce6e13fd07d0eeae1d510b9b9a011773"
+  },
+  {
+    "path": "checks/node22-test.txt",
+    "sha256": "5b83834def5d0fb1f7fdeec39f245a945db711e1ff937e7da2fb6c5688defcd2"
+  },
+  {
+    "path": "checks/node22-validate.txt",
+    "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e"
+  },
+  {
+    "path": "checks/node24-test.txt",
+    "sha256": "4c76f4975399482e2a3c5d049e9b34abb06beea4a1aad58b7f9f3e695ab2bd88"
+  },
+  {
+    "path": "checks/node24-validate.txt",
+    "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e"
+  },
+  {
+    "path": "checks.json",
+    "sha256": "5ad096b5b55b7a7ef52eaac9522502fcb17b4c3c43083983663282d8b8047999"
+  },
+  {
+    "path": "comparison.json",
+    "sha256": "c5c41716c593d36c540625c79287af98e3c011ef1e1cd05c1edb7634dbaacdcc"
+  },
+  {
+    "path": "diagnostics/green-resources.json",
+    "sha256": "2151c27645700ddc7598b224fb383216bdaa309dbc7c26e676c059d8ac4adee0"
+  },
+  {
+    "path": "diagnostics/green.json",
+    "sha256": "bfd879e336a7f58c92015e029c3c3383ddb0b0e366282a113a0043c4ac389a4c"
+  },
+  {
+    "path": "diagnostics/message.txt",
+    "sha256": "398d87b4d585e05e616ffc3391789432f89a6c0e2917eda5ba777e0f04f9d810"
+  },
+  {
+    "path": "diagnostics/reasons-resources.json",
+    "sha256": "4c0057e762203c9e1207480210de0b1aa89787307d16c2385cb826b3876a5316"
+  },
+  {
+    "path": "diagnostics/reasons.json",
+    "sha256": "ea32ced6b6535b8c9c64c14da724d662a951febdc2d0450570d2ce90107302dc"
+  },
+  {
+    "path": "diagnostics/reasons.mjs",
+    "sha256": "5cae249db380e38e86b80f696afeb255bd0de2741827950e34692472ba74d7e8"
+  },
+  {
+    "path": "diagnostics/red.json",
+    "sha256": "ec224dcf8e86987289938c0ae342a45e1b792b1fe727b77200f6676160493aae"
+  },
+  {
+    "path": "diagnostics/verify.mjs",
+    "sha256": "d16857611b9feadae77874429dd0dfdd929630fcea127ab32ae70429a5899d53"
+  },
+  {
+    "path": "focus/green-resources.json",
+    "sha256": "27303494fca874fc176cb41f8ad16556b7b6bc820fabcb931e067b8baf882e14"
+  },
+  {
+    "path": "focus/green.json",
+    "sha256": "1685e491c6f9d633c253caaf1dd60235c10f30f70b18dc9a23e822c2d29bab3a"
+  },
+  {
+    "path": "focus/modes-resources.json",
+    "sha256": "934094261e1918aef10e955fc5b7c908b911cb3fcc69597f99789b956ab95f79"
+  },
+  {
+    "path": "focus/modes.json",
+    "sha256": "c2ae05dbfc22b76ac8115b38a1dc5114d3c83200b06c842ef4caeef9120f7965"
+  },
+  {
+    "path": "focus/red.json",
+    "sha256": "7ee707f63e656efae3f2f0bd06185d3a7254289e6a1cdbd52a24bfa44cbb2e45"
+  },
+  {
+    "path": "modes.mjs",
+    "sha256": "8293210be07a12cf59831c7654554ff8e38e0d0ad10529d3df677fb3bff901ad"
+  },
+  {
+    "path": "screenshots/diagnostic-chromium-next-initial-failure.png",
+    "sha256": "891564614938cfd2ab05e8980290abdaef02cae0a96f33b2fd6b57ba9a6ad91d"
+  },
+  {
+    "path": "screenshots/diagnostic-chromium-next-loader-failure.png",
+    "sha256": "91d1b67d6f1d189cec5147c910e32d327e4d344013675fd3a87957b3db07c8f2"
+  },
+  {
+    "path": "screenshots/diagnostic-chromium-next-selection.png",
+    "sha256": "5605d0e791f3f8da3e71e448faf2de08f44bf37320b1cd94f7aacc18469e0bec"
+  },
+  {
+    "path": "screenshots/diagnostic-chromium-vite-initial-failure.png",
+    "sha256": "7136ad253e3f997302e1dd323834e46db9e8bcae1db2b7019c4c71420628d898"
+  },
+  {
+    "path": "screenshots/diagnostic-chromium-vite-loader-failure.png",
+    "sha256": "91d1b67d6f1d189cec5147c910e32d327e4d344013675fd3a87957b3db07c8f2"
+  },
+  {
+    "path": "screenshots/diagnostic-chromium-vite-selection.png",
+    "sha256": "a521bee9a4a9bd2e32907b742154ca47ad8fba1d9773df6ae02fb7ba5af3a980"
+  },
+  {
+    "path": "screenshots/diagnostic-green-chromium-next-1440.png",
+    "sha256": "bb94d98e1bb5d00f8d39557585fbdbf23a2ecbf78af523f257c9e7174747a1d6"
+  },
+  {
+    "path": "screenshots/diagnostic-green-chromium-next-390.png",
+    "sha256": "27f6d959bcf1ca4503e37bbd68ce000506a790d41ebd27e2bf73e160921e8ba1"
+  },
+  {
+    "path": "screenshots/diagnostic-green-chromium-next-768.png",
+    "sha256": "cad29ef354783f3ec7de9e18ef25331d60a0295988e0d53a35233665a872f2c0"
+  },
+  {
+    "path": "screenshots/diagnostic-green-chromium-vite-1440.png",
+    "sha256": "4026429cda57ecf755bd56947e341924d41014cd3e2b45ce5d0261dd592a8bd4"
+  },
+  {
+    "path": "screenshots/diagnostic-green-chromium-vite-390.png",
+    "sha256": "27f6d959bcf1ca4503e37bbd68ce000506a790d41ebd27e2bf73e160921e8ba1"
+  },
+  {
+    "path": "screenshots/diagnostic-green-chromium-vite-768.png",
+    "sha256": "6716bbc8f95d269be841921c30de34377cc9d4b7242efe1b0dffccb19dab2eaf"
+  },
+  {
+    "path": "screenshots/diagnostic-green-webkit-next-1440.png",
+    "sha256": "4c9dde3247165260588a44821184440493806a8795e2d0381032d812f1451b1c"
+  },
+  {
+    "path": "screenshots/diagnostic-green-webkit-next-390.png",
+    "sha256": "d5c07a479278930ce2aafcd7f1bc57b84c87802a10e5994f99331f70c1ebc0d1"
+  },
+  {
+    "path": "screenshots/diagnostic-green-webkit-next-768.png",
+    "sha256": "63a89fb174568af01ed51819c77987a538049dc4d421573cb6ada8c6fa8048cf"
+  },
+  {
+    "path": "screenshots/diagnostic-green-webkit-vite-1440.png",
+    "sha256": "deca33bb4d71dccf80b84a9c1b6d78d83a74e8f3a63e97dbbb3696a0afe07422"
+  },
+  {
+    "path": "screenshots/diagnostic-green-webkit-vite-390.png",
+    "sha256": "775d9d97bccd64a4ad884a85c4ad94072315926c46065ad836c7c700717077cf"
+  },
+  {
+    "path": "screenshots/diagnostic-green-webkit-vite-768.png",
+    "sha256": "47fa15bc2d1c004e85a5c729e070b2dbe6f4afa1483160f4cbc8748ffff5e665"
+  },
+  {
+    "path": "screenshots/diagnostic-red-chromium-next-1440.png",
+    "sha256": "44f54aae01d81eb6de5dd8e7c3fdd7a8b6d1c9ec00e5f31b18d07c1968d98186"
+  },
+  {
+    "path": "screenshots/diagnostic-red-chromium-next-390.png",
+    "sha256": "fd3510a84b2ed1cd9605010fb80c4f155b231109a32acadc74fd2924db5332e6"
+  },
+  {
+    "path": "screenshots/diagnostic-red-chromium-next-768.png",
+    "sha256": "300d5dcbf20a2eef9ef4989cfeabb1a289efa57b637723a531cdf1ec90eb8156"
+  },
+  {
+    "path": "screenshots/diagnostic-red-chromium-vite-1440.png",
+    "sha256": "562ca65a77bd835fafb8d688313802a05c202e3a28388c2bd0d087d6ef3b906a"
+  },
+  {
+    "path": "screenshots/diagnostic-red-chromium-vite-390.png",
+    "sha256": "fd3510a84b2ed1cd9605010fb80c4f155b231109a32acadc74fd2924db5332e6"
+  },
+  {
+    "path": "screenshots/diagnostic-red-chromium-vite-768.png",
+    "sha256": "19e2e56eafb29d3aad34b44560771b5e11a36f0ca72e71e9b733de871ee7bb95"
+  },
+  {
+    "path": "screenshots/diagnostic-red-webkit-next-1440.png",
+    "sha256": "24f9b6c4e8e80d403d3ef27e57fb7a81951fc4a94358190a0060a80a29e92335"
+  },
+  {
+    "path": "screenshots/diagnostic-red-webkit-next-390.png",
+    "sha256": "1f822e9cb701cd1b4a6e2c8217edfd3ecc21ff557a8d8b075c598026b5e094cd"
+  },
+  {
+    "path": "screenshots/diagnostic-red-webkit-next-768.png",
+    "sha256": "f8460acacb9331300b9b3bf1a91aabe9ca319eefeddf25d819aa0c7638fd5363"
+  },
+  {
+    "path": "screenshots/diagnostic-red-webkit-vite-1440.png",
+    "sha256": "83bf49237c4dfaf683305f84f7518df2b75cc26e4215307083d67ad87a13da76"
+  },
+  {
+    "path": "screenshots/diagnostic-red-webkit-vite-390.png",
+    "sha256": "d25673db92e5b6f240b1eb95b0fb584f0c5f319cf0e175a6ac91e2a1433460d6"
+  },
+  {
+    "path": "screenshots/diagnostic-red-webkit-vite-768.png",
+    "sha256": "0d839671fde98cca0b729d59c3eb12e0e7ac9c3790845d3334d99d8f8a5fa44f"
+  },
+  {
+    "path": "screenshots/diagnostic-webkit-next-initial-failure.png",
+    "sha256": "a210ba18aa94eb22c9f8fefe16b7a46dcf3781df9f17a17aa98ad354dfb30e98"
+  },
+  {
+    "path": "screenshots/diagnostic-webkit-next-loader-failure.png",
+    "sha256": "5ee18feebcdc019ab81e1dc80bd87110e7b2aec4a0413a0f09d7fb8163424160"
+  },
+  {
+    "path": "screenshots/diagnostic-webkit-next-selection.png",
+    "sha256": "37133896188e28b70f980d579cc5326c900b60b99c43d626b71218c2d19f718f"
+  },
+  {
+    "path": "screenshots/diagnostic-webkit-vite-initial-failure.png",
+    "sha256": "a25376109d4f2a947a8bfa2371d05b55b2204ec0909a4236e85acc86d09b2d73"
+  },
+  {
+    "path": "screenshots/diagnostic-webkit-vite-loader-failure.png",
+    "sha256": "5ee18feebcdc019ab81e1dc80bd87110e7b2aec4a0413a0f09d7fb8163424160"
+  },
+  {
+    "path": "screenshots/diagnostic-webkit-vite-selection.png",
+    "sha256": "221e00c66b8275995b6137fb1a567ef31af46d0ed956ff588ef0d8febd31940e"
+  },
+  {
+    "path": "screenshots/focus-chromium-next-1440-controlled-choice.png",
+    "sha256": "b90fbd8e182302dc2664ce848f48778a05f09e0832baa14117319cb72fe9a348"
+  },
+  {
+    "path": "screenshots/focus-chromium-next-1440-uncontrolled.png",
+    "sha256": "0a9adc4d90c3f77981f08fc192317da3ecf023f37b442ab76feff4b2b782c34e"
+  },
+  {
+    "path": "screenshots/focus-chromium-next-390-controlled-choice.png",
+    "sha256": "7c3a58a9432800a60799e7a43ad78b722f4827f0c29bd50b932b0bd096b747bf"
+  },
+  {
+    "path": "screenshots/focus-chromium-next-390-uncontrolled.png",
+    "sha256": "7c3a58a9432800a60799e7a43ad78b722f4827f0c29bd50b932b0bd096b747bf"
+  },
+  {
+    "path": "screenshots/focus-chromium-vite-1440-controlled-choice.png",
+    "sha256": "43f13321021d2f17090439be35ed8661d62ef164845146cb8d85d9c1aa809c72"
+  },
+  {
+    "path": "screenshots/focus-chromium-vite-1440-uncontrolled.png",
+    "sha256": "43f13321021d2f17090439be35ed8661d62ef164845146cb8d85d9c1aa809c72"
+  },
+  {
+    "path": "screenshots/focus-chromium-vite-390-controlled-choice.png",
+    "sha256": "7c3a58a9432800a60799e7a43ad78b722f4827f0c29bd50b932b0bd096b747bf"
+  },
+  {
+    "path": "screenshots/focus-chromium-vite-390-uncontrolled.png",
+    "sha256": "7c3a58a9432800a60799e7a43ad78b722f4827f0c29bd50b932b0bd096b747bf"
+  },
+  {
+    "path": "screenshots/focus-green-chromium-next-1440-directions.png",
+    "sha256": "311bf6ea93cf83a0c15ac14702d6359fad00312d9d39fd08b366efe034fdc7f9"
+  },
+  {
+    "path": "screenshots/focus-green-chromium-next-1440-palette.png",
+    "sha256": "bc34594d5e583e2ecfbf862b2e6e6e3e0b115b07eee282fe7302acaa37d5061e"
+  },
+  {
+    "path": "screenshots/focus-green-chromium-next-390-directions.png",
+    "sha256": "bbfea39eaa6d9322a6b69d19cff14852bc8e3e2bd4646747f2e6fb5259bf46ad"
+  },
+  {
+    "path": "screenshots/focus-green-chromium-next-390-palette.png",
+    "sha256": "7c3a58a9432800a60799e7a43ad78b722f4827f0c29bd50b932b0bd096b747bf"
+  },
+  {
+    "path": "screenshots/focus-green-chromium-vite-1440-directions.png",
+    "sha256": "b7b6cc8ecfcde9459da0b7db712c7b5f3a5beeccdfc2166ef6fc43a730633747"
+  },
+  {
+    "path": "screenshots/focus-green-chromium-vite-1440-palette.png",
+    "sha256": "459cb9a9e906f0989206318d7f11dcaae05473d06e094e7b3a7cde18562d04ca"
+  },
+  {
+    "path": "screenshots/focus-green-chromium-vite-390-directions.png",
+    "sha256": "a3260c1abfc12875dc0c6021f1d1618875917dbfe1f46cdd17e24916e9da90fa"
+  },
+  {
+    "path": "screenshots/focus-green-chromium-vite-390-palette.png",
+    "sha256": "7c3a58a9432800a60799e7a43ad78b722f4827f0c29bd50b932b0bd096b747bf"
+  },
+  {
+    "path": "screenshots/focus-green-webkit-next-1440-directions.png",
+    "sha256": "0f1293f1145110069cd4e07abc05634a621cf5e2f1753615ed0d5b9e5a5926a7"
+  },
+  {
+    "path": "screenshots/focus-green-webkit-next-1440-palette.png",
+    "sha256": "e6ae88ff8288370dfec778ed4cde30ec0bfb67cc716e7380fd4afa81ac0a1240"
+  },
+  {
+    "path": "screenshots/focus-green-webkit-next-390-directions.png",
+    "sha256": "dc091152d2c72cd5c4db390632712ec6daf3c241255642d341ec714c9c374cc2"
+  },
+  {
+    "path": "screenshots/focus-green-webkit-next-390-palette.png",
+    "sha256": "51d14627ffcd13e8c8a1465a894f430cca98791115aa408f3664b3bdbb7f87dc"
+  },
+  {
+    "path": "screenshots/focus-green-webkit-vite-1440-directions.png",
+    "sha256": "0f1293f1145110069cd4e07abc05634a621cf5e2f1753615ed0d5b9e5a5926a7"
+  },
+  {
+    "path": "screenshots/focus-green-webkit-vite-1440-palette.png",
+    "sha256": "f5925d0b67c0bbf393edde3bce8a80af11a050aa4de54bf9c96fb5ea9668980e"
+  },
+  {
+    "path": "screenshots/focus-green-webkit-vite-390-directions.png",
+    "sha256": "140fb9263310579e53338bff3bc07267b3e99f23415dd19ddb46ec6ac3133c57"
+  },
+  {
+    "path": "screenshots/focus-green-webkit-vite-390-palette.png",
+    "sha256": "51d14627ffcd13e8c8a1465a894f430cca98791115aa408f3664b3bdbb7f87dc"
+  },
+  {
+    "path": "screenshots/focus-red-chromium-next-1440-directions.png",
+    "sha256": "b7b6cc8ecfcde9459da0b7db712c7b5f3a5beeccdfc2166ef6fc43a730633747"
+  },
+  {
+    "path": "screenshots/focus-red-chromium-next-1440-palette.png",
+    "sha256": "459cb9a9e906f0989206318d7f11dcaae05473d06e094e7b3a7cde18562d04ca"
+  },
+  {
+    "path": "screenshots/focus-red-chromium-next-390-directions.png",
+    "sha256": "f24afe2d570c61cb020b97cc01cbc97c76518a1653d852608f8ab059d03be2c8"
+  },
+  {
+    "path": "screenshots/focus-red-chromium-next-390-palette.png",
+    "sha256": "7c3a58a9432800a60799e7a43ad78b722f4827f0c29bd50b932b0bd096b747bf"
+  },
+  {
+    "path": "screenshots/focus-red-chromium-vite-1440-directions.png",
+    "sha256": "b7b6cc8ecfcde9459da0b7db712c7b5f3a5beeccdfc2166ef6fc43a730633747"
+  },
+  {
+    "path": "screenshots/focus-red-chromium-vite-1440-palette.png",
+    "sha256": "459cb9a9e906f0989206318d7f11dcaae05473d06e094e7b3a7cde18562d04ca"
+  },
+  {
+    "path": "screenshots/focus-red-chromium-vite-390-directions.png",
+    "sha256": "bbfea39eaa6d9322a6b69d19cff14852bc8e3e2bd4646747f2e6fb5259bf46ad"
+  },
+  {
+    "path": "screenshots/focus-red-chromium-vite-390-palette.png",
+    "sha256": "7c3a58a9432800a60799e7a43ad78b722f4827f0c29bd50b932b0bd096b747bf"
+  },
+  {
+    "path": "screenshots/focus-red-webkit-next-1440-directions.png",
+    "sha256": "0f1293f1145110069cd4e07abc05634a621cf5e2f1753615ed0d5b9e5a5926a7"
+  },
+  {
+    "path": "screenshots/focus-red-webkit-next-1440-palette.png",
+    "sha256": "b32504a50d44c40e8a3a836890861d0493d57d6ec0778f7be27ada013a487389"
+  },
+  {
+    "path": "screenshots/focus-red-webkit-next-390-directions.png",
+    "sha256": "ba6ec8a4f876ca2b2999a536c9a161f5ab7b15b8bedc91307cd553be9e8a63dc"
+  },
+  {
+    "path": "screenshots/focus-red-webkit-next-390-palette.png",
+    "sha256": "51d14627ffcd13e8c8a1465a894f430cca98791115aa408f3664b3bdbb7f87dc"
+  },
+  {
+    "path": "screenshots/focus-red-webkit-vite-1440-directions.png",
+    "sha256": "0f1293f1145110069cd4e07abc05634a621cf5e2f1753615ed0d5b9e5a5926a7"
+  },
+  {
+    "path": "screenshots/focus-red-webkit-vite-1440-palette.png",
+    "sha256": "a471318cbed5207a4e3e745e36cfdf050091f28fdd75b705d53d4b6bf5d601d4"
+  },
+  {
+    "path": "screenshots/focus-red-webkit-vite-390-directions.png",
+    "sha256": "e7f1ddca9c2d4ab9fa452456bb66bbb06a6d94ff12e55429e972d3e3cf47e1b5"
+  },
+  {
+    "path": "screenshots/focus-red-webkit-vite-390-palette.png",
+    "sha256": "51d14627ffcd13e8c8a1465a894f430cca98791115aa408f3664b3bdbb7f87dc"
+  },
+  {
+    "path": "screenshots/focus-webkit-next-1440-controlled-choice.png",
+    "sha256": "2f0521b227874dd05eebef286af05968abd4f40fc0479d7b64d7b31fee080c17"
+  },
+  {
+    "path": "screenshots/focus-webkit-next-1440-uncontrolled.png",
+    "sha256": "0223a389187cf0a6649c88056c5b5e91683a435eab2e5f92f984f2531449acc8"
+  },
+  {
+    "path": "screenshots/focus-webkit-next-390-controlled-choice.png",
+    "sha256": "51d14627ffcd13e8c8a1465a894f430cca98791115aa408f3664b3bdbb7f87dc"
+  },
+  {
+    "path": "screenshots/focus-webkit-next-390-uncontrolled.png",
+    "sha256": "51d14627ffcd13e8c8a1465a894f430cca98791115aa408f3664b3bdbb7f87dc"
+  },
+  {
+    "path": "screenshots/focus-webkit-vite-1440-controlled-choice.png",
+    "sha256": "ccd97d0deb3248908db5865d5ab287110d460f8099eee20746973e4ed998fb1b"
+  },
+  {
+    "path": "screenshots/focus-webkit-vite-1440-uncontrolled.png",
+    "sha256": "37c4f97e561e34c10c998d7ed78608bb684f2162294407f90d7d8bbdabf8e9cb"
+  },
+  {
+    "path": "screenshots/focus-webkit-vite-390-controlled-choice.png",
+    "sha256": "51d14627ffcd13e8c8a1465a894f430cca98791115aa408f3664b3bdbb7f87dc"
+  },
+  {
+    "path": "screenshots/focus-webkit-vite-390-uncontrolled.png",
+    "sha256": "51d14627ffcd13e8c8a1465a894f430cca98791115aa408f3664b3bdbb7f87dc"
+  },
+  {
+    "path": "source-freeze.json",
+    "sha256": "5209a279925a069904fd711b79cd090cc3e685b5e5ef72ff37fcfd9377fb48f8"
+  },
+  {
+    "path": "source.json",
+    "sha256": "ce845533ca4a3f04b12d2819106d789cc1c3c2197fe4f2b4df1d77ba870c1c66"
+  },
+  {
+    "path": "update-preservation.json",
+    "sha256": "b0f22934b955fb57bbf323129a826952d5634a8de64f5cafc01ad8541fe04f62"
+  },
+  {
+    "path": "vendor.json",
+    "sha256": "cee44f0bd12bb8f7283742e9f87ec4610151a4a16de0952de10fdeb15bce3a5e"
+  },
+  {
+    "path": "verified-fetches.json",
+    "sha256": "062bdac06bf66a70b5826c9def63eb2d6e3fae1c6c7e6c19e40ea848a49020a8"
+  },
+  {
+    "path": "verify.mjs",
+    "sha256": "d7f27bb642b6784a4e2546d668d842b6557dec4e715b861876909683a8ea4fe6"
+  }
+]

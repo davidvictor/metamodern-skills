@@ -1,3 +1,9 @@
+## 0.18.3
+
+Long structured design diagnostics and selection/initialization reasons now wrap inside their existing status/panel bounds. Last-valid output, save eligibility and ordinary short status geometry are unchanged.
+
+Modal EditorPopover panels must render their existing visible close control with the new @studio/kit EditorPopoverClose component. It registers the actual Base UI Close part required for Tab containment while keeping Button styling, position and controlled open/onOpenChange behavior. Replace a plain Close Button in protected product panels after updating; a pure setOpen(false) click handler is redundant. Keep controlled choice handlers that close the picker. Uncontrolled popovers close through the same component. No hidden close button or manual keyboard trap is added; ordinary legacy Popover defaults are unchanged. Managed updates preserve product panels, so that small product-owned replacement is explicit.
+
 ## 0.18.2
 
 Long saved and imported direction names now stay within the Directions bar and picker. Names truncate with their full accessible text/title retained; revision/status and actions remain visible, and notices wrap inside the existing scrolling popup. This changes only the opted-in direction manager, with no global Field, legacy menu or preview styling changes. No product migration is needed.

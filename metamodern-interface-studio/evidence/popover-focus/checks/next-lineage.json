@@ -1,0 +1,56 @@
+{
+  "schema": "shared-cr19-next-check-lineage/1",
+  "consumer": "<task-owned>/mm-next-type-transition",
+  "adapter": "editor",
+  "gitBase": "e3e026fd72c9559ed9218e8bfb352b25334de473",
+  "runtimeFiles": [
+    {
+      "path": "example/design-ui/index.tsx",
+      "sourceHash": "sha256:4e2d10645c8071e5785d0c58279379c5c1c8778fefdf172356501f629ea2871e",
+      "consumerHash": "sha256:4e2d10645c8071e5785d0c58279379c5c1c8778fefdf172356501f629ea2871e",
+      "match": true
+    },
+    {
+      "path": "src/App.tsx",
+      "sourceHash": "sha256:0c0a43f649ecee4d5897512b0a507c3656447c07ff34973ea716b2fe532279a5",
+      "consumerHash": "sha256:0c0a43f649ecee4d5897512b0a507c3656447c07ff34973ea716b2fe532279a5",
+      "match": true
+    },
+    {
+      "path": "src/components/ui/popover.tsx",
+      "sourceHash": "sha256:c052881cfdd9ee36ea3362bab532332bec8989615b553fb87fe9b77ef138463e",
+      "consumerHash": "sha256:c052881cfdd9ee36ea3362bab532332bec8989615b553fb87fe9b77ef138463e",
+      "match": true
+    },
+    {
+      "path": "src/kit/design-controls.tsx",
+      "sourceHash": "sha256:edd85a01706d8a55ed50253ea508be3291e81fe4d18d55f06658ee6b41eacc10",
+      "consumerHash": "sha256:edd85a01706d8a55ed50253ea508be3291e81fe4d18d55f06658ee6b41eacc10",
+      "match": true
+    },
+    {
+      "path": "src/kit/index.ts",
+      "sourceHash": "sha256:45624b212bdd65ba29d6b6136c2308dbebc375d2e3875484c033bead87bbd5a8",
+      "consumerHash": "sha256:45624b212bdd65ba29d6b6136c2308dbebc375d2e3875484c033bead87bbd5a8",
+      "match": true
+    },
+    {
+      "path": "src/studio/design-ui/direction-manager.tsx",
+      "sourceHash": "sha256:2e23839a374208afac09029717b4d801a610c7e5053e261fc1e393bc70fc60d1",
+      "consumerHash": "sha256:2e23839a374208afac09029717b4d801a610c7e5053e261fc1e393bc70fc60d1",
+      "match": true
+    },
+    {
+      "path": "src/studio/design-ui/react.tsx",
+      "sourceHash": "sha256:b9d71a46ff0bdff88b8a16ee171bb3b0ff317be9c40ea4e6a9ecae13085896f8",
+      "consumerHash": "sha256:b9d71a46ff0bdff88b8a16ee171bb3b0ff317be9c40ea4e6a9ecae13085896f8",
+      "match": true
+    },
+    {
+      "path": "src/studio/design-ui/slots.tsx",
+      "sourceHash": "sha256:79c88335002219160f38f6203c9e02b943ba352bbcc9894cd62c1599d151e2fe",
+      "consumerHash": "sha256:79c88335002219160f38f6203c9e02b943ba352bbcc9894cd62c1599d151e2fe",
+      "match": true
+    }
+  ]
+}

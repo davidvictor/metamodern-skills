@@ -49,3 +49,21 @@ Foundation and Component receive `DesignPanelProps.review: DesignReviewContext`:
 ## Portaled select options
 
 `Field` with `kind="select"` accepts optional `itemClassName?: string`, forwarded to every portaled option alongside the kit's existing coarse-pointer target class. Ancestor classes in a product panel cannot style a portal. Use `itemClassName="max-[999px]:min-h-11 pointer-coarse:min-h-11"` when an editor's accepted controls require 44px rows on native phone/tablet widths as well as coarse pointers. Trigger styling remains separate. Omit this prop to preserve default option geometry; no legacy menu or product preview is enlarged globally.
+
+## Modal popover close controls
+
+Every `EditorPopover` must include an enabled, visible `EditorPopoverClose` from `@studio/kit` at the panel's existing Close action. A plain Button that changes controlled open state does not register the vendor Close part. [Base UI's Root contract](https://base-ui.com/react/components/popover#root) requires that part for modal focus containment. This shared component renders the same styled native Button and delegates containment/closure to Base UI; do not add a manual Tab handler or hidden substitute.
+
+`EditorPopoverCloseProps` is `Omit<React.ComponentProps<typeof Button>, "render" | "nativeButton">`: normal Button variants, size, className, children and native accessibility/event props remain available. The control stays in the same place with the same visible label. Its Root callback handles controlled closure, so remove redundant pure setOpen(false) onClick handlers. Choice handlers can continue to set controlled open false. Omit open/onOpenChange for normal uncontrolled state; the real Close action and Escape still restore opener focus. Ordinary nonmodal Popover callers keep their existing behavior.
+
+```tsx
+<EditorPopover label="Choose a registered value" open={open} onOpenChange={setOpen}
+  trigger={<Button>Choose value</Button>}>
+  {/* Product-owned choices use the existing shared primitives. */}
+  <EditorPopoverClose variant="ghost">Close picker</EditorPopoverClose>
+</EditorPopover>
+```
+
+Protected product panels are not rewritten by the updater: adopt the exported Close component after the checked shared update. Use the same component when the picker is nested in a phone sheet; the vendor owns the nested focus scopes.
+
+Structured source/compiler diagnostics and initialization/selection reasons retain their full text and wrap inside the existing editor status or panel. This presentation does not change validation, last-valid snapshots or save/export eligibility. Long paths and hash words must reduce intrinsic minimum width rather than push a sidebar or global status beyond its available bounds.

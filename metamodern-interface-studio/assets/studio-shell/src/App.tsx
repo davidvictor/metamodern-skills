@@ -100,7 +100,7 @@ function StageForView({ narrow }: { narrow?: boolean }) {
   React.useEffect(() => {
     if (unavailableSelection && (s.preview.status !== "error" || s.preview.reason !== unavailableSelection)) set({ preview: { status: "error", modified: false, canGoBack: false, reason: unavailableSelection, previous: false } })
   }, [set, unavailableSelection, s.preview.status, s.preview.reason])
-  if (lifecycle?.selectionProblem && !independentComparison) return <p role="alert" className="p-4 text-sm text-muted-foreground">{lifecycle.selectionProblem}</p>
+  if (lifecycle?.selectionProblem && !independentComparison) return <p role="alert" className="min-w-0 max-w-full p-4 text-sm text-muted-foreground [overflow-wrap:anywhere]">{lifecycle.selectionProblem}</p>
   if (editor && !independentComparison && (!direction || !Object.keys(direction.compiled).length)) return <EditorReason />
   if (editor && s.view === "present" && !Object.keys(direction?.savedCompiled ?? {}).length) return <p role="alert" className="p-4 text-sm text-muted-foreground">No validated source or confirmed saved basis is available for Present.</p>
   return (

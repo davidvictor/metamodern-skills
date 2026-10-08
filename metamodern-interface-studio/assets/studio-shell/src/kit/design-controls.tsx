@@ -3,8 +3,8 @@ import { Field as FieldRoot, FieldDescription, FieldError, FieldLabel } from "@/
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { INPUT, TARGET } from "./layout"
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button, INPUT, TARGET } from "./layout"
 
 export type NumberFieldProps = {
   label: string; resetKey?: number; invalidText?: string; inputError?: string; value: number; min: number; max: number; step: number; unit?: string; description?: string; disabled?: boolean
@@ -45,4 +45,10 @@ export function SegmentedControl({ label, value, options, onChange, disabled }: 
 }
 export function EditorPopover({ label, trigger, children, open, onOpenChange }: { label: string; trigger: React.ReactElement; children: React.ReactNode; open?: boolean; onOpenChange?: (open: boolean) => void }) {
   return <Popover modal open={open} onOpenChange={onOpenChange}><PopoverTrigger render={trigger} /><PopoverContent data-kit role="dialog" aria-label={label} className="max-h-[min(70dvh,28rem)] w-64 overflow-y-auto">{children}</PopoverContent></Popover>
+}
+
+/** A real, visible close part enables the vendor modal focus manager without changing button styling. */
+export type EditorPopoverCloseProps = Omit<React.ComponentProps<typeof Button>, "render" | "nativeButton">
+export function EditorPopoverClose(props: EditorPopoverCloseProps) {
+  return <PopoverClose render={<Button {...props} />} />
 }

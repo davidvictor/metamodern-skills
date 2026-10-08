@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Button, Field, SaveBar, EditorPopover } from "@/kit"
+import { Button, Field, SaveBar, EditorPopover, EditorPopoverClose } from "@/kit"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { latestDirections } from "../directions"
 import { useDesignDirections, useDirectionSnapshot, useDesignSnapshot } from "./react"
@@ -51,7 +51,7 @@ export function DirectionManager() {
         <Button className={NATIVE} disabled={!raw.trim() || !state.editable} onClick={() => { if (service.importText(raw)) { setRaw(""); setOpen(false) } }}>Import as draft</Button>
         {items.filter(e => e.deleted).map(({ envelope: e }) => <div key={e.id} className="flex min-w-0 items-center justify-between gap-2"><span className="min-w-0 truncate" title={`${e.label} · deleted, revisions kept`}>{e.label} · deleted, revisions kept</span><Button className={`${NATIVE} min-w-0 max-w-[50%]`} title={`Restore ${e.label}`} disabled={!canWrite} onClick={() => void service.remove(e.id, true)}><span className="truncate">Restore {e.label}</span></Button></div>)}
         {state.quarantine.map(q => <div key={q.id} className="grid gap-1"><p role="alert">{q.label}: {q.reason}</p><Button className={NATIVE} variant="outline" onClick={() => download("rejected-direction.txt", q.raw)}>Download original bytes</Button></div>)}
-        <Button className={NATIVE} onClick={() => setOpen(false)}>Close directions</Button>
+        <EditorPopoverClose className={NATIVE}>Close directions</EditorPopoverClose>
         </div>
       </EditorPopover>
       <Button className={NATIVE} size="sm" variant="ghost" disabled={!design.canExport || state.readiness !== "ready"} onClick={() => void service.pinDraft()}>Pin working draft</Button>
