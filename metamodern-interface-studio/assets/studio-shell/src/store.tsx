@@ -3,6 +3,7 @@ import { validDirectionId, validDirectionPin, validDirectionRevision } from "@/s
 import { useOptionalDesignEditor, useDesignSnapshot, useDirectionSnapshot } from "@/studio/design-ui/react"
 import type { DesignPreviewIdentity } from "@/studio/design-ui/types"
 import { host } from "@/studio-host"
+import { replaceStudioHash } from "./studio/history"
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
 import { toast } from "sonner"
@@ -543,7 +544,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       if (state.view === "compare" && state.compare.axis === "direction") state.compare.values.forEach((value, i) => q.set(`direction${String.fromCharCode(65 + i)}`, value))
     }
     // An open workspace module's link names only the module, its section and its item.
-    if (state.module) { const q = new URLSearchParams(moduleHash({ module: state.module, section: state.section, item: state.item }).slice(1)); writeDirectionIds(q); return history.replaceState(null, "", `#${q}`) }
+    if (state.module) { const q = new URLSearchParams(moduleHash({ module: state.module, section: state.section, item: state.item }).slice(1)); writeDirectionIds(q); return replaceStudioHash(`#${q}`) }
     // An open library page's link names the component, the section asked for, and the theme its previews use.
     if (state.library) {
       const q = new URLSearchParams()
@@ -551,7 +552,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       if (state.libraryAt) q.set("section", state.libraryAt)
       q.set("theme", state.theme)
       writeDirectionIds(q)
-      return history.replaceState(null, "", `#${q}`)
+      return replaceStudioHash(`#${q}`)
     }
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })
     writeDirectionIds(q)
@@ -582,7 +583,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     }
     const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme), state.theme)
     if (design) q.set("design", design)
-    history.replaceState(null, "", `#${q}`)
+    replaceStudioHash(`#${q}`)
   }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive, state.module, state.section, state.item, state.library, state.libraryAt, state.compare, direction, editor?.lifecycle, lifecycle?.selectionProblem])
   // Unsaved Responsive edits stay in this browser until saved or reverted.
   React.useEffect(() => {
