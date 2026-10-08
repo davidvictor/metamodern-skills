@@ -1,0 +1,128 @@
+{
+  "schema": "shared-cr19-checks/1",
+  "base": "e3e026fd72c9559ed9218e8bfb352b25334de473",
+  "packageVersion": "0.18.3",
+  "sourceFreezeDigest": "3929ea5bf376caa0f7f78c90cd289de5390c905b35c0116c3b02d3cc91514b3e",
+  "collection": [
+    {
+      "node": "22.22.1",
+      "commands": [
+        "npm test",
+        "npm run validate"
+      ],
+      "exitCodes": [
+        0,
+        0
+      ],
+      "tests": 234,
+      "packages": 20,
+      "logs": [
+        "checks/node22-test.txt",
+        "checks/node22-validate.txt"
+      ]
+    },
+    {
+      "node": "24.21.0",
+      "commands": [
+        "npm test",
+        "npm run validate"
+      ],
+      "exitCodes": [
+        0,
+        0
+      ],
+      "tests": 234,
+      "packages": 20,
+      "logs": [
+        "checks/node24-test.txt",
+        "checks/node24-validate.txt"
+      ]
+    }
+  ],
+  "hosts": [
+    {
+      "host": "vite",
+      "node": "26.7.0",
+      "commands": [
+        "VITE_STUDIO_ADAPTER=editor npm run typecheck",
+        "npm run lint",
+        "VITE_STUDIO_ADAPTER=editor npm run build"
+      ],
+      "exitCodes": [
+        0,
+        0,
+        0
+      ],
+      "lint": "0 errors/1 existing warning",
+      "logs": [
+        "checks/final-vite-type.txt",
+        "checks/final-vite-lint.txt",
+        "checks/final-vite-build.txt"
+      ]
+    },
+    {
+      "host": "next",
+      "node": "26.7.0",
+      "commands": [
+        "STUDIO_ADAPTER=editor npm run typecheck",
+        "npm run lint",
+        "STUDIO_ADAPTER=editor npm run build"
+      ],
+      "exitCodes": [
+        0,
+        0,
+        0
+      ],
+      "lint": "0 errors/6 existing warnings; lint contract PASS",
+      "logs": [
+        "checks/next-type.txt",
+        "checks/next-lint.txt",
+        "checks/next-build.txt"
+      ],
+      "receipt": "checks/next-receipt.json",
+      "lineage": "checks/next-lineage.json"
+    }
+  ],
+  "browser": {
+    "playwright": "1.64.0",
+    "engines": [
+      "Chromium",
+      "WebKit"
+    ],
+    "focus": {
+      "records": 20,
+      "modal": 16,
+      "legacy": 4,
+      "widths": [
+        1440,
+        390
+      ],
+      "exit": 0
+    },
+    "modes": {
+      "records": 16,
+      "widths": [
+        1440,
+        390
+      ],
+      "exit": 0
+    },
+    "diagnostics": {
+      "records": 12,
+      "widths": [
+        1440,
+        768,
+        390
+      ],
+      "exit": 0
+    },
+    "reasons": {
+      "records": 12,
+      "widths": [
+        390
+      ],
+      "exit": 0
+    }
+  },
+  "normalization": "Checked-in command outputs normalize machine paths, trailing line whitespace and blank EOF lines; raw task-owned originals retained. No source whitespace exception added."
+}

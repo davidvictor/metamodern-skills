@@ -455,7 +455,7 @@ function DesignPanel() {
   )
   return (
     <>
-      <PanelHeader title={both || tab === "adjust" ? "Design" : "Tokens"} count={!both && tab === "tokens" ? adapter.tokens?.total : undefined}>{tabs}</PanelHeader>
+      <PanelHeader title={both || tab === "adjust" ? "Design" : "Tokens"} count={!both && tab === "tokens" && !adapter.design?.editor ? adapter.tokens?.total : undefined}>{tabs}</PanelHeader>
       {tab === "tokens" ? <LazyRegionBoundary key="tokens" label="Token controls"><React.Suspense fallback={<p role="status" className="p-3 text-sm text-muted-foreground">Loading token controls</p>}><TokensPanel /></React.Suspense></LazyRegionBoundary> : <LazyRegionBoundary key="adjust" label="Adjustments"><React.Suspense fallback={<p role="status" className="p-3 text-sm text-muted-foreground">Loading adjustments</p>}><AdjustPanel /></React.Suspense></LazyRegionBoundary>}
     </>
   )

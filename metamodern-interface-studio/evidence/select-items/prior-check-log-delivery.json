@@ -1,0 +1,98 @@
+{
+  "schema": "studio-receipt-delivery-correction/1",
+  "priorFeatureCommit": "874d5077ba0204cf77947e21509901003017d40e",
+  "priorReviewedCandidateDigest": "341361929d109895bf4807ba3abd24aef109d8ea257dfda3d7c17eef02671bb1",
+  "reason": "The prior artifact ledger and local review included these exact logs, but the global *.log ignore rule omitted them from Git staging. This delivery explicitly adds their unchanged verified bytes.",
+  "runtimeChanged": false,
+  "originalArtifactLedger": "metamodern-interface-studio/evidence/directions/artifacts.json",
+  "files": [
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-complete-node22-test.log",
+      "sha256": "b054df287d46126cac565f0564120c257119d8bf5b3099d45a8966c780bd1df8"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-complete-node22-validate.log",
+      "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-complete-node24-test.log",
+      "sha256": "4fe64eb0c83d4bb09236d52471a7e67521b538d5374ed3b1b66a49592e1a8d9c"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-complete-node24-validate.log",
+      "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-next-build.log",
+      "sha256": "2c85e111a9624fe549687e2fb4515b08a3f6a7c3b343c5fcb66f903d8d6ef3fa"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-next-lint.log",
+      "sha256": "cf5282606d2dbaee21946261427e86976f921401530b825b8f95bbf3b26d8a1c"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-next-type.log",
+      "sha256": "b45c02138d60181878a0d0cf5990ccebf4c4e82ed447205f8aad06d0c9349f58"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-node22-test.log",
+      "sha256": "41606430c6fde93e07d1340a053820b81fc72e18cdc84d5012c36da363181a71"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-node22-validate.log",
+      "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-node24-test.log",
+      "sha256": "f5b26ffb287a95c0bcda8b075b75e29320dabf8c9d57a21158cde530429541df"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-node24-validate.log",
+      "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-vite-build.log",
+      "sha256": "1ad53f47bdaaa6ca1faf13b9a2c3c7afb84137a4da7300eccabdeeefd966eaa7"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-vite-lint.log",
+      "sha256": "053f964629fb3c7a0aa20278af582285fe5404c8d71e9865cb9f12824cdb4f3a"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-delivery-vite-type.log",
+      "sha256": "d3824897dd9c9b73dc59e95838eedf79994717b723209e9fdba721c2676e93c1"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-final-next-build.log",
+      "sha256": "a6c2b0edd6682ec85a20148e34977b33c61313cd7100a93a10f7d977adb49dde"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-final-next-lint.log",
+      "sha256": "cf5282606d2dbaee21946261427e86976f921401530b825b8f95bbf3b26d8a1c"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-final-next-type.log",
+      "sha256": "b45c02138d60181878a0d0cf5990ccebf4c4e82ed447205f8aad06d0c9349f58"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-final-vite-build.log",
+      "sha256": "70e73d0da64df5e74149a6eae3569d006191859f4220cabf28118f15ee1ee61c"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-final-vite-lint.log",
+      "sha256": "053f964629fb3c7a0aa20278af582285fe5404c8d71e9865cb9f12824cdb4f3a"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-final-vite-type.log",
+      "sha256": "d3824897dd9c9b73dc59e95838eedf79994717b723209e9fdba721c2676e93c1"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-races-green.log",
+      "sha256": "429e3a5be72c4d1971374177ada200609eb28ac04da5c43dc865c6041a455c44"
+    },
+    {
+      "path": "metamodern-interface-studio/evidence/directions/checks/mm-directions-races-red.log",
+      "sha256": "8620c6647aae4124c98036531ec8674d1b9ba2d7dc896b8f308f7763f7adb3fc"
+    }
+  ]
+}

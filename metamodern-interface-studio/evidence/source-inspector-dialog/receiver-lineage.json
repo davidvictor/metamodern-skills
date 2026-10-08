@@ -1,0 +1,92 @@
+[
+  {
+    "receiver": "mm-directions-vite",
+    "path": "src/components/studio/rail-panel.tsx",
+    "sha256": "bda291f515f19e91dbfabedea480e9b12cc2d2c9b93e2b2067b6c8a17276dcb8",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-directions-vite",
+    "path": "src/components/ui/dialog.tsx",
+    "sha256": "25b060dd5b8cfe28de9c7d96a017fc6ffedb6d4dd804d566b961b1f2bd9e5b4d",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-directions-vite",
+    "path": "src/kit/editor-dialog.tsx",
+    "sha256": "034a28c00ec75caf61f7a49d50af0588ae8cb0b984edade10f119864b221248a",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-directions-vite",
+    "path": "src/kit/index.ts",
+    "sha256": "250ede08312d99b4e4df387f6f9c751a36f426264bae5ffa29c1665e2c8ac625",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-directions-vite",
+    "path": "src/studio/design-ui/slots.tsx",
+    "sha256": "8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-directions-next",
+    "path": "src/components/studio/rail-panel.tsx",
+    "sha256": "bda291f515f19e91dbfabedea480e9b12cc2d2c9b93e2b2067b6c8a17276dcb8",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-directions-next",
+    "path": "src/components/ui/dialog.tsx",
+    "sha256": "25b060dd5b8cfe28de9c7d96a017fc6ffedb6d4dd804d566b961b1f2bd9e5b4d",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-directions-next",
+    "path": "src/kit/editor-dialog.tsx",
+    "sha256": "034a28c00ec75caf61f7a49d50af0588ae8cb0b984edade10f119864b221248a",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-directions-next",
+    "path": "src/kit/index.ts",
+    "sha256": "250ede08312d99b4e4df387f6f9c751a36f426264bae5ffa29c1665e2c8ac625",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-directions-next",
+    "path": "src/studio/design-ui/slots.tsx",
+    "sha256": "8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-next-type-transition",
+    "path": "src/components/studio/rail-panel.tsx",
+    "sha256": "bda291f515f19e91dbfabedea480e9b12cc2d2c9b93e2b2067b6c8a17276dcb8",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-next-type-transition",
+    "path": "src/components/ui/dialog.tsx",
+    "sha256": "25b060dd5b8cfe28de9c7d96a017fc6ffedb6d4dd804d566b961b1f2bd9e5b4d",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-next-type-transition",
+    "path": "src/kit/editor-dialog.tsx",
+    "sha256": "034a28c00ec75caf61f7a49d50af0588ae8cb0b984edade10f119864b221248a",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-next-type-transition",
+    "path": "src/kit/index.ts",
+    "sha256": "250ede08312d99b4e4df387f6f9c751a36f426264bae5ffa29c1665e2c8ac625",
+    "canonicalMatch": true
+  },
+  {
+    "receiver": "mm-next-type-transition",
+    "path": "src/studio/design-ui/slots.tsx",
+    "sha256": "8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3",
+    "canonicalMatch": true
+  }
+]

@@ -15,6 +15,7 @@ export { EmptyState } from "./empty"
 export { PreviewFrame, type PreviewFrameProps } from "./preview-frame"
 export { Icon, type KitIconName } from "./icons"
 export { tokens } from "./tokens"
-export { NumberField, SegmentedControl, EditorPopover, type NumberFieldProps } from "./design-controls"
 
 export type { IconComponent, IconProps } from "../icons"
+export { NumberField, SegmentedControl, EditorPopover, EditorPopoverClose, type EditorPopoverCloseProps, type NumberFieldProps } from "./design-controls"
+export { EditorDialog, EditorDialogClose, EditorDialogTitle, type EditorDialogProps, type EditorDialogCloseProps } from "./editor-dialog"

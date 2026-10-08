@@ -22,8 +22,8 @@ test('initial script budget traverses static imports/preloads once and excludes 
   assert.throws(() => initialScriptGraph(dir, parse), /Unmeasurable/);
   writeFileSync(join(dir, 'index.html'), '<script src="../outside.js"></script>');
   assert.throws(() => initialScriptGraph(dir, parse), /leaves the build output/);
-  const baseline = JSON.parse(readFileSync(new URL('../metamodern-interface-studio/evidence/optional-layers/baseline-0.18.0.json', import.meta.url)));
-  assert.equal(baseline.sourceRevision, '874d5077ba0204cf77947e21509901003017d40e');
+  const baseline = JSON.parse(readFileSync(new URL('../metamodern-interface-studio/evidence/optional-layers/baseline-0.18.4.json', import.meta.url)));
+  assert.equal(baseline.sourceRevision, '6e68f00a6c275dd8dd902faaf6f01924f6165880');
   assert.equal(baseline.gzip, baseline.scripts.reduce((sum, row) => sum + row.gzip, 0));
-  assert.equal(baseline.gzip, 329651);
+  assert.equal(baseline.gzip, 330240);
 });

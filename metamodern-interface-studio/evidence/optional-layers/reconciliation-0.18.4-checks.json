@@ -1,0 +1,45 @@
+{
+  "schema": "studio-dependency-reconciliation/1",
+  "previousCandidate": "920144d5e112199eb3d4af474b5dbd5642da8bf2",
+  "dependency": "6e68f00a6c275dd8dd902faaf6f01924f6165880",
+  "package": "metamodern-interface-studio@0.19.0",
+  "initialJS": {
+    "predecessor": 330240,
+    "candidate": 322523,
+    "growth": -7717,
+    "ceiling": 3072
+  },
+  "checks": {
+    "collectionTests": 244,
+    "packages": 20,
+    "updaterTests": 15,
+    "reviewFocusedTests": 17,
+    "hostBrowserChecksPerHost": 8,
+    "optionalLayerGates": 3,
+    "inheritedUIBrowserRecords": 40,
+    "coldLazyBrowserChecks": 5,
+    "priorUpgrade": {
+      "from": "0.18.4",
+      "to": "0.19.0",
+      "install": "passed",
+      "typecheck": "passed",
+      "lint": "passed",
+      "build": "passed",
+      "acceptance": "skipped: Playwright not installed in this receiver; separate generated host browser checks passed",
+      "productOwnedCompilerFilePreserved": true
+    }
+  },
+  "sourceFiles": {
+    "src/components/studio/design-tokens.tsx": "b52125fbce5a796c7d36241ec2c6f2fa894fde5546e9157346f35b6194e91633",
+    "src/components/studio/rail-panel.tsx": "f6522ba3512cb6ecd1cdee3f21daa4ee743e91e01ed0f5bef561874d808f309b",
+    "src/App.tsx": "b02b6102758f18288302508fcd966ab45e59cebeb8e799a2892d8945186f1520",
+    "src/kit/index.ts": "d7778616667857c28791961594256bfb269e346485560832c3668347f5552d9e",
+    "src/kit/editor-dialog.tsx": "034a28c00ec75caf61f7a49d50af0588ae8cb0b984edade10f119864b221248a",
+    "src/kit/design-controls.tsx": "edd85a01706d8a55ed50253ea508be3291e81fe4d18d55f06658ee6b41eacc10",
+    "src/components/ui/dialog.tsx": "c49109e9cc8178b9ce2a81067f7e688766fdd221360eb1001766b8d4e032025d",
+    "src/components/ui/popover.tsx": "c052881cfdd9ee36ea3362bab532332bec8989615b553fb87fe9b77ef138463e",
+    "src/studio/design-ui/slots.tsx": "8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3",
+    "src/studio/design-ui/direction-manager.tsx": "2e23839a374208afac09029717b4d801a610c7e5053e261fc1e393bc70fc60d1"
+  },
+  "authority": "reviewed candidate PR only; no merge, publication, deployment or global install"
+}

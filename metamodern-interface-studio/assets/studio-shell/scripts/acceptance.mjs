@@ -33,10 +33,10 @@ try {
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
 const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace", library: "library", sections: "sections", static: "static" }
-// The exact immediately preceding0.18 source is recorded in evidence/optional-layers/baseline-0.18.0.json.
+// The exact immediately preceding0.18.4 source is recorded in evidence/optional-layers/baseline-0.18.4.json.
 // Count all static initial JS, including shared imports/preloads; splitting a main file cannot lower the budget.
-const STUDIO_INITIAL_BASELINE = "0.18.0"
-const STUDIO_INITIAL_BASELINE_GZ = 329651
+const STUDIO_INITIAL_BASELINE = "0.18.4"
+const STUDIO_INITIAL_BASELINE_GZ = 330240
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 const serve = (out, host, staticHost = false) =>

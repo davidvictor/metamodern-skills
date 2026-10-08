@@ -1,0 +1,1461 @@
+{
+  "sourceHash": "af877be5c3e7f797421116c51d795c17d6a554f8e439cfb8e6ec6e3962ee9ee6",
+  "results": [
+    {
+      "engine": "chromium",
+      "host": "vite",
+      "width": 1440,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "host": "vite",
+      "width": 768,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "host": "vite",
+      "width": 390,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "host": "vite",
+      "width": 1440,
+      "coarse": true,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "height": 44
+        },
+        {
+          "label": "Missing",
+          "height": 44
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 44
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "host": "next",
+      "width": 1440,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "host": "next",
+      "width": 768,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "host": "next",
+      "width": 390,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "chromium",
+      "host": "next",
+      "width": 1440,
+      "coarse": true,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "height": 44
+        },
+        {
+          "label": "Missing",
+          "height": 44
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 44
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "host": "vite",
+      "width": 1440,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "host": "vite",
+      "width": 768,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "host": "vite",
+      "width": 390,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "host": "vite",
+      "width": 1440,
+      "coarse": true,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "height": 44
+        },
+        {
+          "label": "Missing",
+          "height": 44
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 44
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "host": "next",
+      "width": 1440,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 32,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "host": "next",
+      "width": 768,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "host": "next",
+      "width": 390,
+      "coarse": false,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 32
+        },
+        {
+          "label": "Loading",
+          "height": 32
+        },
+        {
+          "label": "Missing",
+          "height": 32
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 32
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "host": "next",
+      "width": 1440,
+      "coarse": true,
+      "pass": true,
+      "options": [
+        {
+          "label": "Today",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "First use",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Loading",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Failed to load",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "New task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Settings",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Sign in",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Getting started",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Welcome",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Task card",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        },
+        {
+          "label": "Done",
+          "height": 44,
+          "classes": "relative flex min-h-7 w-full cursor-default items-center gap-2 rounded-xl py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2 pointer-coarse:min-w-11 max-[999px]:min-h-11 pointer-coarse:min-h-11"
+        }
+      ],
+      "selected": "First use",
+      "focus": true,
+      "defaults": [
+        {
+          "label": "Loaded",
+          "height": 44
+        },
+        {
+          "label": "Loading",
+          "height": 44
+        },
+        {
+          "label": "Missing",
+          "height": 44
+        },
+        {
+          "label": "Missing stylesheet",
+          "height": 44
+        }
+      ],
+      "defaultFocus": true,
+      "errors": []
+    }
+  ]
+}

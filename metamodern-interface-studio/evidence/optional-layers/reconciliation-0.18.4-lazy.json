@@ -1,0 +1,22 @@
+[
+  {
+    "check": "cold keyboard Design opening loads controls",
+    "pass": true
+  },
+  {
+    "check": "cold Tokens selected tab retains keyboard focus through delayed chunk and working draft survives tab return",
+    "pass": true
+  },
+  {
+    "check": "Present opens after lazy Design without clearing draft link",
+    "pass": true
+  },
+  {
+    "check": "cold Design deep link and stale appearance recovery remain honest",
+    "pass": true
+  },
+  {
+    "check": "rejected lazy token chunk stays local; working Adjust draft survives and remains reachable",
+    "pass": true
+  }
+]

@@ -1,0 +1,40 @@
+{
+  "schema": "shared-cr19-next-check-lineage/1",
+  "consumer": "/private/tmp/mm-next-type-transition",
+  "adapter": "editor",
+  "gitBase": "ec09d26997364f970db9a7d24731fb7c5ab8d7f0",
+  "runtimeFiles": [
+    {
+      "path": "src/components/studio/rail-panel.tsx",
+      "sourceHash": "sha256:bda291f515f19e91dbfabedea480e9b12cc2d2c9b93e2b2067b6c8a17276dcb8",
+      "consumerHash": "sha256:bda291f515f19e91dbfabedea480e9b12cc2d2c9b93e2b2067b6c8a17276dcb8",
+      "match": true
+    },
+    {
+      "path": "src/components/ui/dialog.tsx",
+      "sourceHash": "sha256:25b060dd5b8cfe28de9c7d96a017fc6ffedb6d4dd804d566b961b1f2bd9e5b4d",
+      "consumerHash": "sha256:25b060dd5b8cfe28de9c7d96a017fc6ffedb6d4dd804d566b961b1f2bd9e5b4d",
+      "match": true
+    },
+    {
+      "path": "src/kit/editor-dialog.tsx",
+      "sourceHash": "sha256:034a28c00ec75caf61f7a49d50af0588ae8cb0b984edade10f119864b221248a",
+      "consumerHash": "sha256:034a28c00ec75caf61f7a49d50af0588ae8cb0b984edade10f119864b221248a",
+      "match": true
+    },
+    {
+      "path": "src/kit/index.ts",
+      "sourceHash": "sha256:250ede08312d99b4e4df387f6f9c751a36f426264bae5ffa29c1665e2c8ac625",
+      "consumerHash": "sha256:250ede08312d99b4e4df387f6f9c751a36f426264bae5ffa29c1665e2c8ac625",
+      "match": true
+    },
+    {
+      "path": "src/studio/design-ui/slots.tsx",
+      "sourceHash": "sha256:8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3",
+      "consumerHash": "sha256:8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3",
+      "match": true
+    }
+  ],
+  "runtimeFileCount": 5,
+  "scope": "4 modified+1 new runtime files; earlier6count was owner communication/harness assertion only, all5hashes matched"
+}

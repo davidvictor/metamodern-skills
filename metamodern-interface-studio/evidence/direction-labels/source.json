@@ -1,0 +1,23 @@
+{
+  "base": "260d525267dc6e4f8a44b1b788313d5c1b134c35",
+  "packageVersion": "0.18.2",
+  "path": "metamodern-interface-studio/assets/studio-shell/src/studio/design-ui/direction-manager.tsx",
+  "redSourceHash": "6ef4aeb43aaa78bad84f0a91d393ae981f0e0a0a8606f514109bfb74021b7161",
+  "consumers": [
+    {
+      "host": "vite",
+      "sha256": "4bc9292c5ba41c45c9a77e0a269b2f4cd38b8d26b2c1ebe3dad9aba08ce005ca"
+    },
+    {
+      "host": "next",
+      "sha256": "4bc9292c5ba41c45c9a77e0a269b2f4cd38b8d26b2c1ebe3dad9aba08ce005ca"
+    },
+    {
+      "host": "next-production",
+      "sha256": "4bc9292c5ba41c45c9a77e0a269b2f4cd38b8d26b2c1ebe3dad9aba08ce005ca"
+    }
+  ],
+  "coldPickerGreenSourceHash": "6317219c4d3fd3b6908aedbe47851e26e10fd1e21924141bee9370dc811a2683",
+  "finalSourceHash": "4bc9292c5ba41c45c9a77e0a269b2f4cd38b8d26b2c1ebe3dad9aba08ce005ca",
+  "finalDelta": "Only the portal child grid adds minmax(0,1fr) and overflow-wrap:anywhere; cold/import/picker helper and data paths are unchanged."
+}

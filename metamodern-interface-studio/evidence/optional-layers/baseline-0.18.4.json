@@ -1,0 +1,26 @@
+{
+  "schema": "studio-initial-js/1",
+  "sourceRevision": "6e68f00a6c275dd8dd902faaf6f01924f6165880",
+  "package": "metamodern-interface-studio@0.18.4",
+  "host": "vite",
+  "variant": "example",
+  "node": "v26.7.0",
+  "scripts": [
+    {
+      "file": "assets/protocol-B88BZBGB.js",
+      "gzip": 669,
+      "sha256": "8e4cf7d36264d26591dbd7f2d3093b4bc0e540f7926fc5ec74e07780a4d14e3c"
+    },
+    {
+      "file": "assets/studio-BznNwmSB.js",
+      "gzip": 207260,
+      "sha256": "aabf70479030010c6cd53ac22ef211c47c2513cfb593f068b31d0754244f35fe"
+    },
+    {
+      "file": "assets/tooltip-BeVnqbvf.js",
+      "gzip": 122311,
+      "sha256": "eb7912c15791a8d9e3d7a22bd1e3e379d1b951736561de60d2a221b202021bf5"
+    }
+  ],
+  "gzip": 330240
+}
