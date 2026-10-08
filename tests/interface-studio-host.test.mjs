@@ -113,7 +113,8 @@ test('host-using synthetic adapter preflight evaluates all host globals and choo
   const strip = file => stripTypeScriptTypes(readFileSync(new URL(file, base), 'utf8'), { mode: 'strip' });
   const moduleUrl = code => `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
   const { adapterPreflightDefines } = await import(moduleUrl(strip('studio-shell/src/studio/host.ts')));
-  const example = moduleUrl(strip('studio-shell/src/adapters/example.ts'));
+  const profile = moduleUrl('export const ICON_EDITION = "free"');
+  const example = moduleUrl(strip('studio-shell/src/adapters/example.ts').replace('"@studio/icon-profile"', JSON.stringify(profile)));
   for (const variant of ['synthetic', 'captures']) {
     let host = strip('studio-hosts/vite/src/studio-host.ts').replaceAll('import.meta.env.DEV', 'false').replaceAll('import.meta.env.VITE_STUDIO_ADAPTER', JSON.stringify(variant)).replace(/import\.meta\.glob\([^)]*\)/g, '{}');
     const defines = adapterPreflightDefines({ __STUDIO_DIRECTIONS__: JSON.stringify({ schema: 'studio-directions/1', revisions: [], events: [] }) });

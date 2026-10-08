@@ -4,6 +4,7 @@
  * illustrative. Replace this file (and example/) with the product's adapter;
  * do not extend it with product facts.
  */
+import { ICON_EDITION } from "@studio/icon-profile"
 import type { Scenario, ScenarioInput, StudioAdapter, Token } from "@/studio/types"
 
 const fixture = { id: "example-tasks", version: "1", provenance: "Synthetic, written for the starter" }
@@ -130,7 +131,7 @@ export const exampleAdapter: StudioAdapter = {
   // Design parameters for the Adjust tab. The stops are the densities the example ships.
   design: {
     parameters: [
-      { id: "iconStyle", label: "Icon style", kind: "enum", default: "stroke-rounded", choices: [{ id: "stroke-rounded", label: "Stroke Rounded (Free)" }], apply: { input: "iconStyle", live: true } },
+      { id: "iconStyle", label: "Icon style", kind: "enum", default: "stroke-rounded", choices: [{ id: "stroke-rounded", label: ICON_EDITION === "pro" ? "Stroke Rounded (Pro)" : "Stroke Rounded (Free)" }], apply: { input: "iconStyle", live: true } },
       {
         id: "density",
         label: "Density",

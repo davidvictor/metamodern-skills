@@ -99,4 +99,8 @@ These files differ from `shadcn add` output. Reapply the edits after regeneratin
 | `src/components/ui/scroll-area.tsx` | Unused React import removed. |
 | `src/components/ui/slider.tsx` | `aria-label` on the Slider is passed to the thumb input, which is what a screen reader reads. |
 
-The stack is shadcn 4.21 (`base-rhea`, mapped Hugeicons Free Stroke Rounded icons), Base UI 1.8, Tailwind CSS 4, React 19 and Vite 8. The shell uses Geist through `@fontsource-variable/geist`.
+The stack is shadcn 4.21 (`base-rhea`, mapped Hugeicons Free Stroke Rounded icons by default, optional licensed Pro profile), Base UI 1.8, Tailwind CSS 4, React 19 and Vite 8. The shell uses Geist through `@fontsource-variable/geist`.
+
+## Optional licensed icon profile
+
+The starter needs no paid credential. Licensed owners may install `@hugeicons-pro/core-stroke-rounded@4.3.4` through protected npm registry authentication, run `node scripts/icon-profile.mjs activate pro`, then `npm install` and the host checks. Keep the code in the authorized secret manager; never put it in source or browser fields. Product-owned `studio-icons.json` selects the build profile. Pro uses only installed Pro glyphs and exposes no Free choice; missing configured Pro fails closed. `studio-icon-profile.json` in the build records safe provider/fingerprint provenance. Studio chrome is independent of the product adapter's active appearance capabilities.

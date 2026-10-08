@@ -38,6 +38,11 @@ while (true) {
     await page.goto(`${url}/?host-check=${view}#view=${view}&scenario=tasks.list`); await ready();
     await page.screenshot({ path: `${evidence}/${host}-${view}.png` }); results.push({ check: view, pass: true });
   }
+  const edition = JSON.parse(readFileSync('studio-shell.lock.json', 'utf8')).icons?.edition ?? 'free';
+  await page.goto(`${url}/?host-check=icon-profile#view=design&scenario=tasks.list`); await ready();
+  await page.getByText(edition === 'pro' ? 'Stroke Rounded (Pro)' : 'Stroke Rounded (Free)', { exact: true }).first().waitFor();
+  assert.equal(await page.getByText(edition === 'pro' ? 'Stroke Rounded (Free)' : 'Stroke Rounded (Pro)', { exact: true }).count(), 0);
+  results.push({ check: 'active icon profile only', edition, pass: true });
   await page.goto(`${url}/?host-check=reset#view=inspect&scenario=tasks.list`); await ready();
   const frame = page.frameLocator('iframe[title="Tasks: Today preview"]').first();
   await frame.getByRole('button', { name: 'New task', exact: true }).click(); await page.getByText('Modified', { exact: true }).first().waitFor();

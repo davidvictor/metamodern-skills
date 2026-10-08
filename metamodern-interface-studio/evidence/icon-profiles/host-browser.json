@@ -1,0 +1,178 @@
+[
+  {
+    "edition": "free",
+    "host": "vite",
+    "results": [
+      {
+        "check": "inspect",
+        "pass": true
+      },
+      {
+        "check": "compare",
+        "pass": true
+      },
+      {
+        "check": "responsive",
+        "pass": true
+      },
+      {
+        "check": "design",
+        "pass": true
+      },
+      {
+        "check": "active icon profile only",
+        "edition": "free",
+        "pass": true
+      },
+      {
+        "check": "preview interaction/reset/keyboard",
+        "pass": true
+      },
+      {
+        "check": "layout save/reload/fresh link",
+        "pass": true
+      },
+      {
+        "check": "scenario save/reload/link",
+        "pass": true
+      },
+      {
+        "check": "library",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "edition": "free",
+    "host": "next",
+    "results": [
+      {
+        "check": "inspect",
+        "pass": true
+      },
+      {
+        "check": "compare",
+        "pass": true
+      },
+      {
+        "check": "responsive",
+        "pass": true
+      },
+      {
+        "check": "design",
+        "pass": true
+      },
+      {
+        "check": "active icon profile only",
+        "edition": "free",
+        "pass": true
+      },
+      {
+        "check": "preview interaction/reset/keyboard",
+        "pass": true
+      },
+      {
+        "check": "layout save/reload/fresh link",
+        "pass": true
+      },
+      {
+        "check": "scenario save/reload/link",
+        "pass": true
+      },
+      {
+        "check": "library",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "edition": "pro",
+    "host": "vite",
+    "results": [
+      {
+        "check": "inspect",
+        "pass": true
+      },
+      {
+        "check": "compare",
+        "pass": true
+      },
+      {
+        "check": "responsive",
+        "pass": true
+      },
+      {
+        "check": "design",
+        "pass": true
+      },
+      {
+        "check": "active icon profile only",
+        "edition": "pro",
+        "pass": true
+      },
+      {
+        "check": "preview interaction/reset/keyboard",
+        "pass": true
+      },
+      {
+        "check": "layout save/reload/fresh link",
+        "pass": true
+      },
+      {
+        "check": "scenario save/reload/link",
+        "pass": true
+      },
+      {
+        "check": "library",
+        "pass": true
+      }
+    ],
+    "errors": []
+  },
+  {
+    "edition": "pro",
+    "host": "next",
+    "results": [
+      {
+        "check": "inspect",
+        "pass": true
+      },
+      {
+        "check": "compare",
+        "pass": true
+      },
+      {
+        "check": "responsive",
+        "pass": true
+      },
+      {
+        "check": "design",
+        "pass": true
+      },
+      {
+        "check": "active icon profile only",
+        "edition": "pro",
+        "pass": true
+      },
+      {
+        "check": "preview interaction/reset/keyboard",
+        "pass": true
+      },
+      {
+        "check": "layout save/reload/fresh link",
+        "pass": true
+      },
+      {
+        "check": "scenario save/reload/link",
+        "pass": true
+      },
+      {
+        "check": "library",
+        "pass": true
+      }
+    ],
+    "errors": []
+  }
+]

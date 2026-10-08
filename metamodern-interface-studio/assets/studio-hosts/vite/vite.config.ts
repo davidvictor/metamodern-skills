@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react"
 import { defineConfig, parseAst, runnerImport, type Plugin } from "vite"
 
 import config from "./studio.config"
+import { prepareIconProfile } from "./scripts/icon-profile.mjs"
 import { ownedSavedFiles, writeSavedSources } from "./scripts/saved-sources"
 import type { StudioConfig } from "./src/studio/config"
 import { LAYOUTS_MAX_BYTES, validateLayouts } from "./src/studio/layouts"
@@ -87,7 +88,10 @@ const exampleWorkspace =
 
 // The surfaces workspace modules and library documentation import (references/workspace.md, references/library.md);
 // everything else under src/ is shell internals.
+const iconProfile = prepareIconProfile(root)
 const studioAliases = [
+  { find: /^@studio\/icon-glyphs$/, replacement: iconProfile.glyphs },
+  { find: /^@studio\/icon-profile$/, replacement: iconProfile.metadata },
   ...(variant === "editor" ? [{ find: /^@\/design-ui$/, replacement: path.resolve(root, "example/design-ui/loaders.ts") }, { find: /^@\/design-runtime$/, replacement: path.resolve(root, "example/design-runtime/loaders.ts") }] : []),
   { find: /^@studio\/design-ui$/, replacement: path.resolve(root, "src/studio/design-ui/api.ts") },
   { find: /^@studio\/kit$/, replacement: path.resolve(root, "src/kit/index.ts") },
@@ -204,7 +208,7 @@ const editorFixtureAssets = (): Plugin => ({
 export default defineConfig({
   base: "./",
   define: hostDefines,
-  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), directions(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock(), editorFixtureAssets()],
+  plugins: [react(), tailwindcss(), { name: "studio-icon-profile", generateBundle() { this.emitFile({ type: "asset", fileName: "studio-icon-profile.json", source: JSON.stringify(iconProfile.profile, null, 2) + "\n" }) } }, title(), layouts(), scenarios(), directions(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock(), editorFixtureAssets()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
     emptyOutDir: true,

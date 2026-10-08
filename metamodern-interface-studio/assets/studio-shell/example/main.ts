@@ -4,7 +4,7 @@
  * fixtures injected at its existing seams. The contract is the same: mount
  * from inputs, run commands through the app's own path, expose anchors.
  */
-import { PlusSignIcon } from "@hugeicons/core-free-icons"
+import { PlusIcon as PlusSignIcon } from "@studio/icon-glyphs"
 import { connectStudioFrame } from "../src/studio/frame-client"
 import type { MountInputs } from "../src/studio/protocol"
 
