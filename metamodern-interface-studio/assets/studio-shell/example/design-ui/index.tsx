@@ -10,7 +10,7 @@ function Foundation({ controller, review }: DesignPanelProps) {
   const error = state.inputProblems.scale
   return <>
     <h2 className="text-sm font-semibold">Fixture direction</h2>
-    <Field kind="select" label="Review fixture" value={review.scenarioId} options={review.scenarios} onChange={review.selectScenario} />
+    <Field kind="select" label="Review fixture" itemClassName="max-[999px]:min-h-11 pointer-coarse:min-h-11" value={review.scenarioId} options={review.scenarios} onChange={review.selectScenario} />
     <p data-review-fixture className="text-xs text-muted-foreground">Review context: {review.scenarioId}</p>
     <SegmentedControl label="Recipe" value="" options={[{ id: "compact", label: "Compact" }, { id: "airy", label: "Airy" }]} onChange={v => controller.edit({ controlId: "recipe", value: v })} />
     <SegmentedControl label="Theme scope" value={state.scope.themes.length > 1 ? "both" : state.scope.themes[0]} options={[{ id: "both", label: "Both" }, { id: "light", label: "Light" }, { id: "dark", label: "Dark" }]} onChange={v => controller.setScope({ themes: v === "both" ? ["light", "dark"] : [v] })} />

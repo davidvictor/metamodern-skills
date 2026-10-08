@@ -1,3 +1,7 @@
+## 0.18.1
+
+Field kind="select" adds optional itemClassName for styling its portaled option rows. Product editor panels can opt into native phone/tablet floors with itemClassName="max-[999px]:min-h-11 pointer-coarse:min-h-11". Omit the prop to preserve existing option geometry. This changes no global menus, trigger sizes or product preview styles. Protected product panels must opt in explicitly after updating; managed updates never rewrite them.
+
 ## 0.18.0
 
 Opted-in studio-direction-lifecycle/1 consumers gain named immutable local directions, captured saves, browser draft recovery and independently pinned source/saved/draft comparisons. Product codecs and readiness checks remain in protected src/design-runtime/. Read references/directions.md before opting in; legacy consumers retain their existing behavior. directions.json is product-owned and never replaced by managed updates. studio.config.ts may configure savedFiles.directions as a relative JSON path within the Studio. Generated saved-source exclusions prevent canonical journals and atomic temporary files from causing preview reloads while preserving normal source HMR. Next typecheck/build regenerate official route types and exclude obsolete dev validators when changing between development and static modes.

@@ -1,0 +1,36 @@
+{
+  "base": "874d5077ba0204cf77947e21509901003017d40e",
+  "packageVersion": "0.18.1",
+  "source": [
+    {
+      "path": "metamodern-interface-studio/assets/studio-shell/src/kit/field.tsx",
+      "sha256": "af877be5c3e7f797421116c51d795c17d6a554f8e439cfb8e6ec6e3962ee9ee6",
+      "consumers": [
+        {
+          "host": "vite",
+          "sha256": "af877be5c3e7f797421116c51d795c17d6a554f8e439cfb8e6ec6e3962ee9ee6"
+        },
+        {
+          "host": "next",
+          "sha256": "af877be5c3e7f797421116c51d795c17d6a554f8e439cfb8e6ec6e3962ee9ee6"
+        }
+      ]
+    },
+    {
+      "path": "metamodern-interface-studio/assets/studio-shell/example/design-ui/index.tsx",
+      "sha256": "608ade9fe3964a101d0d0c7f7fa1f7789ccf4d0713d8375f2e30c8ec5e2835e7",
+      "consumers": [
+        {
+          "host": "vite",
+          "sha256": "608ade9fe3964a101d0d0c7f7fa1f7789ccf4d0713d8375f2e30c8ec5e2835e7"
+        },
+        {
+          "host": "next",
+          "sha256": "608ade9fe3964a101d0d0c7f7fa1f7789ccf4d0713d8375f2e30c8ec5e2835e7"
+        }
+      ]
+    }
+  ],
+  "redSourceHash": "23876355ed9a092dee32189bdef7ad60b99790fe72084632e9b8525aa56eae5b",
+  "greenSourceHash": "af877be5c3e7f797421116c51d795c17d6a554f8e439cfb8e6ec6e3962ee9ee6"
+}

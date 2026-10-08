@@ -1,0 +1,130 @@
+[
+  {
+    "path": "README.md",
+    "sha256": "522f2f82b61d7b6eb386b0e64fd667ec2c7a93217fb63436fe05338ca9561f6b"
+  },
+  {
+    "path": "checks/next-build.log",
+    "sha256": "0e171dc677aaa8cc5cd498c4d91836a267768ccecbc253b7524fe7f4d0d3192c"
+  },
+  {
+    "path": "checks/next-lint.log",
+    "sha256": "cf5282606d2dbaee21946261427e86976f921401530b825b8f95bbf3b26d8a1c"
+  },
+  {
+    "path": "checks/next-type.log",
+    "sha256": "dad6c358958cf76f0bcb7a52f05208ca209ca26177e7dad70099d80569789775"
+  },
+  {
+    "path": "checks/node22-test.log",
+    "sha256": "d2d686887f33b390d6f128680865974d860739bdb8f36f2f7c85509a54407cb8"
+  },
+  {
+    "path": "checks/node22-validate.log",
+    "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e"
+  },
+  {
+    "path": "checks/node24-test.log",
+    "sha256": "d08eef6465404774ef900c53680c9c748df565c77aae892c3029222e0be65f4f"
+  },
+  {
+    "path": "checks/node24-validate.log",
+    "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e"
+  },
+  {
+    "path": "checks/vite-build.log",
+    "sha256": "b8c2acd0c2fe1e3e3e867449e7a6f10486d0ad86d0e8e638f61e60d80122e7b0"
+  },
+  {
+    "path": "checks/vite-lint.log",
+    "sha256": "053f964629fb3c7a0aa20278af582285fe5404c8d71e9865cb9f12824cdb4f3a"
+  },
+  {
+    "path": "checks/vite-type.log",
+    "sha256": "d3824897dd9c9b73dc59e95838eedf79994717b723209e9fdba721c2676e93c1"
+  },
+  {
+    "path": "green.json",
+    "sha256": "d23fed659cf02fc6d03cfe0c1a02532e691a9482e012c12bad04a80a7a98b486"
+  },
+  {
+    "path": "red.json",
+    "sha256": "9e6c04cb59bcf660ea4fefd4c7d56c670da6c1c203cc4fc56b060733d364ec41"
+  },
+  {
+    "path": "screenshots/green-chromium-next-1440-coarse.png",
+    "sha256": "ff2f09e459fbfbcd8ab6804ccf8e9057477cd5ca02a87f0db8769074a6409cf7"
+  },
+  {
+    "path": "screenshots/green-chromium-next-1440-fine.png",
+    "sha256": "0e4663ec5714654f057349fa574e84620d0173a98fbc4f333bcc0f889cf2b549"
+  },
+  {
+    "path": "screenshots/green-chromium-next-390-fine.png",
+    "sha256": "f801bdac646353cd8875a50700d7a74696ae40a3257620887ca8d8a5111f2aa9"
+  },
+  {
+    "path": "screenshots/green-chromium-next-768-fine.png",
+    "sha256": "c87e7905ddfd0bd40132a900ee4b2211ddfe411b52930d614cf5dc9a5ad22253"
+  },
+  {
+    "path": "screenshots/green-chromium-vite-1440-coarse.png",
+    "sha256": "ff2f09e459fbfbcd8ab6804ccf8e9057477cd5ca02a87f0db8769074a6409cf7"
+  },
+  {
+    "path": "screenshots/green-chromium-vite-1440-fine.png",
+    "sha256": "0e4663ec5714654f057349fa574e84620d0173a98fbc4f333bcc0f889cf2b549"
+  },
+  {
+    "path": "screenshots/green-chromium-vite-390-fine.png",
+    "sha256": "18845a035262546f63dc96b514842b56e340c114bbb0e264e81061d4fb9d0ec3"
+  },
+  {
+    "path": "screenshots/green-chromium-vite-768-fine.png",
+    "sha256": "c87e7905ddfd0bd40132a900ee4b2211ddfe411b52930d614cf5dc9a5ad22253"
+  },
+  {
+    "path": "screenshots/green-webkit-next-1440-coarse.png",
+    "sha256": "8b1b5bc7b1f1eb32326130a6a3b9907fa19cc2b009b8225793515b790347f473"
+  },
+  {
+    "path": "screenshots/green-webkit-next-1440-fine.png",
+    "sha256": "629a1d4903d9a002b421907898c7b1670d23ae7e41a4716f295a9496a20dbc98"
+  },
+  {
+    "path": "screenshots/green-webkit-next-390-fine.png",
+    "sha256": "064480f09dde189ed9d1e5d1e2d430dd4a24eed54d3372873d0100d3d6502580"
+  },
+  {
+    "path": "screenshots/green-webkit-next-768-fine.png",
+    "sha256": "04c36304e6fce55892fcd112f0f31682c5cd9c41aeda5026bced7e22b3b545c9"
+  },
+  {
+    "path": "screenshots/green-webkit-vite-1440-coarse.png",
+    "sha256": "3a6fc01dc08de0e69720b365ad25b88712fb5640716fff880938c64fffd67b66"
+  },
+  {
+    "path": "screenshots/green-webkit-vite-1440-fine.png",
+    "sha256": "b998e24e967a812360182a69bc336eb0ce55de81560ee9d5ce8897f0a6b11d82"
+  },
+  {
+    "path": "screenshots/green-webkit-vite-390-fine.png",
+    "sha256": "064480f09dde189ed9d1e5d1e2d430dd4a24eed54d3372873d0100d3d6502580"
+  },
+  {
+    "path": "screenshots/green-webkit-vite-768-fine.png",
+    "sha256": "00f00556b17e55d179788789d16ab24b5b3206e3bd3478e30a9f6a729e804026"
+  },
+  {
+    "path": "screenshots/red-chromium-vite-390-fine.png",
+    "sha256": "431d1221e6c83b435951f2b83100c0a8faa9b8c944bcb51c8c54efcf0f70e382"
+  },
+  {
+    "path": "screenshots/red-chromium-vite-768-fine.png",
+    "sha256": "524c31ec71e23b8d2ec159dbef927e197dd176891dbd4633883456d8e2bedf6e"
+  },
+  {
+    "path": "source.json",
+    "sha256": "17b8a014ec9ef2500a3ea55abfaee5a1497acf8a5c31dcc9ed66a8db75f9ff56"
+  }
+]

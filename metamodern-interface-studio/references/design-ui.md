@@ -45,3 +45,7 @@ The optional starter fixture uses `VITE_STUDIO_ADAPTER=editor` or `STUDIO_ADAPTE
 Foundation and Component receive `DesignPanelProps.review: DesignReviewContext`: readonly `scenarioId`, readonly `scenarios: {id,label}[]` and `selectScenario(id)`. This is the current shared review navigation, supplied as UI props. It is never adapter executable data, a design-model edit or an undo entry. Unknown or Later scenarios cannot be selected through this callback. Use the selected ID with product-owned mappings for contextual reach/readouts; never import the shared store into product panels.
 
 `EditorPopover` accepts optional `open?: boolean` and `onOpenChange?: (open: boolean) => void`. Controlled product panels can close after a choice or a visible Close picker action using React state. Escape/outside dismissal uses the same callback and the existing modal primitive restores focus. Omit both props to keep the existing uncontrolled behavior; product panels need no Base UI or DOM imports.
+
+## Portaled select options
+
+`Field` with `kind="select"` accepts optional `itemClassName?: string`, forwarded to every portaled option alongside the kit's existing coarse-pointer target class. Ancestor classes in a product panel cannot style a portal. Use `itemClassName="max-[999px]:min-h-11 pointer-coarse:min-h-11"` when an editor's accepted controls require 44px rows on native phone/tablet widths as well as coarse pointers. Trigger styling remains separate. Omit this prop to preserve default option geometry; no legacy menu or product preview is enlarged globally.

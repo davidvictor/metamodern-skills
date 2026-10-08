@@ -1,0 +1,24 @@
+(node:54644) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ journal retains immutable history, monotonic revisions and recoverable deletion; no replacement or ID ambiguity (47.991208ms)
+✔ prepared saved adoption is atomic/latest-wins and never changes original source; draft recovery remains undoable (10.1795ms)
+✔ confirmed captured save A keeps newer B dirty; rename/duplicate/delete preserve payload/history and source basis (33.230584ms)
+✔ invalid/newer imports retain exact raw bytes and prior saved data; known legacy problems recover as editable blocked input (12.113791ms)
+✔ source/fingerprint drift blocks reopen, conflict never overwrites, static cannot write and recovery restores raw draft separately (13.924292ms)
+✔ new envelope identity starts at revision1 after prior save; acknowledgement is truthful with newer edits (10.35125ms)
+✔ offered recovery survives fresh edits and save until explicit decision; metadata prevents reinterpretation (12.406334ms)
+✔ deep bounded-size payloads reject without stack overflow (6.093208ms)
+✔ late GET success or failure cannot replace a confirmed newer journal write (21.081084ms)
+✔ failed selection can be explicitly replaced by a validated imported draft and saved under a new identity (10.757917ms)
+✔ recovery uses schema/product codec and restores last-valid output atomically with raw invalid text (9.930417ms)
+✔ valid recovery captured during pending compilation resumes its own compile without a ready A/B mismatch (9.502875ms)
+✔ denied browser storage reads never poison canonical editing or compilation (9.831166ms)
+✔ independent immutable draft pin records survive unrelated initialized tabs (11.707ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 290.610958
