@@ -105,6 +105,7 @@ export function Annotations() {
   React.useEffect(() => () => { void hostClient.dispose() }, [hostClient])
   const markdown = feedbackMarkdown(notes)
   const changeScope = (key: string, scope: AnnotationScope) => persist(notesRef.current.map(note => { if (note.key !== key) return note; const source = declaration.resolveSource(note.session.context, note.annotation, scope); return { ...note, scope, source, repository: source.repository ?? declaration.repository } }))
+  const recoveryNotice = notice && <p role="status" className={review ? "rounded border bg-muted p-3 text-sm" : "fixed bottom-32 left-4 z-50 max-w-sm rounded border bg-background p-3 text-sm"}>{notice}<button onClick={() => setNotice("")} className="ml-2 underline">Dismiss</button></p>
   return <>
     {createPortal(<div data-studio-annotations data-annotation-active={active} className="fixed right-4 bottom-16 z-50 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 rounded-lg border bg-background p-2 text-xs shadow-sm">
       <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={enabled} onChange={event => { setEnabled(event.target.checked); try { localStorage.setItem(preferenceKey, String(event.target.checked)) } catch { setNotice("The annotation preference cannot be saved in this browser.") } }} />Annotations</label>
@@ -112,8 +113,9 @@ export function Annotations() {
       <Button variant="outline" onClick={() => setReview(true)}>Feedback ({notes.length})</Button>
       {selected !== "studio" && !target && <span role="status">Choose an available preview. Library previews must be expanded.</span>}
     </div>, document.querySelector("[data-studio-annotation-portal]") ?? document.body)}
-    {notice && <p role="status" className="fixed bottom-32 left-4 z-50 max-w-sm rounded border bg-background p-3 text-sm">{notice}<button onClick={() => setNotice("")} className="ml-2 underline">Dismiss</button></p>}
+    {!review && recoveryNotice}
     <Dialog open={review} onOpenChange={setReview}><DialogContent data-studio-feedback-review className="max-h-[90svh] overflow-auto sm:max-w-3xl"><DialogTitle>Local Studio feedback</DialogTitle><DialogDescription>Check the target, requested scope and source confidence before copying. Captured context stays unchanged.</DialogDescription>
+      {review && recoveryNotice}
       {notes.map(note => <section key={note.key} className="grid gap-2 rounded border p-3"><p className="font-medium">{note.session.context.layer === "studio" ? "Studio" : note.session.context.scenario} · {note.annotation.element}</p><p className="whitespace-pre-wrap">{note.annotation.comment}</p><label>Change scope <select aria-label={`Change scope for ${note.annotation.element}`} className="min-h-11 rounded border bg-background px-2 text-base" value={note.scope} onChange={event => changeScope(note.key, event.target.value as AnnotationScope)}>{note.session.context.layer === "studio" ? <option value="studio">Studio</option> : <><option value="example">This example / composition</option><option value="shared">Shared component</option></>}</select></label><p>{note.source.confidence}: {note.source.paths.join(", ") || "Source unresolved; inspect before editing"}</p><Button variant="ghost" onClick={() => persist(notesRef.current.filter(value => value.key !== note.key))}>Delete note</Button></section>)}
       <Button onClick={async () => { try { await navigator.clipboard.writeText(markdown); setNotice("Feedback copied.") } catch { setNotice("Clipboard unavailable. Select and copy the feedback below.") } }}>Copy feedback</Button>
       <textarea aria-label="Combined feedback Markdown" readOnly value={markdown} className="min-h-48 w-full rounded border p-3 font-mono text-base" />
