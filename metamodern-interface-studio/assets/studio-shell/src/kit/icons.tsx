@@ -1,25 +1,25 @@
 import * as React from "react"
 import {
   ActivityIcon, BoxesIcon, CheckIcon, CopyIcon, DatabaseIcon, DownloadIcon, ExternalLinkIcon, EyeIcon, EyeOffIcon, FileTextIcon, FlagIcon, GlobeIcon,
-  KeyRoundIcon, LanguagesIcon, LayersIcon, MailIcon, PlugIcon, PlusIcon, RefreshCwIcon, SearchIcon, ServerIcon, SettingsIcon, ShieldIcon, TableIcon,
-  TerminalIcon, Trash2Icon, UploadIcon, UsersIcon, WrenchIcon, XIcon, type LucideIcon,
-} from "lucide-react"
+  KeyIcon, LanguagesIcon, LayersIcon, MailIcon, PlugIcon, PlusIcon, RefreshIcon, SearchIcon, ServerIcon, SettingsIcon, ShieldIcon, TableIcon,
+  TerminalIcon, DeleteIcon, UploadIcon, UsersIcon, WrenchIcon, XIcon, type IconComponent,
+} from "@/icons"
 import type { StudioIcon } from "@/studio/types"
 
 /** Module icons the adapter may name. */
-const MODULES: Record<StudioIcon, LucideIcon> = {
-  activity: ActivityIcon, boxes: BoxesIcon, database: DatabaseIcon, "file-text": FileTextIcon, flag: FlagIcon, globe: GlobeIcon, key: KeyRoundIcon,
+const MODULES: Record<StudioIcon, IconComponent> = {
+  activity: ActivityIcon, boxes: BoxesIcon, database: DatabaseIcon, "file-text": FileTextIcon, flag: FlagIcon, globe: GlobeIcon, key: KeyIcon,
   languages: LanguagesIcon, layers: LayersIcon, mail: MailIcon, plug: PlugIcon, server: ServerIcon, settings: SettingsIcon, shield: ShieldIcon,
   table: TableIcon, terminal: TerminalIcon, users: UsersIcon, wrench: WrenchIcon,
 }
 /** Actions modules use. */
 const ACTIONS = {
-  plus: PlusIcon, trash: Trash2Icon, refresh: RefreshCwIcon, copy: CopyIcon, eye: EyeIcon, "eye-off": EyeOffIcon, search: SearchIcon,
+  plus: PlusIcon, trash: DeleteIcon, refresh: RefreshIcon, copy: CopyIcon, eye: EyeIcon, "eye-off": EyeOffIcon, search: SearchIcon,
   check: CheckIcon, x: XIcon, "external-link": ExternalLinkIcon, download: DownloadIcon, upload: UploadIcon,
-} satisfies Record<string, LucideIcon>
+} satisfies Record<string, IconComponent>
 
 export type KitIconName = StudioIcon | keyof typeof ACTIONS
-const ALL: Record<KitIconName, LucideIcon> = { ...MODULES, ...ACTIONS }
+const ALL: Record<KitIconName, IconComponent> = { ...MODULES, ...ACTIONS }
 
 /** An icon from the Studio's fixed set. Decorative: name the control it sits in. */
 export function Icon({ name, className }: { name: KitIconName; className?: string }) {

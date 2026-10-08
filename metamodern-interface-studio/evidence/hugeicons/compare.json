@@ -1,0 +1,30 @@
+[
+  {
+    "check": "independent appearance pane edit retains both documents, drafts and overlays; other fingerprint unchanged",
+    "pass": true
+  },
+  {
+    "check": "2/4-pane count shares the rendered tuple and reopens at the same count",
+    "pass": true
+  },
+  {
+    "check": "appearance Compare tuple round-trips through a fresh-browser share link, including duplicate styles",
+    "pass": true
+  },
+  {
+    "check": "Compare override leaves global style at its baseline",
+    "pass": true
+  },
+  {
+    "check": "authored Step.design preserves presentation appearance without a property declaration",
+    "pass": true
+  },
+  {
+    "check": "presenter design overrides round-trip through actual JSON export/import",
+    "pass": true
+  },
+  {
+    "check": "stale shared appearance restores only invalid pane to default with notice",
+    "pass": true
+  }
+]

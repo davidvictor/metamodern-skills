@@ -1,3 +1,4 @@
+import { appearanceDefault, comparableAppearances, liveAppearanceIds, readAppearanceComparison, staleDesignEnums } from "./studio/appearance"
 import { validDirectionId, validDirectionPin, validDirectionRevision } from "@/studio/directions"
 import { useOptionalDesignEditor, useDesignSnapshot, useDirectionSnapshot } from "@/studio/design-ui/react"
 import type { DesignPreviewIdentity } from "@/studio/design-ui/types"
@@ -13,8 +14,8 @@ import { decodeDesign, designDraft, encodeDesign, mergeDesignValues, parameterAv
 import { normalizeScenarioInput, RESERVED_LINK_KEYS } from "@/studio/input"
 import { appliesTo, axisValues, comparable, editsFromLink, isProperty, keptEdits, linkEdits, propertiesFor, storedEdits, unsettable, usableSaved, withSaved, type Edits, type LinkHold } from "@/studio/properties"
 import type { SavedScenario, ScenariosFile } from "@/studio/scenarios"
-import { savedComparison } from "@/studio/compare"
-import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
+import { resolveComparison, savedComparison } from "@/studio/compare"
+import { DEFAULT_SYNC, decodeFrames, encodeFrames, fromPreset, SHELL_PRESETS, linkedLayoutRecovery, validateLayouts, type LayoutsFile, type ResponsiveFrame, type ResponsiveLayout, type SyncChannels } from "@/studio/layouts"
 import { applyPresenterOverlay, isPresenterOverlay, type PresenterOverlay, type PresenterWalkthrough, updateOverlay } from "@/studio/presenter-overlay"
 import { moduleHash, parseModuleLink } from "@/studio/workspace/link"
 import { parseLibraryLink } from "@/studio/library/link"
@@ -43,6 +44,8 @@ export type State = {
   props: Record<string, Edits>
   /** The scenario whose link said the sender had local text edits this browser does not hold. */
   propsNote: string | null
+  designNotice: string | null
+  layoutNotice: string | null
   /** The scenario a link set edits for, with what this browser had stored for it: kept in storage until the person edits it here. */
   propsHold: LinkHold | null
   /** Saved states from scenarios.json (studio-scenarios/1). */
@@ -163,6 +166,23 @@ function parseViewport(text: string | null) {
   return m && +m[3] >= 0.1 && +m[3] <= 4 ? { x: +m[1], y: +m[2], zoom: +m[3] } : undefined
 }
 
+/** Only Responsive fields are recovered; appearance, properties and navigation are never replayed. */
+function responsiveFromLink(q: URLSearchParams, base: ResponsiveLayout) {
+  const inline = decodeFrames(q.get("frames"), profileIds)
+  const sync = q.get("sync")
+  return {
+    ...initialResponsive(),
+    layout: base.id,
+    name: base.name,
+    frames: inline ?? base.frames,
+    arrangement: q.get("arrange") === "canvas" ? "canvas" : q.get("arrange") === "row" ? "row" : base.arrangement,
+    height: q.get("height") === "full" ? "full" : q.get("height") === "screen" ? "screen" : base.height,
+    sync: sync === null ? (base.sync ?? DEFAULT_SYNC) : { scroll: sync.includes("scroll"), interaction: sync.includes("interaction"), navigation: sync.includes("navigation") },
+    viewport: parseViewport(q.get("vp")) ?? base.viewport,
+    dirty: !!inline,
+  } satisfies State["responsive"]
+}
+
 /** A link that names a scenario this Studio does not have. It is said out loud, never replaced silently. */
 let unresolvedLink: string | null = null
 
@@ -183,6 +203,12 @@ function readHash(stored: Record<string, Edits>): Partial<State> {
   // The Design view grew out of Tokens; old links land on its Tokens tab.
   if (view === "tokens" && (A.tokens || A.design?.editor)) out.view = "design"
   const tab = view === "tokens" ? "tokens" : q.get("tab")
+  const rawDesign = Object.fromEntries((q.get("design") ?? "").split(";").filter(part => part.includes(":")).map(part => [part.slice(0, part.indexOf(":")), part.slice(part.indexOf(":") + 1)]))
+  const stale = staleDesignEnums(A, rawDesign)
+  if (stale.length) out.designNotice = `${stale.join(", ")}: unavailable saved appearance; restored the product default.`
+  const linkedComparison = readAppearanceComparison(A, q.get("compareAxis"), q.get("compareValues"), q.get("theme") ?? A.axes.themes[0]?.id)
+  if (linkedComparison.comparison) out.compare = { ...initial.compare, ...linkedComparison.comparison }
+  if (linkedComparison.notice) out.designNotice = linkedComparison.notice
   const values = decodeDesign(A, q.get("design"))
   if (tab === "adjust" || tab === "tokens" || Object.keys(values).length) {
     const linkedTheme = q.get("theme") ?? A.axes.themes[0]?.id ?? ""
@@ -218,18 +244,7 @@ function readHash(stored: Record<string, Edits>): Partial<State> {
   const inline = decodeFrames(q.get("frames"), profileIds)
   if (layoutId || inline) {
     const base = [...PRESETS, ...(bundledLayouts?.layouts ?? [])].find((l) => l.id === layoutId) ?? PRESETS[0]
-    const sync = q.get("sync")
-    out.responsive = {
-      ...initialResponsive(),
-      layout: base.id,
-      name: base.name,
-      frames: inline ?? base.frames,
-      arrangement: q.get("arrange") === "canvas" ? "canvas" : q.get("arrange") === "row" ? "row" : base.arrangement,
-      height: q.get("height") === "full" ? "full" : q.get("height") === "screen" ? "screen" : base.height,
-      sync: sync === null ? (base.sync ?? DEFAULT_SYNC) : { scroll: sync.includes("scroll"), interaction: sync.includes("interaction"), navigation: sync.includes("navigation") },
-      viewport: parseViewport(q.get("vp")) ?? base.viewport,
-      dirty: !!inline,
-    }
+    out.responsive = responsiveFromLink(q, base)
   }
   const size = /^(\d{2,4})x(\d{2,4})$/.exec(q.get("size") ?? "")
   const lim = A.axes.resizable
@@ -286,22 +301,25 @@ export function resolveValues(sc: Scenario | undefined, values: Record<string, I
   return out
 }
 /** The same values with the viewer's dock choices removed, for playing a walkthrough exactly as designed. */
-export const withoutLenses = (values: Record<string, InputValue>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
+export const withoutLenses = (values: Record<string, InputValue>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock" || liveAppearanceIds(A).includes(k)))
 /**
  * The axes Compare can change for a scenario: theme, profile, every input it uses with named values, then its
  * properties with named values (a switch, options, or a number with presets; text never).
  */
-export const compareAxes = (sc?: Scenario, draft = false) => [
+export const compareAxes = (sc?: Scenario, draft = false, theme?: string) => [
   { id: "theme", label: A.axes.themeLabel },
   { id: "profile", label: "Profile" },
   ...[...choosableFor(sc), ...(hasProperties ? propertiesFor(A.axes.inputs, sc) : [])].filter(comparable).map((i) => ({ id: i.id, label: i.label })),
+  ...comparableAppearances(A, theme).map(({ id, label }) => ({ id, label })),
   ...(draft ? [{ id: "design", label: "Design" }] : []),
   ...(A.design?.directions ? [{ id: "direction", label: "Directions" }] : []),
 ]
-export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: string }[] => {
+export const axisOptions = (axis: string, sc?: Scenario, theme?: string): { id: string; label: string }[] => {
   if (axis === "theme") return A.axes.themes.map((t) => ({ id: t.id, label: t.label }))
   if (axis === "profile") return A.axes.profiles.map((p) => ({ id: p.id, label: p.label }))
   if (axis === "design") return [{ id: "built", label: "As built" }, { id: "draft", label: "Draft" }]
+  const appearance = comparableAppearances(A, theme).find(p => p.id === axis)
+  if (appearance) return appearance.choices
   const input = A.axes.inputs.find((i) => i.id === axis)
   if (input?.control === "switch" || input?.control === "range" || input?.control === "number") return axisValues(input)
   return input ? optionsFor(input, sc) : []
@@ -326,6 +344,8 @@ const initial: State = {
   values: defaultValues(),
   props: {},
   propsNote: null,
+  designNotice: null,
+  layoutNotice: null,
   propsHold: null,
   savedStates: bundledSaved,
   zoom: "fit",
@@ -457,6 +477,8 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     // Saved values pass the same validation as a link, but every value is kept: shared values serve
     // every theme, so one that equals a parameter's plain default can still differ from a theme's.
     const cleanDesign = (raw: unknown) => raw && typeof raw === "object" && !Array.isArray(raw) ? decodeDesign(A, Object.entries(raw).map(([id, v]) => `${id}:${v}`).join(";")) : {}
+    const stale = savedDesign?.version === 1 ? [...new Set([...staleDesignEnums(A, savedDesign.values), ...Object.values(savedDesign.valuesByTheme ?? {}).flatMap(value => staleDesignEnums(A, value))])] : []
+    const designNotice = fromLink.designNotice ?? (stale.length ? `${stale.join(", ")}: unavailable saved appearance; restored the product default.` : null)
     const valuesByTheme = savedDesign?.version === 1 && savedDesign.valuesByTheme && typeof savedDesign.valuesByTheme === "object" && !Array.isArray(savedDesign.valuesByTheme)
       ? Object.fromEntries(Object.entries(savedDesign.valuesByTheme).map(([id, values]) => [id, cleanDesign(values)])) : {}
     const design = { ...initial.design, ...(fromLink.design ?? {}),
@@ -467,8 +489,10 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       speed: presentationPrefs?.speed && [0.75, 1, 1.4].includes(presentationPrefs.speed) ? presentationPrefs.speed : initial.present.speed,
       focus: presentationPrefs?.focus === true,
     }
-    return { ...initial, ...fromLink, props: fromLink.props ?? storedProps, present, design, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} }, presenter: isPresenterOverlay(presenter) ? presenter : initial.presenter }
+    return { ...initial, ...fromLink, props: fromLink.props ?? storedProps, present, design, designNotice, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} }, presenter: isPresenterOverlay(presenter) ? presenter : initial.presenter }
   })
+  const requestedLayout = new URLSearchParams(location.hash.slice(1)).get("layout")
+  const initialLayoutLink = React.useRef(requestedLayout && !PRESETS.some(preset => preset.id === requestedLayout) ? { id: requestedLayout, hash: location.hash, selection: state.responsive } : null)
   // The state as last rendered, to tell whether a change leaves an open workspace module.
   const current = React.useRef(state)
   React.useLayoutEffect(() => {
@@ -550,6 +574,12 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       const sync = (Object.keys(r.sync) as (keyof SyncChannels)[]).filter((k) => r.sync[k])
       if (sync.length !== 3) q.set("sync", sync.join("-") || "off")
     }
+    const appearance = comparableAppearances(A, state.theme).find(p => p.id === state.compare.axis)
+    if (state.view === "compare" && appearance) {
+      const resolved = resolveComparison(appearance.choices.map(choice => choice.id), state.compare.values, state.compare.count, undefined, appearanceDefault(A, appearance, state.theme))
+      q.set("compareAxis", state.compare.axis)
+      q.set("compareValues", JSON.stringify(resolved.compared))
+    }
     const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme), state.theme)
     if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
@@ -579,7 +609,13 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
         const layoutsRevision = r.headers.get("x-studio-revision")
         const data: unknown = await r.json().catch(() => null)
         if (r.headers.get("x-studio-unreadable") === "1" || validateLayouts(data).length) return set({ layoutsRevision, layoutsLoad: "unreadable" })
-        set({ saved: (data as LayoutsFile).layouts, layoutsRevision, layoutsLoad: "ready" })
+        const layouts = (data as LayoutsFile).layouts
+        const linked = initialLayoutLink.current
+        initialLayoutLink.current = null
+        set(s => {
+          const recovery = linkedLayoutRecovery(linked?.id ?? null, linked?.selection ?? s.responsive, s.responsive, layouts)
+          return { saved: layouts, layoutsRevision, layoutsLoad: "ready", ...(recovery.layout && linked ? { responsive: responsiveFromLink(new URLSearchParams(linked.hash.slice(1)), recovery.layout), layoutNotice: null } : recovery.missing ? { layoutNotice: "The saved layout in this link is unavailable. Showing the current layout." } : {}) }
+        })
       })
       .catch(() => set({ layoutsLoad: "failed" }))
   }, [set])

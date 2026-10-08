@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readIconProfile, projectIconPackage } from "../assets/studio-shell/scripts/icon-profile.mjs";
 /**
  * Create a Studio from the shell starter, or bring an existing Studio up to the
  * newest shell without touching product work. See references/updating.md.
@@ -29,14 +30,14 @@ const LOCK = 'studio-shell.lock.json';
 const LOCK_SCHEMA = 'studio-shell-lock/2';
 
 /** Created once and then owned by the product. */
-const SEEDS = new Set(['directions.json', 'src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'src/library/index.ts', 'src/design-runtime/index.ts', 'src/design-ui/index.ts']);
+const SEEDS = new Set(['directions.json', 'studio-icons.json', 'src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'src/library/index.ts', 'src/design-runtime/index.ts', 'src/design-ui/index.ts']);
 /** Folders that belong to the product: never compared, added to or removed from (a seed inside is created when missing). */
 const PRODUCT_DIRS = ['src/workspace/', 'src/library/', 'src/design-runtime/', 'src/design-ui/'];
 /** Replaced from the shell every time, then refreshed by npm install. */
 const REGENERATED = new Set(['package-lock.json', 'next-env.d.ts']);
 /** Shell files a Studio may delete on purpose; recorded under `removed`. */
 const OPTIONAL = ['README.md', 'example/', 'src/adapters/example.ts', 'src/adapters/synthetic.ts', 'scripts/acceptance.mjs'];
-const IGNORED_DIRS = new Set(['node_modules', 'dist', 'dist-ssr', '.acceptance', '.git', '.next', 'out']);
+const IGNORED_DIRS = new Set(['node_modules', 'dist', 'dist-ssr', '.acceptance', '.git', '.next', 'out', '.studio-generated']);
 const IGNORED_FILES = new Set(['.DS_Store', 'acceptance-report.json', LOCK]);
 
 // ---------- arguments ----------
@@ -220,7 +221,8 @@ function plan(opts) {
   const releasesFile = opts.releases ?? resolve(here, '../assets/studio-shell.releases.json');
   const dir = opts.dir;
   const upstream = hashTree(shellDir);
-  const upstreamPkg = readJSON(join(shellDir, 'package.json'));
+  const iconProfile = readIconProfile(dir);
+  const upstreamPkg = projectIconPackage(readJSON(join(shellDir, 'package.json')), iconProfile);
   const lockFile = join(dir, LOCK);
   const blocked = [];
   const notes = [];
@@ -313,7 +315,7 @@ function plan(opts) {
   if (JSON.stringify(merged.pkg) !== JSON.stringify(localPkg)) actions.push({ kind: 'package', path: 'package.json', changes: merged.changes, content: `${JSON.stringify(merged.pkg, null, 2)}\n` });
   // The lockfile moves with the shell's: npm install afterwards adds the Studio's own packages back.
   const lockLocal = hashFile(join(dir, 'package-lock.json'));
-  if (upstream['package-lock.json'] && lockLocal !== upstream['package-lock.json'] && (upstream['package-lock.json'] !== lock.packageLock || lockLocal === undefined)) actions.push({ kind: 'regenerate', path: 'package-lock.json' });
+  if (iconProfile.edition === 'free' && upstream['package-lock.json'] && lockLocal !== upstream['package-lock.json'] && (upstream['package-lock.json'] !== lock.packageLock || lockLocal === undefined)) actions.push({ kind: 'regenerate', path: 'package-lock.json' });
 
   const kitFrom = kitVersion(dir);
   const kitTo = kitVersion(shellDir);
@@ -322,6 +324,7 @@ function plan(opts) {
   const nextLock = {
     schema: LOCK_SCHEMA,
     host,
+    icons: readIconProfile(dir),
     composition: composed?.composition ?? { files: upstream },
     shell: shellVersion,
     files: nextFiles,
@@ -438,6 +441,7 @@ function create(opts) {
   const lock = {
     schema: LOCK_SCHEMA,
     host,
+    icons: readIconProfile(opts.dir),
     composition: composed?.composition ?? { files: upstream },
     shell: shellVersion,
     files: Object.fromEntries(Object.entries(upstream).filter(([p]) => isCompared(p))),

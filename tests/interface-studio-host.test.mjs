@@ -94,3 +94,36 @@ test('Next live saved-file bootstrap resolves new scenario/layout IDs before com
   assert.deepEqual(host.directions, live.directions); assert.deepEqual(host.scenarios, live.scenarios); assert.deepEqual(host.layouts, live.layouts); assert.equal(calls.length, 3);
   host.canSave = false; await initializeHost(); assert.equal(calls.length, 3, 'review builds never fetch a development service');
 });
+
+test('live saved-layout read restores only the untouched initial requested selection', async t => {
+  const dir = mkdtempSync(join(tmpdir(), 'studio-layout-recovery-')); t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const source = readFileSync(new URL('../metamodern-interface-studio/assets/studio-shell/src/studio/layouts.ts', import.meta.url), 'utf8');
+  const file = join(dir, 'layouts.mjs'); writeFileSync(file, stripTypeScriptTypes(source, { mode: 'strip' }));
+  const { linkedLayoutRecovery } = await import(pathToFileURL(file).href);
+  const initial = { layout: 'default', frames: [] }, saved = { id: 'saved-layout', name: 'Saved', frames: [] };
+  assert.equal(linkedLayoutRecovery('saved-layout', initial, initial, [saved]).layout, saved);
+  assert.deepEqual(linkedLayoutRecovery('saved-layout', initial, { ...initial, layout: 'user-chosen' }, [saved]), { layout: undefined, missing: false });
+  assert.deepEqual(linkedLayoutRecovery('saved-layout', initial, { ...initial, frames: ['edited'] }, [saved]), { layout: undefined, missing: false });
+  assert.deepEqual(linkedLayoutRecovery('deleted-layout', initial, initial, [saved]), { layout: undefined, missing: true });
+  assert.deepEqual(linkedLayoutRecovery(null, initial, initial, [saved]), { layout: undefined, missing: false });
+});
+
+test('host-using synthetic adapter preflight evaluates all host globals and chooses the requested variant', async () => {
+  const base = new URL('../metamodern-interface-studio/assets/', import.meta.url);
+  const strip = file => stripTypeScriptTypes(readFileSync(new URL(file, base), 'utf8'), { mode: 'strip' });
+  const moduleUrl = code => `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
+  const { adapterPreflightDefines } = await import(moduleUrl(strip('studio-shell/src/studio/host.ts')));
+  const profile = moduleUrl('export const ICON_EDITION = "free"');
+  const example = moduleUrl(strip('studio-shell/src/adapters/example.ts').replace('"@studio/icon-profile"', JSON.stringify(profile)));
+  for (const variant of ['synthetic', 'captures']) {
+    let host = strip('studio-hosts/vite/src/studio-host.ts').replaceAll('import.meta.env.DEV', 'false').replaceAll('import.meta.env.VITE_STUDIO_ADAPTER', JSON.stringify(variant)).replace(/import\.meta\.glob\([^)]*\)/g, '{}');
+    const defines = adapterPreflightDefines({ __STUDIO_DIRECTIONS__: JSON.stringify({ schema: 'studio-directions/1', revisions: [], events: [] }) });
+    for (const [name, value] of Object.entries(defines)) host = host.replaceAll(name, value);
+    const source = strip('studio-shell/src/adapters/synthetic.ts').replace('"@/studio-host"', JSON.stringify(moduleUrl(host))).replace('"@/adapters/example"', JSON.stringify(example));
+    const { adapter } = await import(moduleUrl(source));
+    assert.equal(!!adapter.workspace, false); assert.equal(!!adapter.library, false);
+    assert.equal(adapter.target.fidelity, variant === 'captures' ? 'static-capture' : 'recreation');
+  }
+  const config = readFileSync(new URL('studio-hosts/vite/vite.config.ts', base), 'utf8');
+  assert.match(config, /define: adapterPreflightDefines\(hostDefines\)/);
+});

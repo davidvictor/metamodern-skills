@@ -11,7 +11,14 @@ type ButtonProps = { label: string; variant: string; size: string; disabled: boo
 
 const app = document.getElementById("app")!
 /** For the starter's acceptance script only: how many times this document mounted, and the values it last applied. */
-const testing = window as unknown as { __libMounts?: number; __libValues?: Values }
+const testing = window as unknown as { __libMounts?: number; __libValues?: Values; __libDesign?: MountInputs["design"]; __studioTestAppearance?: boolean; __studioNoAppearance?: boolean }
+function applyAppearance(inputs: MountInputs) {
+  if (Object.hasOwn(inputs.values, "iconStyle")) throw new Error("iconStyle is a Design parameter, not a component property")
+  const style = inputs.design?.iconStyle ?? "stroke-rounded"
+  if (style !== "stroke-rounded" && !(testing.__studioTestAppearance && style === "test-only-square")) throw new Error("Unsupported icon style")
+  document.documentElement.dataset.iconStyle = String(style)
+  testing.__libDesign = inputs.design
+}
 const esc = (v: string) => v.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!)
 const VARIANTS: Record<string, string> = { primary: "", secondary: "ghost", danger: "danger" }
 const SIZES: Record<string, string> = { small: "sm", medium: "", large: "lg" }
@@ -67,6 +74,7 @@ connectStudioFrame({
   applyCompiled(data, direction) { Object.assign(globalThis, { __fixtureCompiled: data, __fixtureDirection: direction }) },
   mount: (inputs) => {
     if (!SCENES[inputs.scenario]) throw new Error(`${inputs.scenario} has no preview in the example library`)
+    applyAppearance(inputs)
     document.documentElement.dataset.theme = inputs.theme
     scenario = inputs.scenario
     render(inputs.values)
@@ -76,9 +84,11 @@ connectStudioFrame({
   },
   // Playground values change in place: the document is not rebuilt.
   update: (inputs) => {
+    if (Object.hasOwn(inputs.values, "iconStyle")) throw new Error("iconStyle is a Design parameter, not a component property")
     render(inputs.values)
     testing.__libValues = inputs.values
   },
+  updateAppearance: testing.__studioNoAppearance ? undefined : applyAppearance,
   code: (inputs) => ({ language: "tsx", text: buttonCode(fromValues(inputs.values)) }),
 }, { registeredStylesheets: ["/example/design-runtime/assets.css", "/example/design-runtime/missing.css"], ...(allowedOrigins?.length ? { allowedOrigins } : {}) })
 

@@ -1,4 +1,4 @@
-import { LinkIcon, MoonIcon, PanelLeftIcon, PanelRightIcon, PresentationIcon, RotateCcwIcon, FileIcon, TriangleAlertIcon } from "lucide-react"
+import { LinkIcon, MoonIcon, PanelLeftIcon, PanelRightIcon, PresentationIcon, ResetIcon, FileIcon, TriangleAlertIcon } from "@/icons"
 import { toast } from "sonner"
 
 import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from "@/components/ui/command"
@@ -56,7 +56,7 @@ export function CommandMenu() {
           </Slot>
           <CommandSeparator />
           <CommandGroup heading="Actions">
-            <CommandItem value="reset preview" onSelect={run(s.reset)}><RotateCcwIcon />Reset preview<CommandShortcut>R</CommandShortcut></CommandItem>
+            <CommandItem value="reset preview" onSelect={run(s.reset)}><ResetIcon />Reset preview<CommandShortcut>R</CommandShortcut></CommandItem>
             <CommandItem value="toggle panel" onSelect={run(() => s.set({ panelOpen: !s.panelOpen }))}><PanelLeftIcon />Toggle panel<CommandShortcut>⌘B</CommandShortcut></CommandItem>
             <CommandItem value="toggle details" onSelect={run(() => s.set({ detailsOpen: !s.detailsOpen }))}><PanelRightIcon />Toggle details<CommandShortcut>⌘.</CommandShortcut></CommandItem>
             <CommandItem value="studio appearance dark light" onSelect={run(() => setTheme(theme === "dark" ? "light" : "dark"))}><MoonIcon />Switch Studio appearance</CommandItem>

@@ -30,6 +30,8 @@
       }
     ],
     "paths": {
+      "@studio/icon-glyphs": ["./.studio-generated/icon-glyphs.ts"],
+      "@studio/icon-profile": ["./.studio-generated/icon-profile.ts"],
       "@/*": [
         "./src/*"
       ],

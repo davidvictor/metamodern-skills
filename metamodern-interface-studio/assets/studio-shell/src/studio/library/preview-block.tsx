@@ -6,13 +6,14 @@
  * as every view; the documentation supplies scenario strings and validated values, nothing else (references/library.md).
  */
 import * as React from "react"
-import { ExpandIcon, SmartphoneIcon } from "lucide-react"
+import { ExpandIcon, SmartphoneIcon } from "@/icons"
 import { adapter } from "@/adapter"
 import { useStudio } from "@/store"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FidelityBadge, PreviewFrame as Boundary, useFit, type EmptyState } from "@/components/studio/bits"
+import { appearanceFields, liveAppearanceIds } from "../appearance"
 import { LivePreview, type LivePreviewHandle, type LiveStatus } from "@/studio/live-preview"
 import { TARGET } from "@/kit/layout"
 import type { InputValue } from "@/studio/types"
@@ -237,9 +238,10 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode, wide }
                   src={frame.src}
                   origin={frame.origin}
                   isolation={adapter.frameIsolation}
-                  inputs={{ scenario: frame.scenario, theme: s.theme, profile: PROFILE, values: values ?? {}, commands: [] }}
+                  inputs={{ scenario: frame.scenario, theme: s.theme, profile: PROFILE, values: values ?? {}, design: appearanceFields(s.designFor(s.theme).inputs, liveAppearanceIds(adapter)), commands: [] }}
                   // Values and width never remount: values go in place to a frame with live-values, and the width is the frame element's.
                   mountKey={JSON.stringify([frame.scenario, s.theme, retry])}
+                  appearanceIds={liveAppearanceIds(adapter)}
                   draft={s.viewDraft(s.theme)}
                   w={w}
                   h={h}
@@ -264,6 +266,7 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode, wide }
         </TabsContent>
         <TabsContent value="code" style={wide ? WIDE : undefined}>{code ? <CodeBlock code={code.code} language={code.language} title={`${spec.label} code`} /> : <p className="text-sm text-muted-foreground">No code for this preview.</p>}</TabsContent>
       </Tabs>
+      {status?.previous && <p role="status" className="text-xs text-warning">Showing previous settings: {status.reason}</p>}
       <AdjustedNote reason={spec.adjusted} />
       <Dialog open={expanded} onOpenChange={(open) => !open && collapse()}>
         <DialogContent data-kit className="flex h-[min(90svh,56rem)] w-[min(96vw,88rem)] max-w-none flex-col gap-3 sm:max-w-none">
@@ -291,9 +294,10 @@ function Expanded({ spec, capture, values, phone, label }: { spec: BlockSpec; ca
         {capture ? (
           <img src={capture} alt={spec.capture?.alt ?? ""} className="absolute inset-0 size-full object-contain" />
         ) : source && spec.scenario ? (
-          <LivePreview src={source.src} origin={source.origin} isolation={adapter.frameIsolation} inputs={{ scenario: spec.scenario, theme: s.theme, profile: PROFILE, values: values ?? {}, commands: [] }} mountKey={JSON.stringify([spec.scenario, s.theme])} draft={s.viewDraft(s.theme)} w={w} h={h} scale={scale} label={label} onStatus={setStatus} />
+          <LivePreview src={source.src} origin={source.origin} isolation={adapter.frameIsolation} inputs={{ scenario: spec.scenario, theme: s.theme, profile: PROFILE, values: values ?? {}, design: appearanceFields(s.designFor(s.theme).inputs, liveAppearanceIds(adapter)), commands: [] }} appearanceIds={liveAppearanceIds(adapter)} mountKey={JSON.stringify([spec.scenario, s.theme])} draft={s.viewDraft(s.theme)} w={w} h={h} scale={scale} label={label} onStatus={setStatus} />
         ) : null}
       </Boundary>
+      {status?.previous && <p role="status" className="text-xs text-warning">Showing previous settings: {status.reason}</p>}
     </div>
   )
 }

@@ -1,0 +1,85 @@
+[
+  {
+    "edition": "free",
+    "profile": {
+      "schema": "studio-icon-profile/1",
+      "edition": "free",
+      "package": "@hugeicons/core-free-icons",
+      "version": "4.3.5",
+      "style": "stroke-rounded",
+      "renderer": {
+        "package": "@hugeicons/react",
+        "version": "1.1.10"
+      },
+      "glyphs": 96,
+      "sourceFingerprint": "924c58f3a6c7efc942087c7204cf7d08be5e757fa466a6874dae36f564595e7f",
+      "mapFingerprint": "f70495fb660f24ba83d928b27daae0c1a47047191d61586f7debabc3d527ac2d",
+      "importFingerprint": "bc555c1a78bd58f939dcf4e7c37cce5b541aa16e84762ad555559ea036919dd9"
+    },
+    "initialGraph": {
+      "scripts": [
+        {
+          "file": "assets/preview-GFeMMJN-.js",
+          "gzip": 140474,
+          "sha256": "9074ab1650047b9b015d9971b6b6f50754826b4178e2be663c610271d443136a"
+        },
+        {
+          "file": "assets/protocol-CQbMt-m7.js",
+          "gzip": 1814,
+          "sha256": "b369ca76dd8fa5935411feda615ad10c4f261c1ebc9327a1f66978808e90743b"
+        },
+        {
+          "file": "assets/studio-Y_AMd5cr.js",
+          "gzip": 180764,
+          "sha256": "91ba1de16ec05a5631f8fe30f90787ca913291f5369b5007ce8a382fc974b4ec"
+        }
+      ],
+      "gzip": 323052
+    },
+    "selectiveBytes": 668,
+    "proContributingGlyphs": 0,
+    "freeModuleInputs": 6026
+  },
+  {
+    "edition": "pro",
+    "profile": {
+      "schema": "studio-icon-profile/1",
+      "edition": "pro",
+      "package": "@hugeicons-pro/core-stroke-rounded",
+      "version": "4.3.4",
+      "style": "stroke-rounded",
+      "renderer": {
+        "package": "@hugeicons/react",
+        "version": "1.1.10"
+      },
+      "glyphs": 96,
+      "sourceFingerprint": "b2c2a813c1653e761bfb1a47e234bb7f0c20cd4830d8ce706598f971beeb14d8",
+      "mapFingerprint": "f70495fb660f24ba83d928b27daae0c1a47047191d61586f7debabc3d527ac2d",
+      "importFingerprint": "b8a17a0c02ada6b861096c4c4dbdda69106decb1c6b6e7136756f18640b420a6"
+    },
+    "initialGraph": {
+      "scripts": [
+        {
+          "file": "assets/preview-3irsbxty.js",
+          "gzip": 140472,
+          "sha256": "02dbf39a076f4c1a5c797625909cde5f2775e0b5dedfbfdb47bce1c2b6206525"
+        },
+        {
+          "file": "assets/protocol-CQbMt-m7.js",
+          "gzip": 1814,
+          "sha256": "b369ca76dd8fa5935411feda615ad10c4f261c1ebc9327a1f66978808e90743b"
+        },
+        {
+          "file": "assets/studio-CyGJ6a_n.js",
+          "gzip": 180767,
+          "sha256": "bfac47c0fefb724c49f19912337659453ad83794cbdbee785f0824c7626b1339"
+        }
+      ],
+      "gzip": 323053
+    },
+    "selectiveBytes": 668,
+    "proContributingGlyphs": 1,
+    "freeModuleInputs": 0
+  }
+]
+

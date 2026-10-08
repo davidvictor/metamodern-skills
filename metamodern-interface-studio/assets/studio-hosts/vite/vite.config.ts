@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react"
 import { defineConfig, parseAst, runnerImport, type Plugin } from "vite"
 
 import config from "./studio.config"
+import { prepareIconProfile } from "./scripts/icon-profile.mjs"
 import { ownedSavedFiles, writeSavedSources } from "./scripts/saved-sources"
 import type { StudioConfig } from "./src/studio/config"
 import { LAYOUTS_MAX_BYTES, validateLayouts } from "./src/studio/layouts"
@@ -12,6 +13,7 @@ import { SCENARIOS_MAX_BYTES, validateScenarios } from "./src/studio/scenarios"
 import type { IncomingMessage, ServerResponse } from "http"
 import { pathToFileURL } from "url"
 import type { StudioAdapter } from "./src/studio/types"
+import { adapterPreflightDefines } from "./src/studio/host"
 import { DIRECTIONS_MAX_BYTES, validateDirections, validateDirectionTransition } from "./src/studio/directions"
 import { savedFileMiddleware, savedFileSnapshot, type SavedFileOptions } from "./scripts/saved-file"
 import { astLang, definedModules, undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
@@ -86,7 +88,10 @@ const exampleWorkspace =
 
 // The surfaces workspace modules and library documentation import (references/workspace.md, references/library.md);
 // everything else under src/ is shell internals.
+const iconProfile = prepareIconProfile(root)
 const studioAliases = [
+  { find: /^@studio\/icon-glyphs$/, replacement: iconProfile.glyphs },
+  { find: /^@studio\/icon-profile$/, replacement: iconProfile.metadata },
   ...(variant === "editor" ? [{ find: /^@\/design-ui$/, replacement: path.resolve(root, "example/design-ui/loaders.ts") }, { find: /^@\/design-runtime$/, replacement: path.resolve(root, "example/design-runtime/loaders.ts") }] : []),
   { find: /^@studio\/design-ui$/, replacement: path.resolve(root, "src/studio/design-ui/api.ts") },
   { find: /^@studio\/kit$/, replacement: path.resolve(root, "src/kit/index.ts") },
@@ -97,8 +102,11 @@ const aliases = [...exampleWorkspace, ...acceptance, ...studioAliases, { find: "
 
 // The adapter as a build sees it, loaded once with Vite's module runner, or why it could not be loaded (for example it imports CSS).
 let builtAdapter: Promise<{ adapter: StudioAdapter } | { error: string }> | undefined
+const hostDefines = {
+  __STUDIO_DIRECTIONS__: JSON.stringify(savedFileSnapshot({ file: savedPaths.directions, maxBytes: DIRECTIONS_MAX_BYTES, validate: validateDirections })) ?? "undefined",
+}
 const loadAdapter = () =>
-  (builtAdapter ??= runnerImport<{ adapter: StudioAdapter }>("@/adapter", { configFile: false, root, logLevel: "error", resolve: { alias: aliases } }).then(
+  (builtAdapter ??= runnerImport<{ adapter: StudioAdapter }>("@/adapter", { configFile: false, root, logLevel: "error", resolve: { alias: aliases }, define: adapterPreflightDefines(hostDefines) }).then(
     (r) => ({ adapter: r.module.adapter }),
     (e: unknown) => ({ error: e instanceof Error ? e.message : String(e) })
   ))
@@ -199,8 +207,8 @@ const editorFixtureAssets = (): Plugin => ({
 })
 export default defineConfig({
   base: "./",
-  define: { __STUDIO_DIRECTIONS__: JSON.stringify(savedFileSnapshot({ file: savedPaths.directions, maxBytes: DIRECTIONS_MAX_BYTES, validate: validateDirections })) ?? "undefined" },
-  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), directions(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock(), editorFixtureAssets()],
+  define: hostDefines,
+  plugins: [react(), tailwindcss(), { name: "studio-icon-profile", generateBundle() { this.emitFile({ type: "asset", fileName: "studio-icon-profile.json", source: JSON.stringify(iconProfile.profile, null, 2) + "\n" }) } }, title(), layouts(), scenarios(), directions(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock(), editorFixtureAssets()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
     emptyOutDir: true,

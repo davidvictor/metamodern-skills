@@ -16,7 +16,7 @@ import {
   PaletteIcon,
   ImageOffIcon,
   TriangleAlertIcon,
-} from "lucide-react"
+} from "@/icons"
 import { cn } from "@/lib/utils"
 
 import { Badge } from "@/components/ui/badge"
@@ -237,4 +237,13 @@ export function ProductMark({ width, decorative }: { width: number; decorative?:
       {m.paths.map((d) => <path key={d} d={d} />)}
     </svg>
   )
+}
+
+/** Keep the provider and working drafts alive when an optional chunk cannot load. */
+export class LazyRegionBoundary extends React.Component<{ label: string; children: React.ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError = () => ({ failed: true })
+  render() {
+    return this.state.failed ? <p role="alert" className="p-3 text-sm text-muted-foreground">{this.props.label} could not load. Your working state is retained; reload the Studio to try again.</p> : this.props.children
+  }
 }

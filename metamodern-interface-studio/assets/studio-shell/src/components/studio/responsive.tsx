@@ -6,7 +6,7 @@
  */
 import * as React from "react"
 import { toast } from "sonner"
-import { ChevronDownIcon, EllipsisIcon, GripVerticalIcon, LayoutGridIcon, PlusIcon, Undo2Icon, RotateCcwIcon, SaveIcon, XIcon } from "lucide-react"
+import { DisclosureDownIcon, EllipsisIcon, GripVerticalIcon, LayoutGridIcon, PlusIcon, UndoIcon, ResetIcon, SaveIcon, XIcon } from "@/icons"
 import { cn } from "@/lib/utils"
 
 import { Badge } from "@/components/ui/badge"
@@ -224,7 +224,7 @@ export function LayoutActions() {
         <SaveAs title="Save as a new layout" initial={isSaved ? `${r.name} copy` : `${r.name} (mine)`} onSave={saveAs} trigger={<Button size="sm" variant={isSaved ? "ghost" : "outline"} disabled={!!why} title={why}>{isSaved ? "Save as" : <><SaveIcon /> Save as</>}</Button>} />
         {r.dirty && (
           <Button size="sm" variant="ghost" onClick={revert}>
-            <RotateCcwIcon /> Revert
+            <ResetIcon /> Revert
           </Button>
         )}
         {isSaved && (
@@ -419,7 +419,7 @@ export function AddFrame({ compact }: { compact?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button size="sm" variant="outline" className={cn(!compact && "w-full")} disabled={full} title={full ? `A layout holds at most ${MAX_FRAMES} frames` : undefined} />}>
-        <PlusIcon /> Add frame {!compact && <ChevronDownIcon className="ml-auto" />}
+        <PlusIcon /> Add frame {!compact && <DisclosureDownIcon className="ml-auto" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuGroup>
@@ -612,7 +612,7 @@ export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrap
                 </DropdownMenuRadioGroup>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
-            <DropdownMenuItem onClick={() => setNonce((n) => n + 1)}><RotateCcwIcon /> Reset this frame</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setNonce((n) => n + 1)}><ResetIcon /> Reset this frame</DropdownMenuItem>
             <DropdownMenuItem onClick={() => s.set({ view: "inspect", profile: frame.profile, size: prof.w === frame.w && prof.h === frame.h ? null : { w: frame.w, h: frame.h }, preview: { ...s.preview, status: "loading" } })}>Open in Inspect at this size</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" disabled={count === 1} onClick={() => removeFrame(set, r.frames, frame.id)}><XIcon /> Remove</DropdownMenuItem>
@@ -887,12 +887,12 @@ export function ResponsiveStage({ narrow }: { narrow?: boolean }) {
           <AddFrame compact />
           {placed && (
             <Tooltip>
-              <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Back to a row" onClick={backToRow} />}><Undo2Icon /></TooltipTrigger>
+              <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Back to a row" onClick={backToRow} />}><UndoIcon /></TooltipTrigger>
               <TooltipContent>Back to a row: undo where frames were dragged</TooltipContent>
             </Tooltip>
           )}
           {onCanvas && <Button variant="ghost" size="sm" aria-label="Tidy" title="Tidy into a row, grouped by kind" onClick={() => tidy.current?.()}><LayoutGridIcon /><span className="hidden xl:inline">Tidy</span></Button>}
-          <Button variant="ghost" size="sm" aria-label="Reset all" title="Reset all frames" onClick={() => set({ resetNonce: r.resetNonce + 1 }, false)}><RotateCcwIcon /><span className={cn(onCanvas && "hidden xl:inline")}>Reset all</span></Button>
+          <Button variant="ghost" size="sm" aria-label="Reset all" title="Reset all frames" onClick={() => set({ resetNonce: r.resetNonce + 1 }, false)}><ResetIcon /><span className={cn(onCanvas && "hidden xl:inline")}>Reset all</span></Button>
         </div>
       </div>
       {r.arrangement === "canvas" && narrow && <p className="px-4 pt-2 text-center text-xs text-stage-muted">This layout is a canvas. The canvas opens on wider screens; here its frames stack.</p>}

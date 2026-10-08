@@ -1,36 +1,9 @@
+import { LazyRegionBoundary } from "./bits"
 import * as React from "react"
-import {
-  MonitorSmartphoneIcon,
-  ChevronRightIcon,
-  Columns2Icon,
-  KeyboardIcon,
-  LayoutGridIcon,
-  PresentationIcon,
-  ScanEyeIcon,
-  SearchIcon,
-  SwatchBookIcon,
-  TriangleAlertIcon,
-  CircleDashedIcon,
-  CircleAlertIcon,
-  BookmarkIcon,
-  LockIcon,
-} from "lucide-react"
+import { MonitorSmartphoneIcon, NextIcon, ColumnsIcon, KeyboardIcon, LayoutGridIcon, PresentationIcon, ScanEyeIcon, SearchIcon, SwatchBookIcon, TriangleAlertIcon, CircleDashedIcon, CircleAlertIcon, BookmarkIcon } from "@/icons"
 import { cn } from "@/lib/utils"
 import { useCoarse } from "@/hooks/use-mobile"
-
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuBadge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenuButton } from "@/components/ui/sidebar"
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group"
 import { Kbd } from "@/components/ui/kbd"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -44,7 +17,6 @@ import { Separator } from "@/components/ui/separator"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { adapter } from "@/adapter"
 import { areaCount, captureFor, hasAdjust, hasDesign, useStudio, type View } from "@/store"
-import { AdjustPanel } from "./design"
 import { ResponsivePanel } from "./responsive"
 import type { Scenario } from "@/studio/types"
 import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
@@ -54,18 +26,24 @@ import { staticProblem } from "./views"
 import { Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
 import { LibraryNav, LibraryPage, LibrarySlot } from "@/studio/library/slots"
 
+const TokensPanel = React.lazy(() => import("./design-tokens").then(module => ({ default: module.TokensPanel })))
+const AdjustPanel = React.lazy(() => import("./design").then(module => ({ default: module.AdjustPanel })))
+
+
 /** Joined filter segments sized to fit a 272 px panel: small type, tight padding, never wider than their column. */
 const SEG = "h-7 min-w-0 gap-1 px-1.5 text-xs"
+
 
 /** The five views. Design appears only when the adapter declares design parameters or a token source. */
 export const VIEWS: { id: View; label: string; icon: React.ElementType; key: string }[] = [
   { id: "inspect" as View, label: "Inspect", icon: ScanEyeIcon, key: "1" },
-  { id: "compare" as View, label: "Compare", icon: Columns2Icon, key: "2" },
+  { id: "compare" as View, label: "Compare", icon: ColumnsIcon, key: "2" },
   { id: "responsive" as View, label: "Responsive", icon: MonitorSmartphoneIcon, key: "6" },
   { id: "gallery" as View, label: "Gallery", icon: LayoutGridIcon, key: "3" },
   { id: "present" as View, label: "Present", icon: PresentationIcon, key: "4" },
   { id: "design" as View, label: "Design", icon: SwatchBookIcon, key: "5" },
 ].filter((v) => v.id !== "design" || hasDesign)
+
 
 /** A rail item: square, full rail width, straight marker on the edge, inset focus ring. A hint (why a workspace module cannot open) shows in its tooltip. */
 export function RailButton({ label, keyHint, labels, active, hint, onClick, children }: { label: string; keyHint?: string; labels?: boolean; active?: boolean; hint?: string; onClick: () => void; children: React.ReactNode }) {
@@ -105,6 +83,7 @@ export function RailButton({ label, keyHint, labels, active, hint, onClick, chil
     </Tooltip>
   )
 }
+
 
 export function Rail({ labels }: { labels: boolean }) {
   const s = useStudio()
@@ -154,7 +133,8 @@ export function Rail({ labels }: { labels: boolean }) {
   )
 }
 
-function PanelHeader({ title, count, children }: { title: string; count?: React.ReactNode; children?: React.ReactNode }) {
+
+export function PanelHeader({ title, count, children }: { title: string; count?: React.ReactNode; children?: React.ReactNode }) {
   return (
     <SidebarHeader className="gap-3 border-b p-3">
       <div className="flex h-7 items-center gap-2">
@@ -166,7 +146,8 @@ function PanelHeader({ title, count, children }: { title: string; count?: React.
   )
 }
 
-function SearchField({ placeholder, value, onChange, id }: { placeholder: string; value: string; onChange: (v: string) => void; id: string }) {
+
+export function SearchField({ placeholder, value, onChange, id }: { placeholder: string; value: string; onChange: (v: string) => void; id: string }) {
   return (
     <InputGroup className="h-8 bg-background">
       <InputGroupAddon>
@@ -180,14 +161,20 @@ function SearchField({ placeholder, value, onChange, id }: { placeholder: string
   )
 }
 
+
 type CatalogRow =
   | { key: string; kind: "area"; areaId: string; label: string; count: number; open: boolean }
   | { key: string; kind: "scenario"; sc: Scenario; level: 1 | 2; parent: string }
 
+
 const STEP_ROW = 84
+
 const AREA_ROW = 30
+
 const SCENARIO_ROW = 32
+
 const RING = "outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--sidebar-ring)]"
+
 
 function CatalogPanel({ compare }: { compare?: boolean }) {
   const s = useStudio()
@@ -313,7 +300,7 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
             if (r.kind === "area")
               return (
                 <>
-                  <ChevronRightIcon className={cn("size-3.5 shrink-0 transition-transform duration-200", r.open && "rotate-90")} />
+                  <NextIcon className={cn("size-3.5 shrink-0 transition-transform duration-200", r.open && "rotate-90")} />
                   <span className="truncate">{r.label}</span>
                   <span className="ml-auto font-normal tracking-normal tabular-nums normal-case">{r.count}</span>
                 </>
@@ -332,6 +319,7 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
   )
 }
 
+
 function RowMark({ status, noCapture }: { status?: string; noCapture: boolean }) {
   if (status === "stale") return <TriangleAlertIcon className="ml-auto size-3.5 shrink-0 text-warning" aria-label="Stale: source changed since the last evidence" />
   if (status === "unresolved") return <CircleAlertIcon className="ml-auto size-3.5 shrink-0 text-danger" aria-label="Unresolved: a reference is broken" />
@@ -339,6 +327,7 @@ function RowMark({ status, noCapture }: { status?: string; noCapture: boolean })
   if (noCapture) return <span className="ml-auto size-1.5 shrink-0 rounded-full border border-muted-foreground/60" role="img" aria-label="No capture for this theme and profile" />
   return null
 }
+
 
 function GalleryPanel() {
   const s = useStudio()
@@ -370,6 +359,7 @@ function GalleryPanel() {
   )
 }
 
+
 function PresentPanel() {
   const s = useStudio()
   const tours = s.walkthroughs
@@ -396,7 +386,7 @@ function PresentPanel() {
         label={(i) => tour.steps[i].narration}
         rowProps={(i) => {
           const st = tour.steps[i]
-          const problem = staticProblem(st)
+          const problem = staticProblem(st, s.theme)
           return {
             role: "listitem",
             "aria-current": i === s.present.step ? "step" : undefined,
@@ -408,7 +398,7 @@ function PresentPanel() {
         {(i) => {
           const st = tour.steps[i]
           const sc = adapter.scenarios.find((x) => x.id === st.scenario)
-          const problem = staticProblem(st)
+          const problem = staticProblem(st, s.theme)
           const current = i === s.present.step
           return (
             <>
@@ -440,6 +430,7 @@ function PresentPanel() {
   )
 }
 
+
 function ResponsiveSide() {
   const s = useStudio()
   return (
@@ -449,6 +440,7 @@ function ResponsiveSide() {
     </>
   )
 }
+
 
 /** Design: Adjust and Tokens over one draft layer; a tab shows only when the adapter supplies it. */
 function DesignPanel() {
@@ -461,69 +453,15 @@ function DesignPanel() {
       <ToggleGroupItem value="tokens" className="h-7 text-xs">Tokens</ToggleGroupItem>
     </ToggleGroup>
   )
-  if (tab === "tokens") return <TokensPanel tabs={tabs} />
   return (
     <>
-      <PanelHeader title="Design">{tabs}</PanelHeader>
-      <AdjustPanel />
+      <PanelHeader title={both || tab === "adjust" ? "Design" : "Tokens"} count={!both && tab === "tokens" && !adapter.design?.editor ? adapter.tokens?.total : undefined}>{tabs}</PanelHeader>
+      {tab === "tokens" ? <LazyRegionBoundary key="tokens" label="Token controls"><React.Suspense fallback={<p role="status" className="p-3 text-sm text-muted-foreground">Loading token controls</p>}><TokensPanel /></React.Suspense></LazyRegionBoundary> : <LazyRegionBoundary key="adjust" label="Adjustments"><React.Suspense fallback={<p role="status" className="p-3 text-sm text-muted-foreground">Loading adjustments</p>}><AdjustPanel /></React.Suspense></LazyRegionBoundary>}
     </>
   )
 }
 
-function TokensPanel({ tabs }: { tabs?: React.ReactNode }) {
-  const s = useStudio()
-  if (adapter.design?.editor) return <>
-    <PanelHeader title={tabs ? "Design" : "Tokens"}>{tabs}</PanelHeader>
-    <SidebarContent><SidebarGroup><p className="px-2 py-2 text-xs leading-relaxed text-muted-foreground">Read only. Inspect the paired compiler output and its source receipts in Compiled and Source.</p></SidebarGroup></SidebarContent>
-  </>
-  const t = adapter.tokens!
-  const drafts = Object.keys(s.tokens.drafts).length
-  return (
-    <>
-      <PanelHeader title={tabs ? "Design" : "Tokens"} count={tabs ? undefined : t.total}>
-        {tabs}
-        <SearchField id="token-search" placeholder="Name or value" value={s.tokens.query} onChange={(v) => s.set({ tokens: { ...s.tokens, query: v } })} />
-        <ToggleGroup value={[s.tokens.flag]} onValueChange={(v) => v[0] && s.set({ tokens: { ...s.tokens, flag: v[0] as typeof s.tokens.flag } })} variant="outline" size="sm" spacing={0} className="grid w-full grid-cols-4" aria-label="Show">
-          <ToggleGroupItem value="all" className={SEG}>All</ToggleGroupItem>
-          <ToggleGroupItem value="unread" className={SEG}>Unread</ToggleGroupItem>
-          <ToggleGroupItem value="literal" className={SEG}>Fixed</ToggleGroupItem>
-          <ToggleGroupItem value="draft" className={SEG}>Draft<span className="tabular-nums opacity-55">{drafts}</span></ToggleGroupItem>
-        </ToggleGroup>
-      </PanelHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Families</SidebarGroupLabel>
-          <SidebarMenu>
-            {[{ name: null as string | null, count: t.total }, ...t.families].map((g) => (
-              <SidebarMenuItem key={g.name ?? "all"}>
-                <SidebarMenuButton size="sm" isActive={s.tokens.family === g.name} aria-pressed={s.tokens.family === g.name} onClick={() => s.set({ tokens: { ...s.tokens, family: g.name } })}>
-                  <span>{g.name ?? "All families"}</span>
-                </SidebarMenuButton>
-                <SidebarMenuBadge className="tabular-nums">{g.count}</SidebarMenuBadge>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarGroup>
-        <Collapsible className="group/shell mt-auto border-t">
-          <SidebarGroup>
-            <SidebarGroupLabel render={<CollapsibleTrigger />} className="w-full hover:bg-sidebar-accent">
-              <LockIcon className="mr-1" /> This Studio’s own tokens
-              <ChevronRightIcon className="ml-auto transition-transform group-data-[open]/shell:rotate-90" />
-            </SidebarGroupLabel>
-            <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 data-[ending-style]:h-0 data-[starting-style]:h-0">
-              <p className="px-2 pb-2 text-xs leading-relaxed text-muted-foreground">Read only. The shell’s tokens never reach a preview, and product tokens never style the shell, even where the names match.</p>
-              <ul className="grid gap-1 px-2 pb-2 font-mono text-[11px]">
-                {["--stage", "--boundary", "--background", "--foreground", "--success", "--warning"].map((n) => (
-                  <li key={n} className="flex items-center gap-2"><span className="size-3 rounded-sm ring-1 ring-border" style={{ background: `var(${n})` }} />{n}</li>
-                ))}
-              </ul>
-            </CollapsibleContent>
-          </SidebarGroup>
-        </Collapsible>
-      </SidebarContent>
-    </>
-  )
-}
+
 
 export function ContextPanel() {
   const s = useStudio()
@@ -552,6 +490,7 @@ export function ContextPanel() {
     </Sidebar>
   )
 }
+
 
 export function MobilePanel() {
   const s = useStudio()

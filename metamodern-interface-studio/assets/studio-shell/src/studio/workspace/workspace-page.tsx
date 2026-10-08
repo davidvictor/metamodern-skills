@@ -5,7 +5,7 @@
  * the person moves between its sections, so drafts survive a section change.
  */
 import * as React from "react"
-import { PanelRightIcon } from "lucide-react"
+import { PanelRightIcon } from "@/icons"
 import { toast } from "sonner"
 import workspace from "@/workspace"
 import { adapter } from "@/adapter"

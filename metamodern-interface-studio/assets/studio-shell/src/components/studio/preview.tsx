@@ -1,10 +1,11 @@
 import * as React from "react"
-import { TriangleAlertIcon } from "lucide-react"
+import { TriangleAlertIcon } from "@/icons"
 
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { adapter } from "@/adapter"
 import { captureFor, NO_DRAFT, propertyIds, resolveValues, useStudio, type Draft } from "@/store"
+import { appearanceFields, appearanceKey, appearanceOverrides, liveAppearanceIds, withoutAppearance } from "@/studio/appearance"
 import { frameDesignValues, valuesForTheme } from "@/studio/design"
 import { LivePreview, type LivePreviewHandle, type LiveStatus, type PreviewSync } from "@/studio/live-preview"
 import type { Edits } from "@/studio/properties"
@@ -51,6 +52,8 @@ type Props = {
   values: Record<string, InputValue>
   /** The viewer's property edits for this preview. They reach a live frame without a remount. */
   props?: Edits
+  /** Validated per-preview live appearance overrides; never component properties or global state. */
+  designInputs?: Record<string, string | number>
   commands?: string[]
   /** The draft this preview shows; none by default. Present never passes one. */
   draft?: Draft
@@ -73,7 +76,7 @@ type Props = {
  * similar scenario, theme or profile.
  */
 export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(function ScenarioPreview(
-  { scenario, theme, profile, size, values, props, commands = [], draft = NO_DRAFT, sync, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
+  { scenario, theme, profile, size, values, props, designInputs, commands = [], draft = NO_DRAFT, sync, resetNonce = 0, scale, label, anchor, source = "auto", interactive = true, className, onStatus },
   ref
 ) {
   const studio = useStudio()
@@ -129,7 +132,9 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   // The frame receives resolved values: the viewer's choice, else what the scenario was designed with, else the default.
   const resolved = sc ? resolveValues(sc, values, props) : values
   // Properties change the runtime on screen; every other input mounts a new one.
-  const fixed = Object.fromEntries(Object.entries(resolved).filter(([id]) => !propertyIds.has(id)))
+  const appearanceIds = liveAppearanceIds(adapter)
+  // LivePreview negotiates support: older clients still remount on declared appearance changes.
+  const fixed = withoutAppearance(Object.fromEntries(Object.entries(resolved).filter(([id]) => !propertyIds.has(id))), appearanceIds)
   // Token-only design adjustments use the draft channel. Controls declared with `apply.input`
   // are part of the materialized product state and deliberately rebuild the isolated frame.
   // Present and every “as built” pane pass the shared NO_DRAFT sentinel. Input-backed
@@ -146,9 +151,10 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
     description: shownDraft.unavailable ?? (draft === NO_DRAFT ? "This basis has no valid compiled output. A working draft cannot substitute for the source or confirmed saved direction." : "No valid compiled output is available for this preview."),
     tone: "danger",
   }
-  const design = draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)
-  const mountKey = JSON.stringify([scenario, theme, profile, fixed, design, commands, resetNonce, retry])
-  const frameKey = JSON.stringify([scenario, theme, profile, fixed, design, commands, resetNonce])
+  const appearanceOverride = appearanceOverrides(adapter, designInputs, theme)
+  const design = { ...appearanceFields(studio.designFor(theme).inputs, appearanceIds), ...(draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)), ...appearanceOverride.inputs }
+  const mountKey = JSON.stringify([scenario, theme, profile, fixed, withoutAppearance(design, appearanceIds), commands, resetNonce, retry])
+  const frameKey = JSON.stringify([scenario, theme, profile, fixed, withoutAppearance(design, appearanceIds), appearanceKey({ values: resolved, design }, appearanceIds), commands, resetNonce])
   // A failure belongs to the frame that reported it: another scenario, theme, profile or input mounts afresh.
   const [shownKey, setShownKey] = React.useState(frameKey)
   if (shownKey !== frameKey) {
@@ -174,6 +180,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
             commands,
           }}
           mountKey={mountKey}
+          appearanceIds={appearanceIds}
           draft={shownDraft}
           sync={sync}
           w={w}

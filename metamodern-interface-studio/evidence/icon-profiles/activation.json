@@ -1,0 +1,23 @@
+[
+  {
+    "host": "vite",
+    "edition": "pro",
+    "package": "@hugeicons-pro/core-stroke-rounded",
+    "version": "4.3.4",
+    "lockBaselineProjected": true,
+    "privateLockSHA256": "dab50273cb4852373adec3ca221a299f3014a95c4f7df49792ed361883434df0",
+    "privateLockPreserved": true,
+    "generatedRuntimeUnchanged": true
+  },
+  {
+    "host": "next",
+    "edition": "pro",
+    "package": "@hugeicons-pro/core-stroke-rounded",
+    "version": "4.3.4",
+    "lockBaselineProjected": true,
+    "privateLockSHA256": "66c47e9fd2a36c6727c1aeb706588a79459bd11b025c2c8ae4f1bf1452327f69",
+    "privateLockPreserved": true,
+    "generatedRuntimeUnchanged": true
+  }
+]
+

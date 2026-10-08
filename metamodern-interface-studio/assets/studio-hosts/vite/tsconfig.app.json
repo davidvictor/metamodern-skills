@@ -23,6 +23,8 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "paths": {
+      "@studio/icon-glyphs": ["./.studio-generated/icon-glyphs.ts"],
+      "@studio/icon-profile": ["./.studio-generated/icon-profile.ts"],
       "@/*": ["./src/*"],
       "@studio/design-ui": ["./src/studio/design-ui/api.ts"],
       "@studio/kit": ["./src/kit/index.ts"],

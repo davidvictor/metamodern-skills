@@ -9,7 +9,10 @@ import type { NavProps } from "./library-nav"
 import type { PageProps } from "./library-page"
 
 /** False in a build whose adapter declares no library (vite.config.ts), which then contains no library chunk at all. */
-import { libraryEnabled } from "@/studio-host"
+import { libraryEnabled as hostEnabled } from "@/studio-host"
+declare const __STUDIO_LIBRARY__: boolean
+// Vite folds its build define locally before scanning lazy imports; other hosts use their generated capability.
+const libraryEnabled = typeof __STUDIO_LIBRARY__ === "boolean" ? __STUDIO_LIBRARY__ : hostEnabled
 
 export const hasLibrary = libraryEnabled && !!adapter.library
 if (!libraryEnabled && adapter.library) console.error("Interface Studio: this build left the component library out because the adapter it loaded declared none, but the adapter running now declares one. Rebuild the Studio to show its library.")

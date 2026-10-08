@@ -292,7 +292,7 @@ test('LM-14 the core shell reaches the library only through lazy slots, and libr
   }
   assert.match(read('src/store.tsx'), /from "@\/studio\/library\/link"/);
   assert.match(read('src/store.tsx'), /q\.set\("library", state\.library\)/);
-  assert.match(read('src/studio/input.ts'), /"module", "section", "library", "item"\]/);
+  assert.match(read('src/studio/input.ts'), /"module", "section", "library", "item", "compareAxis", "compareValues"\]/);
   assert.match(read('src/studio/library/library-page.tsx'), /from "@\/library"/);
   const app = read('src/App.tsx');
   assert.match(app, /hasWorkspace \? \([\s\S]*?WorkspaceNav part="tab"[\s\S]*?\) : hasLibrary \? \([\s\S]*?LibraryNav part="tab"/, 'one place entry on the phone bar');
@@ -320,7 +320,7 @@ test('LM-17 the library files ship with the starter', () => {
   for (const path of ['src/studio/library/schema.ts', 'src/studio/library/model.ts', 'src/studio/library/link.ts', 'src/studio/library/highlight.ts', 'src/studio/library/api.ts', 'src/studio/library/slots.tsx', 'src/studio/library/library-nav.tsx', 'src/studio/library/library-page.tsx', 'src/studio/library/rich-text.tsx', 'src/studio/library/code-block.tsx', 'src/studio/library/preview-block.tsx', 'src/library/index.ts', 'scripts/library-boundary.mjs', 'example/library/declaration.ts', 'example/library/adapter.ts', 'example/library/sections.ts', 'example/library/invalid.ts', 'example/library/index.ts', 'example/library/button.ts', 'example/library/icon-button.ts', 'example/library/text-field.ts', 'example/library/frame.html', 'example/library/frame.ts', 'example/library/library.css']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
-  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.18.4');
+  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.19.0');
 });
 
 test('LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported', async () => {
@@ -429,7 +429,7 @@ test('0.13.2 Page Up and Page Down typed in a field never scroll the Studio on a
   assert.match(script, /want: applePlatform \? "abQ\\ncd" : "ab\\ncdQ"/, 'a native Page Down that moves a textarea caret stays native');
   assert.match(script, /line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,area PageDown:true,area PageUp:true,number PageDown:true,combo PageDown:false/);
   assert.match(script, /area\.selection === "abQ" && area\.number\.join\(\) === "5,5"/, 'a selection reaching the end and a number field, natively');
-  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.14\.0"/);
+  assert.match(script, /const STUDIO_INITIAL_BASELINE = "0\.18\.4"/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /Outside Apple platforms Home and End are native caret moves/);
   assert.match(read('UPDATING.md'), /^## 0\.13\.2$/m);
 });

@@ -3,7 +3,7 @@ import { useDirectionSnapshot } from "@/studio/design-ui/react"
 import { DesignEditorProvider, useOptionalDesignEditor, useDesignSnapshot } from "@/studio/design-ui/react"
 import { EditorReason, DesignEditorStatus } from "@/studio/design-ui/slots"
 import * as React from "react"
-import { ListTreeIcon, InfoIcon } from "lucide-react"
+import { ListTreeIcon, InfoIcon } from "@/icons"
 import { cn } from "@/lib/utils"
 
 import { Sidebar, SidebarInset, SidebarProvider, SidebarRail } from "@/components/ui/sidebar"
@@ -15,8 +15,11 @@ import { adapter } from "@/adapter"
 import { designTab, StudioProvider, useStudio } from "@/store"
 import { ContextPanel, MobilePanel, Rail, VIEWS } from "@/components/studio/rail-panel"
 import { DetailsContent, StageControls, TopBar } from "@/components/studio/chrome"
-import { CompareStage, GalleryStage, InspectStage, PresentStage, TokensStage } from "@/components/studio/views"
-import { DesignStage } from "@/components/studio/design"
+import { CompareStage, GalleryStage, InspectStage, PresentStage } from "@/components/studio/views"
+import { LazyRegionBoundary } from "@/components/studio/bits"
+import { Spinner } from "@/components/ui/spinner"
+const TokensStage = React.lazy(() => import("@/components/studio/design-tokens").then(module => ({ default: module.TokensStage })))
+const DesignStage = React.lazy(() => import("@/components/studio/design").then(module => ({ default: module.DesignStage })))
 import { ResponsiveStage } from "@/components/studio/responsive"
 import { CommandMenu, ShortcutsDialog } from "@/components/studio/command"
 import { hasWorkspace, Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
@@ -120,7 +123,7 @@ function StageForView({ narrow }: { narrow?: boolean }) {
           {s.view === "responsive" && <ResponsiveStage narrow={narrow} />}
           {s.view === "gallery" && <GalleryStage />}
           {s.view === "present" && <PresentStage narrow={narrow} />}
-          {s.view === "design" && (designTab(s.design.tab) === "tokens" ? <TokensStage /> : <DesignStage narrow={narrow} />)}
+          {s.view === "design" && (designTab(s.design.tab) === "tokens" ? <LazyRegionBoundary key="tokens" label="Token preview"><React.Suspense fallback={<div role="status" className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground"><Spinner className="size-4" />Loading token preview</div>}><TokensStage /></React.Suspense></LazyRegionBoundary> : <LazyRegionBoundary key="adjust" label="Design preview"><React.Suspense fallback={<div role="status" className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground"><Spinner className="size-4" />Loading design preview</div>}><DesignStage narrow={narrow} /></React.Suspense></LazyRegionBoundary>)}
         </>
       )}
     </div>
@@ -267,12 +270,15 @@ function MobileShell() {
 }
 
 function Shell() {
+  const s = useStudio()
   const mobile = useIsMobile()
+  const notice = [s.designNotice, s.layoutNotice].filter(Boolean).join(" ")
   useGlobalKeys()
   usePresentFocus()
   return (
     <TooltipProvider delay={350}>
       {mobile ? <MobileShell /> : <DesktopShell />}
+      {notice && <div role="status" className="fixed bottom-4 left-4 z-50 max-w-sm rounded-lg border bg-background p-3 text-sm shadow-sm">{notice}<button type="button" className="ml-3 underline" onClick={() => s.set({ designNotice: null, layoutNotice: null })}>Dismiss</button></div>}
       <CommandMenu />
       <ShortcutsDialog />
       <Slot>

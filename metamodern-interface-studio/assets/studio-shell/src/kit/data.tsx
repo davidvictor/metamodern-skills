@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ArrowDownIcon, ArrowUpIcon, CheckIcon, CircleIcon, TriangleAlertIcon } from "lucide-react"
+import { ArrowDownIcon, ArrowUpIcon, CheckIcon, CircleIcon, TriangleAlertIcon } from "@/icons"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"

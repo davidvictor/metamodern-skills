@@ -141,3 +141,10 @@ export function validateLayouts(data: unknown): string[] {
   })
   return problems
 }
+
+/** Recover a link resolved before live layouts arrived, without replacing a person's intervening edits. */
+export function linkedLayoutRecovery(requested: string | null, initial: object, current: object, layouts: ResponsiveLayout[]) {
+  if (!requested || initial !== current) return { layout: undefined, missing: false }
+  const layout = layouts.find(candidate => candidate.id === requested)
+  return { layout, missing: !layout }
+}

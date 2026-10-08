@@ -30,7 +30,7 @@ test('a failing diagnostics handler reports none and never blocks the ready repl
   const { pathToFileURL } = await import('node:url');
   // frame-client imports its siblings; strip each and point the imports at the stripped copies.
   const dir = mkdtempSync(join(tmpdir(), 'studio-frame-'));
-  for (const name of ['frame-client', 'protocol', 'frame-sync', 'frame-gestures']) {
+  for (const name of ['frame-client', 'protocol', 'frame-sync', 'frame-gestures', 'appearance']) {
     const code = stripTypeScriptTypes(readFileSync(new URL(`src/studio/${name}.ts`, root), 'utf8'), { mode: 'strip' }).replace(/from "\.\/([\w-]+)"/g, 'from "./$1.mjs"');
     writeFileSync(join(dir, `${name}.mjs`), code);
   }

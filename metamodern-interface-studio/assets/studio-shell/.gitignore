@@ -35,3 +35,5 @@ out
 public/assets
 public/example
 *.tsbuildinfo
+
+/public/studio-icon-profile.json

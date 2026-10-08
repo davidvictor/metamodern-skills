@@ -1,0 +1,9 @@
+{
+  "bytes": 2128,
+  "semantic": "CheckIcon",
+  "excluded": [
+    "DeleteIcon",
+    "ZoomInIcon"
+  ],
+  "onlyNamedImports": true
+}

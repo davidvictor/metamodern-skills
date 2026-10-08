@@ -1,5 +1,5 @@
 import * as React from "react"
-import { CheckIcon, TriangleAlertIcon } from "lucide-react"
+import { CheckIcon, TriangleAlertIcon } from "@/icons"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Spinner } from "@/components/ui/spinner"

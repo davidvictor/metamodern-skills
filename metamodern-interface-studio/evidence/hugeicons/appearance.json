@@ -1,0 +1,10 @@
+[
+  {
+    "check": "live appearance retains document, unsaved form and open dialog",
+    "pass": true
+  },
+  {
+    "check": "old client rejects unavailable style, preserves previous preview, recovers valid style by remount",
+    "pass": true
+  }
+]

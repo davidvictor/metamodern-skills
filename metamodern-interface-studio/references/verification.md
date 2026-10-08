@@ -65,3 +65,5 @@ Hosted checks after deploying, on the actual URL, in light and dark and at phone
 6. Nothing writes: no save controls succeed, and the network shows only GETs of the build's own files.
 
 The shell's static build in acceptance (`VITE_STUDIO_ADAPTER=static`, served with CORS and the Studio's origin in its preview pages) measures the opaque frames (AC-69) and the host-free workspace (WS-12) locally over http. It does not measure a CSP, https or a real host; those are the hosted checks above.
+
+For mapped Free icons and state-preserving appearance updates, use the explicit [live appearance contract](frame-protocol.md#declared-live-appearance-0190). Verify a negotiated `live-appearance` client, refused/invalid and stale updates, state preservation and an older client's remount fallback. A single installed `stroke-rounded` style does not imply alternate style availability or entitlement.

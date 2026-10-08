@@ -1,9 +1,9 @@
 import { CompiledInspector } from "@/studio/design-ui/slots"
 import * as React from "react"
 import {
-  ChevronDownIcon,
-  ChevronRightIcon,
-  ChevronUpIcon,
+  DisclosureDownIcon,
+  NextIcon,
+  DisclosureUpIcon,
   EllipsisIcon,
   CornerUpLeftIcon,
   LinkIcon,
@@ -14,15 +14,15 @@ import {
   PanelLeftCloseIcon,
   PanelLeftOpenIcon,
   PanelRightIcon,
-  RotateCcwIcon,
-  Rows3Icon,
-  UserRoundIcon,
+  ResetIcon,
+  RowsIcon,
+  UserIcon,
   SearchIcon,
   SlidersHorizontalIcon,
   SunIcon,
   ZoomInIcon,
-  RefreshCwIcon,
-} from "lucide-react"
+  RefreshIcon,
+} from "@/icons"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { useCoarse } from "@/hooks/use-mobile"
@@ -150,7 +150,7 @@ function MobileFold({ mobile, open, onOpenChange, children }: { mobile?: boolean
         <div className={cn("flex min-w-0 items-center gap-0.5 overflow-hidden transition-[opacity,translate] duration-300 ease-(--ease-out-quint) motion-reduce:transition-none", open ? "translate-x-0 p-0.5 opacity-100" : "translate-x-3 opacity-0")}>{children}</div>
       </div>
       <Button variant="ghost" size="icon-sm" aria-label={open ? "Hide actions" : "More actions"} aria-expanded={open} aria-controls="header-actions" onClick={() => onOpenChange(!open)}>
-        {open ? <ChevronRightIcon /> : <EllipsisIcon />}
+        {open ? <NextIcon /> : <EllipsisIcon />}
       </Button>
     </div>
   )
@@ -221,7 +221,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
                       <BreadcrumbPage className="truncate">
                         {areaLabel(s.scenarioObj.area)}: {s.scenarioObj.label}
                       </BreadcrumbPage>
-                      <ChevronDownIcon className="size-3.5 opacity-60" />
+                      <DisclosureDownIcon className="size-3.5 opacity-60" />
                     </button>
                   </BreadcrumbItem>
                 </>
@@ -426,7 +426,7 @@ function BrandColor() {
         {brand && (
           <InputGroupAddon align="inline-end">
             <InputGroupButton size="icon-xs" aria-label="Back to neutral" onClick={() => setBrand(null)}>
-              <RotateCcwIcon />
+              <ResetIcon />
             </InputGroupButton>
           </InputGroupAddon>
         )}
@@ -650,7 +650,7 @@ function RangeChoices({ id, note = true }: { id: string; note?: boolean }) {
       </div>
       {overridden && (
         <DropdownMenuItem onClick={() => s.setValue(id, null)}>
-          <RotateCcwIcon /> Back to {designedLabel}
+          <ResetIcon /> Back to {designedLabel}
         </DropdownMenuItem>
       )}
       {note && inp.note && <p className="px-2 py-1.5 text-xs text-muted-foreground">{inp.note}</p>}
@@ -675,7 +675,7 @@ function InputChoices({ id, note = true }: { id: string; note?: boolean }) {
         </DropdownMenuRadioGroup>
         {overridden && (
           <DropdownMenuItem onClick={() => s.setValue(id, null)}>
-            <RotateCcwIcon /> Back to {designedLabel}
+            <ResetIcon /> Back to {designedLabel}
           </DropdownMenuItem>
         )}
       </DropdownMenuGroup>
@@ -692,8 +692,8 @@ function InputChoices({ id, note = true }: { id: string; note?: boolean }) {
 function InputMenu({ id, variant, compact }: { id: string; variant: "dock" | "toolbar"; compact?: boolean }) {
   const { inp, label, overridden, designedLabel } = useInputChoice(id)
   const Icon = {
-    person: UserRoundIcon,
-    density: Rows3Icon,
+    person: UserIcon,
+    density: RowsIcon,
     sliders: SlidersHorizontalIcon,
   }[inp.icon ?? "sliders"]
   return (
@@ -806,7 +806,7 @@ function ZoomMenu({ variant, canvasZoom }: { variant: "dock" | "toolbar"; canvas
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="gap-1 tabular-nums" aria-label={`Zoom, ${label}`} />}>
         <ZoomInIcon /> {label}
-        <ChevronUpIcon className="size-3 opacity-60" />
+        <DisclosureUpIcon className="size-3 opacity-60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side={variant === "dock" ? "top" : "bottom"} className="w-60">
         <DropdownMenuGroup>
@@ -917,7 +917,7 @@ export function StageControls({ variant, compact, lookOnly, noZoom, canvasZoom }
           </Tip>
           <Tip label={live ? "Reset preview" : "Reload capture"} keys={["R"]}>
             <Button variant="ghost" size="icon-sm" aria-label={live ? "Reset preview" : "Reload capture"} onClick={s.reset}>
-              <RotateCcwIcon />
+              <ResetIcon />
             </Button>
           </Tip>
         </>
@@ -969,12 +969,12 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
           <div className="ml-auto flex gap-0.5">
             <Tip label="Previous scenario" keys={["["]}>
               <Button variant="ghost" size="icon-xs" aria-label="Previous scenario" onClick={() => s.step(-1)}>
-                <ChevronUpIcon />
+                <DisclosureUpIcon />
               </Button>
             </Tip>
             <Tip label="Next scenario" keys={["]"]}>
               <Button variant="ghost" size="icon-xs" aria-label="Next scenario" onClick={() => s.step(1)}>
-                <ChevronDownIcon />
+                <DisclosureDownIcon />
               </Button>
             </Tip>
             {onClose && (
@@ -1138,7 +1138,7 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
                 })
               }
             >
-              <RefreshCwIcon /> Re-check this scenario
+              <RefreshIcon /> Re-check this scenario
             </Button>
           </TabsContent>
           {showCode && (
@@ -1194,7 +1194,7 @@ function LegacyTokenEditor() {
           {v && (
             <InputGroupAddon align="inline-end">
               <InputGroupButton size="icon-xs" aria-label="Back to baseline" onClick={() => setDraft(theme, "")}>
-                <RotateCcwIcon />
+                <ResetIcon />
               </InputGroupButton>
             </InputGroupAddon>
           )}

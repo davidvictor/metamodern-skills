@@ -65,3 +65,21 @@ test('choosing a value another side shows swaps the two sides', () => {
   const views = read('src/components/studio/views.tsx');
   assert.equal(views.match(/chooseCompared\(compared, /g)?.length, 2, 'A/B and the extra sides both choose through the swap');
 });
+
+test('appearance comparisons keep independent pane values, including duplicate styles and invalid defaults', () => {
+  assert.deepEqual(model.chooseCompared(['free', 'synthetic'], 0, 'synthetic', true), ['synthetic', 'synthetic']);
+  const duplicate = model.resolveComparison(['free', 'synthetic'], ['synthetic', 'synthetic'], 2, undefined, 'free');
+  assert.deepEqual(duplicate.compared, ['synthetic', 'synthetic']); assert.equal(duplicate.available, true);
+  const stale = model.resolveComparison(['free', 'synthetic'], ['gone', 'synthetic'], 2, undefined, 'free');
+  assert.deepEqual(stale.compared, ['free', 'synthetic']);
+  assert.deepEqual(model.resolveComparison(['free', 'synthetic'], ['free', 'synthetic', 'free', 'synthetic'], 4, undefined, 'free').compared, ['free', 'synthetic', 'free', 'synthetic']);
+});
+
+test('appearance count changes serialize the actual visible tuple rather than stale stored length', () => {
+  const four = model.resolveComparison(['free', 'synthetic'], ['free', 'synthetic'], 4, undefined, 'free');
+  assert.equal(four.compared.length, 4);
+  assert.equal(model.savedComparison({ values: four.compared }, 'free', 'synthetic').count, 4);
+  const two = model.resolveComparison(['free', 'synthetic'], four.compared, 2, undefined, 'free');
+  assert.equal(two.compared.length, 2);
+  assert.equal(model.savedComparison({ values: two.compared }, 'free', 'synthetic').count, 2);
+});

@@ -62,3 +62,9 @@ assert.match(views, /<Popover open=\{open\} onOpenChange=\{onOpenChange\}>/, "th
 assert.match(views, /if \(next\) \{\s*setName\(tour\.name\)\s*setGoal\(tour\.goal\)\s*setNarration\(step\.narration\)\s*setSeconds\(String\(step\.duration \?\? ""\)\)/, "opening reads the current tour and step")
 assert.match(views, /\[s\.present\.playing, i, secs, problem, ready, tour, s\.walkthroughs, set\]/, "playlist advance reads current walkthroughs")
 console.log("presenter overlay tests passed")
+
+const appearanceOverlay = { version: 1, tours: { 'tour.weekly': { steps: { 'step.first': { design: { iconStyle: 'synthetic' } } } } } }
+assert.equal(isPresenterOverlay(appearanceOverlay), true)
+assert.deepEqual(applyPresenterOverlay(base, appearanceOverlay)[0].steps[0].design, { iconStyle: 'synthetic' })
+assert.equal(isPresenterOverlay({ version: 1, tours: { x: { steps: { y: { design: { iconStyle: {} } } } } } }), false)
+assert.equal(isPresenterOverlay({ version: 1, tours: { x: { steps: { y: { design: { iconStyle: Infinity } } } } } }), false)

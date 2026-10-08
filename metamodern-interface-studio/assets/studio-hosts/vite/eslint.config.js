@@ -10,7 +10,7 @@ import { libraryBoundary } from './scripts/library-boundary.mjs'
 
 export default defineConfig([
   { files: ['src/design-ui/**/*.{ts,tsx,js,jsx,mjs}', 'example/design-ui/**/*.{ts,tsx}'], plugins: { 'design-ui': designUiBoundary }, rules: { 'design-ui/imports': 'error', 'react-refresh/only-export-components': 'off' } },
-  globalIgnores(['dist']),
+  globalIgnores(['dist', '.studio-generated']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

@@ -23,7 +23,9 @@ const sha = (buf) => `sha256:${createHash('sha256').update(buf).digest('hex')}`;
 const git = (...args) => execFileSync('git', ['-C', repo, ...args], { maxBuffer: 64 * 1024 * 1024 });
 const packageBase = (pkg) => ({ dependencies: pkg.dependencies ?? {}, devDependencies: pkg.devDependencies ?? {}, scripts: pkg.scripts ?? {} });
 
-const versions = {};
+// Keep candidate dependency fingerprints as well as published main history.
+const versions = JSON.parse(readFileSync(out, "utf8")).versions ?? {};
+const rebuilt = new Set();
 // Released versions are the merges on main's first-parent line; newest first, so the newest
 // commit carrying a version is that version's release. Branch work in progress never counts.
 for (const commit of git('log', '--first-parent', '--format=%H', 'main', '--', skill).toString().trim().split('\n')) {
@@ -33,7 +35,8 @@ for (const commit of git('log', '--first-parent', '--format=%H', 'main', '--', s
   } catch {
     continue;
   }
-  if (versions[version]) continue;
+  if (rebuilt.has(version)) continue;
+  rebuilt.add(version);
   const paths = git('ls-tree', '-r', '--name-only', commit, '--', starter).toString().trim().split('\n').filter(Boolean);
   if (!paths.length) continue;
   const files = {};

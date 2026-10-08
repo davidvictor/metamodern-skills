@@ -1,0 +1,28 @@
+[
+  {
+    "host": "vite",
+    "priorSource": "f33baa9f34758b4f059175615613f599e7674601",
+    "priorPackage": "0.19.0 unpublished Free candidate",
+    "profileSeeded": "free",
+    "install": "passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "acceptance": "skipped: receiver has no Playwright; separate fresh host browser checks passed",
+    "productOwnedCompilerSHA256": "281e238272387c657b758fdb41245f1fd494f83be83225b29a5649be89e8e5d4",
+    "productOwnedCompilerPreserved": true
+  },
+  {
+    "host": "next",
+    "priorSource": "f33baa9f34758b4f059175615613f599e7674601",
+    "priorPackage": "0.19.0 unpublished Free candidate",
+    "profileSeeded": "free",
+    "install": "passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "acceptance": "skipped: receiver has no Playwright; separate fresh host browser checks passed",
+    "productOwnedCompilerSHA256": "281e238272387c657b758fdb41245f1fd494f83be83225b29a5649be89e8e5d4",
+    "productOwnedCompilerPreserved": true
+  }
+]

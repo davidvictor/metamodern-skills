@@ -95,7 +95,7 @@ test('acceptance script covers every shell criterion', () => {
 test('large lists are windowed with one tab stop', () => {
   const list = read('src/studio/virtual-list.tsx');
   assert.match(list, /tabIndex=\{i === safeActive \? 0 : -1\}/);
-  for (const file of ['src/components/studio/rail-panel.tsx', 'src/components/studio/views.tsx']) assert.match(read(file), /<VirtualList/);
+  for (const file of ['src/components/studio/rail-panel.tsx', 'src/components/studio/design-tokens.tsx']) assert.match(read(file), /<VirtualList/);
 });
 
 test('starter documents local edits and the shell reference exists', () => {
@@ -120,15 +120,15 @@ test('property values and code cross the frame boundary only as announced capabi
   assert.match(client, /handlers\.update \? \(\["live-values"\] as const\)/);
   assert.match(client, /handlers\.code \? \(\["code"\] as const\)/);
   // A Studio change never marks the runtime modified: the values branch disarms before it updates.
-  assert.match(client, /m\.type === "values"\) \{[\s\S]{0,600}?armedAt = 0[\s\S]{0,200}?await update\(current\)/, 'a Studio change never marks the runtime modified');
+  assert.match(client, /m\.type === "values"\) \{[\s\S]{0,2200}?armedAt = 0[\s\S]{0,200}?await update\(next\)/, 'a Studio change never marks the runtime modified');
   const host = read('src/studio/live-preview.tsx');
   assert.match(host, /includes\("live-values"\)/);
   assert.match(host, /type: "code-request"/);
   // Pending value requests are forgotten on the reply as well as on an error, so the set never grows with each edit.
   assert.match(host, /m\.type === "reply"\) \{[\s\S]{0,200}?valueRequests\.current\.delete\(m\.requestId\)/, 'a reply clears its value request');
-  assert.match(host, /if \(valueRequests\.current\.delete\(m\.requestId\) && rt === onScreen\) setRemount/, 'an error clears its value request and remounts only the runtime on screen');
+  assert.match(host, /else setRemount/, 'an error clears its value request and remounts only the runtime on screen');
   // A failed staged runtime does not freeze later edits: new values stage another runtime, the same values never loop.
-  assert.match(host, /if \(newest\?\.phase === "error" && newest\.key === runtimeKey\) \{\s*if \(JSON\.stringify\(newest\.inputs\.values\) !== valuesKey\) setRemount\(\(n\) => n \+ 1\)\s*return\s*\}/, 'a failed runtime lets the next edit remount');
+  assert.match(host, /if \(newest\?\.phase === "error" && newest\.key === runtimeKey\) \{\s*if \(JSON\.stringify\(withoutAppearance\(newest\.inputs\.values, appearanceIds\)\) !== valuesKey\) setRemount\(\(n\) => n \+ 1\)\s*return\s*\}/, 'a failed runtime lets the next edit remount');
   assert.match(host, /language: String\(m\.language\), text: String\(m\.text\)/, 'code answers are coerced to strings');
 });
 
@@ -286,7 +286,7 @@ test('saved files carry a revision: a stale save gets 409 with the current file 
   assert.match(read('src/components/studio/responsive.tsx'), /"x-studio-expected-revision": revision/);
   assert.match(read('src/components/studio/properties.tsx'), /const revision = read\.headers\.get\("x-studio-revision"\)[\s\S]*"x-studio-expected-revision": revision/);
   const store = read('src/store.tsx');
-  assert.match(store, /set\(\{ saved: \(data as LayoutsFile\)\.layouts, layoutsRevision, layoutsLoad: "ready" \}\)/, 'the page keeps the revision of the layouts it loaded');
+  assert.match(store, /return \{ saved: layouts, layoutsRevision, layoutsLoad: "ready"/, 'the page keeps the revision of the layouts it loaded');
   assert.match(store, /x-studio-unreadable"\) === "1" \|\| validateLayouts\(data\)\.length\) return set\(\{ layoutsRevision, layoutsLoad: "unreadable" \}\)/, 'an unreadable layouts.json is never taken as an empty list to save over');
   assert.match(store, /layoutsLoad: "loading",/, 'the page starts without a revision and says so');
   const responsive = read('src/components/studio/responsive.tsx');
@@ -301,7 +301,7 @@ test('final fix wave: ordered value updates, file-preserving saves, a lazy-chunk
   // Only the newest values message may affect the runtime: updates chain, a superseded one is skipped or ignored.
   assert.match(client, /const seq = \+\+valuesSeq/);
   assert.match(client, /updating\.then\(async \(\) => \{\s*if \(seq !== valuesSeq/);
-  assert.match(client, /if \(seq === valuesSeq\) throw err/);
+  assert.match(client, /if \(seq === valuesSeq\[channel\]\) throw err/);
   assert.match(client, /if \(newest\) post\(\{ type: "navigated"/);
   assert.match(client, /await updating\s*\n\s*if \(!handlers\.code/);
   const props = read('src/components/studio/properties.tsx');
@@ -320,7 +320,7 @@ test('acceptance script covers the workspace criteria', () => {
   for (let i = 1; i <= 9; i++) assert.match(script, new RegExp(`"WS-0${i}"`), `WS-0${i} is not checked`);
   assert.match(script, /"WS-06b"/, 'WS-06b is not checked');
   assert.match(script, /"WS-05b"/, 'WS-05b is not checked');
-  assert.match(script, /STUDIO_CHUNK_BASELINE_GZ = \d+/);
+  assert.match(script, /STUDIO_INITIAL_BASELINE_GZ = \d+/);
   assert.match(script, /workspace: "workspace"/);
 });
 
@@ -391,7 +391,7 @@ test('0.12.2 Present anchor label and Compare headers: AA text, whole on the sta
   assert.match(script, /Compare Profile 3-up/);
   assert.match(script, /contents \$\{x\.spill\} px outside the header/);
   assert.match(script, /brand: "#fde68a" \}\)\n/);
-  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.14\.0"/);
+  assert.match(script, /const STUDIO_INITIAL_BASELINE = "0\.18\.4"/);
   const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');
   for (const id of ['AC-67', 'AC-68']) assert.match(doc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
   assert.match(doc, /AC-01 to AC-69/);

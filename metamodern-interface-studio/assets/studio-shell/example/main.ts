@@ -4,6 +4,7 @@
  * fixtures injected at its existing seams. The contract is the same: mount
  * from inputs, run commands through the app's own path, expose anchors.
  */
+import { PlusIcon as PlusSignIcon } from "@studio/icon-glyphs"
 import { connectStudioFrame } from "../src/studio/frame-client"
 import type { MountInputs } from "../src/studio/protocol"
 
@@ -57,6 +58,21 @@ const FIXTURE: Task[] = [
   { id: "t5", title: "Book the planning room", due: "Done", done: true },
 ]
 
+// The alternate geometry exists only for capability acceptance and is deliberately synthetic.
+const syntheticSquare = [["rect", { x: 5, y: 5, width: 14, height: 14 }]] as const
+let iconStyle = "stroke-rounded"
+function appearanceIcon() {
+  const geometry = iconStyle === "test-only-square" ? syntheticSquare : PlusSignIcon
+  return `<svg data-example-icon viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">${geometry.map(([tag, attrs]) => `<${tag} ${Object.entries(attrs).map(([name, value]) => `${name}="${String(value)}"`).join(" ")}/>`).join("")}</svg>`
+}
+function applyAppearance(inputs: MountInputs) {
+  const next = inputs.design?.iconStyle ?? "stroke-rounded"
+  if (next !== "stroke-rounded" && !(next === "test-only-square" && testing.__studioTestAppearance)) throw new Error("Unsupported icon style")
+  iconStyle = String(next)
+  document.documentElement.dataset.iconStyle = iconStyle
+  // Replace only glyph islands: forms, overlays and navigation keep their existing nodes and state.
+  for (const icon of document.querySelectorAll("[data-example-icon]")) icon.outerHTML = appearanceIcon()
+}
 const app = document.getElementById("app")!
 let s: State = {
   scenario: "",
@@ -86,7 +102,7 @@ function nav() {
 
 function listView() {
   const owner = s.role === "owner"
-  const head = `<div class="head"><h1>Today</h1>${owner ? '<button class="btn" data-act="new" data-studio-anchor="new-task">New task</button>' : ""}</div>`
+  const head = `<div class="head"><h1>Today</h1>${owner ? '<button class="btn" data-act="new" data-studio-anchor="new-task"><span data-example-icon-slot></span>New task</button>' : ""}</div>`
   if (s.loading) return head + `<div class="list" aria-busy="true">${[1, 2, 3, 4].map(() => '<div class="row"><span class="check"></span><span class="skeleton"></span></div>').join("")}</div>`
   if (s.failed) return head + '<div class="failed" role="alert"><strong>Tasks didn’t load</strong><p class="muted">Check the connection, then try again.</p><button class="btn ghost" data-act="retry">Retry</button></div>'
   if (!s.tasks.length) return head + `<div class="empty"><h2>No tasks yet</h2><p class="muted">Tasks you add appear here, newest first.</p>${owner ? '<button class="btn" data-act="new">Add your first task</button>' : ""}</div>`
@@ -172,6 +188,7 @@ function page() {
 function render() {
   const focused = document.activeElement?.id
   app.innerHTML = page()
+  for (const slot of app.querySelectorAll("[data-example-icon-slot]")) slot.innerHTML = appearanceIcon()
   if (focused) document.getElementById(focused)?.focus()
 }
 
@@ -270,6 +287,7 @@ function mount(inputs: MountInputs) {
   // A real product constraint for the example: it has no layout narrower than 300 px.
   if (innerWidth < 300) throw new Error(`Example Tasks has no layout narrower than 300 px; this frame is ${innerWidth} px`)
   rejectTitle(inputs.values)
+  applyAppearance(inputs)
   s = {
     scenario: inputs.scenario,
     card: cardFrom(inputs.values),
@@ -293,6 +311,8 @@ function mount(inputs: MountInputs) {
 // For the starter's acceptance script only: stand in for an older frame client, or a product without navigate.
 const testing = window as unknown as {
   __studioLegacy?: boolean
+  __studioTestAppearance?: boolean
+  __studioNoAppearance?: boolean
   __studioNoNavigate?: boolean
   /** Stand in for a frame client without live-values. */
   __studioNoLive?: boolean
@@ -361,6 +381,7 @@ const frame = connectStudioFrame(
           testing.__studioUpdated = inputs.values
           if (s.scenario.startsWith("components.task-card")) render()
         },
+    updateAppearance: testing.__studioNoAppearance ? undefined : applyAppearance,
     code: testing.__studioNoCode ? undefined : (inputs) => ({ language: "tsx", text: cardCode(cardFrom(inputs.values)) }),
     canGoBack: () => s.location.length > 1 || !!s.dialog,
     location: () => here() + (s.dialog ? " (New task)" : ""),

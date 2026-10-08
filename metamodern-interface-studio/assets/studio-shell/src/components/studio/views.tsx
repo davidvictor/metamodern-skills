@@ -1,27 +1,9 @@
-import { CompiledInspector } from "@/studio/design-ui/slots"
+import { appearanceDefault, appearanceOverrides, comparableAppearances } from "@/studio/appearance"
 import * as React from "react"
 import { useDesignDirections, useDirectionSnapshot } from "@/studio/design-ui/react"
-import {
-  ArrowLeftRightIcon,
-  CheckIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  Columns2Icon,
-  GripVerticalIcon,
-  PauseIcon,
-  PlayIcon,
-  RotateCcwIcon,
-  SplitIcon,
-  TriangleAlertIcon,
-  XIcon,
-  ListIcon,
-  ImagesIcon,
-  PencilIcon,
-} from "lucide-react"
+import { ArrowLeftRightIcon, CheckIcon, PreviousIcon, NextIcon, ColumnsIcon, GripVerticalIcon, PauseIcon, PlayIcon, ResetIcon, SplitIcon, TriangleAlertIcon, XIcon, ListIcon, ImagesIcon, PencilIcon } from "@/icons"
 import { cn } from "@/lib/utils"
-import { useCoarse, useMedia } from "@/hooks/use-mobile"
 import { toast } from "sonner"
-
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Kbd } from "@/components/ui/kbd"
@@ -32,18 +14,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@/components/ui/empty"
 import { adapter } from "@/adapter"
-import { areaLabel, axisOptions, captureFor, compareAxes, isColor, NO_DRAFT, propertyIds, useStudio, withoutLenses } from "@/store"
+import { areaLabel, axisOptions, captureFor, compareAxes, NO_DRAFT, propertyIds, useStudio, withoutLenses } from "@/store"
 import { normalizeScenarioInput } from "@/studio/input"
 import type { LiveStatus } from "@/studio/live-preview"
 import type { Step } from "@/studio/types"
 import { FidelityBadge, ScaleChip, StatusBadge, useFit } from "./bits"
-import { VirtualList, type VirtualListHandle } from "@/studio/virtual-list"
 import { StageControls } from "./chrome"
-import { ScenarioPreview, inspectHandle, profileOf, themeOf, useReportStatus } from "./preview"
+import { ScenarioPreview, inspectHandle, profileOf, themeOf } from "./preview"
 import { ResizeHandles } from "./resize-handles"
 import { StageNav, useStageNav } from "./stage-nav"
 import { firstVisibleIndex, importedOverlay, isPresenterOverlay, nextVisibleIndex, stepId, stepSeconds } from "@/studio/presenter-overlay"
@@ -74,6 +54,7 @@ function Stage({ children, controls = true, footer, narrow }: { children: React.
     </div>
   )
 }
+
 
 export function InspectStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
@@ -126,11 +107,13 @@ export function InspectStage({ narrow }: { narrow?: boolean }) {
   )
 }
 
+
 function useSideStatus() {
   const [st, setSt] = React.useState<LiveStatus | null>(null)
   const [nonce, setNonce] = React.useState(0)
   return { st, setSt, nonce, reset: () => setNonce((n) => n + 1) }
 }
+
 
 /**
  * A compared side's header. It takes the width of its preview, never more: as a size container it stays out of the
@@ -148,24 +131,26 @@ function SideCaption({ side, label, status, onReset }: { side: string; label: st
         </span>
         <span className="flex flex-wrap items-center justify-center gap-1.5">
           {status}
-          <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${side}`} onClick={onReset}><RotateCcwIcon /></Button>
+          <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${side}`} onClick={onReset}><ResetIcon /></Button>
         </span>
       </span>
     </figcaption>
   )
 }
 
+
 export function CompareStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
   const sc = s.scenarioObj
-  const axes = compareAxes(sc, s.hasDraft)
+  const axes = compareAxes(sc, s.hasDraft, s.theme)
   const { mode, split, showB } = s.compare
   // A scoped axis (such as Role) that this scenario does not use falls back to the theme axis.
   const fallback = !axes.some((x) => x.id === s.compare.axis)
   const axis = fallback ? "theme" : s.compare.axis
+  const appearance = comparableAppearances(adapter, s.theme).find(p => p.id === axis)
   const directionService = useDesignDirections()
   useDirectionSnapshot()
-  const baseOptions = axis === "direction" ? s.directionOptions : axisOptions(axis, sc)
+  const baseOptions = axis === "direction" ? s.directionOptions : axisOptions(axis, sc, s.theme)
   const options = axis === "direction" ? [...baseOptions, ...s.compare.values.filter(id => !baseOptions.some(o => o.id === id)).map(id => ({ id, label: `Unavailable pin: ${id}` }))] : baseOptions
   const pinnedKeys = axis === "direction" ? s.compare.values.join("|") : ""
   React.useEffect(() => { if (pinnedKeys) for (const key of pinnedKeys.split("|")) void directionService?.resolvePin(key) }, [pinnedKeys, directionService])
@@ -177,7 +162,8 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
     options.map((o) => o.id),
     saved,
     s.compare.count,
-    fallback ? [adapter.axes.themes[0].id, adapter.axes.themes[adapter.axes.themes.length - 1].id] : undefined
+    fallback ? [adapter.axes.themes[0].id, adapter.axes.themes[adapter.axes.themes.length - 1].id] : undefined,
+    appearance ? appearanceDefault(adapter, appearance, s.theme) : undefined
   )
   const axisLabel = axes.find((x) => x.id === axis)?.label ?? "This axis"
   const optionLabel = (id: string) => options.find((o) => o.id === id)?.label ?? id
@@ -190,7 +176,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   // Every side carries the viewer's property edits. A property axis reaches each side as that side's own property
   // value, any other input as its value; nothing a side shows is written back to the edits.
   const sideInputs = (value: string) =>
-    !input ? { values: s.values, props: s.edits } : propertyIds.has(axis) ? { values: s.values, props: { ...s.edits, [axis]: axisValue(value) } } : { values: { ...s.values, [axis]: axisValue(value) }, props: s.edits }
+    appearance ? { values: s.values, props: s.edits, designInputs: { [appearance.input]: value } } : !input ? { values: s.values, props: s.edits } : propertyIds.has(axis) ? { values: s.values, props: { ...s.edits, [axis]: axisValue(value) } } : { values: { ...s.values, [axis]: axisValue(value) }, props: s.edits }
   const pa = sideProfile("a")
   const pb = sideProfile("b")
   const box = React.useRef<HTMLDivElement>(null)
@@ -212,11 +198,12 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const setC = (patch: Partial<typeof s.compare>) => s.set({ compare: { ...s.compare, ...patch } })
   const changeAxis = (next: string) => {
     if (next === axis) return
-    const opts = next === "direction" ? s.directionOptions : axisOptions(next, sc)
-    const current = next === "design" ? "built" : next === "theme" ? s.theme : next === "profile" ? s.profile : (s.edits[next] ?? s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
+    const opts = next === "direction" ? s.directionOptions : axisOptions(next, sc, s.theme)
+    const nextAppearance = comparableAppearances(adapter, s.theme).find(p => p.id === next)
+    const current = nextAppearance ? s.designFor(s.theme).inputs[nextAppearance.input] : next === "design" ? "built" : next === "theme" ? s.theme : next === "profile" ? s.profile : (s.edits[next] ?? s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
     const at = Math.max(0, opts.findIndex((o) => o.id === String(current)))
     // The requested count stays; the new axis shows as many of those sides as it has values.
-    const values = Array.from({ length: Math.max(2, Math.min(comparisonCount(s.compare.count), opts.length)) }, (_, index) => opts[(at + index) % opts.length]?.id ?? "")
+    const values = Array.from({ length: nextAppearance ? comparisonCount(s.compare.count) : Math.max(2, Math.min(comparisonCount(s.compare.count), opts.length)) }, (_, index) => opts[(at + index) % opts.length]?.id ?? "")
     setC({ axis: next, a: values[0], b: values[1], values })
   }
   const A = useSideStatus()
@@ -285,6 +272,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   return (
     <Stage controls={false}>
       <StageNav nav={nav}>
+      {((appearance && saved.some(value => !options.some(option => option.id === value))) || (fallback && s.compare.axis.startsWith("appearance:"))) && <p role="status" className="px-3 pt-2 text-xs text-warning">Unavailable comparison appearance; showing the product default.</p>}
       {axis === "direction" && <div data-direction-pins className="flex flex-wrap justify-center gap-2 px-3 pt-2 text-xs">{compared.map(key => { const p = s.pinnedDirectionFor(key, s.theme); return <details key={key} className="max-w-xs rounded-lg border bg-popover px-2 py-1"><summary>{optionLabel(key)} · {themeOf(s.theme).label} · {profileOf(s.profile).label}</summary>{p.direction ? <div className="break-all pt-1"><p>{p.direction.basis} · direction {p.direction.id} · saved r{p.direction.savedRevision} · draft r{p.direction.draftRevision}</p><p>Source: {p.direction.sourceLockId ?? "Not declared"}</p><p>Fingerprint: {p.direction.fingerprint}</p></div> : <p role="status">{p.unavailable}</p>}</details> })}</div>}
       <div className="flex flex-wrap items-center justify-center gap-2 px-3 pt-3">
         <div className="flex flex-wrap items-center gap-1 rounded-xl border bg-popover/95 p-1 shadow-[var(--dock-shadow)] backdrop-blur-md">
@@ -295,7 +283,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           <Separator orientation="vertical" className="h-5! self-center!" />
           {(["a", "b"] as const).map((k) => (
             <Select key={k} value={pick(k)} items={Object.fromEntries(options.map((o) => [o.id, o.label]))} onValueChange={(v) => {
-              const values = chooseCompared(compared, k === "a" ? 0 : 1, v as string)
+              const values = chooseCompared(compared, k === "a" ? 0 : 1, v as string, !!appearance)
               setC({ axis, a: values[0], b: values[1], values })
             }} disabled={!s.compare.editable}>
               <SelectTrigger size="sm" className="gap-1 border-0 shadow-none" aria-label={k === "a" ? "Side A" : "Side B"}>
@@ -309,7 +297,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
             const slot = index + 2
             return (
               <Select key={slot} value={value} items={Object.fromEntries(options.map((o) => [o.id, o.label]))} onValueChange={(v) => {
-                const values = chooseCompared(compared, slot, v as string)
+                const values = chooseCompared(compared, slot, v as string, !!appearance)
                 setC({ a: values[0], b: values[1], values })
               }} disabled={!s.compare.editable}>
                 <SelectTrigger size="sm" className={cn("gap-1 border-0 shadow-none", axis === "direction" && "pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[1000px]:min-h-11 max-[1000px]:min-w-11")} aria-label={`Side ${String.fromCharCode(65 + slot)}`}>
@@ -326,7 +314,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           </Tooltip>
           <Separator orientation="vertical" className="h-5! self-center!" />
           <ToggleGroup value={[effectiveMode]} onValueChange={(v) => v[0] && setC({ mode: v[0] as typeof mode })} size="sm" spacing={0} aria-label="Comparison mode">
-            {!narrow && <ToggleGroupItem value="side" aria-label="Side by side"><Columns2Icon /><span className="hidden xl:inline">Side by side</span></ToggleGroupItem>}
+            {!narrow && <ToggleGroupItem value="side" aria-label="Side by side"><ColumnsIcon /><span className="hidden xl:inline">Side by side</span></ToggleGroupItem>}
             <Tooltip>
               <TooltipTrigger render={<span className="inline-flex" />}>
                 <ToggleGroupItem value="split" aria-label="Split" disabled={!splitOk}><SplitIcon /><span className="hidden xl:inline">Split</span></ToggleGroupItem>
@@ -337,14 +325,14 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           </ToggleGroup>
           <ToggleGroup value={[String(count)]} onValueChange={(v) => v[0] && setC({ count: Number(v[0]) as 2 | 3 | 4, mode: Number(v[0]) > 2 ? "side" : s.compare.mode })} size="sm" spacing={0} aria-label="Comparison count">
             <ToggleGroupItem value="2">2-up</ToggleGroupItem>
-            <ToggleGroupItem value="3" disabled={options.length < 3}>3-up</ToggleGroupItem>
-            <ToggleGroupItem value="4" disabled={options.length < 4}>4-up</ToggleGroupItem>
+            <ToggleGroupItem value="3" disabled={!appearance && options.length < 3}>3-up</ToggleGroupItem>
+            <ToggleGroupItem value="4" disabled={!appearance && options.length < 4}>4-up</ToggleGroupItem>
           </ToggleGroup>
         </div>
         {diverged && (
           <Badge variant="outline" className="gap-1.5 bg-background/90 pr-0.5 text-warning backdrop-blur">
             <TriangleAlertIcon /> Sides diverged: reset to compare
-            <Button variant="ghost" size="xs" onClick={() => { A.reset(); B.reset(); if (count > 2) C.reset(); if (count > 3) D.reset() }}><RotateCcwIcon /> {count > 2 ? "Reset all" : "Reset both"}</Button>
+            <Button variant="ghost" size="xs" onClick={() => { A.reset(); B.reset(); if (count > 2) C.reset(); if (count > 3) D.reset() }}><ResetIcon /> {count > 2 ? "Reset all" : "Reset both"}</Button>
           </Badge>
         )}
       </div>
@@ -370,7 +358,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           const sideIndex = (index + 2) as 2 | 3
           const state = sideIndex === 2 ? C : D
           return (
-            <figure key={`${sideIndex}:${value}`} className="m-0 flex min-w-15 flex-col items-center gap-2">
+            <figure key={appearance ? sideIndex : `${sideIndex}:${value}`} className="m-0 flex min-w-15 flex-col items-center gap-2">
               <SideCaption side={String.fromCharCode(65 + sideIndex)} label={label(value)} status={sideStatus(state.st)} onReset={state.reset} />
               {extraSide(value, sideIndex)}
             </figure>
@@ -429,6 +417,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   )
 }
 
+
 /** Mounts its child only while near the viewport, so offscreen thumbnails hold no runtime. */
 function WhenVisible({ children, className }: { children: (width: number) => React.ReactNode; className?: string }) {
   const ref = React.useRef<HTMLDivElement>(null)
@@ -448,6 +437,7 @@ function WhenVisible({ children, className }: { children: (width: number) => Rea
   }, [])
   return <div ref={ref} className={className}>{visible && width > 0 ? children(width) : null}</div>
 }
+
 
 export function GalleryStage() {
   const s = useStudio()
@@ -551,21 +541,25 @@ export function GalleryStage() {
   )
 }
 
+
 /** Why a step cannot run, resolved before playback. A broken step is shown, never skipped or replaced. */
-export function staticProblem(st: Step) {
+export function staticProblem(st: Step, selectedTheme = adapter.axes.themes[0].id) {
   const sc = adapter.scenarios.find((x) => x.id === st.scenario)
   if (!sc) return `Scenario ${st.scenario} is not in the catalog. Nothing was substituted.`
   for (const [id, value] of Object.entries(st.values ?? {})) {
     const input = adapter.axes.inputs.find((candidate) => candidate.id === id)
     if (!input || (input.scoped && sc.designed?.[id] === undefined) || normalizeScenarioInput(input, sc, value) === undefined) return `The authored input ${id} is not supported by this step. Nothing was substituted.`
   }
+  if (appearanceOverrides(adapter, st.design, st.theme ?? selectedTheme).invalid.length) return "The authored appearance is unavailable. Nothing was substituted."
   if (sc.status === "later") return `${sc.surface} is marked Later: it has no designed screen. Nothing was substituted.`
   if (!adapter.frameEntry && st.commands?.length) return "This step runs product commands, and this Studio has no live preview."
   if (!adapter.frameEntry && !captureFor(sc, st.theme ?? adapter.axes.themes[0].id, st.profile ?? adapter.axes.profiles[0].id)) return "No capture exists for this step."
   return null
 }
 
+
 const MAX_SEGMENTS = 24
+
 
 export function PresentStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
@@ -594,12 +588,12 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
   const profile = step?.profile ?? s.profile
   const pr = profileOf(profile)
   const scale = useFit(box, pr.w, pr.h, s.zoom, 48)
-  const stepKey = `${tour?.id ?? "none"}:${stepId(tour ?? { id: "none" }, step ?? { scenario: "none", narration: "" }, i)}:${JSON.stringify(step?.values ?? {})}:${nonce}`
+  const stepKey = `${tour?.id ?? "none"}:${stepId(tour ?? { id: "none" }, step ?? { scenario: "none", narration: "" }, i)}:${JSON.stringify([step?.values ?? {}, step?.design ?? {}])}:${nonce}`
   // A frame can report its final status after a new step has mounted. Only the
   // callback from this exact step may affect readiness, anchors, or playback.
   const currentStatus = statusKey === stepKey ? st : null
   // Runtime problems count too: a failed command or a missing anchor stops the step.
-  const problem = !step ? null : staticProblem(step) ?? (currentStatus?.status === "error" && !currentStatus.previous ? `The step did not run: ${currentStatus.reason}` : currentStatus?.status === "ready" && step.anchor && !currentStatus.anchors.some((a) => a.id === step.anchor) ? `Anchor ${step.anchor} is missing from the preview. Nothing was highlighted in its place.` : null)
+  const problem = !step ? null : staticProblem(step, s.theme) ?? (currentStatus?.status === "error" && !currentStatus.previous ? `The step did not run: ${currentStatus.reason}` : currentStatus?.status === "ready" && step.anchor && !currentStatus.anchors.some((a) => a.id === step.anchor) ? `Anchor ${step.anchor} is missing from the preview. Nothing was highlighted in its place.` : null)
   const ready = !problem && (adapter.frameEntry ? currentStatus?.status === "ready" : true)
   const explored = !!currentStatus?.modified
   const go = (d: number) => tour && s.set({ present: { ...s.present, step: Math.max(0, Math.min(tour.steps.length - 1, i + d)), elapsed: 0 } })
@@ -652,7 +646,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
       <div className="stage-surface relative flex min-h-0 flex-1 flex-col">
         <div ref={box} className="flex min-h-0 flex-1 flex-col overflow-auto p-4">
          <div className="mx-auto my-auto flex w-max flex-col items-center gap-3">
-          {staticProblem(step) ? (
+          {staticProblem(step, s.theme) ? (
             <div className="flex max-w-sm flex-col items-center gap-2 rounded-xl bg-background/95 p-6 text-center text-sm shadow-sm">
               <TriangleAlertIcon className="size-5 text-danger" />
               <b>Step {i + 1} cannot run</b>
@@ -666,6 +660,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
               theme={theme}
               profile={profile}
               values={{ ...withoutLenses(s.values), ...step.values }}
+              designInputs={step.design}
               commands={step.commands}
               anchor={explored ? undefined : step.anchor}
               scale={scale}
@@ -674,7 +669,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
               onStatus={(next) => { setSt(next); setStatusKey(stepKey) }}
             />
           )}
-          {!staticProblem(step) && <ScaleChip w={pr.w} h={pr.h} scale={scale} />}
+          {!staticProblem(step, s.theme) && <ScaleChip w={pr.w} h={pr.h} scale={scale} />}
          </div>
         </div>
       </div>
@@ -682,7 +677,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
         {tour.steps.length <= MAX_SEGMENTS ? (
           <div className="seg-track px-4 pt-3" aria-hidden>
             {tour.steps.map((x, j) => (
-              <i key={j} data-state={staticProblem(x) || (j === i && problem) ? "unresolved" : j < i ? "done" : j === i ? "current" : "upcoming"} style={j === i ? ({ "--p": `${(s.present.elapsed / secs) * 100}%` } as React.CSSProperties) : undefined} />
+              <i key={j} data-state={staticProblem(x, s.theme) || (j === i && problem) ? "unresolved" : j < i ? "done" : j === i ? "current" : "upcoming"} style={j === i ? ({ "--p": `${(s.present.elapsed / secs) * 100}%` } as React.CSSProperties) : undefined} />
             ))}
           </div>
         ) : (
@@ -690,7 +685,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
           <div className="px-4 pt-3" aria-hidden>
             <div className="relative h-1 rounded-full bg-foreground/15">
               <div className="absolute inset-y-0 left-0 rounded-full bg-foreground" style={{ width: `${((i + s.present.elapsed / secs) / tour.steps.length) * 100}%` }} />
-              {tour.steps.map((x, j) => (staticProblem(x) || (j === i && problem) ? <i key={j} className="absolute -top-0.5 h-2 w-0.5 rounded-full bg-danger" style={{ left: `${(j / tour.steps.length) * 100}%` }} /> : null))}
+              {tour.steps.map((x, j) => (staticProblem(x, s.theme) || (j === i && problem) ? <i key={j} className="absolute -top-0.5 h-2 w-0.5 rounded-full bg-danger" style={{ left: `${(j / tour.steps.length) * 100}%` }} /> : null))}
             </div>
           </div>
         )}
@@ -722,7 +717,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
             {step.hidden && <p className="text-xs text-muted-foreground">This step is hidden from autoplay. It remains available here for review.</p>}
           </div>
           <div role="group" aria-label="Walkthrough controls" className={cn("flex flex-wrap items-center gap-1", !narrow && "@xl:col-span-2 @4xl:col-span-1")}>
-            <Button variant="outline" size="icon" aria-label="Previous step" disabled={i === 0} onClick={() => go(-1)}><ChevronLeftIcon /></Button>
+            <Button variant="outline" size="icon" aria-label="Previous step" disabled={i === 0} onClick={() => go(-1)}><PreviousIcon /></Button>
             <Button size="icon" aria-label={s.present.playing ? "Pause" : "Play"} onClick={() => s.set({ present: { ...s.present, playing: !s.present.playing } })} disabled={!!problem}>
               {s.present.playing ? <PauseIcon /> : <PlayIcon />}
             </Button>
@@ -730,8 +725,8 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
               const first = s.walkthroughs.find((candidate) => firstVisibleIndex(candidate) >= 0)
               if (first) s.set({ present: { ...s.present, tour: first.id, step: firstVisibleIndex(first), elapsed: 0, playing: true, playlist: true } })
             }}>Play all</Button>
-            <Button variant="outline" size="icon" aria-label="Next step" disabled={i === tour.steps.length - 1} onClick={() => go(1)}><ChevronRightIcon /></Button>
-            <StepsPopover tour={tour} current={i} onPick={(j) => s.set({ present: { ...s.present, step: j, elapsed: 0 } })} />
+            <Button variant="outline" size="icon" aria-label="Next step" disabled={i === tour.steps.length - 1} onClick={() => go(1)}><NextIcon /></Button>
+            <StepsPopover theme={s.theme} tour={tour} current={i} onPick={(j) => s.set({ present: { ...s.present, step: j, elapsed: 0 } })} />
             <PresenterEditor key={`${tour.id}:${stepId(tour, step, i)}`} tour={tour} step={step} index={i} />
             <PresenterTransfer />
             <Button variant="ghost" size="sm" aria-label="Focus presentation" aria-pressed={s.present.focus} onClick={() => s.set({ present: { ...s.present, focus: !s.present.focus } })}>Focus</Button>
@@ -747,6 +742,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
     </div>
   )
 }
+
 
 function PresenterTransfer() {
   const s = useStudio()
@@ -788,6 +784,7 @@ function PresenterTransfer() {
     </Popover>
   )
 }
+
 
 /** A deliberately small, local editor for presenter-owned material. Generated adapter records stay read-only. */
 function PresenterEditor({ tour, step, index }: { tour: { id: string; name: string; goal: string; steps: Step[] }; step: Step; index: number }) {
@@ -834,8 +831,9 @@ function PresenterEditor({ tour, step, index }: { tour: { id: string; name: stri
   )
 }
 
+
 /** Every step of the walkthrough, to jump to one. It lives with the player so it works with the panel closed. */
-function StepsPopover({ tour, current, onPick }: { tour: { steps: Step[] }; current: number; onPick: (i: number) => void }) {
+function StepsPopover({ tour, current, onPick, theme }: { tour: { steps: Step[] }; current: number; onPick: (i: number) => void; theme: string }) {
   const [open, setOpen] = React.useState(false)
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -847,7 +845,7 @@ function StepsPopover({ tour, current, onPick }: { tour: { steps: Step[] }; curr
           <ol aria-label="All steps" className="grid gap-0.5">
             {tour.steps.map((st, j) => {
               const sc = adapter.scenarios.find((x) => x.id === st.scenario)
-              const problem = staticProblem(st)
+              const problem = staticProblem(st, theme)
               return (
                 <li key={j}>
                   <button
@@ -872,190 +870,5 @@ function StepsPopover({ tour, current, onPick }: { tour: { steps: Step[] }; curr
         </ScrollArea>
       </PopoverContent>
     </Popover>
-  )
-}
-
-type TokenRow = { key: string; kind: "family"; name: string; count: number; open: boolean } | { key: string; kind: "token"; token: import("@/studio/types").Token }
-const FAMILY_ROW = 32
-const TOKEN_ROW = 56
-/** Families larger than this start folded, so a huge token set opens as a short list of families. */
-const FOLD_OVER = 60
-
-export function TokensStage() { return adapter.design?.editor ? <CompiledInspector /> : <LegacyTokensStage /> }
-function LegacyTokensStage() {
-  const s = useStudio()
-  const t = adapter.tokens!
-  const q = s.tokens.query.toLowerCase()
-  const family = s.tokens.family
-  const familyCount = t.families.find((g) => g.name === family)?.count
-  const [ca, cb] = t.columns
-  const [showTheme, setShowTheme] = React.useState(ca)
-  const [showDraft, setShowDraft] = React.useState(true)
-  const [folds, setFolds] = React.useState<Record<string, boolean>>({})
-  const drafts = Object.keys(s.tokens.drafts).length
-  const matches = React.useMemo(
-    () =>
-      t.tokens.filter(
-        (x) =>
-          (!family || x.family === family) &&
-          (!q || `${x.name} ${Object.values(x.values).join(" ")}`.toLowerCase().includes(q)) &&
-          (s.tokens.flag === "all" || (s.tokens.flag === "unread" && x.flags?.includes("unread")) || (s.tokens.flag === "literal" && x.flags?.includes("literal")) || (s.tokens.flag === "draft" && !!s.tokens.drafts[x.name]))
-      ),
-    [t.tokens, family, q, s.tokens.flag, s.tokens.drafts]
-  )
-  const narrowed = !!q || !!family || s.tokens.flag !== "all"
-  const rows = React.useMemo(() => {
-    const out: TokenRow[] = []
-    const names = [...new Set(matches.map((x) => x.family))]
-    for (const name of names) {
-      const items = matches.filter((x) => x.family === name)
-      // An explicit fold wins; otherwise big families fold unless the view is already narrowed.
-      const open = folds[name] ?? (narrowed || items.length <= FOLD_OVER)
-      out.push({ key: `family:${name}`, kind: "family", name, count: items.length, open })
-      if (open) for (const token of items) out.push({ key: token.name, kind: "token", token })
-    }
-    return out
-  }, [matches, folds, narrowed])
-  const [activeKey, setActiveKey] = React.useState<string | null>(null)
-  const found = rows.findIndex((r) => r.key === (activeKey ?? s.tokens.selected))
-  const active = found >= 0 ? found : 0
-  const handle = React.useRef<VirtualListHandle>(null)
-  // On a touch screen a family row is a 44 px target. Below 1024 px the stage sits under the table and a token's values take the full width.
-  const coarse = useCoarse()
-  const stacked = useMedia("(max-width: 1023px)")
-  const heightOf = React.useCallback((i: number) => (rows[i].kind === "family" ? (coarse ? 44 : FAMILY_ROW) : TOKEN_ROW), [rows, coarse])
-  const ground = (theme: string) => t.grounds?.[theme] ?? (themeOf(theme).appearance === "dark" ? "#111111" : "#ffffff")
-  const pval = (v: string | undefined, theme: string, draft?: string) => (
-    <span className="flex min-w-0 items-center gap-2">
-      {v && isColor(v) && (
-        <span className="relative flex h-5 w-7 shrink-0 items-center justify-center rounded ring-1 ring-border" style={{ background: ground(theme) }}>
-          <span className="size-3 rounded-[3px]" style={{ background: draft && CSS.supports("color", draft) ? draft : v }} />
-        </span>
-      )}
-      <code className={cn("font-mono text-xs", stacked ? "line-clamp-2 break-all" : "truncate", draft && "text-info")} title={v}>{draft ?? v ?? "none"}</code>
-    </span>
-  )
-  const select = (name: string) => s.set({ tokens: { ...s.tokens, selected: name }, detailsOpen: true })
-  const toggleFamily = (name: string, open: boolean) => setFolds((m) => ({ ...m, [name]: !open }))
-  const box = React.useRef<HTMLDivElement>(null)
-  const pr = profileOf(s.profile)
-  const scale = useFit(box, pr.w, pr.h, s.zoom, 40)
-  const COLS = stacked ? "grid-cols-2 gap-y-1" : "grid-cols-[minmax(0,42%)_minmax(0,1fr)_minmax(0,1fr)]"
-  const report = useReportStatus()
-  return (
-    <ResizablePanelGroup key={String(stacked)} orientation={stacked ? "vertical" : "horizontal"} className="min-h-0 flex-1">
-      <ResizablePanel defaultSize={stacked ? "50" : "60"} minSize="40">
-        <div className="flex h-full min-h-0 flex-col bg-background">
-          <div className="flex items-center gap-2 border-b px-4 py-2 text-xs text-muted-foreground">
-            <span>{family ? `${family} · ` : ""}{matches.length} shown of {familyCount ?? t.total} · read from {t.source} at {adapter.product.revision}</span>
-            <span className="ml-auto hidden lg:inline">Product values sit on the product’s own ground</span>
-          </div>
-          <div className={cn("grid border-b py-2 pr-4 pl-4 text-xs font-medium text-muted-foreground [scrollbar-gutter:stable]", COLS)} aria-hidden>
-            <span className={cn(stacked && "sr-only")}>Token</span>
-            <span>{themeOf(ca).label}</span>
-            <span>{themeOf(cb).label}</span>
-          </div>
-          {rows.length === 0 ? (
-            <Empty className="border-0 py-12">
-              <EmptyHeader>
-                <EmptyTitle className="text-sm">No token matches</EmptyTitle>
-                <EmptyDescription className="text-xs">Clear the search, the flag or the family.</EmptyDescription>
-              </EmptyHeader>
-              <Button variant="outline" size="sm" onClick={() => s.set({ tokens: { ...s.tokens, family: null, query: "", flag: "all" } })}>Show all tokens</Button>
-            </Empty>
-          ) : (
-            <VirtualList
-              ref={handle}
-              role="treegrid"
-              aria-label="Tokens"
-              aria-rowcount={rows.length}
-              className="[scrollbar-gutter:stable]"
-              count={rows.length}
-              rowHeight={heightOf}
-              active={active}
-              onActiveChange={(i) => setActiveKey(rows[i].key)}
-              label={(i) => { const r = rows[i]; return r.kind === "family" ? r.name : r.token.name.replace(/^-+/, "") }}
-              onRowKeyDown={(e, i) => {
-                const r = rows[i]
-                if (r.kind !== "family") return
-                if (e.key === "ArrowRight" && !r.open) { e.preventDefault(); toggleFamily(r.name, r.open) }
-                if (e.key === "ArrowLeft" && r.open) { e.preventDefault(); toggleFamily(r.name, r.open) }
-              }}
-              rowProps={(i) => {
-                const r = rows[i]
-                if (r.kind === "family")
-                  return {
-                    role: "row",
-                    "aria-rowindex": i + 1,
-                    "aria-expanded": r.open,
-                    onClick: () => toggleFamily(r.name, r.open),
-                    className: "flex cursor-default items-center gap-1.5 border-b bg-muted/40 px-4 text-xs font-medium select-none hover:bg-muted outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--ring)]",
-                  }
-                return {
-                  role: "row",
-                  "aria-rowindex": i + 1,
-                  "aria-selected": s.tokens.selected === r.token.name,
-                  onClick: () => select(r.token.name),
-                  className: cn("grid cursor-default items-center gap-x-2 border-b px-4 select-none hover:bg-muted/50 outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--ring)]", COLS, s.tokens.selected === r.token.name && "bg-muted"),
-                }
-              }}
-            >
-              {(i) => {
-                const r = rows[i]
-                if (r.kind === "family")
-                  return (
-                    <div role="gridcell" className="flex min-w-0 flex-1 items-center gap-1.5">
-                      <ChevronRightIcon className={cn("size-3.5 transition-transform duration-200", r.open && "rotate-90")} />
-                      {r.name}
-                      <span className="font-normal text-muted-foreground tabular-nums">{r.count}</span>
-                      {!r.open && <span className="ml-auto font-normal text-muted-foreground">Folded</span>}
-                    </div>
-                  )
-                const x = r.token
-                const d = s.tokens.drafts[x.name]
-                return (
-                  <>
-                    <div className={cn("grid min-w-0 gap-0.5", stacked && "col-span-2 flex items-center gap-2")} role="gridcell">
-                      <code className="truncate font-mono text-xs font-medium">{x.name}</code>
-                      <span className="flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
-                        <span className="shrink-0">{x.reads != null ? `${x.reads} reads` : "reads unknown"}</span>
-                        {d && <StatusBadge kind="draft">Draft</StatusBadge>}
-                        {x.flags?.includes("unread") && <Badge variant="outline" className="h-4 px-1 text-[10px] text-warning">Unread</Badge>}
-                        {x.flags?.includes("literal") && <Badge variant="outline" className="h-4 px-1 text-[10px]">Fixed</Badge>}
-                        {x.flags?.includes("coupled") && <Badge variant="outline" className="h-4 px-1 text-[10px] text-info">Coupled</Badge>}
-                      </span>
-                    </div>
-                    <div role="gridcell" className="min-w-0">{pval(x.values[ca], ca, d?.[ca])}</div>
-                    <div role="gridcell" className="min-w-0">{pval(x.values[cb], cb, d?.[cb])}</div>
-                  </>
-                )
-              }}
-            </VirtualList>
-          )}
-        </div>
-      </ResizablePanel>
-      <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={stacked ? "50" : "40"} minSize="25">
-        <div className="stage-surface flex h-full min-h-0 flex-col">
-          <div ref={box} className="flex min-h-0 flex-1 flex-col overflow-auto p-4">
-           <div className="mx-auto my-auto flex w-max flex-col items-center gap-3">
-            <div className="flex flex-wrap items-center justify-center gap-1.5 rounded-lg bg-background/92 p-1 text-xs shadow-sm backdrop-blur">
-              <ToggleGroup value={[showTheme]} onValueChange={(v) => v[0] && setShowTheme(v[0])} size="sm" spacing={0} aria-label="Preview theme">
-                {[ca, cb].map((id) => <ToggleGroupItem key={id} value={id} className="h-6 px-2 text-xs">{themeOf(id).label}</ToggleGroupItem>)}
-              </ToggleGroup>
-              <Separator orientation="vertical" className="h-4! self-center!" />
-              <ToggleGroup value={[showDraft ? "draft" : "baseline"]} onValueChange={(v) => v[0] && setShowDraft(v[0] === "draft")} size="sm" spacing={0} aria-label="Values">
-                <ToggleGroupItem value="baseline" className="h-6 px-2 text-xs">Baseline</ToggleGroupItem>
-                <ToggleGroupItem value="draft" className="h-6 px-2 text-xs" disabled={!s.hasDraft}>Draft{drafts ? ` · ${drafts}` : ""}</ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-            <ScenarioPreview scenario={s.scenario} theme={showTheme} profile={s.profile} values={s.values} draft={showDraft ? s.draftFor(showTheme) : NO_DRAFT} onStatus={report} scale={scale} label="Token preview" />
-            <ScaleChip w={pr.w} h={pr.h} scale={scale} />
-            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">One draft layer: Adjust's values, with tokens edited here winning. It applies in the Design view only and never changes the product.</p>
-           </div>
-          </div>
-        </div>
-      </ResizablePanel>
-    </ResizablePanelGroup>
   )
 }

@@ -3,7 +3,7 @@
  * Copy. Token colors come from studio.css (.library-code), which keeps each at AA on the code ground.
  */
 import * as React from "react"
-import { CheckIcon, CopyIcon } from "lucide-react"
+import { CheckIcon, CopyIcon } from "@/icons"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"

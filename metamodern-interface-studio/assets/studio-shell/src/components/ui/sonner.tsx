@@ -2,7 +2,7 @@
 
 import { useTheme } from "@/components/theme-provider"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
-import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
+import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, LoadingIcon } from "@/icons"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   // Studio edit: follows the Studio appearance instead of next-themes.
@@ -26,7 +26,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           <OctagonXIcon className="size-4" />
         ),
         loading: (
-          <Loader2Icon className="size-4 animate-spin" />
+          <LoadingIcon className="size-4 animate-spin" />
         ),
       }}
       style={
