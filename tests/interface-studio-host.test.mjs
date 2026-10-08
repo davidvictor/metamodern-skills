@@ -107,3 +107,22 @@ test('live saved-layout read restores only the untouched initial requested selec
   assert.deepEqual(linkedLayoutRecovery('deleted-layout', initial, initial, [saved]), { layout: undefined, missing: true });
   assert.deepEqual(linkedLayoutRecovery(null, initial, initial, [saved]), { layout: undefined, missing: false });
 });
+
+test('host-using synthetic adapter preflight evaluates all host globals and chooses the requested variant', async () => {
+  const base = new URL('../metamodern-interface-studio/assets/', import.meta.url);
+  const strip = file => stripTypeScriptTypes(readFileSync(new URL(file, base), 'utf8'), { mode: 'strip' });
+  const moduleUrl = code => `data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
+  const { adapterPreflightDefines } = await import(moduleUrl(strip('studio-shell/src/studio/host.ts')));
+  const example = moduleUrl(strip('studio-shell/src/adapters/example.ts'));
+  for (const variant of ['synthetic', 'captures']) {
+    let host = strip('studio-hosts/vite/src/studio-host.ts').replaceAll('import.meta.env.DEV', 'false').replaceAll('import.meta.env.VITE_STUDIO_ADAPTER', JSON.stringify(variant)).replace(/import\.meta\.glob\([^)]*\)/g, '{}');
+    const defines = adapterPreflightDefines({ __STUDIO_DIRECTIONS__: JSON.stringify({ schema: 'studio-directions/1', revisions: [], events: [] }) });
+    for (const [name, value] of Object.entries(defines)) host = host.replaceAll(name, value);
+    const source = strip('studio-shell/src/adapters/synthetic.ts').replace('"@/studio-host"', JSON.stringify(moduleUrl(host))).replace('"@/adapters/example"', JSON.stringify(example));
+    const { adapter } = await import(moduleUrl(source));
+    assert.equal(!!adapter.workspace, false); assert.equal(!!adapter.library, false);
+    assert.equal(adapter.target.fidelity, variant === 'captures' ? 'static-capture' : 'recreation');
+  }
+  const config = readFileSync(new URL('studio-hosts/vite/vite.config.ts', base), 'utf8');
+  assert.match(config, /define: adapterPreflightDefines\(hostDefines\)/);
+});

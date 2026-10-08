@@ -12,6 +12,7 @@ import { SCENARIOS_MAX_BYTES, validateScenarios } from "./src/studio/scenarios"
 import type { IncomingMessage, ServerResponse } from "http"
 import { pathToFileURL } from "url"
 import type { StudioAdapter } from "./src/studio/types"
+import { adapterPreflightDefines } from "./src/studio/host"
 import { DIRECTIONS_MAX_BYTES, validateDirections, validateDirectionTransition } from "./src/studio/directions"
 import { savedFileMiddleware, savedFileSnapshot, type SavedFileOptions } from "./scripts/saved-file"
 import { astLang, definedModules, undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
@@ -97,8 +98,11 @@ const aliases = [...exampleWorkspace, ...acceptance, ...studioAliases, { find: "
 
 // The adapter as a build sees it, loaded once with Vite's module runner, or why it could not be loaded (for example it imports CSS).
 let builtAdapter: Promise<{ adapter: StudioAdapter } | { error: string }> | undefined
+const hostDefines = {
+  __STUDIO_DIRECTIONS__: JSON.stringify(savedFileSnapshot({ file: savedPaths.directions, maxBytes: DIRECTIONS_MAX_BYTES, validate: validateDirections })) ?? "undefined",
+}
 const loadAdapter = () =>
-  (builtAdapter ??= runnerImport<{ adapter: StudioAdapter }>("@/adapter", { configFile: false, root, logLevel: "error", resolve: { alias: aliases } }).then(
+  (builtAdapter ??= runnerImport<{ adapter: StudioAdapter }>("@/adapter", { configFile: false, root, logLevel: "error", resolve: { alias: aliases }, define: adapterPreflightDefines(hostDefines) }).then(
     (r) => ({ adapter: r.module.adapter }),
     (e: unknown) => ({ error: e instanceof Error ? e.message : String(e) })
   ))
@@ -199,7 +203,7 @@ const editorFixtureAssets = (): Plugin => ({
 })
 export default defineConfig({
   base: "./",
-  define: { __STUDIO_DIRECTIONS__: JSON.stringify(savedFileSnapshot({ file: savedPaths.directions, maxBytes: DIRECTIONS_MAX_BYTES, validate: validateDirections })) ?? "undefined" },
+  define: hostDefines,
   plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), directions(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock(), editorFixtureAssets()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),

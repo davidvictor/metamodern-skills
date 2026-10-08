@@ -95,7 +95,7 @@ test('acceptance script covers every shell criterion', () => {
 test('large lists are windowed with one tab stop', () => {
   const list = read('src/studio/virtual-list.tsx');
   assert.match(list, /tabIndex=\{i === safeActive \? 0 : -1\}/);
-  for (const file of ['src/components/studio/rail-panel.tsx', 'src/components/studio/views.tsx']) assert.match(read(file), /<VirtualList/);
+  for (const file of ['src/components/studio/rail-panel.tsx', 'src/components/studio/design-tokens.tsx']) assert.match(read(file), /<VirtualList/);
 });
 
 test('starter documents local edits and the shell reference exists', () => {
@@ -320,7 +320,7 @@ test('acceptance script covers the workspace criteria', () => {
   for (let i = 1; i <= 9; i++) assert.match(script, new RegExp(`"WS-0${i}"`), `WS-0${i} is not checked`);
   assert.match(script, /"WS-06b"/, 'WS-06b is not checked');
   assert.match(script, /"WS-05b"/, 'WS-05b is not checked');
-  assert.match(script, /STUDIO_CHUNK_BASELINE_GZ = \d+/);
+  assert.match(script, /STUDIO_INITIAL_BASELINE_GZ = \d+/);
   assert.match(script, /workspace: "workspace"/);
 });
 
@@ -391,7 +391,7 @@ test('0.12.2 Present anchor label and Compare headers: AA text, whole on the sta
   assert.match(script, /Compare Profile 3-up/);
   assert.match(script, /contents \$\{x\.spill\} px outside the header/);
   assert.match(script, /brand: "#fde68a" \}\)\n/);
-  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.14\.0"/);
+  assert.match(script, /const STUDIO_INITIAL_BASELINE = "0\.18\.0"/);
   const doc = readFileSync(new URL('../metamodern-interface-studio/references/shell.md', import.meta.url), 'utf8');
   for (const id of ['AC-67', 'AC-68']) assert.match(doc, new RegExp(`^\\| ${id} \\|`, 'm'), `shell.md has no ${id} row`);
   assert.match(doc, /AC-01 to AC-69/);

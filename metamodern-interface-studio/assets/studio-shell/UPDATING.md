@@ -12,6 +12,8 @@ Live Design enums with multiple declared choices now offer independent Compare a
 
 Saved-layout initial-load recovery now resolves the originally requested saved layout after the existing validated live read, if the viewer has not changed Responsive state. It restores only layout fields, never appearance, properties or navigation; missing layouts remain disclosed. No new timer, retry or loading gate is introduced.
 
+Host preflight now evaluates adapter imports with the same saved-direction snapshot as the actual build. Undeclared optional workspace/library layers are excluded. Design and Tokens stage/controls load on first use while root/store draft state stays mounted; local failures retain working state. Startup acceptance counts the complete static script graph against the measured exact 0.18.0 predecessor, preserving the 3 KiB growth budget.
+
 Nothing else to do by hand. Product adapters, saved directions and presenter files remain product owned.
 
 ## 0.17.1

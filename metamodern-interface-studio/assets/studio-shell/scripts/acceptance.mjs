@@ -19,6 +19,8 @@ import { tmpdir } from "node:os"
 import { extname, join, normalize } from "node:path"
 import { pathToFileURL } from "node:url"
 import { gzipSync } from "node:zlib"
+import { parseAst } from "vite"
+import { initialScriptGraph } from "./initial-graph.mjs"
 
 const root = new URL("..", import.meta.url).pathname
 let chromium
@@ -31,11 +33,10 @@ try {
 const { createMockHost } = await import(pathToFileURL(join(root, "example/workspace/mock-host.mjs")).href)
 
 const builds = { normal: "example", stress: "synthetic", captures: "captures", workspace: "workspace", library: "library", sections: "sections", static: "static" }
-// WS-01 and LB-01: the initial Studio chunk of the previous release's shell (0.14.0), gzipped, built with the example
-// product. A Studio that declares neither a workspace nor a library may grow by at most 3 KB over it. Each release moves
-// it to the release before it.
-const STUDIO_CHUNK_BASELINE = "0.14.0"
-const STUDIO_CHUNK_BASELINE_GZ = 299064
+// The exact immediately preceding0.18 source is recorded in evidence/optional-layers/baseline-0.18.0.json.
+// Count all static initial JS, including shared imports/preloads; splitting a main file cannot lower the budget.
+const STUDIO_INITIAL_BASELINE = "0.18.0"
+const STUDIO_INITIAL_BASELINE_GZ = 329651
 const servers = {}
 const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml", ".woff2": "font/woff2", ".jpg": "image/jpeg" }
 const serve = (out, host, staticHost = false) =>
@@ -1963,16 +1964,18 @@ const flagged = async (flag, hash) => {
   return page
 }
 
-// AC-53 A Studio with no property inputs renders exactly as 0.10.2 (an empty range link value now reads as unset), and its build keeps
-// the 0.11.0 chunks. Since 0.12.0 the initial chunk's size budget is per release and is checked by WS-01; this reports the growth only.
+// AC-53 preserves no-property behavior, initial static resource budget and exclusion of undeclared layers.
+// Chunk filenames are informational: the complete static graph prevents hiding startup bytes through splitting.
 await check("AC-53", async () => {
   const dir = join(root, ".acceptance", "normal", "assets")
   const scripts = readdirSync(dir).filter((f) => f.endsWith(".js"))
-  // A split would make the studio chunk look smaller while the initial load grows: expect exactly these chunks. The normal
-  // build declares no workspace, so it has no workspace chunk either.
+  // Inspect the whole initial graph below; filenames are not a proxy for bytes or optional-layer ownership.
   const layout = scripts.map((f) => f.split("-")[0]).sort().join(",")
   const main = scripts.find((f) => /^studio-.*\.js$/.test(f))
-  const grew = gzipSync(readFileSync(join(dir, main))).length - STUDIO_CHUNK_BASELINE_GZ
+  const initialGraph = initialScriptGraph(join(root, ".acceptance", "normal"), parseAst)
+  const grew = initialGraph.gzip - STUDIO_INITIAL_BASELINE_GZ
+  const optional = scripts.filter(file => /^(?:workspace|library)-/.test(file))
+  const eager = initialGraph.scripts.filter(script => /\/(?:properties|design(?:-tokens)?)-/.test(script.file))
   // The stress Studio declares no properties.
   const p = await open("stress", { hash: "view=inspect&scenario=syn.tasks.2" })
   await wait(800)
@@ -1989,8 +1992,8 @@ await check("AC-53", async () => {
   const isolated = await p.locator("iframe[sandbox], iframe[credentialless]").count()
   await p.closeAll()
   const same = isolated === 0 && tabs.join() === "Scenario,Fidelity,Evidence" && section === 0 && picker === 0 && edited === 0 && keys === "view,scenario,theme,profile" && values === "density" && loaded.length === 0 && stored.length === 0
-  const ok = same && layout === "canvas,example,properties,protocol,studio"
-  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial chunk ${main} grew ${grew} bytes gzipped against ${STUDIO_CHUNK_BASELINE} (${STUDIO_CHUNK_BASELINE_GZ}; budget checked by WS-01)`]
+  const ok = same && grew <= 3072 && optional.length === 0 && eager.length === 0
+  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial static JS graph ${initialGraph.gzip} bytes (${initialGraph.scripts.map(script => script.file).join(", ")}); ${optional.length} undeclared optional chunks, ${eager.length} eager property/Design chunks; growth ${grew} bytes gzipped against ${STUDIO_INITIAL_BASELINE} (${STUDIO_INITIAL_BASELINE_GZ}; budget checked by WS-01)`]
 })
 
 // AC-54 Switch, text, number and choice change the live frame without a remount; booleans arrive as booleans; a choice sends only its ID;
@@ -3358,13 +3361,21 @@ await check("WS-01", async () => {
   const files = readdirSync(dir)
   const main = files.find((f) => /^studio-.*\.js$/.test(f))
   const gz = gzipSync(readFileSync(join(dir, main))).length
-  const growth = gz - STUDIO_CHUNK_BASELINE_GZ
+  const initialGraph = initialScriptGraph(join(root, ".acceptance", "normal"), parseAst)
+  const growth = initialGraph.gzip - STUDIO_INITIAL_BASELINE_GZ
   // A Studio without a declaration is built without the workspace layer: no workspace chunk exists to request.
   const built = files.filter((f) => /^workspace-/.test(f))
   const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
+  const designEarly = (await resources(p)).some(url => /\/design(?:-tokens)?-[^/]+\.js/.test(url))
+  let designAfter = false, tokensAfter = false
   for (const name of ["Compare", "Responsive", "Gallery", "Present", "Design", "Inspect"]) {
     await railView(p, name).click()
     await wait(500)
+    if (name === "Design") {
+      designAfter = (await resources(p)).some(url => /\/design-[^/]+\.js/.test(url))
+      await p.getByRole("button", { name: "Tokens", exact: true }).click()
+      tokensAfter = !!(await poll(() => resources(p), urls => urls.some(url => /\/design-tokens-[^/]+\.js/.test(url))))
+    }
   }
   await p.keyboard.press("ControlOrMeta+k")
   await wait(400)
@@ -3389,10 +3400,10 @@ await check("WS-01", async () => {
   await w.closeAll()
   const acRun = results.filter((r) => r.id.startsWith("AC-"))
   const acFailed = acRun.filter((r) => r.status === "fail").map((r) => r.id)
-  const met = growth <= 3072 && built.length === 0 && plain.length === 0 && railItems === 0 && navEarly && !pageEarly && pageAfter && !errors.length
+  const met = growth <= 3072 && !designEarly && designAfter && tokensAfter && built.length === 0 && plain.length === 0 && railItems === 0 && navEarly && !pageEarly && pageAfter && !errors.length
   const status = !met || acFailed.length ? "fail" : acRun.length ? "pass" : "not-measured"
   const acNote = acRun.length ? `${acRun.length} AC criteria ran in this pass, failing: ${acFailed.join(", ") || "none"}` : "the AC suite did not run in this pass (ONLY), so that part is not measured"
-  return [status, `initial Studio chunk ${(gz / 1024).toFixed(1)} KB gzipped, ${growth >= 0 ? "+" : ""}${growth} bytes against the ${STUDIO_CHUNK_BASELINE} baseline of ${STUDIO_CHUNK_BASELINE_GZ} (budget 3,072); without a workspace the build has ${built.length} workspace chunks, ${plain.length} were requested across every view and Go to, and the rail has ${railItems} workspace items; with one, the navigation chunk loaded at start ${navEarly}, module code before a module opened ${pageEarly} and after ${pageAfter}, and the scripts loaded before any interaction were ${initial.map((f) => f.replace(/-[\w-]{8}\.js$/, "")).join(", ")} at ${(initialGz / 1024).toFixed(1)} KB gzipped in all (reported, not gated); page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}; ${acNote}`]
+  return [status, `initial static JS graph ${(initialGraph.gzip / 1024).toFixed(1)} KB gzipped (main ${(gz / 1024).toFixed(1)} KB, reported only), ${growth >= 0 ? "+" : ""}${growth} bytes against the ${STUDIO_INITIAL_BASELINE} baseline of ${STUDIO_INITIAL_BASELINE_GZ} (budget 3,072); Design requested before visiting ${designEarly}, Adjust after visiting ${designAfter}, Tokens after choosing ${tokensAfter}; without a workspace the build has ${built.length} workspace chunks, ${plain.length} were requested across every view and Go to, and the rail has ${railItems} workspace items; with one, the navigation chunk loaded at start ${navEarly}, module code before a module opened ${pageEarly} and after ${pageAfter}, and the scripts loaded before any interaction were ${initial.map((f) => f.replace(/-[\w-]{8}\.js$/, "")).join(", ")} at ${(initialGz / 1024).toFixed(1)} KB gzipped in all (reported, not gated); page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}; ${acNote}`]
 })
 
 // WS-02 Modules follow the views with the views' marker, focus and labels; keyboard, Go to, links and Back reach every module and section
@@ -4134,7 +4145,8 @@ await check("LB-01", async () => {
   const dir = join(root, ".acceptance", "normal", "assets")
   const files = readdirSync(dir)
   const gz = gzipSync(readFileSync(join(dir, files.find((f) => /^studio-.*\.js$/.test(f))))).length
-  const growth = gz - STUDIO_CHUNK_BASELINE_GZ
+  const initialGraph = initialScriptGraph(join(root, ".acceptance", "normal"), parseAst)
+  const growth = initialGraph.gzip - STUDIO_INITIAL_BASELINE_GZ
   const built = files.filter((f) => /^(library-|example-library)/.test(f))
   const p = await open("normal", { hash: "view=inspect&scenario=tasks.list" })
   for (const name of ["Compare", "Gallery", "Design", "Inspect"]) {
@@ -4163,7 +4175,7 @@ await check("LB-01", async () => {
   await l.closeAll()
   const goTo = headings.some((h) => /Library/.test(h))
   const ok = growth <= 3072 && !built.length && !requested.length && rail === 0 && !goTo && navEarly && !pageEarly && pageAfter && button && others === 0 && !errors.length
-  return [ok ? "pass" : "fail", `initial Studio chunk ${gz} bytes gzipped, ${growth >= 0 ? "+" : ""}${growth} against the ${STUDIO_CHUNK_BASELINE} baseline of ${STUDIO_CHUNK_BASELINE_GZ} (budget 3,072); without a library the build has ${built.length} library chunks, ${requested.length} were requested across the views and Go to, the rail has ${rail} library items and Go to ${goTo ? "lists" : "has no"} library group; with one, the navigation chunk loaded at start ${navEarly}, the page chunk before opening ${pageEarly} and after ${pageAfter}, the opened component's documentation ${button} and others ${others}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
+  return [ok ? "pass" : "fail", `initial static JS graph ${initialGraph.gzip} bytes gzipped (main ${gz}, reported only), ${growth >= 0 ? "+" : ""}${growth} against the ${STUDIO_INITIAL_BASELINE} baseline of ${STUDIO_INITIAL_BASELINE_GZ} (budget 3,072); without a library the build has ${built.length} library chunks, ${requested.length} were requested across the views and Go to, the rail has ${rail} library items and Go to ${goTo ? "lists" : "has no"} library group; with one, the navigation chunk loaded at start ${navEarly}, the page chunk before opening ${pageEarly} and after ${pageAfter}, the opened component's documentation ${button} and others ${others}; page errors ${errors.length ? errors.slice(0, 2).join(" | ") : "none"}`]
 })
 
 // LB-02 The library comes first in the rail, above the views with a divider after it, with the views' marker and focus, and Tab follows

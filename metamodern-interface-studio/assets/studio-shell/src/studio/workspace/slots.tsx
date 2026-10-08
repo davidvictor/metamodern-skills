@@ -9,7 +9,10 @@ import type { NavProps } from "./workspace-nav"
 import type { PageProps } from "./workspace-page"
 
 /** False in a build whose adapter declares no workspace (vite.config.ts), which then contains no workspace chunk at all. */
-import { workspaceEnabled } from "@/studio-host"
+import { workspaceEnabled as hostEnabled } from "@/studio-host"
+declare const __STUDIO_WORKSPACE__: boolean
+// Vite folds its build define locally before scanning lazy imports; other hosts use their generated capability.
+const workspaceEnabled = typeof __STUDIO_WORKSPACE__ === "boolean" ? __STUDIO_WORKSPACE__ : hostEnabled
 
 export const hasWorkspace = workspaceEnabled && !!adapter.workspace
 if (!workspaceEnabled && adapter.workspace) console.error("Interface Studio: this build left the workspace out because the adapter it loaded declared none, but the adapter running now declares one. Rebuild the Studio to show its workspace.")

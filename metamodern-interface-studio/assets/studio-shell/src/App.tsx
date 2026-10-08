@@ -15,8 +15,11 @@ import { adapter } from "@/adapter"
 import { designTab, StudioProvider, useStudio } from "@/store"
 import { ContextPanel, MobilePanel, Rail, VIEWS } from "@/components/studio/rail-panel"
 import { DetailsContent, StageControls, TopBar } from "@/components/studio/chrome"
-import { CompareStage, GalleryStage, InspectStage, PresentStage, TokensStage } from "@/components/studio/views"
-import { DesignStage } from "@/components/studio/design"
+import { CompareStage, GalleryStage, InspectStage, PresentStage } from "@/components/studio/views"
+import { LazyRegionBoundary } from "@/components/studio/bits"
+import { Spinner } from "@/components/ui/spinner"
+const TokensStage = React.lazy(() => import("@/components/studio/design-tokens").then(module => ({ default: module.TokensStage })))
+const DesignStage = React.lazy(() => import("@/components/studio/design").then(module => ({ default: module.DesignStage })))
 import { ResponsiveStage } from "@/components/studio/responsive"
 import { CommandMenu, ShortcutsDialog } from "@/components/studio/command"
 import { hasWorkspace, Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
@@ -120,7 +123,7 @@ function StageForView({ narrow }: { narrow?: boolean }) {
           {s.view === "responsive" && <ResponsiveStage narrow={narrow} />}
           {s.view === "gallery" && <GalleryStage />}
           {s.view === "present" && <PresentStage narrow={narrow} />}
-          {s.view === "design" && (designTab(s.design.tab) === "tokens" ? <TokensStage /> : <DesignStage narrow={narrow} />)}
+          {s.view === "design" && (designTab(s.design.tab) === "tokens" ? <LazyRegionBoundary key="tokens" label="Token preview"><React.Suspense fallback={<div role="status" className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground"><Spinner className="size-4" />Loading token preview</div>}><TokensStage /></React.Suspense></LazyRegionBoundary> : <LazyRegionBoundary key="adjust" label="Design preview"><React.Suspense fallback={<div role="status" className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground"><Spinner className="size-4" />Loading design preview</div>}><DesignStage narrow={narrow} /></React.Suspense></LazyRegionBoundary>)}
         </>
       )}
     </div>

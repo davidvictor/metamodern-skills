@@ -429,7 +429,7 @@ test('0.13.2 Page Up and Page Down typed in a field never scroll the Studio on a
   assert.match(script, /want: applePlatform \? "abQ\\ncd" : "ab\\ncdQ"/, 'a native Page Down that moves a textarea caret stays native');
   assert.match(script, /line PageDown:true,area PageDown:true,area PageUp:true,area PageDown:false,area PageUp:false,area Home:false,area PageDown:true,area PageUp:true,number PageDown:true,combo PageDown:false/);
   assert.match(script, /area\.selection === "abQ" && area\.number\.join\(\) === "5,5"/, 'a selection reaching the end and a number field, natively');
-  assert.match(script, /const STUDIO_CHUNK_BASELINE = "0\.14\.0"/);
+  assert.match(script, /const STUDIO_INITIAL_BASELINE = "0\.18\.0"/);
   assert.match(readFileSync(new URL('references/frame-protocol.md', skill), 'utf8'), /Outside Apple platforms Home and End are native caret moves/);
   assert.match(read('UPDATING.md'), /^## 0\.13\.2$/m);
 });

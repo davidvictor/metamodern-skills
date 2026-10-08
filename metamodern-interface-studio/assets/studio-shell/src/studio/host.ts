@@ -9,3 +9,6 @@ export type StudioHost = {
   workspace: boolean
   library: boolean
 }
+
+/** Adapter preflight evaluates host-using data modules without rendering optional layers. */
+export const adapterPreflightDefines = (defines: Record<string, string>) => ({ ...defines, __STUDIO_WORKSPACE__: "false", __STUDIO_LIBRARY__: "false" })
