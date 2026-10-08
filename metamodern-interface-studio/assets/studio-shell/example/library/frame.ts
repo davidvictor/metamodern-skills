@@ -1,3 +1,4 @@
+import { exampleAnnotationClient } from "../annotations"
 /*
  * The example library's preview entry: one document that renders a component's variant group, example or playground
  * for a scenario `<component>:<example>`, applying playground values in place. A product writes its own entry, with
@@ -71,6 +72,7 @@ const render = (values: Values) => {
  */
 const allowedOrigins = document.querySelector<HTMLMetaElement>('meta[name="studio-allowed-origins"]')?.content.split(/\s+/).filter(Boolean)
 connectStudioFrame({
+  annotations: exampleAnnotationClient,
   applyCompiled(data, direction) { Object.assign(globalThis, { __fixtureCompiled: data, __fixtureDirection: direction }) },
   mount: (inputs) => {
     if (!SCENES[inputs.scenario]) throw new Error(`${inputs.scenario} has no preview in the example library`)

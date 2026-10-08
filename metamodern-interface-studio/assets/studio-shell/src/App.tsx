@@ -1,3 +1,4 @@
+import { AnnotationSlot } from "./studio/annotations/slot"
 import { DirectionManager } from "@/studio/design-ui/direction-manager"
 import { useDirectionSnapshot } from "@/studio/design-ui/react"
 import { DesignEditorProvider, useOptionalDesignEditor, useDesignSnapshot } from "@/studio/design-ui/react"
@@ -287,6 +288,7 @@ function Shell() {
       <LibrarySlot>
         <LibraryNav part="runtime" />
       </LibrarySlot>
+      <AnnotationSlot />
       <Toaster position="bottom-right" />
     </TooltipProvider>
   )

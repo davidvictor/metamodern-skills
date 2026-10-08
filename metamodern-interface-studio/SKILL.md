@@ -26,6 +26,8 @@ When a product asks for a component library in its Studio (one documentation pag
 
 When a product requests reviewed rich Design controls or a component-treatment inspector, read [Design editors](references/design-ui.md). Use its opt-in controller and protected panels; retain the product compiler as the only interpretation path. For named saved directions, hydration, imports, recovery or independent comparison pins, also read [saved directions](references/directions.md).
 
+When the product requests local feedback annotations, read [local annotations](references/annotations.md). The capability is opt-in, Library/Inspect only, and excluded from production/export builds.
+
 ## Non-negotiable boundaries
 
 - Preserve the fixed product identity and existing kit. Do not invent a new brand direction or redesign the application as a side effect. Keep the shell and the product apart: product tokens never style the shell, shell tokens never reach a preview, and product needs go in the adapter rather than in shell components. Follow the project's accepted design authority where available; missing authority is an evidence gap, not permission to claim approval.

@@ -1,3 +1,8 @@
+import { LOCAL_ANNOTATIONS } from "./annotations/capability"
+import { adapter } from "@/adapter"
+import { annotationBridge } from "./annotations/bridge"
+import { eligibleAnnotationPage, captureAnnotationValues, annotationPreviewSettled, safeAnnotationDesign, safeAnnotationTokens } from "./annotations/model"
+import { useStudio } from "@/store"
 import { useOptionalDesignEditor } from "./design-ui/react"
 import type { JsonValue } from "./design-runtime"
 import type { DesignPreviewIdentity } from "./design-ui/types"
@@ -12,7 +17,7 @@ import { appearanceKey, withoutAppearance } from "./appearance"
 import { cn } from "@/lib/utils"
 import { StageGestureContext } from "./stage-gestures"
 import type { StudioAdapter } from "./types"
-import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type FrameDiagnostic, type FrameMessage, type MountInputs, type ShellBody, type SyncChannelsMessage, type SyncEvent } from "./protocol"
+import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type FrameDiagnostic, type FrameMessage, type MountInputs, type ShellBody, type SyncChannelsMessage, type SyncEvent, fingerprint } from "./protocol"
 
 export const READY_TIMEOUT_MS = 20000
 
@@ -62,6 +67,9 @@ type Runtime = {
   capabilities?: FrameCapability[]
   contentHeight?: number
   appearanceError?: string
+  annotationValuesKey?: string
+  annotationAppearanceKey?: string
+  annotationDraftKey?: string
 }
 /** The draft a preview shows: token values, CSS rules and font stylesheets. */
 export type PreviewDraft = {
@@ -101,9 +109,12 @@ type Props = {
   interactive?: boolean
   onStatus?: (s: LiveStatus) => void
   sync?: PreviewSync
+  /** Only expanded Library previews opt in; Inspect registers the active preview automatically. */
+  annotationTarget?: { component?: string; example?: string; block?: string; originalViewport?: { width: number; height: number } }
 }
 
-export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, isolation, inputs, mountKey, appearanceIds = [], draft, w, h, scale, label, interactive = true, onStatus, sync }, ref) {
+export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, isolation, inputs, mountKey, appearanceIds = [], draft, w, h, scale, label, interactive = true, onStatus, sync, annotationTarget }, ref) {
+  const studio = useStudio()
   const [runtimes, setRuntimes] = React.useState<Runtime[]>([])
   const frames = React.useRef(new Map<string, HTMLIFrameElement>())
   const gesture = React.useContext(StageGestureContext)
@@ -116,7 +127,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
     controller?.registerPreview(previewOwner, inputs.theme, previewChannel)
     return () => controller?.unregisterPreview(previewOwner)
   }, [editor?.controller, previewOwner, inputs.theme, previewChannel])
-  const draftRequests = React.useRef(new Map<string, { instance: string; direction?: DesignPreviewIdentity }>())
+  const draftRequests = React.useRef(new Map<string, { instance: string; direction?: DesignPreviewIdentity; key: string }>())
   const latestDraft = React.useRef(new Map<string, string>())
   const draftError = React.useRef<string | undefined>(undefined)
   const latest = React.useRef({ draft, onStatus, inputs, sync, gesture })
@@ -176,6 +187,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       if (!el || e.source !== el.contentWindow || (expectedOrigin !== "null" && e.origin !== expectedOrigin)) return
       const rt = runtimesRef.current.find((r) => r.instance === m.instance)
       if (!rt) return
+      if (m.type === "annotations") { annotationBridge.receive(rt.instance, m.event); return }
       if (m.type === "hello") {
         if (rt.inputs.compiledData !== undefined && !m.capabilities?.includes("compiled-data")) {
           const reason = "This frame does not support the compiled-data capability"
@@ -215,7 +227,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
           if (request.direction) editor?.controller?.reportPreviewFailure(request.direction, reason)
           if (m.type === "error" && !m.recoverable) { failure.current = { instance: rt.instance, reason }; update(rt.instance, () => ({ phase: "error", ready: undefined })) }
           else update(rt.instance, () => ({}))
-        } else { draftError.current = undefined; update(rt.instance, () => ({})) }
+        } else { draftError.current = undefined; update(rt.instance, () => ({ annotationDraftKey: request.key })) }
       }
       else if (m.type === "error" && m.requestId && (answers.current.has(m.requestId) || valueRequests.current.has(m.requestId))) {
         answers.current.get(m.requestId)?.(null)
@@ -260,7 +272,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       } else if (m.type === "reply") {
         const request = valueRequests.current.get(m.requestId)
         valueRequests.current.delete(m.requestId)
-        if (request?.appearance && latestAppearance.current.get(rt.instance) === request.key) update(rt.instance, (r) => ({ appearanceError: undefined, ready: r.ready && m.fingerprint ? { ...r.ready, fingerprint: m.fingerprint } : r.ready }))
+        if (request && m.ok && (request.appearance ? latestAppearance.current.get(rt.instance) : sentValues.current.get(rt.instance)) === request.key) update(rt.instance, r => request.appearance ? { annotationAppearanceKey: request.key, ...(latestAppearance.current.get(rt.instance) === request.key ? { appearanceError: undefined, ready: r.ready && m.fingerprint ? { ...r.ready, fingerprint: m.fingerprint } : r.ready } : {}) } : { annotationValuesKey: request.key })
         const done = replies.current.get(m.requestId)
         if (done) {
           replies.current.delete(m.requestId)
@@ -287,6 +299,8 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   const current = [...runtimes].reverse().find((r) => r.phase === "ready")
   const newest = runtimes[runtimes.length - 1]
 
+
+
   // Live drafts go to the runtime on screen without a remount. Compare with what that
   // runtime last received, not with what it mounted with: returning to the mounted values
   // (discarding a draft) must reach the frame too.
@@ -298,7 +312,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
     if (last === key) return
     sent.current.set(current.instance, key)
     const requestId = uid("draft")
-    draftRequests.current.set(requestId, { instance: current.instance, direction: latest.current.draft.direction })
+    draftRequests.current.set(requestId, { instance: current.instance, direction: latest.current.draft.direction, key })
     latestDraft.current.set(current.instance, requestId)
     draftError.current = undefined
     post(current.instance, {
@@ -342,6 +356,28 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
     valueRequests.current.set(requestId, { appearance: false, instance: current.instance, key: valuesKey })
     post(current.instance, { type: "values", requestId, values: inputs.values, appearanceIds })
   }, [valuesKey, current, newest, runtimeKey, post, appearanceIds, inputs.values])
+
+  const annotationPage = eligibleAnnotationPage(studio)
+  const annotationContext = {
+    layer: "preview" as const, page: annotationPage ?? "inspect", scenario: inputs.scenario, theme: inputs.theme,
+    profile: inputs.profile, values: inputs.values, design: { values: safeAnnotationDesign(inputs.design, adapter.design?.parameters), fingerprint: fingerprint(inputs.design) }, draft: { tokens: safeAnnotationTokens(draft.tokens), fingerprint: fingerprint(draft) },
+    viewport: { width: w, height: h, scale }, location: current?.ready?.location,
+    revision: adapter.product.revision, shellVersion: "0.19.1", ...annotationTarget,
+  }
+  const safeContext = { ...annotationContext, ...captureAnnotationValues(inputs.values, adapter.annotations?.safeValues?.(annotationContext)), omittedContext: ["Unregistered/free-text design values: fingerprint only", "Unsafe/custom token values, CSS and compiled snapshot: fingerprint only"] }
+  const annotationContextKey = JSON.stringify(safeContext)
+  const annotationSettled = annotationPreviewSettled({ current: current?.instance, newest: newest?.instance, currentKey: current?.key, requestedKey: runtimeKey, error: !!current?.appearanceError || !!draftError.current,
+    values: valuesKey, acknowledgedValues: current?.annotationValuesKey ?? JSON.stringify(withoutAppearance(current?.inputs.values ?? {}, appearanceIds)),
+    appearance, acknowledgedAppearance: current?.annotationAppearanceKey ?? (current ? appearanceKey(current.inputs, appearanceIds) : ""),
+    draft: key, acknowledgedDraft: current?.annotationDraftKey ?? (current ? draftKey(current.inputs) : ""),
+  })
+  const annotationAvailable = annotationSettled && (current?.capabilities?.includes("annotations") ?? false)
+  const annotationInstance = current?.instance
+  const annotationOptIn = !!annotationTarget
+  React.useEffect(() => {
+    if (!LOCAL_ANNOTATIONS || !adapter.annotations || !annotationInstance || !annotationPage || (annotationPage === "library" && !annotationOptIn)) return
+    return annotationBridge.register({ id: annotationInstance, label: label + (annotationPage === "library" ? " (expanded preview)" : " (preview)"), context: JSON.parse(annotationContextKey), available: annotationAvailable, send: command => post(annotationInstance, { type: "annotations", command }) })
+  }, [annotationContextKey, annotationAvailable, annotationInstance, annotationPage, label, post, annotationOptIn])
 
   // The runtime on screen reports only the channels asked for; a new runtime is told again.
   const channelKey = sync ? JSON.stringify(sync.channels) : ""

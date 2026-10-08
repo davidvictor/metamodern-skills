@@ -1,3 +1,4 @@
+import { exampleAnnotationClient } from "./annotations"
 /*
  * Example product preview entry. A real product replaces this with a preview
  * route or document that renders its own components for one scenario, with
@@ -343,6 +344,7 @@ function rejectTitle(values: MountInputs["values"]) {
 const allowedOrigins = document.querySelector<HTMLMetaElement>('meta[name="studio-allowed-origins"]')?.content.split(/\s+/).filter(Boolean)
 const frame = connectStudioFrame(
   {
+    annotations: exampleAnnotationClient,
     applyCompiled: testing.__fixtureNoCompiled ? undefined : (data, direction) => {
       if (testing.__fixtureApplyReject) { testing.__fixtureApplyReject = false; throw new Error("Fixture opaque apply rejected") }
       if (testing.__fixtureRollbackReject) throw new Error("Fixture rollback rejected")

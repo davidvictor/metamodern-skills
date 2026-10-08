@@ -1,3 +1,4 @@
+import type { AnnotationClient } from "./annotations/types"
 import type { JsonValue } from "./design-runtime"
 import type { DesignPreviewIdentity } from "./design-ui/types"
 /*
@@ -15,6 +16,8 @@ import { createFrameSync } from "./frame-sync"
 import { createFrameGestures, keepFieldKeys } from "./frame-gestures"
 
 export type FrameHandlers = {
+  /** Optional lazy annotation client, compiled out by nonlocal preview builders. */
+  annotations?: AnnotationClient
   /** Product consumes the same opaque compiled snapshot as exports; validate before mutating, reject atomically. */
   applyCompiled?: (data: JsonValue | undefined, direction: DesignPreviewIdentity | undefined) => void | Promise<void>
   /** Materialize the scenario from scratch: state, navigation, theme, profile and inputs. */
@@ -221,7 +224,9 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
     if (e.source !== window.parent || !allowed.includes(e.origin) || !isShellMessage(e.data) || e.data.instance !== instance) return
     const m = e.data
     try {
-      if (m.type === "mount") {
+      if (m.type === "annotations") {
+        handlers.annotations?.receive(m.command, event => post({ type: "annotations", event }))
+      } else if (m.type === "mount") {
         current = m.inputs
         if (m.inputs.direction && !handlers.applyCss) await ensureStylesheets(m.inputs.stylesheets ?? [], options.registeredStylesheets ?? [])
         await handlers.applyCompiled?.(m.inputs.compiledData, m.inputs.direction)
@@ -390,7 +395,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
 
   post({
     type: "hello",
-    capabilities: [...(handlers.applyCompiled ? ["compiled-data" as const] : []), ...(options.registeredStylesheets?.length ? ["registered-stylesheets" as const] : []), "direction-identity", "draft-css", "content-size", ...syncCaps, ...(gestures ? (["stage-gestures"] as const) : []), ...(handlers.update ? (["live-values"] as const) : []), ...(handlers.updateAppearance ? (["live-appearance"] as const) : []), ...(handlers.code ? (["code"] as const) : [])],
+    capabilities: [...(handlers.annotations ? ["annotations" as const] : []), ...(handlers.applyCompiled ? ["compiled-data" as const] : []), ...(options.registeredStylesheets?.length ? ["registered-stylesheets" as const] : []), "direction-identity", "draft-css", "content-size", ...syncCaps, ...(gestures ? (["stage-gestures"] as const) : []), ...(handlers.update ? (["live-values"] as const) : []), ...(handlers.updateAppearance ? (["live-appearance"] as const) : []), ...(handlers.code ? (["code"] as const) : [])],
   })
 
   return {
@@ -404,6 +409,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
     /** For state changes the DOM does not show, such as canvas or media. */
     markModified,
     disconnect: () => {
+      handlers.annotations?.dispose()
       sync.dispose()
       gestures?.dispose()
       releaseFieldKeys()
