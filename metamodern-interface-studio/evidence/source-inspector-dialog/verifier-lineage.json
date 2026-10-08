@@ -1,0 +1,41 @@
+{
+  "scripts": [
+    {
+      "script": "inspector/verify.mjs",
+      "executedOriginalSha256": "e5bad1f28babfa1367b4703e3fa9716a495e2fb867401f9dc49614c4ccac1d22",
+      "portableCopySha256": "cd56a470bd74af59bceced65b2d52854c26f226cd11c67835bdbccf4ce7b281e",
+      "delta": "Only module/browser/origin/output configuration parameterized; original execution retained in owned temporary folder."
+    },
+    {
+      "script": "dialog/verify.mjs",
+      "executedOriginalSha256": "3a68a23034c6caedcffca210be31e613e642bc169bba6e5471aa4277c29e544e",
+      "portableCopySha256": "7ee4be8c01b8967d065061e88eb6f27764198ab2462a80382b1f4f400c097c77",
+      "delta": "Only module/browser/origin/output configuration parameterized; original execution retained in owned temporary folder."
+    },
+    {
+      "script": "tokens/verify.mjs",
+      "executedOriginalSha256": "4c01d90c65e1babc60b4d7825195d59002613d9c23be8f72c3efd0d33eae4727",
+      "portableCopySha256": "c39d2e4d61cac1b0d63693b2c196a66140b7eb0391e18195bd480ac7910f9ea0",
+      "delta": "Only module/browser/origin/output configuration parameterized; original execution retained in owned temporary folder."
+    },
+    {
+      "script": "lineage/lineage.mjs",
+      "executedOriginalSha256": "5f79dbeb45b89e18c012789cd4231c9c7adc2e933a1f5a32edfd3bee4d57b9b8",
+      "portableCopySha256": "2da33c1b5ca6e3991bce0d23406886debcb060b0c87ecdbaa1f3f00b834858d5",
+      "delta": "Only module/browser/origin/output configuration parameterized; original execution retained in owned temporary folder."
+    }
+  ],
+  "redSource": [
+    {
+      "path": "src/studio/design-ui/slots.tsx",
+      "baseSha256": "79c88335002219160f38f6203c9e02b943ba352bbcc9894cd62c1599d151e2fe",
+      "currentSha256": "8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3"
+    },
+    {
+      "path": "src/components/studio/rail-panel.tsx",
+      "baseSha256": "2b84d8b2b5d59e103a201bf5ae30cff9d4cdddf9f60398bd0b8f5217dc28690e",
+      "currentSha256": "bda291f515f19e91dbfabedea480e9b12cc2d2c9b93e2b2067b6c8a17276dcb8"
+    }
+  ],
+  "phases": "Inspector comparison precedes TokensPanel delta; same inspector source/metadata. Final served lineage and Tokens green bind the later rail-only delta. Subsequent portability/check/index/report bytes do not modify runtime."
+}

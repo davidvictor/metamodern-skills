@@ -1,0 +1,40 @@
+{
+  "base": "ec09d26997364f970db9a7d24731fb7c5ab8d7f0",
+  "adaptations": [
+    "Synthetic compiler metadata replaces sourceLock/diagnostics only; descriptor optional sourceLockId pin removed for short/long comparison.",
+    "Explicit local fixture loaders select provenance and centered modules from query flags; no remote loaders.",
+    "Centered fixture composes public API and neutral gray swatches; products own composition.",
+    "ConfirmDialog proof uses documented onCancel/confirmLabel props; initial wrong fixture props superseded.",
+    "The legacy query selects original exampleAdapter in disposable consumers only, proving opt-out token filtering; default editor inputs remain unchanged."
+  ],
+  "fixtures": [
+    {
+      "path": "design-adapter.ts",
+      "sha256": "0ce7226cd2db02955671246a9e899d69e1271e04c1822d062abe5e02f5643267"
+    },
+    {
+      "path": "design-runtime/index.ts",
+      "sha256": "55f583742e304109ba521db0d8419c3465040eaadd47ce3406f5229b49b69d23"
+    },
+    {
+      "path": "design-runtime/loaders.ts",
+      "sha256": "67b8dc6ad7adbfd68d5d54a457312faf8d458683a95d4c27febc69af2c15db9d"
+    },
+    {
+      "path": "design-runtime/provenance-long.ts",
+      "sha256": "096c2d094e5f03e4879c656feddd9aaabd45953958e8c232f7f84d396787b4ed"
+    },
+    {
+      "path": "design-runtime/provenance-short.ts",
+      "sha256": "d12268237408a12c96e8a95749a833c786dc554b69d0d7eea9d7c2211c1ae9a0"
+    },
+    {
+      "path": "design-ui/centered.tsx",
+      "sha256": "876b59ecc68afaa910294a93a8782948fceb4d30bd59233154f1f5e7dcd9d3a3"
+    },
+    {
+      "path": "design-ui/loaders.ts",
+      "sha256": "6425791a17e41b2cea1367e771e2f0d990e7f13d30cbff95b2add15ef335d039"
+    }
+  ]
+}

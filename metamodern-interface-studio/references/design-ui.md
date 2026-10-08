@@ -67,3 +67,24 @@ Every `EditorPopover` must include an enabled, visible `EditorPopoverClose` from
 Protected product panels are not rewritten by the updater: adopt the exported Close component after the checked shared update. Use the same component when the picker is nested in a phone sheet; the vendor owns the nested focus scopes.
 
 Structured source/compiler diagnostics and initialization/selection reasons retain their full text and wrap inside the existing editor status or panel. This presentation does not change validation, last-valid snapshots or save/export eligibility. Long paths and hash words must reduce intrinsic minimum width rather than push a sidebar or global status beyond its available bounds.
+
+### Centered picker surface
+
+`EditorDialog` is an opt-in native centered alternative for product picker composition. `EditorDialogProps` contains `label: string`, `trigger: React.ReactElement`, `children: React.ReactNode`, optional `open?: boolean`, `onOpenChange?: (open: boolean) => void`, `className?: string` and `overlayClassName?: string`. It reuses the existing [Base UI Dialog](https://base-ui.com/react/components/dialog) through shared kit wrappers. Default EditorPopover callers retain their anchored geometry.
+
+Its width is at most 420px and viewport minus 32px, with 20px padding, 16px gap and radius, vertical scrolling within viewport minus 32px, and an 18% black backdrop without blur. Product content supplies visible `EditorDialogTitle`, a real visible `EditorDialogClose`, search, options and optional swatches. Close accepts the same native Button props as EditorPopoverClose; Title accepts the shared DialogTitle props. No manual focus trap is needed.
+
+```tsx
+<EditorDialog label="Choose a registered value" open={open} onOpenChange={setOpen}
+  trigger={<Button>Choose value</Button>}>
+  <div className="flex items-center justify-between gap-4">
+    <EditorDialogTitle>Choose value</EditorDialogTitle>
+    <EditorDialogClose variant="ghost">Close picker</EditorDialogClose>
+  </div>
+  {choices}
+</EditorDialog>
+```
+
+Choice handlers can set controlled open false; native Close, Escape and outside dismissal use the same Root state and restore trigger focus. Omitting controlled props preserves native uncontrolled behavior. Read-only Source inspector prose wraps provenance identifiers and diagnostics; it does not introduce a second token editor or compiler path.
+
+For adapters declaring `design.editor`, the Tokens rail presents read-only context and retains Design tabs. Legacy name/value, family and All/Unread/Fixed/Draft filters are omitted because the paired Compiled/Source inspector does not consume them. Adapters without the editor declaration keep the existing token editor and its working filters.

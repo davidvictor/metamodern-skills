@@ -1,3 +1,9 @@
+## 0.18.4
+
+Read-only Source inspector provenance and diagnostic paragraphs now wrap long hashes within the available pane. Compiled token and intentional code scrolling behavior are unchanged. Opted-in read-only Tokens panels omit legacy search, family and flag controls that do not apply to compiled output. Legacy token consumers retain their existing working filters.
+
+The optional @studio/kit EditorDialog, EditorDialogTitle and EditorDialogClose provide a centered native picker surface. It defaults to a 420px maximum width capped at viewport minus 32px, 20px padding, 16px gap/radius and viewport-bounded vertical scrolling, with a black 18% backdrop and no blur. Supply a visible Title and real Close part; product panels own choices, search, readiness and swatches. Optional open/onOpenChange support controlled choice dismissal; omit them for native uncontrolled state. Existing EditorPopover and ordinary Dialog defaults are unchanged. Protected product panels opt into the new seam explicitly after managed update.
+
 ## 0.18.3
 
 Long structured design diagnostics and selection/initialization reasons now wrap inside their existing status/panel bounds. Last-valid output, save eligibility and ordinary short status geometry are unchanged.

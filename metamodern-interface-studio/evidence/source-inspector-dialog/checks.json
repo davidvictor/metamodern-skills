@@ -1,0 +1,81 @@
+{
+  "phase": "Final runtime/metadata frozen; required tests completed before subsequent portability/index/report evidence writes.",
+  "normalization": "ANSI removed; trailing line whitespace and blank EOF lines removed; canonical absolute prefix replaced by <canonical>. Raw originals retained task-owned tmp.",
+  "checks": [
+    {
+      "receipt": "checks/vite-typecheck.txt",
+      "sha256": "829fdfe7a634fcb76b48f6856512f7579ffe6dc521df857e9f5eac4f864f55d8",
+      "command": "npm run typecheck",
+      "nodeVersion": "26.7.0",
+      "exit": 0
+    },
+    {
+      "receipt": "checks/vite-lint.txt",
+      "sha256": "0d6d42525d473aaf51e60a2e366aa24fcf6b43fe200e10cca27afd4a7252aace",
+      "command": "npm run lint",
+      "nodeVersion": "26.7.0",
+      "exit": 0
+    },
+    {
+      "receipt": "checks/vite-build.txt",
+      "sha256": "48b357ea6c7b40f48e3fb6d0c15a2ae243b402043fb637328cd6ce81a8454705",
+      "command": "VITE_STUDIO_ADAPTER=editor npm run build",
+      "nodeVersion": "26.7.0",
+      "exit": 0
+    },
+    {
+      "receipt": "checks/node22-test.txt",
+      "sha256": "d5f887d296d6db874c2c9bd1a0400cccc50d64a82a171231ce7eab8641c4a5e7",
+      "command": "npm test",
+      "nodeVersion": "22.22.1",
+      "exit": 0
+    },
+    {
+      "receipt": "checks/node22-validate.txt",
+      "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e",
+      "command": "npm run validate",
+      "nodeVersion": "22.22.1",
+      "exit": 0
+    },
+    {
+      "receipt": "checks/node24-test.txt",
+      "sha256": "55debdb3ed2891f49494593cf549b601f46f9d8fb7cb8d0b093ae9f3e014d2d0",
+      "command": "npm test",
+      "nodeVersion": "24.21.0",
+      "exit": 0
+    },
+    {
+      "receipt": "checks/node24-validate.txt",
+      "sha256": "5300265602f02f231301a6092a2c828757738e04ccc97bd0fe846144516b327e",
+      "command": "npm run validate",
+      "nodeVersion": "24.21.0",
+      "exit": 0
+    },
+    {
+      "receipt": "checks/next-typecheck.txt",
+      "sha256": "3c8d22196265450e8f68e3946ba4b9c5ad09fd7a778fcfb96f9b76b35425f5af",
+      "command": "npm run typecheck",
+      "nodeVersion": "26.7.0",
+      "exit": 0,
+      "scope": "Next production consumer; root-owned receipt,5runtime hashes stable before/after."
+    },
+    {
+      "receipt": "checks/next-lint.txt",
+      "sha256": "782b0c237500116f3ad2e8f2d65acd4d0afa86a48903fba367b5905df8ee978b",
+      "command": "npm run lint",
+      "nodeVersion": "26.7.0",
+      "exit": 0,
+      "scope": "Next production consumer; root-owned receipt,5runtime hashes stable before/after."
+    },
+    {
+      "receipt": "checks/next-build.txt",
+      "sha256": "e61012b38b35f75c16b6aa5e3e6019a36fe3d38b39d7fdc40d206885964d23cb",
+      "command": "STUDIO_ADAPTER=editor npm run build",
+      "nodeVersion": "26.7.0",
+      "exit": 0,
+      "scope": "Next production consumer; root-owned receipt,5runtime hashes stable before/after."
+    }
+  ],
+  "next": "All three root-owned Next checks PASS, zero errors/six existing warnings; original receipt/lineage retained next-host-*.json.",
+  "superseded": "Initial test attempts raced addition of source-freeze.json; package-copy inventory only. Both final suites pass234."
+}

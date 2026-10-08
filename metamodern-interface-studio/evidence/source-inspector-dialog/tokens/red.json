@@ -1,0 +1,34 @@
+[
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "red": true,
+    "ignoredSearch": true,
+    "rows": 8,
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "red": true,
+    "ignoredSearch": true,
+    "rows": 8,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "red": true,
+    "ignoredSearch": true,
+    "rows": 8,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "red": true,
+    "ignoredSearch": true,
+    "rows": 8,
+    "errors": []
+  }
+]
