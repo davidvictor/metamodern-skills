@@ -1,3 +1,9 @@
+## 0.18.5
+
+Studio link serialization now skips history replacement when the current hash already equals the desired selection. Changed selections still replace the current entry; intentional navigation entries and Back/Forward behavior are preserved.
+
+Nothing to do by hand.
+
 ## 0.18.4
 
 Read-only Source inspector provenance and diagnostic paragraphs now wrap long hashes within the available pane. Compiled token and intentional code scrolling behavior are unchanged. Opted-in read-only Tokens panels omit legacy search, family and flag controls that do not apply to compiled output. Legacy token consumers retain their existing working filters.
