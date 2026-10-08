@@ -1,0 +1,2774 @@
+[
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 1440,
+    "pass": true,
+    "saved": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 599.234375,
+          "right": 786.859375
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17.015625,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 616,
+      "scrollHeight": 616,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438847333· r1",
+          "title": "First 1791438847333 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438847768· r1",
+          "title": "Second 1791438847768 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Alpha· r1",
+          "title": "vite-1791439434583 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Beta· r1",
+          "title": "vite-1791439434583 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Alpha· r1",
+          "title": "vite-1791439802667 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Beta· r1",
+          "title": "vite-1791439802667 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791440661155 Alpha· r1",
+          "title": "vite-1791440661155 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Beta external phase 1791442225528· r5",
+          "title": "Beta external phase 1791442225528 · r5",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Phase recovered· r1",
+          "title": "Phase recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Alpha· r1",
+          "title": "vite-1791442931841 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555· r4",
+          "title": "Lifecycle named 1791444084555 · r4",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Recovered· r1",
+          "title": "vite-1791442931841 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Alpha· r1",
+          "title": "vite-1791443108447 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Beta external· r2",
+          "title": "vite-1791443108447 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Recovered· r1",
+          "title": "vite-1791443108447 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555 copy· r1",
+          "title": "Lifecycle named 1791444084555 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444393068· r1",
+          "title": "Unsupported saved 1791444393068 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 599.234375,
+          "right": 786.859375
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 512.25,
+      "width": 224,
+      "height": 32
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 112,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 768,
+    "pass": true,
+    "saved": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "viewport": 768,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 352,
+          "right": 539.625
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17.015625,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 779,
+      "scrollHeight": 844,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438847333· r1",
+          "title": "First 1791438847333 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438847768· r1",
+          "title": "Second 1791438847768 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Alpha· r1",
+          "title": "vite-1791439434583 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Beta· r1",
+          "title": "vite-1791439434583 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Alpha· r1",
+          "title": "vite-1791439802667 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Beta· r1",
+          "title": "vite-1791439802667 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791440661155 Alpha· r1",
+          "title": "vite-1791440661155 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Beta external phase 1791442225528· r5",
+          "title": "Beta external phase 1791442225528 · r5",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Phase recovered· r1",
+          "title": "Phase recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Alpha· r1",
+          "title": "vite-1791442931841 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555· r4",
+          "title": "Lifecycle named 1791444084555 · r4",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Recovered· r1",
+          "title": "vite-1791442931841 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Alpha· r1",
+          "title": "vite-1791443108447 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Beta external· r2",
+          "title": "vite-1791443108447 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Recovered· r1",
+          "title": "vite-1791443108447 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555 copy· r1",
+          "title": "Lifecycle named 1791444084555 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444393068· r1",
+          "title": "Unsupported saved 1791444393068 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "viewport": 768,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 352,
+          "right": 539.625
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 390,
+    "pass": true,
+    "saved": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "viewport": 390,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 12,
+          "right": 104.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 112.6875,
+          "right": 251.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 12,
+          "right": 199.625
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17.015625,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 779,
+      "scrollHeight": 844,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438847333· r1",
+          "title": "First 1791438847333 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438847768· r1",
+          "title": "Second 1791438847768 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Alpha· r1",
+          "title": "vite-1791439434583 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Beta· r1",
+          "title": "vite-1791439434583 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Alpha· r1",
+          "title": "vite-1791439802667 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Beta· r1",
+          "title": "vite-1791439802667 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791440661155 Alpha· r1",
+          "title": "vite-1791440661155 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Beta external phase 1791442225528· r5",
+          "title": "Beta external phase 1791442225528 · r5",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Phase recovered· r1",
+          "title": "Phase recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Alpha· r1",
+          "title": "vite-1791442931841 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555· r4",
+          "title": "Lifecycle named 1791444084555 · r4",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Recovered· r1",
+          "title": "vite-1791442931841 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Alpha· r1",
+          "title": "vite-1791443108447 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Beta external· r2",
+          "title": "vite-1791443108447 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Recovered· r1",
+          "title": "vite-1791443108447 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555 copy· r1",
+          "title": "Lifecycle named 1791444084555 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444393068· r1",
+          "title": "Unsupported saved 1791444393068 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "viewport": 390,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 12,
+          "right": 104.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 112.6875,
+          "right": 251.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 12,
+          "right": 199.625
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 21,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 5,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 1440,
+    "pass": true,
+    "saved": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 599.234375,
+          "right": 786.859375
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17.015625,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 648,
+      "scrollHeight": 648,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438852223· r1",
+          "title": "First 1791438852223 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438852687· r1",
+          "title": "Second 1791438852687 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Alpha· r1",
+          "title": "next-1791439469570 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Beta· r1",
+          "title": "next-1791439469570 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Alpha· r1",
+          "title": "next-1791439835551 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Beta external· r2",
+          "title": "next-1791439835551 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Recovered· r1",
+          "title": "next-1791439835551 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Alpha· r1",
+          "title": "next-1791440699592 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Beta external· r2",
+          "title": "next-1791440699592 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Recovered· r1",
+          "title": "next-1791440699592 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Alpha· r1",
+          "title": "next-1791442939578 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744· r3",
+          "title": "Lifecycle named 1791444087744 · r3",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Recovered· r1",
+          "title": "next-1791442939578 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Alpha· r1",
+          "title": "next-1791443116026 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Beta external· r2",
+          "title": "next-1791443116026 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Recovered· r1",
+          "title": "next-1791443116026 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744 copy· r1",
+          "title": "Lifecycle named 1791444087744 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444394290· r1",
+          "title": "Unsupported saved 1791444394290 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 599.234375,
+          "right": 786.859375
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 512.25,
+      "width": 224,
+      "height": 32
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 112,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 768,
+    "pass": true,
+    "saved": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "viewport": 768,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 352,
+          "right": 539.625
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17.015625,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 779,
+      "scrollHeight": 888,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438852223· r1",
+          "title": "First 1791438852223 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438852687· r1",
+          "title": "Second 1791438852687 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Alpha· r1",
+          "title": "next-1791439469570 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Beta· r1",
+          "title": "next-1791439469570 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Alpha· r1",
+          "title": "next-1791439835551 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Beta external· r2",
+          "title": "next-1791439835551 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Recovered· r1",
+          "title": "next-1791439835551 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Alpha· r1",
+          "title": "next-1791440699592 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Beta external· r2",
+          "title": "next-1791440699592 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Recovered· r1",
+          "title": "next-1791440699592 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Alpha· r1",
+          "title": "next-1791442939578 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744· r3",
+          "title": "Lifecycle named 1791444087744 · r3",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Recovered· r1",
+          "title": "next-1791442939578 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Alpha· r1",
+          "title": "next-1791443116026 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Beta external· r2",
+          "title": "next-1791443116026 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Recovered· r1",
+          "title": "next-1791443116026 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744 copy· r1",
+          "title": "Lifecycle named 1791444087744 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444394290· r1",
+          "title": "Unsupported saved 1791444394290 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "viewport": 768,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 352,
+          "right": 539.625
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 390,
+    "pass": true,
+    "saved": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "viewport": 390,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 12,
+          "right": 104.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 112.6875,
+          "right": 251.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 12,
+          "right": 199.625
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17.015625,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 779,
+      "scrollHeight": 888,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438852223· r1",
+          "title": "First 1791438852223 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438852687· r1",
+          "title": "Second 1791438852687 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Alpha· r1",
+          "title": "next-1791439469570 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Beta· r1",
+          "title": "next-1791439469570 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Alpha· r1",
+          "title": "next-1791439835551 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Beta external· r2",
+          "title": "next-1791439835551 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Recovered· r1",
+          "title": "next-1791439835551 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Alpha· r1",
+          "title": "next-1791440699592 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Beta external· r2",
+          "title": "next-1791440699592 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Recovered· r1",
+          "title": "next-1791440699592 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Alpha· r1",
+          "title": "next-1791442939578 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744· r3",
+          "title": "Lifecycle named 1791444087744 · r3",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Recovered· r1",
+          "title": "next-1791442939578 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Alpha· r1",
+          "title": "next-1791443116026 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Beta external· r2",
+          "title": "next-1791443116026 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Recovered· r1",
+          "title": "next-1791443116026 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744 copy· r1",
+          "title": "Lifecycle named 1791444087744 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444394290· r1",
+          "title": "Unsupported saved 1791444394290 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "viewport": 390,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 12,
+          "right": 104.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 112.6875,
+          "right": 251.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 12,
+          "right": 199.625
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 21,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 5,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 1440,
+    "pass": true,
+    "saved": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 599.234375,
+          "right": 786.859375
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 616,
+      "scrollHeight": 616,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438847333· r1",
+          "title": "First 1791438847333 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438847768· r1",
+          "title": "Second 1791438847768 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Alpha· r1",
+          "title": "vite-1791439434583 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Beta· r1",
+          "title": "vite-1791439434583 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Alpha· r1",
+          "title": "vite-1791439802667 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Beta· r1",
+          "title": "vite-1791439802667 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791440661155 Alpha· r1",
+          "title": "vite-1791440661155 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Beta external phase 1791442225528· r5",
+          "title": "Beta external phase 1791442225528 · r5",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Phase recovered· r1",
+          "title": "Phase recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Alpha· r1",
+          "title": "vite-1791442931841 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555· r4",
+          "title": "Lifecycle named 1791444084555 · r4",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Recovered· r1",
+          "title": "vite-1791442931841 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Alpha· r1",
+          "title": "vite-1791443108447 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Beta external· r2",
+          "title": "vite-1791443108447 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Recovered· r1",
+          "title": "vite-1791443108447 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555 copy· r1",
+          "title": "Lifecycle named 1791444084555 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444393068· r1",
+          "title": "Unsupported saved 1791444393068 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 599.234375,
+          "right": 786.859375
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 512.25,
+      "width": 224,
+      "height": 32
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 112,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 768,
+    "pass": true,
+    "saved": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "viewport": 768,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 352,
+          "right": 539.625
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 779,
+      "scrollHeight": 844,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438847333· r1",
+          "title": "First 1791438847333 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438847768· r1",
+          "title": "Second 1791438847768 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Alpha· r1",
+          "title": "vite-1791439434583 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Beta· r1",
+          "title": "vite-1791439434583 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Alpha· r1",
+          "title": "vite-1791439802667 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Beta· r1",
+          "title": "vite-1791439802667 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791440661155 Alpha· r1",
+          "title": "vite-1791440661155 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Beta external phase 1791442225528· r5",
+          "title": "Beta external phase 1791442225528 · r5",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Phase recovered· r1",
+          "title": "Phase recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Alpha· r1",
+          "title": "vite-1791442931841 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555· r4",
+          "title": "Lifecycle named 1791444084555 · r4",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Recovered· r1",
+          "title": "vite-1791442931841 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Alpha· r1",
+          "title": "vite-1791443108447 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Beta external· r2",
+          "title": "vite-1791443108447 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Recovered· r1",
+          "title": "vite-1791443108447 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555 copy· r1",
+          "title": "Lifecycle named 1791444084555 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444393068· r1",
+          "title": "Unsupported saved 1791444393068 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "viewport": 768,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 352,
+          "right": 539.625
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 390,
+    "pass": true,
+    "saved": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "viewport": 390,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 12,
+          "right": 104.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 112.6875,
+          "right": 251.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 12,
+          "right": 199.625
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 779,
+      "scrollHeight": 844,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438847333· r1",
+          "title": "First 1791438847333 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438847768· r1",
+          "title": "Second 1791438847768 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Alpha· r1",
+          "title": "vite-1791439434583 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439434583 Beta· r1",
+          "title": "vite-1791439434583 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Alpha· r1",
+          "title": "vite-1791439802667 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791439802667 Beta· r1",
+          "title": "vite-1791439802667 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791440661155 Alpha· r1",
+          "title": "vite-1791440661155 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Beta external phase 1791442225528· r5",
+          "title": "Beta external phase 1791442225528 · r5",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Phase recovered· r1",
+          "title": "Phase recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Alpha· r1",
+          "title": "vite-1791442931841 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555· r4",
+          "title": "Lifecycle named 1791444084555 · r4",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791442931841 Recovered· r1",
+          "title": "vite-1791442931841 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Alpha· r1",
+          "title": "vite-1791443108447 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Beta external· r2",
+          "title": "vite-1791443108447 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "vite-1791443108447 Recovered· r1",
+          "title": "vite-1791443108447 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444084555 copy· r1",
+          "title": "Lifecycle named 1791444084555 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444393068· r1",
+          "title": "Unsupported saved 1791444393068 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "viewport": 390,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 12,
+          "right": 104.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 112.6875,
+          "right": 251.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 12,
+          "right": 199.625
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 21,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 5,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 1440,
+    "pass": true,
+    "saved": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 599.234375,
+          "right": 786.859375
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 648,
+      "scrollHeight": 648,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438852223· r1",
+          "title": "First 1791438852223 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438852687· r1",
+          "title": "Second 1791438852687 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Alpha· r1",
+          "title": "next-1791439469570 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Beta· r1",
+          "title": "next-1791439469570 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Alpha· r1",
+          "title": "next-1791439835551 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Beta external· r2",
+          "title": "next-1791439835551 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Recovered· r1",
+          "title": "next-1791439835551 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Alpha· r1",
+          "title": "next-1791440699592 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Beta external· r2",
+          "title": "next-1791440699592 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Recovered· r1",
+          "title": "next-1791440699592 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Alpha· r1",
+          "title": "next-1791442939578 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744· r3",
+          "title": "Lifecycle named 1791444087744 · r3",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Recovered· r1",
+          "title": "next-1791442939578 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Alpha· r1",
+          "title": "next-1791443116026 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Beta external· r2",
+          "title": "next-1791443116026 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Recovered· r1",
+          "title": "next-1791443116026 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744 copy· r1",
+          "title": "Lifecycle named 1791444087744 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444394290· r1",
+          "title": "Unsupported saved 1791444394290 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 599.234375,
+          "right": 786.859375
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 512.25,
+      "width": 224,
+      "height": 32
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 112,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 768,
+    "pass": true,
+    "saved": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "viewport": 768,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 352,
+          "right": 539.625
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 779,
+      "scrollHeight": 888,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438852223· r1",
+          "title": "First 1791438852223 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438852687· r1",
+          "title": "Second 1791438852687 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Alpha· r1",
+          "title": "next-1791439469570 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Beta· r1",
+          "title": "next-1791439469570 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Alpha· r1",
+          "title": "next-1791439835551 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Beta external· r2",
+          "title": "next-1791439835551 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Recovered· r1",
+          "title": "next-1791439835551 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Alpha· r1",
+          "title": "next-1791440699592 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Beta external· r2",
+          "title": "next-1791440699592 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Recovered· r1",
+          "title": "next-1791440699592 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Alpha· r1",
+          "title": "next-1791442939578 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744· r3",
+          "title": "Lifecycle named 1791444087744 · r3",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Recovered· r1",
+          "title": "next-1791442939578 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Alpha· r1",
+          "title": "next-1791443116026 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Beta external· r2",
+          "title": "next-1791443116026 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Recovered· r1",
+          "title": "next-1791443116026 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744 copy· r1",
+          "title": "Lifecycle named 1791444087744 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444394290· r1",
+          "title": "Unsupported saved 1791444394290 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "viewport": 768,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 352,
+          "right": 444.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 452.6875,
+          "right": 591.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 352,
+          "right": 539.625
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 390,
+    "pass": true,
+    "saved": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "viewport": 390,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 12,
+          "right": 104.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 112.6875,
+          "right": 251.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 12,
+          "right": 199.625
+        }
+      ]
+    },
+    "trigger": {
+      "width": 224,
+      "scrollWidth": 222,
+      "popupWidth": 256,
+      "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼"
+    },
+    "triggerRevision": {
+      "text": "· r1",
+      "width": 17,
+      "scrollWidth": 17,
+      "clientWidth": 17,
+      "inside": true,
+      "shrink": "0",
+      "visible": true
+    },
+    "menu": {
+      "width": 224,
+      "scrollWidth": 224,
+      "height": 779,
+      "scrollHeight": 888,
+      "options": [
+        {
+          "text": "Original source",
+          "title": "Original source",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "First 1791438852223· r1",
+          "title": "First 1791438852223 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Second 1791438852687· r1",
+          "title": "Second 1791438852687 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Alpha· r1",
+          "title": "next-1791439469570 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439469570 Beta· r1",
+          "title": "next-1791439469570 Beta · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Alpha· r1",
+          "title": "next-1791439835551 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Beta external· r2",
+          "title": "next-1791439835551 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791439835551 Recovered· r1",
+          "title": "next-1791439835551 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Alpha· r1",
+          "title": "next-1791440699592 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Beta external· r2",
+          "title": "next-1791440699592 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791440699592 Recovered· r1",
+          "title": "next-1791440699592 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Alpha· r1",
+          "title": "next-1791442939578 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744· r3",
+          "title": "Lifecycle named 1791444087744 · r3",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791442939578 Recovered· r1",
+          "title": "next-1791442939578 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Alpha· r1",
+          "title": "next-1791443116026 Alpha · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Beta external· r2",
+          "title": "next-1791443116026 Beta external · r2",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "next-1791443116026 Recovered· r1",
+          "title": "next-1791443116026 Recovered · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Lifecycle named 1791444087744 copy· r1",
+          "title": "Lifecycle named 1791444087744 copy · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "Unsupported saved 1791444394290· r1",
+          "title": "Unsupported saved 1791444394290 · r1",
+          "width": 216,
+          "scrollWidth": 216
+        },
+        {
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1",
+          "title": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · r1",
+          "width": 216,
+          "scrollWidth": 216
+        }
+      ]
+    },
+    "menuRevisions": [
+      {
+        "text": "· r1",
+        "inside": true,
+        "visible": true,
+        "shrink": "0",
+        "clientWidth": 17,
+        "scrollWidth": 17
+      }
+    ],
+    "imported": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "viewport": 390,
+      "identity": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1",
+      "title": "Imported WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "status": "· saved r1",
+      "buttons": [
+        {
+          "text": "Directions",
+          "x": 12,
+          "right": 104.6875
+        },
+        {
+          "text": "Pin working draft",
+          "x": 112.6875,
+          "right": 251.234375
+        },
+        {
+          "text": "Refresh saved directions",
+          "x": 12,
+          "right": 199.625
+        }
+      ]
+    },
+    "selectedFocus": true,
+    "shortTrigger": {
+      "width": 144.109375,
+      "scrollWidth": 142,
+      "text": "Original source▼"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 21,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 5,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "postCountBeforeImport": 0,
+    "postCountAfterImport": 0,
+    "errors": []
+  }
+]

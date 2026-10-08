@@ -1,0 +1,25 @@
+{
+  "scope": "Actual save notice after cold/picker correction, before portal-grid wrapping correction",
+  "sourceHash": "6317219c4d3fd3b6908aedbe47851e26e10fd1e21924141bee9370dc811a2683",
+  "engine": "chromium",
+  "host": "vite",
+  "width": 390,
+  "geometry": {
+    "width": 256,
+    "scrollWidth": 2111,
+    "ps": [
+      {
+        "width": 2095,
+        "scrollWidth": 2095,
+        "wrap": "normal",
+        "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+      },
+      {
+        "width": 2095,
+        "scrollWidth": 2095,
+        "wrap": "normal",
+        "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+      }
+    ]
+  }
+}

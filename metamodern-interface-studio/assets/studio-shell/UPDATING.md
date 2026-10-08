@@ -1,3 +1,7 @@
+## 0.18.2
+
+Long saved and imported direction names now stay within the Directions bar and picker. Names truncate with their full accessible text/title retained; revision/status and actions remain visible, and notices wrap inside the existing scrolling popup. This changes only the opted-in direction manager, with no global Field, legacy menu or preview styling changes. No product migration is needed.
+
 ## 0.18.1
 
 Field kind="select" adds optional itemClassName for styling its portaled option rows. Product editor panels can opt into native phone/tablet floors with itemClassName="max-[999px]:min-h-11 pointer-coarse:min-h-11". Omit the prop to preserve existing option geometry. This changes no global menus, trigger sizes or product preview styles. Protected product panels must opt in explicitly after updating; managed updates never rewrite them.

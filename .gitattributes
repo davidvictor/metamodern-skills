@@ -2,3 +2,4 @@
 # Source files retain the repository whitespace checks and text behavior.
 metamodern-interface-studio/evidence/directions/checks/*.log -text -whitespace
 metamodern-interface-studio/evidence/select-items/checks/*.log -text -whitespace
+metamodern-interface-studio/evidence/direction-labels/checks/*.txt -text -whitespace

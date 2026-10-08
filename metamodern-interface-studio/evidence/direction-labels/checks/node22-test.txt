@@ -1,0 +1,1443 @@
+
+> metamodern-skills@1.19.1 test
+> node --test
+
+TAP version 13
+# presenter overlay tests passed
+# Subtest: metamodern-interface-studio/assets/studio-shell/tests/interface-studio-presenter.test.mjs
+ok 1 - metamodern-interface-studio/assets/studio-shell/tests/interface-studio-presenter.test.mjs
+  ---
+  duration_ms: 143.042458
+  type: 'test'
+  ...
+# Subtest: permits prose edits that preserve protected anchors
+ok 2 - permits prose edits that preserve protected anchors
+  ---
+  duration_ms: 115.096208
+  type: 'test'
+  ...
+# Subtest: reports removed and invented protected anchors
+ok 3 - reports removed and invented protected anchors
+  ---
+  duration_ms: 81.188375
+  type: 'test'
+  ...
+# Subtest: default dry run describes the plan without creating or changing files
+ok 4 - default dry run describes the plan without creating or changing files
+  ---
+  duration_ms: 211.094959
+  type: 'test'
+  ...
+# Subtest: install works without an application and records root, lead, and 17 native role configurations
+ok 5 - install works without an application and records root, lead, and 17 native role configurations
+  ---
+  duration_ms: 347.199375
+  type: 'test'
+  ...
+# Subtest: low roles select the newest permitted discovered model and fall back when it is absent
+ok 6 - low roles select the newest permitted discovered model and fall back when it is absent
+  ---
+  duration_ms: 401.495708
+  type: 'test'
+  ...
+# Subtest: repeat application and checker are idempotent
+ok 7 - repeat application and checker are idempotent
+  ---
+  duration_ms: 684.516292
+  type: 'test'
+  ...
+# Subtest: checker rejects native model drift
+ok 8 - checker rejects native model drift
+  ---
+  duration_ms: 526.774791
+  type: 'test'
+  ...
+# Subtest: checker rejects native effort drift
+ok 9 - checker rejects native effort drift
+  ---
+  duration_ms: 377.636958
+  type: 'test'
+  ...
+# Subtest: checker rejects native instructions drift
+ok 10 - checker rejects native instructions drift
+  ---
+  duration_ms: 373.629792
+  type: 'test'
+  ...
+# Subtest: checker rejects native unnamed dispatch effort drift
+ok 11 - checker rejects native unnamed dispatch effort drift
+  ---
+  duration_ms: 401.992834
+  type: 'test'
+  ...
+# Subtest: checker rejects native role registration drift
+ok 12 - checker rejects native role registration drift
+  ---
+  duration_ms: 288.610291
+  type: 'test'
+  ...
+# Subtest: checker rejects native Claude default effort drift
+ok 13 - checker rejects native Claude default effort drift
+  ---
+  duration_ms: 290.594125
+  type: 'test'
+  ...
+# Subtest: checker rejects native Claude model drift
+ok 14 - checker rejects native Claude model drift
+  ---
+  duration_ms: 321.956709
+  type: 'test'
+  ...
+# Subtest: preserves unrelated native settings, hooks, MCP configuration, and project prose
+ok 15 - preserves unrelated native settings, hooks, MCP configuration, and project prose
+  ---
+  duration_ms: 574.448292
+  type: 'test'
+  ...
+# Subtest: unmanaged collision at .codex/agents/explorer.toml refuses the entire install before writing
+ok 16 - unmanaged collision at .codex/agents/explorer.toml refuses the entire install before writing
+  ---
+  duration_ms: 176.504666
+  type: 'test'
+  ...
+# Subtest: unmanaged collision at .claude/agents/worker.md refuses the entire install before writing
+ok 17 - unmanaged collision at .claude/agents/worker.md refuses the entire install before writing
+  ---
+  duration_ms: 181.071625
+  type: 'test'
+  ...
+# Subtest: unmanaged collision at docs/engineering/profile.json refuses the entire install before writing
+ok 18 - unmanaged collision at docs/engineering/profile.json refuses the entire install before writing
+  ---
+  duration_ms: 196.572
+  type: 'test'
+  ...
+# Subtest: unmanaged collision at scripts/check-engineering.py refuses the entire install before writing
+ok 19 - unmanaged collision at scripts/check-engineering.py refuses the entire install before writing
+  ---
+  duration_ms: 819.896167
+  type: 'test'
+  ...
+# Subtest: changed generated content is rejected without silently overwriting user changes
+ok 20 - changed generated content is rejected without silently overwriting user changes
+  ---
+  duration_ms: 734.609041
+  type: 'test'
+  ...
+# Subtest: symlinked output directories cannot write outside the project
+ok 21 - symlinked output directories cannot write outside the project
+  ---
+  duration_ms: 106.519458
+  type: 'test'
+  ...
+# Subtest: missing availability is explicit unknown evidence while structural configuration can pass
+ok 22 - missing availability is explicit unknown evidence while structural configuration can pass
+  ---
+  duration_ms: 430.685667
+  type: 'test'
+  ...
+# Subtest: provider evidence is preserved and a verified model catalog remains a distinct result
+ok 23 - provider evidence is preserved and a verified model catalog remains a distinct result
+  ---
+  duration_ms: 351.914209
+  type: 'test'
+  ...
+# Subtest: an absent required provider model cannot produce an availability success claim
+ok 24 - an absent required provider model cannot produce an availability success claim
+  ---
+  duration_ms: 356.433167
+  type: 'test'
+  ...
+# Subtest: newer low model without the required effort is skipped for a supported permitted candidate
+ok 25 - newer low model without the required effort is skipped for a supported permitted candidate
+  ---
+  duration_ms: 483.926416
+  type: 'test'
+  ...
+# Subtest: existing native role registration is a collision even when its role file is elsewhere
+ok 26 - existing native role registration is a collision even when its role file is elsewhere
+  ---
+  duration_ms: 146.568416
+  type: 'test'
+  ...
+# Subtest: explicit catalogs with no permitted low model block application before any writes
+ok 27 - explicit catalogs with no permitted low model block application before any writes
+  ---
+  duration_ms: 117.25975
+  type: 'test'
+  ...
+# Subtest: availability evidence for one provider does not verify the other provider
+ok 28 - availability evidence for one provider does not verify the other provider
+  ---
+  duration_ms: 276.180834
+  type: 'test'
+  ...
+# Subtest: malformed catalog with missing source is refused before writing
+ok 29 - malformed catalog with missing source is refused before writing
+  ---
+  duration_ms: 142.30025
+  type: 'test'
+  ...
+# Subtest: malformed catalog with invalid verification date is refused before writing
+ok 30 - malformed catalog with invalid verification date is refused before writing
+  ---
+  duration_ms: 169.936625
+  type: 'test'
+  ...
+# Subtest: malformed catalog with duplicate models is refused before writing
+ok 31 - malformed catalog with duplicate models is refused before writing
+  ---
+  duration_ms: 113.100583
+  type: 'test'
+  ...
+# Subtest: an old model catalog cannot silently claim fresh verified availability
+ok 32 - an old model catalog cannot silently claim fresh verified availability
+  ---
+  duration_ms: 161.4075
+  type: 'test'
+  ...
+# Subtest: editing the profile receipt cannot authorize overwriting a changed generated role
+ok 33 - editing the profile receipt cannot authorize overwriting a changed generated role
+  ---
+  duration_ms: 615.9205
+  type: 'test'
+  ...
+# Subtest: explicitly unverified catalog entries do not prove model access or select newer models
+ok 34 - explicitly unverified catalog entries do not prove model access or select newer models
+  ---
+  duration_ms: 266.848625
+  type: 'test'
+  ...
+# Subtest: conflicting existing lead and default routing is preserved until explicitly adopted
+ok 35 - conflicting existing lead and default routing is preserved until explicitly adopted
+  ---
+  duration_ms: 704.783292
+  type: 'test'
+  ...
+# Subtest: explicit routing adoption replaces reviewed root assignments and preserves unrelated settings
+ok 36 - explicit routing adoption replaces reviewed root assignments and preserves unrelated settings
+  ---
+  duration_ms: 415.584459
+  type: 'test'
+  ...
+# Subtest: reapplying preserves deliberate routing and registration changes until explicit adoption
+ok 37 - reapplying preserves deliberate routing and registration changes until explicit adoption
+  ---
+  duration_ms: 1591.167583
+  type: 'test'
+  ...
+# Subtest: Claude duplicate identities prevent installation and fail later configuration checks
+ok 38 - Claude duplicate identities prevent installation and fail later configuration checks
+  ---
+  duration_ms: 626.604
+  type: 'test'
+  ...
+# Subtest: Claude with quoted identity key duplicate identities prevent installation and fail later configuration checks
+ok 39 - Claude with quoted identity key duplicate identities prevent installation and fail later configuration checks
+  ---
+  duration_ms: 559.4605
+  type: 'test'
+  ...
+# Subtest: Codex duplicate identities prevent installation and fail later configuration checks
+ok 40 - Codex duplicate identities prevent installation and fail later configuration checks
+  ---
+  duration_ms: 670.057917
+  type: 'test'
+  ...
+# Subtest: installs a selected package only and preserves Codex-Claude parity
+ok 41 - installs a selected package only and preserves Codex-Claude parity
+  ---
+  duration_ms: 843.520458
+  type: 'test'
+  ...
+# Subtest: local install, update, and reinstall preserve external personal and project prompt knowledge
+ok 42 - local install, update, and reinstall preserve external personal and project prompt knowledge
+  ---
+  duration_ms: 1798.667667
+  type: 'test'
+  ...
+# Subtest: ordinary local installation does not create personal or project prompt knowledge
+ok 43 - ordinary local installation does not create personal or project prompt knowledge
+  ---
+  duration_ms: 640.224708
+  type: 'test'
+  ...
+# Subtest: refuses an unknown selection before altering an installation
+ok 44 - refuses an unknown selection before altering an installation
+  ---
+  duration_ms: 92.960209
+  type: 'test'
+  ...
+# Subtest: refuses an unrelated installed package collision
+ok 45 - refuses an unrelated installed package collision
+  ---
+  duration_ms: 220.515542
+  type: 'test'
+  ...
+# Subtest: retires owned prompt aliases only after the replacement installs
+ok 46 - retires owned prompt aliases only after the replacement installs
+  ---
+  duration_ms: 711.6545
+  type: 'test'
+  ...
+# Subtest: keeps an owned legacy package when replacement installation fails
+ok 47 - keeps an owned legacy package when replacement installation fails
+  ---
+  duration_ms: 650.317292
+  type: 'test'
+  ...
+# Subtest: the public collection installs every canonical package with verified parity
+ok 48 - the public collection installs every canonical package with verified parity
+  ---
+  duration_ms: 10793.946041
+  type: 'test'
+  ...
+# (node:42599) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a saved comparison keeps values and count in step
+ok 49 - a saved comparison keeps values and count in step
+  ---
+  duration_ms: 5.6075
+  type: 'test'
+  ...
+# Subtest: the resolved sides always start with the A and B the selectors show
+ok 50 - the resolved sides always start with the A and B the selectors show
+  ---
+  duration_ms: 0.469167
+  type: 'test'
+  ...
+# Subtest: the count is capped at the values an axis has and an axis without two is unavailable
+ok 51 - the count is capped at the values an axis has and an axis without two is unavailable
+  ---
+  duration_ms: 0.344333
+  type: 'test'
+  ...
+# Subtest: choosing a value another side shows swaps the two sides
+ok 52 - choosing a value another side shows swaps the two sides
+  ---
+  duration_ms: 0.232875
+  type: 'test'
+  ...
+# (node:42600) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: atomic gestures create one history entry; cancel and resets preserve immutable source/saved bases
+ok 53 - atomic gestures create one history entry; cancel and resets preserve immutable source/saved bases
+  ---
+  duration_ms: 79.029334
+  type: 'test'
+  ...
+# Subtest: invalid input and source/asset failures retain whole last-valid paired output and block save/export
+ok 54 - invalid input and source/asset failures retain whole last-valid paired output and block save/export
+  ---
+  duration_ms: 23.235875
+  type: 'test'
+  ...
+# Subtest: async compilation publishes themes atomically and stale success cannot clear a newer invalid/error revision
+ok 55 - async compilation publishes themes atomically and stale success cannot clear a newer invalid/error revision
+  ---
+  duration_ms: 9.193791
+  type: 'test'
+  ...
+# Subtest: explicit editor loader rejects inherited/missing IDs and incompatible interface/slot versions
+ok 56 - explicit editor loader rejects inherited/missing IDs and incompatible interface/slot versions
+  ---
+  duration_ms: 7.512375
+  type: 'test'
+  ...
+# Subtest: confirmed saved A keeps newer working B dirty and captured output immutable
+ok 57 - confirmed saved A keeps newer working B dirty and captured output immutable
+  ---
+  duration_ms: 7.187208
+  type: 'test'
+  ...
+# Subtest: preview failure C rolls whole map back to applied A, never compiler-only B; capabilities prevent mutation/history
+ok 58 - preview failure C rolls whole map back to applied A, never compiler-only B; capabilities prevent mutation/history
+  ---
+  duration_ms: 12.233375
+  type: 'test'
+  ...
+# Subtest: descriptor rejects executable data, unknown slots/capabilities and missing declared capability
+ok 59 - descriptor rejects executable data, unknown slots/capabilities and missing declared capability
+  ---
+  duration_ms: 12.615625
+  type: 'test'
+  ...
+# Subtest: managed host updates preserve every product editor file; editor imports cannot cross into shell or remote modules
+ok 60 - managed host updates preserve every product editor file; editor imports cannot cross into shell or remote modules
+  ---
+  duration_ms: 1035.06725
+  type: 'test'
+  ...
+# Subtest: cancelling an unrelated gesture restores pre-gesture invalid text instead of reporting save-ready
+ok 61 - cancelling an unrelated gesture restores pre-gesture invalid text instead of reporting save-ready
+  ---
+  duration_ms: 15.23025
+  type: 'test'
+  ...
+# Subtest: data-changing notifications are pending and cannot capture B with older A compilation
+ok 62 - data-changing notifications are pending and cannot capture B with older A compilation
+  ---
+  duration_ms: 16.226166
+  type: 'test'
+  ...
+# Subtest: failed source A followed by repaired working B cannot seed saved A with B on retry or repeated start
+ok 63 - failed source A followed by repaired working B cannot seed saved A with B on retry or repeated start
+  ---
+  duration_ms: 8.922125
+  type: 'test'
+  ...
+# Subtest: review context navigation is guarded and cannot change canonical values, compiled fingerprints or history
+ok 64 - review context navigation is guarded and cannot change canonical values, compiled fingerprints or history
+  ---
+  duration_ms: 11.443625
+  type: 'test'
+  ...
+# (node:42601) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Design model honors theme defaults and sends only input-backed parameters to frames
+ok 65 - Design model honors theme defaults and sends only input-backed parameters to frames
+  ---
+  duration_ms: 52.995791
+  type: 'test'
+  ...
+# Subtest: range inputs and diagnostics are carried by the stable shell contracts
+ok 66 - range inputs and diagnostics are carried by the stable shell contracts
+  ---
+  duration_ms: 0.988125
+  type: 'test'
+  ...
+# Subtest: decimal 24-hour range values use the declared time-hours formatter
+ok 67 - decimal 24-hour range values use the declared time-hours formatter
+  ---
+  duration_ms: 1.933209
+  type: 'test'
+  ...
+# Subtest: scenario input validation normalizes declared ranges and rejects unsupported values
+ok 68 - scenario input validation normalizes declared ranges and rejects unsupported values
+  ---
+  duration_ms: 2.907708
+  type: 'test'
+  ...
+# Subtest: a link keeps shared values that differ from any theme default and scoped values against the active theme
+ok 69 - a link keeps shared values that differ from any theme default and scoped values against the active theme
+  ---
+  duration_ms: 6.004417
+  type: 'test'
+  ...
+# Subtest: a link made in dark round-trips a shared value into light
+ok 70 - a link made in dark round-trips a shared value into light
+  ---
+  duration_ms: 4.600917
+  type: 'test'
+  ...
+# Subtest: a partial values change keeps the shared and themed values it does not name
+ok 71 - a partial values change keeps the shared and themed values it does not name
+  ---
+  duration_ms: 4.5165
+  type: 'test'
+  ...
+# Subtest: the type specimen reads the active theme default for typefaces and change detection
+ok 72 - the type specimen reads the active theme default for typefaces and change detection
+  ---
+  duration_ms: 0.185625
+  type: 'test'
+  ...
+# Subtest: a snapped range value never passes the declared maximum
+ok 73 - a snapped range value never passes the declared maximum
+  ---
+  duration_ms: 1.526291
+  type: 'test'
+  ...
+# Subtest: a generic font family stays unquoted in tokens and CSS
+ok 74 - a generic font family stays unquoted in tokens and CSS
+  ---
+  duration_ms: 3.739042
+  type: 'test'
+  ...
+# Subtest: a generic font family requests no web font stylesheet
+ok 75 - a generic font family requests no web font stylesheet
+  ---
+  duration_ms: 3.360375
+  type: 'test'
+  ...
+# (node:42602) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: fetch direction journal requires CAS and rejects immutable replacement without changing stored bytes
+ok 76 - fetch direction journal requires CAS and rejects immutable replacement without changing stored bytes
+  ---
+  duration_ms: 56.57675
+  type: 'test'
+  ...
+# Subtest: node direction journal requires CAS and rejects immutable replacement without changing stored bytes
+ok 77 - node direction journal requires CAS and rejects immutable replacement without changing stored bytes
+  ---
+  duration_ms: 45.848042
+  type: 'test'
+  ...
+# Subtest: direction reads fail closed for malformed, invalid and filesystem errors
+ok 78 - direction reads fail closed for malformed, invalid and filesystem errors
+  ---
+  duration_ms: 12.597209
+  type: 'test'
+  ...
+# Subtest: fetch origin rejection precedes body budget; prototype routes remain denied
+ok 79 - fetch origin rejection precedes body budget; prototype routes remain denied
+  ---
+  duration_ms: 5.435709
+  type: 'test'
+  ...
+# Subtest: node origin rejection precedes body budget; prototype routes remain denied
+ok 80 - node origin rejection precedes body budget; prototype routes remain denied
+  ---
+  duration_ms: 24.688333
+  type: 'test'
+  ...
+# Subtest: permission errors, interrupted uploads and failed final rename never overwrite a saved journal
+ok 81 - permission errors, interrupted uploads and failed final rename never overwrite a saved journal
+  ---
+  duration_ms: 9.178792
+  type: 'test'
+  ...
+# Subtest: registered journal schema persists revisions/deletion history and refuses mutation with the correct CAS
+ok 82 - registered journal schema persists revisions/deletion history and refuses mutation with the correct CAS
+  ---
+  duration_ms: 54.93575
+  type: 'test'
+  ...
+# Subtest: fetch strict validator exceptions cannot crash or overwrite the journal
+ok 83 - fetch strict validator exceptions cannot crash or overwrite the journal
+  ---
+  duration_ms: 15.118166
+  type: 'test'
+  ...
+# Subtest: node strict validator exceptions cannot crash or overwrite the journal
+ok 84 - node strict validator exceptions cannot crash or overwrite the journal
+  ---
+  duration_ms: 12.587084
+  type: 'test'
+  ...
+# Subtest: bootstrap returns explicit unavailable data for malformed/invalid/deep journal files without changing bytes
+ok 85 - bootstrap returns explicit unavailable data for malformed/invalid/deep journal files without changing bytes
+  ---
+  duration_ms: 15.61375
+  type: 'test'
+  ...
+# (node:42603) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: journal retains immutable history, monotonic revisions and recoverable deletion; no replacement or ID ambiguity
+ok 86 - journal retains immutable history, monotonic revisions and recoverable deletion; no replacement or ID ambiguity
+  ---
+  duration_ms: 79.532125
+  type: 'test'
+  ...
+# Subtest: prepared saved adoption is atomic/latest-wins and never changes original source; draft recovery remains undoable
+ok 87 - prepared saved adoption is atomic/latest-wins and never changes original source; draft recovery remains undoable
+  ---
+  duration_ms: 20.614708
+  type: 'test'
+  ...
+# Subtest: confirmed captured save A keeps newer B dirty; rename/duplicate/delete preserve payload/history and source basis
+ok 88 - confirmed captured save A keeps newer B dirty; rename/duplicate/delete preserve payload/history and source basis
+  ---
+  duration_ms: 54.197625
+  type: 'test'
+  ...
+# Subtest: invalid/newer imports retain exact raw bytes and prior saved data; known legacy problems recover as editable blocked input
+ok 89 - invalid/newer imports retain exact raw bytes and prior saved data; known legacy problems recover as editable blocked input
+  ---
+  duration_ms: 24.322916
+  type: 'test'
+  ...
+# Subtest: source/fingerprint drift blocks reopen, conflict never overwrites, static cannot write and recovery restores raw draft separately
+ok 90 - source/fingerprint drift blocks reopen, conflict never overwrites, static cannot write and recovery restores raw draft separately
+  ---
+  duration_ms: 26.020041
+  type: 'test'
+  ...
+# Subtest: new envelope identity starts at revision1 after prior save; acknowledgement is truthful with newer edits
+ok 91 - new envelope identity starts at revision1 after prior save; acknowledgement is truthful with newer edits
+  ---
+  duration_ms: 16.93725
+  type: 'test'
+  ...
+# Subtest: offered recovery survives fresh edits and save until explicit decision; metadata prevents reinterpretation
+ok 92 - offered recovery survives fresh edits and save until explicit decision; metadata prevents reinterpretation
+  ---
+  duration_ms: 15.091333
+  type: 'test'
+  ...
+# Subtest: deep bounded-size payloads reject without stack overflow
+ok 93 - deep bounded-size payloads reject without stack overflow
+  ---
+  duration_ms: 31.912416
+  type: 'test'
+  ...
+# Subtest: late GET success or failure cannot replace a confirmed newer journal write
+ok 94 - late GET success or failure cannot replace a confirmed newer journal write
+  ---
+  duration_ms: 34.890333
+  type: 'test'
+  ...
+# Subtest: failed selection can be explicitly replaced by a validated imported draft and saved under a new identity
+ok 95 - failed selection can be explicitly replaced by a validated imported draft and saved under a new identity
+  ---
+  duration_ms: 22.988333
+  type: 'test'
+  ...
+# Subtest: recovery uses schema/product codec and restores last-valid output atomically with raw invalid text
+ok 96 - recovery uses schema/product codec and restores last-valid output atomically with raw invalid text
+  ---
+  duration_ms: 19.342792
+  type: 'test'
+  ...
+# Subtest: valid recovery captured during pending compilation resumes its own compile without a ready A/B mismatch
+ok 97 - valid recovery captured during pending compilation resumes its own compile without a ready A/B mismatch
+  ---
+  duration_ms: 14.208375
+  type: 'test'
+  ...
+# Subtest: denied browser storage reads never poison canonical editing or compilation
+ok 98 - denied browser storage reads never poison canonical editing or compilation
+  ---
+  duration_ms: 17.950458
+  type: 'test'
+  ...
+# Subtest: independent immutable draft pin records survive unrelated initialized tabs
+ok 99 - independent immutable draft pin records survive unrelated initialized tabs
+  ---
+  duration_ms: 13.76
+  type: 'test'
+  ...
+# (node:42636) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: declared device corners match the renderer at fractional, small and large zoom
+ok 100 - declared device corners match the renderer at fractional, small and large zoom
+  ---
+  duration_ms: 0.509875
+  type: 'test'
+  ...
+# Subtest: tablets get their own defaults and a flat renderer can explicitly opt out
+ok 101 - tablets get their own defaults and a flat renderer can explicitly opt out
+  ---
+  duration_ms: 0.08425
+  type: 'test'
+  ...
+# Subtest: a failing diagnostics handler reports none and never blocks the ready reply
+ok 102 - a failing diagnostics handler reports none and never blocks the ready reply
+  ---
+  duration_ms: 30.591125
+  type: 'test'
+  ...
+# Subtest: preview frames carry the adapter frame isolation, and nothing when it is undeclared
+ok 103 - preview frames carry the adapter frame isolation, and nothing when it is undeclared
+  ---
+  duration_ms: 15.973833
+  type: 'test'
+  ...
+# (node:42642) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: host creation, legacy Vite interpretation, preservation, and mismatch refuse writes
+ok 104 - host creation, legacy Vite interpretation, preservation, and mismatch refuse writes
+  ---
+  duration_ms: 3535.918958
+  type: 'test'
+  ...
+# Subtest: compiler seam is opt-in, resolves explicit map, rejects mismatched authority and executable output
+ok 105 - compiler seam is opt-in, resolves explicit map, rejects mismatched authority and executable output
+  ---
+  duration_ms: 35.003875
+  type: 'test'
+  ...
+# Subtest: Fetch save transport retains revision, schema, size, origin and unreadable-file protections
+ok 106 - Fetch save transport retains revision, schema, size, origin and unreadable-file protections
+  ---
+  duration_ms: 40.077542
+  type: 'test'
+  ...
+# Subtest: Next live saved-file bootstrap resolves new scenario/layout IDs before common store initialization; review builds use snapshots
+ok 107 - Next live saved-file bootstrap resolves new scenario/layout IDs before common store initialization; review builds use snapshots
+  ---
+  duration_ms: 6.776958
+  type: 'test'
+  ...
+# (node:42667) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: LM-01 the declaration is checked, grouped in declared order and searched on every field
+ok 108 - LM-01 the declaration is checked, grouped in declared order and searched on every field
+  ---
+  duration_ms: 51.330709
+  type: 'test'
+  ...
+# Subtest: LM-02 links name a component and a section; a module link wins, and an unknown component is reported
+ok 109 - LM-02 links name a component and a section; a module link wins, and an unknown component is reported
+  ---
+  duration_ms: 6.669125
+  type: 'test'
+  ...
+# Subtest: LM-03 previews load only from the adapter entry on the frame origin; captures only from the Studio or inline
+ok 110 - LM-03 previews load only from the adapter entry on the frame origin; captures only from the Studio or inline
+  ---
+  duration_ms: 24.480166
+  type: 'test'
+  ...
+# Subtest: LM-04 playground values are declared, validated and complete
+ok 111 - LM-04 playground values are declared, validated and complete
+  ---
+  duration_ms: 5.643208
+  type: 'test'
+  ...
+# Subtest: LM-05 documentation is checked before a page renders it
+ok 112 - LM-05 documentation is checked before a page renders it
+  ---
+  duration_ms: 5.001333
+  type: 'test'
+  ...
+# Subtest: LM-06 at most LIVE_FRAMES previews are live, nearest first, the playground preferred, only near ones
+ok 113 - LM-06 at most LIVE_FRAMES previews are live, nearest first, the playground preferred, only near ones
+  ---
+  duration_ms: 5.218
+  type: 'test'
+  ...
+# Subtest: LM-08 the build reads the component IDs src/library/index.ts documents, or says why it cannot
+ok 114 - LM-08 the build reads the component IDs src/library/index.ts documents, or says why it cannot
+  ---
+  duration_ms: 3.0805
+  type: 'test'
+  ...
+# Subtest: LM-09 the library model files stay pure and the adapter type declares the library
+ok 115 - LM-09 the library model files stay pure and the adapter type declares the library
+  ---
+  duration_ms: 0.729334
+  type: 'test'
+  ...
+# Subtest: LM-07 code is tokenized losslessly into kinds the page draws as text
+ok 116 - LM-07 code is tokenized losslessly into kinds the page draws as text
+  ---
+  duration_ms: 22.168792
+  type: 'test'
+  ...
+# Subtest: LM-10 documentation files import only @studio/library and their own files
+ok 117 - LM-10 documentation files import only @studio/library and their own files
+  ---
+  duration_ms: 1.24075
+  type: 'test'
+  ...
+# Subtest: LM-11 the product seed is empty, the API is the published surface, and the build and lint know the library
+ok 118 - LM-11 the product seed is empty, the API is the published surface, and the build and lint know the library
+  ---
+  duration_ms: 0.7605
+  type: 'test'
+  ...
+# Subtest: LM-12 the example library is a valid declaration, and every documented component has valid documentation
+ok 119 - LM-12 the example library is a valid declaration, and every documented component has valid documentation
+  ---
+  duration_ms: 24.662375
+  type: 'test'
+  ...
+# Subtest: LM-13 library pages render documentation as React text, load frames only from the adapter, and never remount for values
+ok 120 - LM-13 library pages render documentation as React text, load frames only from the adapter, and never remount for values
+  ---
+  duration_ms: 0.717875
+  type: 'test'
+  ...
+# Subtest: LM-14 the core shell reaches the library only through lazy slots, and library is a reserved link key
+ok 121 - LM-14 the core shell reaches the library only through lazy slots, and library is a reserved link key
+  ---
+  duration_ms: 1.38425
+  type: 'test'
+  ...
+# Subtest: LM-16 the library reference documents the contract and SKILL.md routes to it only for a component library
+ok 122 - LM-16 the library reference documents the contract and SKILL.md routes to it only for a component library
+  ---
+  duration_ms: 3.286083
+  type: 'test'
+  ...
+# Subtest: LM-17 the library files ship with the starter
+ok 123 - LM-17 the library files ship with the starter
+  ---
+  duration_ms: 0.40075
+  type: 'test'
+  ...
+# Subtest: LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported
+ok 124 - LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported
+  ---
+  duration_ms: 7.302042
+  type: 'test'
+  ...
+# Subtest: 0.13.1 the library comes first in the rail with a divider after it, and its Go to groups precede the views
+ok 125 - 0.13.1 the library comes first in the rail with a divider after it, and its Go to groups precede the views
+  ---
+  duration_ms: 2.570208
+  type: 'test'
+  ...
+# Subtest: 0.13.1 Home, End and the page keys typed in a field inside a frame never scroll the Studio around it
+ok 126 - 0.13.1 Home, End and the page keys typed in a field inside a frame never scroll the Studio around it
+  ---
+  duration_ms: 1.847458
+  type: 'test'
+  ...
+# Subtest: 0.13.2 Page Up and Page Down typed in a field never scroll the Studio on any platform
+ok 127 - 0.13.2 Page Up and Page Down typed in a field never scroll the Studio on any platform
+  ---
+  duration_ms: 2.052792
+  type: 'test'
+  ...
+# Subtest: 0.14.0 sections nest groups in declared order; alsoIn cross-lists at the component position; the home path names the section
+ok 128 - 0.14.0 sections nest groups in declared order; alsoIn cross-lists at the component position; the home path names the section
+  ---
+  duration_ms: 4.820708
+  type: 'test'
+  ...
+# Subtest: 0.14.0 invalid sections and alsoIn are named, and the panel, Go to and breadcrumb use them
+ok 129 - 0.14.0 invalid sections and alsoIn are named, and the panel, Go to and breadcrumb use them
+  ---
+  duration_ms: 6.811833
+  type: 'test'
+  ...
+# Subtest: valid local v1 manifest validates without writing and CLI reports bounded coverage
+ok 130 - valid local v1 manifest validates without writing and CLI reports bounded coverage
+  ---
+  duration_ms: 71.101042
+  type: 'test'
+  ...
+# Subtest: typed missing, wrong-kind and removed references remain distinct failures
+ok 131 - typed missing, wrong-kind and removed references remain distinct failures
+  ---
+  duration_ms: 5.973334
+  type: 'test'
+  ...
+# Subtest: duplicate IDs, source mappings, record ownership and required envelopes are checked
+ok 132 - duplicate IDs, source mappings, record ownership and required envelopes are checked
+  ---
+  duration_ms: 6.182792
+  type: 'test'
+  ...
+# Subtest: fixture byte changes, scenario version drift, missing provenance and audiences fail
+ok 133 - fixture byte changes, scenario version drift, missing provenance and audiences fail
+  ---
+  duration_ms: 6.280875
+  type: 'test'
+  ...
+# Subtest: contained file checks reject absolute, traversal and symlink escape paths
+ok 134 - contained file checks reject absolute, traversal and symlink escape paths
+  ---
+  duration_ms: 16.145958
+  type: 'test'
+  ...
+# Subtest: presenter overrides and walkthrough references retain unresolved diagnostics
+ok 135 - presenter overrides and walkthrough references retain unresolved diagnostics
+  ---
+  duration_ms: 12.098292
+  type: 'test'
+  ...
+# Subtest: target/profile mismatches and unsupported schemas fail honestly
+ok 136 - target/profile mismatches and unsupported schemas fail honestly
+  ---
+  duration_ms: 125.676958
+  type: 'test'
+  ...
+# Subtest: status claims require passing evidence; status axes remain independent
+ok 137 - status claims require passing evidence; status axes remain independent
+  ---
+  duration_ms: 13.805
+  type: 'test'
+  ...
+# Subtest: malformed sidecar JSON and absent local files fail without exceptions
+ok 138 - malformed sidecar JSON and absent local files fail without exceptions
+  ---
+  duration_ms: 5.807708
+  type: 'test'
+  ...
+# Subtest: unreferenced tombstones keep historic paths and dependencies without becoming runnable
+ok 139 - unreferenced tombstones keep historic paths and dependencies without becoming runnable
+  ---
+  duration_ms: 10.97625
+  type: 'test'
+  ...
+# Subtest: aggregate and reference-changing overrides cannot bypass the presentation-only allowlist
+ok 140 - aggregate and reference-changing overrides cannot bypass the presentation-only allowlist
+  ---
+  duration_ms: 5.213833
+  type: 'test'
+  ...
+# Subtest: saved baseline needs a supported structured envelope
+ok 141 - saved baseline needs a supported structured envelope
+  ---
+  duration_ms: 7.39875
+  type: 'test'
+  ...
+# Subtest: Next standalone checks regenerate current production route types and exclude stale development validators
+ok 142 - Next standalone checks regenerate current production route types and exclude stale development validators
+  ---
+  duration_ms: 0.850667
+  type: 'test'
+  ...
+# (node:42691) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: switches, text, numbers and choices normalize; booleans stay booleans; readonly takes nothing
+ok 143 - switches, text, numbers and choices normalize; booleans stay booleans; readonly takes nothing
+  ---
+  duration_ms: 0.766292
+  type: 'test'
+  ...
+# Subtest: a range still snaps to its last in-range step when the range is not a whole number of steps (0.10.2)
+ok 144 - a range still snaps to its last in-range step when the range is not a whole number of steps (0.10.2)
+  ---
+  duration_ms: 0.188666
+  type: 'test'
+  ...
+# Subtest: a property whose ID is a reserved link key is rejected with a clear error
+ok 145 - a property whose ID is a reserved link key is rejected with a clear error
+  ---
+  duration_ms: 0.382875
+  type: 'test'
+  ...
+# Subtest: properties apply to their surfaces, curated first, in declaration order
+ok 146 - properties apply to their surfaces, curated first, in declaration order
+  ---
+  duration_ms: 0.500208
+  type: 'test'
+  ...
+# Subtest: links carry every value except text that is not shareable, which leaves edited=local
+ok 147 - links carry every value except text that is not shareable, which leaves edited=local
+  ---
+  duration_ms: 0.303334
+  type: 'test'
+  ...
+# Subtest: a link sets the linked scenario: values that travel from the link, local text only with edited=local
+ok 148 - a link sets the linked scenario: values that travel from the link, local text only with edited=local
+  ---
+  duration_ms: 0.243542
+  type: 'test'
+  ...
+# Subtest: a property with a reserved link key never travels in links, in either direction
+ok 149 - a property with a reserved link key never travels in links, in either direction
+  ---
+  duration_ms: 0.195916
+  type: 'test'
+  ...
+# Subtest: a property with a reserved link key gets no row and is named once in the console
+ok 150 - a property with a reserved link key gets no row and is named once in the console
+  ---
+  duration_ms: 0.122208
+  type: 'test'
+  ...
+# Subtest: stored local text passes the same normalization as a link: stale, corrupt or readonly values are dropped
+ok 151 - stored local text passes the same normalization as a link: stale, corrupt or readonly values are dropped
+  ---
+  duration_ms: 0.32025
+  type: 'test'
+  ...
+# Subtest: linkEdits round-trips through a URL to editsFromLink, keeping false and decimals
+ok 152 - linkEdits round-trips through a URL to editsFromLink, keeping false and decimals
+  ---
+  duration_ms: 0.409834
+  type: 'test'
+  ...
+# Subtest: linkEdits writes only values that still normalize, so a stale stored edit never reaches a link
+ok 153 - linkEdits writes only values that still normalize, so a stale stored edit never reaches a link
+  ---
+  duration_ms: 0.113833
+  type: 'test'
+  ...
+# Subtest: keptEdits keeps only a scenario's own properties at values that normalize
+ok 154 - keptEdits keeps only a scenario's own properties at values that normalize
+  ---
+  duration_ms: 0.087292
+  type: 'test'
+  ...
+# Subtest: a link shows its own state but keeps this browser's stored edits for that scenario until the person edits there
+ok 155 - a link shows its own state but keeps this browser's stored edits for that scenario until the person edits there
+  ---
+  duration_ms: 0.174
+  type: 'test'
+  ...
+# Subtest: Compare offers switches, selects, choices and numbers with presets; never text
+ok 156 - Compare offers switches, selects, choices and numbers with presets; never text
+  ---
+  duration_ms: 0.106875
+  type: 'test'
+  ...
+# Subtest: saved states join the catalog after their surface, nested under the base, rendering the base
+ok 157 - saved states join the catalog after their surface, nested under the base, rendering the base
+  ---
+  duration_ms: 0.120708
+  type: 'test'
+  ...
+# Subtest: a hand-edited scenarios.json adds only usable saved states, with only their base's own property values
+ok 158 - a hand-edited scenarios.json adds only usable saved states, with only their base's own property values
+  ---
+  duration_ms: 0.304
+  type: 'test'
+  ...
+# Subtest: usableSaved applies the same per-entry limits as studio-scenarios/1, so a skipped entry never blocks a save
+ok 159 - usableSaved applies the same per-entry limits as studio-scenarios/1, so a skipped entry never blocks a save
+  ---
+  duration_ms: 0.267834
+  type: 'test'
+  ...
+# Subtest: a saved-state ID never ends in a hyphen
+ok 160 - a saved-state ID never ends in a hyphen
+  ---
+  duration_ms: 0.15775
+  type: 'test'
+  ...
+# Subtest: studio-scenarios/1 accepts saved states and refuses what it should
+ok 161 - studio-scenarios/1 accepts saved states and refuses what it should
+  ---
+  duration_ms: 0.178208
+  type: 'test'
+  ...
+# Subtest: an optional property a state designs can be unset: stored, kept out of links as local, restored only with edited=local
+ok 162 - an optional property a state designs can be unset: stored, kept out of links as local, restored only with edited=local
+  ---
+  duration_ms: 0.089208
+  type: 'test'
+  ...
+# (node:42697) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Tailwind exclusions derive only owned saved paths and exact atomic-temp family, including custom paths
+ok 163 - Tailwind exclusions derive only owned saved paths and exact atomic-temp family, including custom paths
+  ---
+  duration_ms: 45.124833
+  type: 'test'
+  ...
+# (node:42698) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shell starter ships source only
+ok 164 - shell starter ships source only
+  ---
+  duration_ms: 2.242041
+  type: 'test'
+  ...
+# Subtest: the whole package names no client
+ok 165 - the whole package names no client
+  ---
+  duration_ms: 88.624375
+  type: 'test'
+  ...
+# Subtest: shell starter stays product-neutral and portable
+ok 166 - shell starter stays product-neutral and portable
+  ---
+  duration_ms: 15.197625
+  type: 'test'
+  ...
+# Subtest: the adapter is the only product seam in the shell
+ok 167 - the adapter is the only product seam in the shell
+  ---
+  duration_ms: 7.0425
+  type: 'test'
+  ...
+# Subtest: frame protocol is versioned and validates origin and source on both sides
+ok 168 - frame protocol is versioned and validates origin and source on both sides
+  ---
+  duration_ms: 0.329583
+  type: 'test'
+  ...
+# Subtest: frame sync stays framework free and never reports private fields
+ok 169 - frame sync stays framework free and never reports private fields
+  ---
+  duration_ms: 0.22525
+  type: 'test'
+  ...
+# Subtest: modified is a state set by real changes, not a click count
+ok 170 - modified is a state set by real changes, not a click count
+  ---
+  duration_ms: 0.294625
+  type: 'test'
+  ...
+# Subtest: acceptance script covers every shell criterion
+ok 171 - acceptance script covers every shell criterion
+  ---
+  duration_ms: 4.746833
+  type: 'test'
+  ...
+# Subtest: large lists are windowed with one tab stop
+ok 172 - large lists are windowed with one tab stop
+  ---
+  duration_ms: 2.657292
+  type: 'test'
+  ...
+# Subtest: starter documents local edits and the shell reference exists
+ok 173 - starter documents local edits and the shell reference exists
+  ---
+  duration_ms: 0.488
+  type: 'test'
+  ...
+# Subtest: the frame can be resized in place and the Size menu lists every profile
+ok 174 - the frame can be resized in place and the Size menu lists every profile
+  ---
+  duration_ms: 0.340916
+  type: 'test'
+  ...
+# Subtest: property values and code cross the frame boundary only as announced capabilities
+ok 175 - property values and code cross the frame boundary only as announced capabilities
+  ---
+  duration_ms: 0.29375
+  type: 'test'
+  ...
+# Subtest: every key the Studio writes to or reads from its links is reserved against property IDs
+ok 176 - every key the Studio writes to or reads from its links is reserved against property IDs
+  ---
+  duration_ms: 0.587
+  type: 'test'
+  ...
+# Subtest: properties stay out of scenario inputs and the dock, reach Compare only with named values, and edit without a remount
+ok 177 - properties stay out of scenario inputs and the dock, reach Compare only with named values, and edit without a remount
+  ---
+  duration_ms: 0.580958
+  type: 'test'
+  ...
+# Subtest: Properties load lazily, edit only the scenario of the update, and keep stored edits a link does not carry
+ok 178 - Properties load lazily, edit only the scenario of the update, and keep stored edits a link does not carry
+  ---
+  duration_ms: 0.300458
+  type: 'test'
+  ...
+# Subtest: saved states share the layouts guards and stay pure
+ok 179 - saved states share the layouts guards and stay pure
+  ---
+  duration_ms: 0.516792
+  type: 'test'
+  ...
+# Subtest: saved files carry a revision: a stale save gets 409 with the current file and writes nothing
+ok 180 - saved files carry a revision: a stale save gets 409 with the current file and writes nothing
+  ---
+  duration_ms: 165.459
+  type: 'test'
+  ...
+# Subtest: final fix wave: ordered value updates, file-preserving saves, a lazy-chunk boundary and a fresh runtime per Present step
+ok 181 - final fix wave: ordered value updates, file-preserving saves, a lazy-chunk boundary and a fresh runtime per Present step
+  ---
+  duration_ms: 0.824833
+  type: 'test'
+  ...
+# Subtest: acceptance script covers the workspace criteria
+ok 182 - acceptance script covers the workspace criteria
+  ---
+  duration_ms: 2.19175
+  type: 'test'
+  ...
+# Subtest: acceptance script covers the library criteria
+ok 183 - acceptance script covers the library criteria
+  ---
+  duration_ms: 27.041625
+  type: 'test'
+  ...
+# Subtest: 0.12.1 touch and focus floors: stacked controls keep their own targets and focus is drawn whole
+ok 184 - 0.12.1 touch and focus floors: stacked controls keep their own targets and focus is drawn whole
+  ---
+  duration_ms: 19.565709
+  type: 'test'
+  ...
+# Subtest: 0.12.1 a focused slider outlines its thumb and AC-66 walks the Design sliders
+ok 185 - 0.12.1 a focused slider outlines its thumb and AC-66 walks the Design sliders
+  ---
+  duration_ms: 0.851666
+  type: 'test'
+  ...
+# Subtest: 0.12.1 kit: the SaveBar message wraps above its actions and a DataTable keeps its announcement inside the page
+ok 186 - 0.12.1 kit: the SaveBar message wraps above its actions and a DataTable keeps its announcement inside the page
+  ---
+  duration_ms: 9.505292
+  type: 'test'
+  ...
+# Subtest: 0.12.2 Present anchor label and Compare headers: AA text, whole on the stage, a forced-colors highlight
+ok 187 - 0.12.2 Present anchor label and Compare headers: AA text, whole on the stage, a forced-colors highlight
+  ---
+  duration_ms: 10.5035
+  type: 'test'
+  ...
+# Subtest: UP-01 a created Studio is stamped with the shell files only
+ok 188 - UP-01 a created Studio is stamped with the shell files only
+  ---
+  duration_ms: 432.181833
+  type: 'test'
+  ...
+# Subtest: UP-02 a report writes nothing and lists every action
+ok 189 - UP-02 a report writes nothing and lists every action
+  ---
+  duration_ms: 1060.440209
+  type: 'test'
+  ...
+# Subtest: UP-03 applying replaces, adds and deletes shell files and rewrites the lock
+ok 190 - UP-03 applying replaces, adds and deletes shell files and rewrites the lock
+  ---
+  duration_ms: 1452.704625
+  type: 'test'
+  ...
+# Subtest: UP-04 product files never change
+ok 191 - UP-04 product files never change
+  ---
+  duration_ms: 816.739875
+  type: 'test'
+  ...
+# Subtest: UP-05 a local edit blocks until it is replaced or kept with a reason
+ok 192 - UP-05 a local edit blocks until it is replaced or kept with a reason
+  ---
+  duration_ms: 3088.41725
+  type: 'test'
+  ...
+# Subtest: UP-06 deleted optional files stay deleted once recorded; other missing files block
+ok 193 - UP-06 deleted optional files stay deleted once recorded; other missing files block
+  ---
+  duration_ms: 1842.120166
+  type: 'test'
+  ...
+# Subtest: UP-07 package.json keeps the Studio additions and takes the shell versions
+ok 194 - UP-07 package.json keeps the Studio additions and takes the shell versions
+  ---
+  duration_ms: 1048.540333
+  type: 'test'
+  ...
+# Subtest: UP-08 the report prints the update notes between the two versions
+ok 195 - UP-08 the report prints the update notes between the two versions
+  ---
+  duration_ms: 1248.213167
+  type: 'test'
+  ...
+# Subtest: UP-09 adoption finds the release a Studio came from and lists exactly what differs
+ok 196 - UP-09 adoption finds the release a Studio came from and lists exactly what differs
+  ---
+  duration_ms: 2489.952583
+  type: 'test'
+  ...
+# Subtest: UP-10 applying refuses uncommitted changes to shell files
+ok 197 - UP-10 applying refuses uncommitted changes to shell files
+  ---
+  duration_ms: 2698.564417
+  type: 'test'
+  ...
+# Subtest: UP-11 the workspace seed is created once, and nothing in src/workspace/ is ever compared or updated
+ok 198 - UP-11 the workspace seed is created once, and nothing in src/workspace/ is ever compared or updated
+  ---
+  duration_ms: 1011.212167
+  type: 'test'
+  ...
+# Subtest: UP-12 a major kit change is reported as breaking and applied only when accepted
+ok 199 - UP-12 a major kit change is reported as breaking and applied only when accepted
+  ---
+  duration_ms: 1516.042959
+  type: 'test'
+  ...
+# Subtest: UP-13 acceptance is skipped with a reason when the workspace example it loads is missing
+ok 200 - UP-13 acceptance is skipped with a reason when the workspace example it loads is missing
+  ---
+  duration_ms: 1545.057917
+  type: 'test'
+  ...
+# Subtest: UP-14 the library seed is created once, and nothing in src/library/ is ever compared or updated
+ok 201 - UP-14 the library seed is created once, and nothing in src/library/ is ever compared or updated
+  ---
+  duration_ms: 627.912334
+  type: 'test'
+  ...
+# Subtest: release fingerprints include the current shell
+ok 202 - release fingerprints include the current shell
+  ---
+  duration_ms: 12.010417
+  type: 'test'
+  ...
+# (node:42771) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: WM-01 modules resolve in declaration order with the first reason each cannot open
+ok 203 - WM-01 modules resolve in declaration order with the first reason each cannot open
+  ---
+  duration_ms: 41.765208
+  type: 'test'
+  ...
+# Subtest: WM-01b module groups draw a divider only between consecutive modules whose groups differ
+ok 204 - WM-01b module groups draw a divider only between consecutive modules whose groups differ
+  ---
+  duration_ms: 47.416667
+  type: 'test'
+  ...
+# Subtest: WM-02 a module file and the adapter must agree, and the declaration must be well formed
+ok 205 - WM-02 a module file and the adapter must agree, and the declaration must be well formed
+  ---
+  duration_ms: 2.7865
+  type: 'test'
+  ...
+# Subtest: WM-03 links name a module and a section; a missing section falls back, an unknown module is reported
+ok 206 - WM-03 links name a module and a section; a missing section falls back, an unknown module is reported
+  ---
+  duration_ms: 4.185417
+  type: 'test'
+  ...
+# Subtest: WM-04 undeclared names, kind mismatches, cross-origin and missing hosts are refused without a request
+ok 207 - WM-04 undeclared names, kind mismatches, cross-origin and missing hosts are refused without a request
+  ---
+  duration_ms: 3.906458
+  type: 'test'
+  ...
+# Subtest: WM-04b the runtime operation-name pattern matches the declaration rule
+ok 208 - WM-04b the runtime operation-name pattern matches the declaration rule
+  ---
+  duration_ms: 0.365042
+  type: 'test'
+  ...
+# Subtest: WM-05 a declared operation is one same-origin JSON POST to {operations}/{name}
+ok 209 - WM-05 a declared operation is one same-origin JSON POST to {operations}/{name}
+  ---
+  duration_ms: 3.339417
+  type: 'test'
+  ...
+# Subtest: WM-06 results use one envelope; anything else is a host problem, never data
+ok 210 - WM-06 results use one envelope; anything else is a host problem, never data
+  ---
+  duration_ms: 2.557708
+  type: 'test'
+  ...
+# Subtest: WM-07 stores notify their subscribers and the guard registry asks until released
+ok 211 - WM-07 stores notify their subscribers and the guard registry asks until released
+  ---
+  duration_ms: 9.695708
+  type: 'test'
+  ...
+# Subtest: WM-08 the workspace model files stay pure
+ok 212 - WM-08 the workspace model files stay pure
+  ---
+  duration_ms: 0.913292
+  type: 'test'
+  ...
+# Subtest: WM-09 tables filter on every column, sort stably both ways and toggle direction
+ok 213 - WM-09 tables filter on every column, sort stably both ways and toggle direction
+  ---
+  duration_ms: 49.361458
+  type: 'test'
+  ...
+# Subtest: WM-10 the kit is one versioned barrel with the floors built in
+ok 214 - WM-10 the kit is one versioned barrel with the floors built in
+  ---
+  duration_ms: 2.752416
+  type: 'test'
+  ...
+# Subtest: WM-11 workspace files import only the kit, the workspace API, React and their own files
+ok 215 - WM-11 workspace files import only the kit, the workspace API, React and their own files
+  ---
+  duration_ms: 3.124209
+  type: 'test'
+  ...
+# Subtest: WM-13 the build reads the module IDs a workspace file defines, or says why it cannot
+ok 216 - WM-13 the build reads the module IDs a workspace file defines, or says why it cannot
+  ---
+  duration_ms: 2.285458
+  type: 'test'
+  ...
+# Subtest: WM-12 the product seed is empty and the workspace API is the published surface
+ok 217 - WM-12 the product seed is empty and the workspace API is the published surface
+  ---
+  duration_ms: 0.446958
+  type: 'test'
+  ...
+# Subtest: WM-13b the example host reads, writes with compare-and-set, and refuses what the contract refuses
+ok 218 - WM-13b the example host reads, writes with compare-and-set, and refuses what the contract refuses
+  ---
+  duration_ms: 58.588167
+  type: 'test'
+  ...
+# Subtest: WM-13c the dev server middleware applies the endpoint guard, keeps empty writes and caps history
+ok 219 - WM-13c the dev server middleware applies the endpoint guard, keeps empty writes and caps history
+  ---
+  duration_ms: 40.760291
+  type: 'test'
+  ...
+# Subtest: WM-14 the core shell reaches the workspace only through lazy slots
+ok 220 - WM-14 the core shell reaches the workspace only through lazy slots
+  ---
+  duration_ms: 1.488584
+  type: 'test'
+  ...
+# Subtest: WM-15 the workspace reference documents the contract and SKILL.md routes to it only for workspace tools
+ok 221 - WM-15 the workspace reference documents the contract and SKILL.md routes to it only for workspace tools
+  ---
+  duration_ms: 2.422875
+  type: 'test'
+  ...
+# Subtest: WM-17 a missing host stops a module only on a read before the host answered it, never under unsaved changes
+ok 222 - WM-17 a missing host stops a module only on a read before the host answered it, never under unsaved changes
+  ---
+  duration_ms: 0.204791
+  type: 'test'
+  ...
+# Subtest: WM-17b a missing host is recorded per module, so another module is never stopped by it
+ok 223 - WM-17b a missing host is recorded per module, so another module is never stopped by it
+  ---
+  duration_ms: 1.592
+  type: 'test'
+  ...
+# Subtest: WM-16 the workspace files ship with the starter
+ok 224 - WM-16 the workspace files ship with the starter
+  ---
+  duration_ms: 0.144583
+  type: 'test'
+  ...
+# Subtest: WM-17 0.15.0: groups, host-free modules, items, SelectList and step keys are public, documented and measured
+ok 225 - WM-17 0.15.0: groups, host-free modules, items, SelectList and step keys are public, documented and measured
+  ---
+  duration_ms: 2.255834
+  type: 'test'
+  ...
+# Subtest: WM-18 a sandbox without allow-same-origin makes every preview frame opaque, wherever it is served
+ok 226 - WM-18 a sandbox without allow-same-origin makes every preview frame opaque, wherever it is served
+  ---
+  duration_ms: 0.164
+  type: 'test'
+  ...
+# Subtest: all new and existing domain guides are reachable from the skill entrypoint
+ok 227 - all new and existing domain guides are reachable from the skill entrypoint
+  ---
+  duration_ms: 31.979417
+  type: 'test'
+  ...
+# Subtest: evaluation requests cover the new domains, every mode, and a consequential conflict
+ok 228 - evaluation requests cover the new domains, every mode, and a consequential conflict
+  ---
+  duration_ms: 2.125375
+  type: 'test'
+  ...
+# Subtest: the published collection validates after package material is present
+ok 229 - the published collection validates after package material is present
+  ---
+  duration_ms: 171.038791
+  type: 'test'
+  ...
+# Subtest: rejects catalog and package drift
+ok 230 - rejects catalog and package drift
+  ---
+  duration_ms: 32.78975
+  type: 'test'
+  ...
+# Subtest: rejects a package version that diverges from the catalog
+ok 231 - rejects a package version that diverges from the catalog
+  ---
+  duration_ms: 31.458417
+  type: 'test'
+  ...
+# Subtest: accepts a portable canonical package
+ok 232 - accepts a portable canonical package
+  ---
+  duration_ms: 28.60925
+  type: 'test'
+  ...
+# Subtest: rejects a non-portable machine path
+ok 233 - rejects a non-portable machine path
+  ---
+  duration_ms: 38.136125
+  type: 'test'
+  ...
+# Subtest: rejects a malformed canonical package identity
+ok 234 - rejects a malformed canonical package identity
+  ---
+  duration_ms: 41.836458
+  type: 'test'
+  ...
+1..234
+# tests 234
+# suites 0
+# pass 234
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21954.153916

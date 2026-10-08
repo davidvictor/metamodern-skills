@@ -1,0 +1,106 @@
+[
+  {
+    "host": "vite",
+    "identity": {
+      "width": 390,
+      "scrollWidth": 1852,
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · saved r1DirectionsPin working draftRefresh saved directions"
+    },
+    "trigger": {
+      "width": 2163.046875,
+      "scrollWidth": 2161,
+      "popup": 256
+    },
+    "saved": {
+      "schema": "studio-direction/1",
+      "id": "direction.a1ebfce5-e5eb-4c34-b2d3-bf441c5b64d3",
+      "label": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "revision": 1,
+      "createdAt": "2026-10-08T08:30:18.390Z",
+      "updatedAt": "2026-10-08T08:30:18.390Z",
+      "product": {
+        "id": "example-tasks",
+        "revision": "1"
+      },
+      "payloadSchema": "fixture-direction/1",
+      "payload": {
+        "scale": 1,
+        "light": "blue",
+        "dark": "blue",
+        "linked": true,
+        "asset": "loaded",
+        "radius": null
+      },
+      "receipt": {
+        "compiler": {
+          "id": "fixture",
+          "version": "1"
+        },
+        "sourceLockId": "fixture-source/1",
+        "fingerprints": {
+          "light": "{\"scale\":1,\"light\":\"blue\",\"dark\":\"blue\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark": "{\"scale\":1,\"light\":\"blue\",\"dark\":\"blue\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "light-contrast": "{\"scale\":1,\"light\":\"blue\",\"dark\":\"blue\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark-contrast": "{\"scale\":1,\"light\":\"blue\",\"dark\":\"blue\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+        },
+        "basis": {
+          "fixtureSource": "fixture-source/1",
+          "bindings": "fixture-bindings/1",
+          "assets": "fixture-assets/1"
+        }
+      }
+    }
+  },
+  {
+    "host": "next",
+    "identity": {
+      "width": 390,
+      "scrollWidth": 1852,
+      "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW · saved r1DirectionsPin working draftRefresh saved directions"
+    },
+    "trigger": {
+      "width": 2163.046875,
+      "scrollWidth": 2161,
+      "popup": 256
+    },
+    "saved": {
+      "schema": "studio-direction/1",
+      "id": "direction.f5a4723f-a0cf-487e-a55e-7163c1bf2911",
+      "label": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+      "revision": 1,
+      "createdAt": "2026-10-08T08:30:20.768Z",
+      "updatedAt": "2026-10-08T08:30:20.768Z",
+      "product": {
+        "id": "example-tasks",
+        "revision": "1"
+      },
+      "payloadSchema": "fixture-direction/1",
+      "payload": {
+        "scale": 1,
+        "light": "blue",
+        "dark": "blue",
+        "linked": true,
+        "asset": "loaded",
+        "radius": null
+      },
+      "receipt": {
+        "compiler": {
+          "id": "fixture",
+          "version": "1"
+        },
+        "sourceLockId": "fixture-source/1",
+        "fingerprints": {
+          "light": "{\"scale\":1,\"light\":\"blue\",\"dark\":\"blue\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark": "{\"scale\":1,\"light\":\"blue\",\"dark\":\"blue\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "light-contrast": "{\"scale\":1,\"light\":\"blue\",\"dark\":\"blue\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark-contrast": "{\"scale\":1,\"light\":\"blue\",\"dark\":\"blue\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+        },
+        "basis": {
+          "fixtureSource": "fixture-source/1",
+          "bindings": "fixture-bindings/1",
+          "assets": "fixture-assets/1"
+        }
+      }
+    }
+  }
+]
