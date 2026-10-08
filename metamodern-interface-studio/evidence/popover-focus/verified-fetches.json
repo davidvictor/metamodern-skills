@@ -1,0 +1,74 @@
+[
+  {
+    "url": "http://127.0.0.1:4221/@react-refresh",
+    "status": 200,
+    "mime": "text/javascript",
+    "etag": "W/\"5367-h8iO905IyT3hT92qDTgpgcseDiA\"",
+    "sha256": "fe633113388e056842f0b8df96ea422fcd97761329b79d39fddd71d1fee2f8c7",
+    "bytes": 111894,
+    "scope": "Fresh verification fetch at frozen source; not a retroactive body for the earlier304/detached-frame response."
+  },
+  {
+    "url": "http://127.0.0.1:4221/@vite/client",
+    "status": 200,
+    "mime": "text/javascript",
+    "etag": "W/\"9b7a-S79/1c7bfR4aGbAHcHJ19S9C0P4\"",
+    "sha256": "7ded212456d6c4def3b275b9676e6edc3140176603d1b26672fff6f678fe21e4",
+    "bytes": 210757,
+    "scope": "Fresh verification fetch at frozen source; not a retroactive body for the earlier304/detached-frame response."
+  },
+  {
+    "url": "http://127.0.0.1:4221/example/design-runtime/assets.css",
+    "status": 200,
+    "mime": "text/javascript",
+    "etag": "W/\"27b-rnkXubmp/d23j48635HDw38IwSI\"",
+    "sha256": "16f5aa94d675499b8c195650522687e5b538e0ac53c280b18132b612e3219107",
+    "bytes": 635,
+    "scope": "Fresh verification fetch at frozen source; not a retroactive body for the earlier304/detached-frame response."
+  },
+  {
+    "url": "http://127.0.0.1:4221/example/index.html",
+    "status": 200,
+    "mime": "text/html",
+    "etag": "W/\"261-I8kIbyLFHXDTNh8nTmSU7klMNeE\"",
+    "sha256": "a48c250f0b91c38b6c6f224fc0cda997c84626204245960e98df3f5e3ab6933e",
+    "bytes": 609,
+    "scope": "Fresh verification fetch at frozen source; not a retroactive body for the earlier304/detached-frame response."
+  },
+  {
+    "url": "http://127.0.0.1:4221/node_modules/vite/dist/client/env.mjs",
+    "status": 200,
+    "mime": "text/javascript",
+    "etag": "W/\"9561-Djym2ImjplO5fbM5pG73Wn5I79E\"",
+    "sha256": "7bfabcf8326551cf7ef7d5c3b4703640c36274b6b9a4a75e1aa01dc00765fb7e",
+    "bytes": 222496,
+    "scope": "Fresh verification fetch at frozen source; not a retroactive body for the earlier304/detached-frame response."
+  },
+  {
+    "url": "http://127.0.0.1:4221/src/studio/protocol.ts",
+    "status": 200,
+    "mime": "text/javascript",
+    "etag": "W/\"364-IxgZRQWbdVvnrM+7pjOY9igg8qw\"",
+    "sha256": "736bc3f433a1bdf06b503beab3be43c20ec518172d78e7e446412dcb8e674073",
+    "bytes": 12091,
+    "scope": "Fresh verification fetch at frozen source; not a retroactive body for the earlier304/detached-frame response."
+  },
+  {
+    "url": "http://127.0.0.1:4222/example/design-runtime/assets.css",
+    "status": 200,
+    "mime": "text/css; charset=UTF-8",
+    "etag": "W/\"84-1a11b3924a1\"",
+    "sha256": "c6e079db38c7715cc5e0618d87dc07c4a08f2817cc78596a2d7813a41ab9237a",
+    "bytes": 132,
+    "scope": "Fresh verification fetch at frozen source; not a retroactive body for the earlier304/detached-frame response."
+  },
+  {
+    "url": "http://127.0.0.1:4222/example/index.html",
+    "status": 200,
+    "mime": "text/html; charset=UTF-8",
+    "etag": "W/\"1f7-1a11b392653\"",
+    "sha256": "dbea5a52325ec9bd4ef8e98dde1f4dd6bed679fe62f9f5b7d9101502b480fc3a",
+    "bytes": 503,
+    "scope": "Fresh verification fetch at frozen source; not a retroactive body for the earlier304/detached-frame response."
+  }
+]

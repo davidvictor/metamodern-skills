@@ -1,0 +1,154 @@
+{
+  "schema": "independent-editor-browser-delta/1",
+  "freeze": {
+    "vite": {
+      "digest": "c8a7b400cf17e2e0d7098fef7f58373da5d1548a1e122c34241e188c6b78dbab",
+      "count": 153,
+      "mismatches": []
+    },
+    "next": {
+      "digest": "a2d5523b11dd21d26ce2b5bc894cda992865866a83f04540a62d5a9e2e34339c",
+      "count": 161,
+      "mismatches": []
+    }
+  },
+  "proofScope": "Bounded caption/footer, radius gesture, strong document witness and declared component-only slots; prior full journey/native receipts remain separate.",
+  "delta": [
+    {
+      "engine": "chromium",
+      "host": "vite",
+      "pass": true,
+      "macroBefore": {
+        "name": "pv-muywaak5-2",
+        "mounts": 1,
+        "nonce": "6e61040e-a139-4ce3-b680-b1beb81ea56b"
+      },
+      "macroAfter": {
+        "nonce": "6e61040e-a139-4ce3-b680-b1beb81ea56b",
+        "name": "pv-muywaak5-2",
+        "mounts": 1,
+        "sameWindow": true,
+        "sameDocument": true,
+        "sameBody": true,
+        "bodyConnected": true,
+        "scale": 1.4
+      },
+      "radiusBefore": "8",
+      "radiusDragged": "20",
+      "radiusAfterOneUndo": "8",
+      "pageErrors": [],
+      "servedCount": 281
+    },
+    {
+      "engine": "chromium",
+      "host": "next",
+      "pass": true,
+      "macroBefore": {
+        "name": "pv-muywadgh-2",
+        "mounts": 1,
+        "nonce": "7ec2fecb-19d0-4d50-9904-b2b6a6853a70"
+      },
+      "macroAfter": {
+        "nonce": "7ec2fecb-19d0-4d50-9904-b2b6a6853a70",
+        "name": "pv-muywadgh-2",
+        "mounts": 1,
+        "sameWindow": true,
+        "sameDocument": true,
+        "sameBody": true,
+        "bodyConnected": true,
+        "scale": 1.4
+      },
+      "radiusBefore": "8",
+      "radiusDragged": "20",
+      "radiusAfterOneUndo": "8",
+      "pageErrors": [],
+      "servedCount": 111
+    },
+    {
+      "engine": "webkit",
+      "host": "vite",
+      "pass": true,
+      "macroBefore": {
+        "name": "pv-muywahf9-2",
+        "mounts": 1,
+        "nonce": "9f74a79a-82a0-44ee-813e-392234b540b3"
+      },
+      "macroAfter": {
+        "nonce": "9f74a79a-82a0-44ee-813e-392234b540b3",
+        "name": "pv-muywahf9-2",
+        "mounts": 1,
+        "sameWindow": true,
+        "sameDocument": true,
+        "sameBody": true,
+        "bodyConnected": true,
+        "scale": 1.4
+      },
+      "radiusBefore": "8",
+      "radiusDragged": "20",
+      "radiusAfterOneUndo": "8",
+      "pageErrors": [],
+      "servedCount": 257
+    },
+    {
+      "engine": "webkit",
+      "host": "next",
+      "pass": true,
+      "macroBefore": {
+        "name": "pv-muywajml-2",
+        "mounts": 1,
+        "nonce": "f0503f14-0118-40ab-b8cd-89cf1c2f9759"
+      },
+      "macroAfter": {
+        "nonce": "f0503f14-0118-40ab-b8cd-89cf1c2f9759",
+        "name": "pv-muywajml-2",
+        "mounts": 1,
+        "sameWindow": true,
+        "sameDocument": true,
+        "sameBody": true,
+        "bodyConnected": true,
+        "scale": 1.4
+      },
+      "radiusBefore": "8",
+      "radiusDragged": "20",
+      "radiusAfterOneUndo": "8",
+      "pageErrors": [],
+      "servedCount": 102
+    }
+  ],
+  "componentOnly": [
+    {
+      "engine": "chromium",
+      "pass": true,
+      "url": "http://127.0.0.1:4196/#view=design&scenario=tasks.list",
+      "errors": []
+    },
+    {
+      "engine": "webkit",
+      "pass": true,
+      "url": "http://127.0.0.1:4196/#view=design&scenario=tasks.list",
+      "errors": []
+    }
+  ],
+  "screenshots": {
+    "chromium-next-delta-foundation.png": "10d34eb4befd06322778e967e09c915ecd8f70c392455e50a9a5240bc214e147",
+    "chromium-vite-delta-radius-after-undo.png": "75633807fd5f8ef55a02fe3e42dc745925bbd2fd2e5d558b9f4a2762f03b83dd",
+    "webkit-component-only-treatment.png": "d4d941949ab1d0f73fad9f558e1d9c0466e21cf4afad208a486e4ae2c7f20638",
+    "chromium-component-only-treatment.png": "1e0943ee4dfb1b8cc0c6c1d2272491ccf602e60799a5d3db0ca7d18593b9ea8c",
+    "chromium-next-delta-radius-after-undo.png": "dc053d156ae22bc512b7510570c0f253793d64c28e2c089658e961dca88b17b4",
+    "webkit-vite-delta-foundation.png": "0029bdde08e6ad46520eb6a349fab7d7a7ba823d4ecbb2b62020866de2b4f485",
+    "chromium-component-only-design.png": "5c268e2cc30a7ee02f184d7074b16b381be1f91617b54c30c351b5b3935c95dc",
+    "webkit-next-delta-foundation.png": "0029bdde08e6ad46520eb6a349fab7d7a7ba823d4ecbb2b62020866de2b4f485",
+    "webkit-vite-delta-radius-after-undo.png": "a65a500b920200aa8a29680eb16cadec19b7176058c1c8a38734233ec28c598d",
+    "webkit-next-delta-radius-after-undo.png": "a65a500b920200aa8a29680eb16cadec19b7176058c1c8a38734233ec28c598d",
+    "chromium-vite-delta-foundation.png": "28e6412c6c3fad3bbb019b6b46d755d92ded585d8a5ed18a42f36a975e39b61e",
+    "webkit-component-only-design.png": "edf33095d2f41c061683b9ac5d4314f92143130fd4c5e7f86f3ac1d34ad58325"
+  },
+  "proxy": {
+    "path": "proxy.cjs",
+    "listen4192": "forward4190",
+    "preserves": "bytes/status/MIME/headers",
+    "cleanup": "Closed own PID97189; owned exec session exit143 confirmed"
+  },
+  "implementation": "No source edits",
+  "acceptance": "Scoped delta passed; independent integrated review and root delivery/acceptance separate"
+}

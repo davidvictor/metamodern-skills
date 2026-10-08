@@ -1,9 +1,10 @@
+import { studioSource } from './studio-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 
-const root = new URL('../metamodern-interface-studio/assets/studio-shell/', import.meta.url);
+const root = new URL(`file://${studioSource}/`);
 const source = readFileSync(new URL('src/studio/profile-frame.ts', root), 'utf8');
 const model = await import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(source, { mode: 'strip' })).toString('base64')}`);
 

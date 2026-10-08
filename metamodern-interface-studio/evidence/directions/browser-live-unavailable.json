@@ -1,0 +1,18 @@
+[
+  {
+    "host": "vite",
+    "pass": true,
+    "failedId": "direction.unsupported-1791444393068",
+    "http": 200,
+    "errors": [],
+    "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nCatalog\n13\n/\nAll\nStale\n1\nUnresolved\n1\nTASKS\n5\nToday\nFirst use\nLoading\nFailed to load\nNew task\nTASK DETAIL\n1\nTask\nACCOUNT\n2\nSettings\nSign in\nREPORTS\n1\nOverview\nHELP\n2\nGetting started\nWelcome\nCOMPONENTS\n2\nTask card\nDone\nExample Tasks\nInspect\nTasks: Today\nDid not start\nIllustrative example\nGo to scenario…\n⌘\nK\nDirection unavailable\nDirections\nPin working draft\nRefresh saved directions\n\nUnsupported fixture payload schema; raw bytes retained\n\nUnsupported fixture payload schema; raw bytes retained\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nDid not start\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nGo to\n\nSearch scenarios, views and actions\n\nPreview reset\nProduct state and navigation restored to the scenario."
+  },
+  {
+    "host": "next",
+    "pass": true,
+    "failedId": "direction.unsupported-1791444394290",
+    "http": 200,
+    "errors": [],
+    "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nCatalog\n13\n/\nAll\nStale\n1\nUnresolved\n1\nTASKS\n5\nToday\nFirst use\nLoading\nFailed to load\nNew task\nTASK DETAIL\n1\nTask\nACCOUNT\n2\nSettings\nSign in\nREPORTS\n1\nOverview\nHELP\n2\nGetting started\nWelcome\nCOMPONENTS\n2\nTask card\nDone\nExample Tasks\nInspect\nTasks: Today\nDid not start\nIllustrative example\nGo to scenario…\n⌘\nK\nDirection unavailable\nDirections\nPin working draft\nRefresh saved directions\n\nUnsupported fixture payload schema; raw bytes retained\n\nUnsupported fixture payload schema; raw bytes retained\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nDid not start\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nGo to\n\nSearch scenarios, views and actions\n\nPreview reset\nProduct state and navigation restored to the scenario."
+  }
+]

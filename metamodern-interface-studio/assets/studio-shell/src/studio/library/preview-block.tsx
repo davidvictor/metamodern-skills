@@ -22,7 +22,7 @@ import { captureSource, libraryProfile, LIVE_FRAMES, MOBILE_WIDTH, NEAR_PX, pick
 import type { Code, Text } from "./schema"
 
 /** Where this Studio's library previews load from, decided once from the adapter. */
-const SOURCE = previewSource(adapter, location.href)
+const SOURCE = previewSource(adapter, typeof location === "undefined" ? "http://studio.invalid/" : location.href)
 const PROFILE = libraryProfile(adapter.axes.profiles, adapter.axes.defaultProfile)
 const PAD = 48
 

@@ -16,6 +16,7 @@
  *
  * Other options: --skip-checks, --allow-dirty, --json, and for tests --shell <dir>, --shell-version <v>, --releases <file>.
  */
+import { composeHost } from './compose-host.mjs';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
@@ -25,23 +26,23 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const LOCK = 'studio-shell.lock.json';
-const LOCK_SCHEMA = 'studio-shell-lock/1';
+const LOCK_SCHEMA = 'studio-shell-lock/2';
 
 /** Created once and then owned by the product. */
-const SEEDS = new Set(['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'src/library/index.ts']);
+const SEEDS = new Set(['directions.json', 'src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'src/library/index.ts', 'src/design-runtime/index.ts', 'src/design-ui/index.ts']);
 /** Folders that belong to the product: never compared, added to or removed from (a seed inside is created when missing). */
-const PRODUCT_DIRS = ['src/workspace/', 'src/library/'];
+const PRODUCT_DIRS = ['src/workspace/', 'src/library/', 'src/design-runtime/', 'src/design-ui/'];
 /** Replaced from the shell every time, then refreshed by npm install. */
-const REGENERATED = new Set(['package-lock.json']);
+const REGENERATED = new Set(['package-lock.json', 'next-env.d.ts']);
 /** Shell files a Studio may delete on purpose; recorded under `removed`. */
 const OPTIONAL = ['README.md', 'example/', 'src/adapters/example.ts', 'src/adapters/synthetic.ts', 'scripts/acceptance.mjs'];
-const IGNORED_DIRS = new Set(['node_modules', 'dist', 'dist-ssr', '.acceptance', '.git']);
+const IGNORED_DIRS = new Set(['node_modules', 'dist', 'dist-ssr', '.acceptance', '.git', '.next', 'out']);
 const IGNORED_FILES = new Set(['.DS_Store', 'acceptance-report.json', LOCK]);
 
 // ---------- arguments ----------
 
 function parseArgs(argv) {
-  const out = { dir: null, apply: false, adopt: false, create: false, skipChecks: false, allowDirty: false, json: false, keep: [], replace: [], removed: [], acceptKit: null, shell: null, shellVersion: null, releases: null };
+  const out = { dir: null, apply: false, adopt: false, create: false, skipChecks: false, allowDirty: false, json: false, keep: [], replace: [], removed: [], acceptKit: null, shell: null, shellVersion: null, releases: null, host: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     const next = () => {
@@ -63,6 +64,7 @@ function parseArgs(argv) {
     } else if (a === '--replace') out.replace.push(norm(next()));
     else if (a === '--removed') out.removed.push(norm(next()));
     else if (a === '--accept-kit') out.acceptKit = next();
+    else if (a === '--host') out.host = next();
     else if (a === '--shell') out.shell = resolve(next());
     else if (a === '--shell-version') out.shellVersion = next();
     else if (a === '--releases') out.releases = resolve(next());
@@ -70,6 +72,7 @@ function parseArgs(argv) {
     else if (!out.dir) out.dir = resolve(a);
     else throw new UsageError(`Unexpected argument ${a}`);
   }
+  if (out.host && !['vite', 'next'].includes(out.host)) throw new UsageError(`Unknown host ${out.host}`);
   if (!out.dir) throw new UsageError('Name the Studio directory');
   for (const k of out.keep) if (!k.reason) throw new UsageError(`--keep ${k.path} needs --reason "<why>"`);
   return out;
@@ -208,7 +211,11 @@ function seedStudioConfig(dir, upstreamDir) {
 // ---------- plan ----------
 
 function plan(opts) {
-  const shellDir = opts.shell ?? resolve(here, '../assets/studio-shell');
+  const existing = existsSync(join(opts.dir, LOCK)) ? readJSON(join(opts.dir, LOCK)) : null;
+  const host = existing?.schema === 'studio-shell-lock/1' ? 'vite' : existing?.host ?? 'vite';
+  if (opts.host && opts.host !== host) throw new UsageError(`Studio host is ${host}; --host ${opts.host} requires an explicit migration, not a normal update`);
+  const composed = opts.shell ? null : composeHost(host);
+  const shellDir = opts.shell ?? composed.dir;
   const shellVersion = opts.shellVersion ?? readFileSync(resolve(here, '../PACKAGE_VERSION'), 'utf8').trim().replace(/^.*@/, '');
   const releasesFile = opts.releases ?? resolve(here, '../assets/studio-shell.releases.json');
   const dir = opts.dir;
@@ -224,7 +231,7 @@ function plan(opts) {
   let from;
   if (existsSync(lockFile)) {
     lock = readJSON(lockFile);
-    if (lock.schema !== LOCK_SCHEMA) throw new UsageError(`${LOCK} has schema ${lock.schema}; this updater reads ${LOCK_SCHEMA}`);
+    if (![LOCK_SCHEMA, 'studio-shell-lock/1'].includes(lock.schema)) throw new UsageError(`${LOCK} has schema ${lock.schema}; this updater reads ${LOCK_SCHEMA}`);
     from = lock.shell;
   } else {
     if (!opts.adopt) return { dir, shellVersion, needsAdopt: true, actions: [], blocked: [], notes: [] };
@@ -314,6 +321,8 @@ function plan(opts) {
 
   const nextLock = {
     schema: LOCK_SCHEMA,
+    host,
+    composition: composed?.composition ?? { files: upstream },
     shell: shellVersion,
     files: nextFiles,
     package: packageBase(upstreamPkg),
@@ -325,6 +334,7 @@ function plan(opts) {
 
   return {
     dir,
+    host,
     shellDir,
     from,
     shellVersion,
@@ -414,7 +424,9 @@ function apply(p) {
 }
 
 function create(opts) {
-  const shellDir = opts.shell ?? resolve(here, '../assets/studio-shell');
+  const host = opts.host ?? 'vite';
+  const composed = opts.shell ? null : composeHost(host);
+  const shellDir = opts.shell ?? composed.dir;
   const shellVersion = opts.shellVersion ?? readFileSync(resolve(here, '../PACKAGE_VERSION'), 'utf8').trim().replace(/^.*@/, '');
   if (existsSync(opts.dir) && readdirSync(opts.dir).length) throw new UsageError(`${opts.dir} is not empty`);
   const files = walk(shellDir);
@@ -425,6 +437,8 @@ function create(opts) {
   const upstream = hashTree(shellDir);
   const lock = {
     schema: LOCK_SCHEMA,
+    host,
+    composition: composed?.composition ?? { files: upstream },
     shell: shellVersion,
     files: Object.fromEntries(Object.entries(upstream).filter(([p]) => isCompared(p))),
     package: packageBase(readJSON(join(shellDir, 'package.json'))),
@@ -433,7 +447,7 @@ function create(opts) {
     kept: [],
   };
   writeFileSync(join(opts.dir, LOCK), `${JSON.stringify(lock, null, 2)}\n`);
-  return { dir: opts.dir, shellVersion, files: files.length };
+  return { dir: opts.dir, host, shellVersion, files: files.length };
 }
 
 // ---------- report ----------
@@ -443,7 +457,7 @@ const LABEL = { add: 'Add', restore: 'Restore', replace: 'Replace', delete: 'Del
 function report(p, { applied, checks, dirty, acceptKit, kitRefused }) {
   const out = [];
   const title = applied ? 'Updated' : 'Update plan for';
-  out.push(`${title} ${p.dir}`);
+  out.push(`${title} ${p.dir} (host: ${p.host})`);
   out.push(`Shell ${p.from ?? 'unknown'} -> ${p.shellVersion}${p.adopting ? ' (adopting: no lock file yet)' : ''}${applied ? '' : kitRefused ? ' (nothing written)' : ' (nothing written; add --apply)'}`);
   for (const n of p.notes) out.push(`Note: ${n}`);
   if (p.kit) out.push('', `Breaking: the Studio UI kit changes from ${p.kit.from} to ${p.kit.to}. Workspace modules in src/workspace/ may need changes; read the update notes first.${acceptKit === p.kit.to ? '' : ` Nothing is applied without --accept-kit ${p.kit.to}.`}`);
@@ -500,7 +514,7 @@ function main() {
     if (opts.create) {
       const r = create(opts);
       if (opts.json) console.log(JSON.stringify({ created: r }, null, 2));
-      else console.log(`Created a Studio at ${r.dir} from shell ${r.shellVersion} (${r.files} files) with ${LOCK}.\nNext: point src/adapter.ts at the product adapter, set studio.config.ts, then npm install and npm run dev.`);
+      else console.log(`Created a Studio at ${r.dir} from ${r.host} shell ${r.shellVersion} (${r.files} files) with ${LOCK}.\nNext: point src/adapter.ts at the product adapter, set studio.config.ts, then npm install and npm run dev.`);
       return 0;
     }
     const p = plan(opts);
@@ -524,7 +538,7 @@ function main() {
     }
     const failed = checks?.some((c) => c.ok === false);
     if (opts.json) {
-      console.log(JSON.stringify({ from: p.from, to: p.shellVersion, adopting: p.adopting, kit: p.kit, applied: canApply, actions: p.actions.map(({ content, ...a }) => a), blocked: p.blocked, dirty, notes: p.notes, updateNotes: p.updateNotes, checks }, null, 2));
+      console.log(JSON.stringify({ host: p.host, from: p.from, to: p.shellVersion, adopting: p.adopting, kit: p.kit, applied: canApply, actions: p.actions.map(({ content, ...a }) => a), blocked: p.blocked, dirty, notes: p.notes, updateNotes: p.updateNotes, checks }, null, 2));
     } else console.log(report(p, { applied: canApply, checks, dirty, acceptKit: opts.acceptKit, kitRefused: opts.apply && kitBlocked }));
     if (p.blocked.length || (dirty && dirty.length) || failed || (opts.apply && kitBlocked)) return 1;
     return 0;

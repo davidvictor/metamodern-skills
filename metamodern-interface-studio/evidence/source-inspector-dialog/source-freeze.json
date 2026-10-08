@@ -1,0 +1,46 @@
+[
+  {
+    "path": "catalog.json",
+    "sha256": "3bdfe2b6662b321785216a7f6f43d47667e304c67ba168910c97b34cc74ede27"
+  },
+  {
+    "path": "metamodern-interface-studio/PACKAGE_VERSION",
+    "sha256": "1cdddb266aabcdffb4a5578bd01bacd401de4441f362f7751375a56b16893211"
+  },
+  {
+    "path": "metamodern-interface-studio/assets/studio-shell.releases.json",
+    "sha256": "2f243aa5bf0661175eb5f830aee926e8b856dcdd85f02cf001626a63c68d2366"
+  },
+  {
+    "path": "metamodern-interface-studio/assets/studio-shell/UPDATING.md",
+    "sha256": "161449be91cd08491120a2e97335ad8aeb93b26ec51320cb526a4a50edb12c24"
+  },
+  {
+    "path": "metamodern-interface-studio/assets/studio-shell/src/components/studio/rail-panel.tsx",
+    "sha256": "bda291f515f19e91dbfabedea480e9b12cc2d2c9b93e2b2067b6c8a17276dcb8"
+  },
+  {
+    "path": "metamodern-interface-studio/assets/studio-shell/src/components/ui/dialog.tsx",
+    "sha256": "25b060dd5b8cfe28de9c7d96a017fc6ffedb6d4dd804d566b961b1f2bd9e5b4d"
+  },
+  {
+    "path": "metamodern-interface-studio/assets/studio-shell/src/kit/editor-dialog.tsx",
+    "sha256": "034a28c00ec75caf61f7a49d50af0588ae8cb0b984edade10f119864b221248a"
+  },
+  {
+    "path": "metamodern-interface-studio/assets/studio-shell/src/kit/index.ts",
+    "sha256": "250ede08312d99b4e4df387f6f9c751a36f426264bae5ffa29c1665e2c8ac625"
+  },
+  {
+    "path": "metamodern-interface-studio/assets/studio-shell/src/studio/design-ui/slots.tsx",
+    "sha256": "8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3"
+  },
+  {
+    "path": "metamodern-interface-studio/references/design-ui.md",
+    "sha256": "a9b0a6c57ad86498d886198376fb28ba3b38e7e8bbb56e478f9081a119ad538a"
+  },
+  {
+    "path": "tests/interface-studio-library.test.mjs",
+    "sha256": "a4f872b758f5df3e5143ab16734915513f548fd3f3a15f1ae6549ab80fb94f2a"
+  }
+]

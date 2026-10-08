@@ -1,0 +1,6 @@
+import { exampleAdapter } from "../src/adapters/example"
+import { libraryAdapter } from "./library/adapter"
+import type { StudioAdapter } from "../src/studio/types"
+const editorAdapter: StudioAdapter = { ...libraryAdapter, design: { directions: { schema: "studio-direction-lifecycle/1", product: { id: "example-tasks", revision: "1" }, payloadSchema: "fixture-direction/1" }, parameters: [], compiler: { schema: "studio-design-compiler/1", id: "fixture", version: "1", inputSchema: "fixture-direction/1", outputSchema: "studio-compiled-design/1" }, editor: { schema: "studio-design-editor/1", id: "fixture", version: "1", controllerSchema: "studio-design-controller/1", slots: ["foundation", "component"], capabilities: ["edit", "history", "inheritance", "diagnostics", "reset"] } } }
+
+export const adapter: StudioAdapter = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("legacy") ? exampleAdapter : editorAdapter

@@ -1,0 +1,3 @@
+import { libraryAdapter } from "./library/adapter"
+import type { StudioAdapter } from "../src/studio/types"
+export const adapter: StudioAdapter = { ...libraryAdapter, design: { directions: { schema: "studio-direction-lifecycle/1", product: { id: "example-tasks", revision: "1" }, payloadSchema: "fixture-direction/1" }, parameters: [], compiler: { schema: "studio-design-compiler/1", id: "fixture", version: "1", sourceLockId: "fixture-source/1", inputSchema: "fixture-direction/1", outputSchema: "studio-compiled-design/1" }, editor: { schema: "studio-design-editor/1", id: "fixture", version: "1", controllerSchema: "studio-design-controller/1", slots: ["foundation", "component"], capabilities: ["edit", "history", "inheritance", "diagnostics", "reset"] } } }

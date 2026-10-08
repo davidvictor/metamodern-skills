@@ -1,0 +1,76 @@
+{
+  "schema": "shared-cr19-next-checks/1",
+  "status": "pass",
+  "node": "v26.7.0",
+  "npm": "11.19.0",
+  "adapter": "editor",
+  "consumer": "/private/tmp/mm-next-type-transition",
+  "sourceBase": "ec09d26997364f970db9a7d24731fb7c5ab8d7f0",
+  "runtimeFiles": [
+    {
+      "path": "src/components/studio/rail-panel.tsx",
+      "sourceHash": "sha256:bda291f515f19e91dbfabedea480e9b12cc2d2c9b93e2b2067b6c8a17276dcb8",
+      "consumerHash": "sha256:bda291f515f19e91dbfabedea480e9b12cc2d2c9b93e2b2067b6c8a17276dcb8",
+      "match": true
+    },
+    {
+      "path": "src/components/ui/dialog.tsx",
+      "sourceHash": "sha256:25b060dd5b8cfe28de9c7d96a017fc6ffedb6d4dd804d566b961b1f2bd9e5b4d",
+      "consumerHash": "sha256:25b060dd5b8cfe28de9c7d96a017fc6ffedb6d4dd804d566b961b1f2bd9e5b4d",
+      "match": true
+    },
+    {
+      "path": "src/kit/editor-dialog.tsx",
+      "sourceHash": "sha256:034a28c00ec75caf61f7a49d50af0588ae8cb0b984edade10f119864b221248a",
+      "consumerHash": "sha256:034a28c00ec75caf61f7a49d50af0588ae8cb0b984edade10f119864b221248a",
+      "match": true
+    },
+    {
+      "path": "src/kit/index.ts",
+      "sourceHash": "sha256:250ede08312d99b4e4df387f6f9c751a36f426264bae5ffa29c1665e2c8ac625",
+      "consumerHash": "sha256:250ede08312d99b4e4df387f6f9c751a36f426264bae5ffa29c1665e2c8ac625",
+      "match": true
+    },
+    {
+      "path": "src/studio/design-ui/slots.tsx",
+      "sourceHash": "sha256:8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3",
+      "consumerHash": "sha256:8a8bdb61afa2653f1935a8d8416cba2179b8cdd3ac0725fd129ace5674eeb7b3",
+      "match": true
+    }
+  ],
+  "checks": [
+    {
+      "command": "STUDIO_ADAPTER=editor npm run typecheck",
+      "exit": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "command": "STUDIO_ADAPTER=editor npm run lint",
+      "exit": 0,
+      "log": "lint.log"
+    },
+    {
+      "command": "STUDIO_ADAPTER=editor npm run build",
+      "exit": 0,
+      "log": "build.log"
+    }
+  ],
+  "lint": "0errors/6existingwarnings;lintcontractpass",
+  "logs": [
+    {
+      "name": "typecheck.log",
+      "hash": "sha256:3c8d22196265450e8f68e3946ba4b9c5ad09fd7a778fcfb96f9b76b35425f5af",
+      "bytes": 1245
+    },
+    {
+      "name": "lint.log",
+      "hash": "sha256:782b0c237500116f3ad2e8f2d65acd4d0afa86a48903fba367b5905df8ee978b",
+      "bytes": 2318
+    },
+    {
+      "name": "build.log",
+      "hash": "sha256:617eab2dea5b7831fec3b3b6b1b34ea88205d5ed96ac4fcc87fec4ee876c2665",
+      "bytes": 1810
+    }
+  ]
+}

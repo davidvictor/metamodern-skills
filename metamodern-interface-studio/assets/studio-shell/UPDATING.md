@@ -1,3 +1,43 @@
+## 0.18.4
+
+Read-only Source inspector provenance and diagnostic paragraphs now wrap long hashes within the available pane. Compiled token and intentional code scrolling behavior are unchanged. Opted-in read-only Tokens panels omit legacy search, family and flag controls that do not apply to compiled output. Legacy token consumers retain their existing working filters.
+
+The optional @studio/kit EditorDialog, EditorDialogTitle and EditorDialogClose provide a centered native picker surface. It defaults to a 420px maximum width capped at viewport minus 32px, 20px padding, 16px gap/radius and viewport-bounded vertical scrolling, with a black 18% backdrop and no blur. Supply a visible Title and real Close part; product panels own choices, search, readiness and swatches. Optional open/onOpenChange support controlled choice dismissal; omit them for native uncontrolled state. Existing EditorPopover and ordinary Dialog defaults are unchanged. Protected product panels opt into the new seam explicitly after managed update.
+
+## 0.18.3
+
+Long structured design diagnostics and selection/initialization reasons now wrap inside their existing status/panel bounds. Last-valid output, save eligibility and ordinary short status geometry are unchanged.
+
+Modal EditorPopover panels must render their existing visible close control with the new @studio/kit EditorPopoverClose component. It registers the actual Base UI Close part required for Tab containment while keeping Button styling, position and controlled open/onOpenChange behavior. Replace a plain Close Button in protected product panels after updating; a pure setOpen(false) click handler is redundant. Keep controlled choice handlers that close the picker. Uncontrolled popovers close through the same component. No hidden close button or manual keyboard trap is added; ordinary legacy Popover defaults are unchanged. Managed updates preserve product panels, so that small product-owned replacement is explicit.
+
+## 0.18.2
+
+Long saved and imported direction names now stay within the Directions bar and picker. Names truncate with their full accessible text/title retained; revision/status and actions remain visible, and notices wrap inside the existing scrolling popup. This changes only the opted-in direction manager, with no global Field, legacy menu or preview styling changes. No product migration is needed.
+
+## 0.18.1
+
+Field kind="select" adds optional itemClassName for styling its portaled option rows. Product editor panels can opt into native phone/tablet floors with itemClassName="max-[999px]:min-h-11 pointer-coarse:min-h-11". Omit the prop to preserve existing option geometry. This changes no global menus, trigger sizes or product preview styles. Protected product panels must opt in explicitly after updating; managed updates never rewrite them.
+
+## 0.18.0
+
+Opted-in studio-direction-lifecycle/1 consumers gain named immutable local directions, captured saves, browser draft recovery and independently pinned source/saved/draft comparisons. Product codecs and readiness checks remain in protected src/design-runtime/. Read references/directions.md before opting in; legacy consumers retain their existing behavior. directions.json is product-owned and never replaced by managed updates. studio.config.ts may configure savedFiles.directions as a relative JSON path within the Studio. Generated saved-source exclusions prevent canonical journals and atomic temporary files from causing preview reloads while preserving normal source HMR. Next typecheck/build regenerate official route types and exclude obsolete dev validators when changing between development and static modes.
+
+## 0.17.1
+
+DesignPanelProps now supplies review context (scenarioId, readonly scenario options and selectScenario) to Foundation and Component panels. Use it for a Review fixture selector and contextual reach readouts; navigation never edits direction payloads or undo history. Private panels still import only the public kit/design-ui APIs and their own files. Product-owned modules remain protected by managed updates. EditorPopover adds optional open/onOpenChange for controlled Close picker and choice dismissal; existing uncontrolled callers retain their behavior.
+
+## 0.17.0
+
+An optional studio-design-editor/1 declaration loads product-owned panels from protected src/design-ui/. Its registered compiler supplies the authoritative pure model; private panels use @studio/kit and @studio/design-ui. Opted-in previews use the source/confirmed saved basis plus labeled working overlays, and Tokens is readonly. The optional compiled-data frame capability forwards the same JSON snapshot without another resolver. Registered local stylesheets are validated and failures preserve the last valid result. Read references/design-ui.md before opting in. Non-opted consumers retain their legacy behavior. New frame capabilities require the updated frame-client/protocol in product receivers; copied clients must be refreshed to consume compiled data. Canonical saved-direction persistence is not supplied by this editor interface.
+
+## 0.16.1
+
+Next uses its official ESLint plugin and recommended rules, with mixed provider/hook/helper exports allowed. Vite keeps its existing refresh rules. The managed updater adds the Next plugin dependency and preserves product files. Run npm install after a skipped-check update. Nothing else to do by hand.
+
+## 0.16.0
+
+The shell now composes one common UI source with Vite or Next host overlays. Existing lock/1 consumers remain Vite; updates write host-aware lock/2 and preserve product files. New Next consumers use `--create --host next`. Host changes require an explicit migration. Product-owned `src/design-runtime/index.ts` is seeded empty for opt-in data-only design compiler descriptors; legacy designDraft remains unchanged. Nothing else to do by hand.
+
 # Updating this Studio
 
 The shell in this Studio comes from the `metamodern-interface-studio` skill. Bring it up to the newest shell with the skill's updater instead of copying files by hand. First install the skill update, then run, from anywhere:

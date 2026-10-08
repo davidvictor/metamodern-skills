@@ -9,10 +9,10 @@ import type { NavProps } from "./library-nav"
 import type { PageProps } from "./library-page"
 
 /** False in a build whose adapter declares no library (vite.config.ts), which then contains no library chunk at all. */
-declare const __STUDIO_LIBRARY__: boolean
+import { libraryEnabled } from "@/studio-host"
 
-export const hasLibrary = __STUDIO_LIBRARY__ && !!adapter.library
-if (!__STUDIO_LIBRARY__ && adapter.library) console.error("Interface Studio: this build left the component library out because the adapter it loaded declared none, but the adapter running now declares one. Rebuild the Studio to show its library.")
+export const hasLibrary = libraryEnabled && !!adapter.library
+if (!libraryEnabled && adapter.library) console.error("Interface Studio: this build left the component library out because the adapter it loaded declared none, but the adapter running now declares one. Rebuild the Studio to show its library.")
 const never = () => new Promise<never>(() => undefined)
 /** The link the Studio opened with, read before the Studio rewrites it, so the library can name a component it lacks. */
 export const openingLibraryLink = location.hash
@@ -22,9 +22,9 @@ function failed<P>(e: unknown): { default: React.ComponentType<P> } {
   return { default: () => null }
 }
 /** The rail group, Go to entries, breadcrumb, phone entries and history: loaded with the Studio when declared. */
-export const LibraryNav: React.LazyExoticComponent<React.ComponentType<NavProps>> = React.lazy(() => (!__STUDIO_LIBRARY__ ? never() : import("./library-nav").then((m) => ({ default: m.LibraryNav }), failed<NavProps>)))
+export const LibraryNav: React.LazyExoticComponent<React.ComponentType<NavProps>> = React.lazy(() => (!libraryEnabled ? never() : import("./library-nav").then((m) => ({ default: m.LibraryNav }), failed<NavProps>)))
 /** The open component's page, the component list and the sidebar: loaded when the library opens. */
-export const LibraryPage: React.LazyExoticComponent<React.ComponentType<PageProps>> = React.lazy(() => (!__STUDIO_LIBRARY__ ? never() : import("./library-page").then((m) => ({ default: m.LibraryPage }), failed<PageProps>)))
+export const LibraryPage: React.LazyExoticComponent<React.ComponentType<PageProps>> = React.lazy(() => (!libraryEnabled ? never() : import("./library-page").then((m) => ({ default: m.LibraryPage }), failed<PageProps>)))
 
 /** A fallback holds the part's place while its chunk loads, such as the rail item above the views, so nothing below it moves. */
 export function LibrarySlot({ children, fallback = null }: { children: React.ReactNode; fallback?: React.ReactNode }) {

@@ -1,3 +1,4 @@
+import { studioSource } from './studio-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -8,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const root = fileURLToPath(new URL('../metamodern-interface-studio/assets/studio-shell/', import.meta.url));
+const root = studioSource;
 const files = (dir) => readdirSync(dir).flatMap((name) => {
   const path = join(dir, name);
   return statSync(path).isDirectory() ? files(path) : [path];
@@ -149,7 +150,9 @@ test('every key the Studio writes to or reads from its links is reserved against
   for (const key of linkKeys) keys.add(key);
   const input = read('src/studio/input.ts');
   const reserved = JSON.parse(/RESERVED_LINK_KEYS: readonly string\[\] = (\[[^\]]*\])/.exec(input)[1]);
-  for (const key of keys) assert.ok(reserved.includes(key), `link key "${key}" is not in RESERVED_LINK_KEYS`);
+  const optional = JSON.parse(/DIRECTION_LINK_KEYS = (\[[^\]]*\])/.exec(read('src/studio/directions.ts'))[1]);
+  for (const key of keys) assert.ok(reserved.includes(key) || optional.includes(key), `link key "${key}" has no reserved namespace`);
+  assert.match(read('src/studio/design-ui/react.tsx'), /adapter\.axes\.inputs\.filter[\s\S]{0,140}DIRECTION_LINK_KEYS[\s\S]{0,160}reserved\.length[\s\S]{0,40}throw new Error/, 'opt-in lifecycle rejects collisions without reserving new keys for legacy consumers');
   // Property values reach the link only through linkEdits, which leaves out readonly and reserved-key properties.
   assert.match(store, /linkEdits\(A\.axes\.inputs/);
   assert.match(store, /i\.placement === "dock" && !isProperty\(i\) && !RESERVED_LINK_KEYS\.includes\(i\.id\) && state\.values\[i\.id\] !== undefined\) q\.set/, 'the dock writer never writes a property or a reserved key');

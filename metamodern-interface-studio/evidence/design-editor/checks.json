@@ -1,0 +1,67 @@
+{
+  "schema": "studio-design-checks/1",
+  "base": "eb289d907e61c9014fa8cb57ac5bb45113581ed6",
+  "packageVersion": "0.17.0",
+  "contracts": {
+    "command": "node --test tests/interface-studio-design-editor.test.mjs",
+    "passed": 11
+  },
+  "collection": {
+    "npm test": {
+      "passed": 207,
+      "failed": 0
+    },
+    "npm run validate": {
+      "packages": 20,
+      "pass": true
+    }
+  },
+  "hosts": {
+    "vite": {
+      "typecheck": "pass",
+      "lint": "pass (existing advisory warnings)",
+      "productionBuild": "pass",
+      "productionStart": "pass"
+    },
+    "next": {
+      "typecheck": "pass",
+      "lint": "pass (existing advisory warnings)",
+      "productionBuild": "pass",
+      "productionStart": "pass"
+    }
+  },
+  "focusedReceiverSmoke": [
+    {
+      "host": "vite",
+      "mode": "development",
+      "scope": "compile\u2192frame; no remount; Present uses source baseline",
+      "pass": true
+    },
+    {
+      "host": "next",
+      "mode": "development",
+      "scope": "compile\u2192frame; no remount; Present uses source baseline",
+      "pass": true
+    },
+    {
+      "host": "vite",
+      "mode": "production",
+      "scope": "compile\u2192frame; no remount; Present uses source baseline",
+      "pass": true
+    },
+    {
+      "host": "next",
+      "mode": "production",
+      "scope": "compile\u2192frame; no remount; Present uses source baseline",
+      "pass": true
+    }
+  ],
+  "correctionScope": "Final saved/source seed regression prevents initial failed A plus repaired working B from publishing B as saved A on retry or repeated start. Final required checks run after source correction. Earlier browser freezes remain distinct.",
+  "managedUpdate": "Protected product editor/runtime seeds retained; boundary allowed/denied import checks pass in contract suite.",
+  "limits": [
+    "Canonical saved-direction persistence belongs to a later batch.",
+    "No private product integration, export receiver, deployment, publication, merge or user acceptance.",
+    "One-shot opaque callback probe observes an error but is not claimed as full restore evidence."
+  ],
+  "selectedBasis": "Focused Chromium failed source\u2192working repair\u2192Present unavailable/no frame and Compare source unavailable/one working frame pass; shared source+served module hashes recorded."
+}

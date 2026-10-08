@@ -1,0 +1,86 @@
+[
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 1440,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 768,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 390,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 1440,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 768,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 390,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 1440,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 768,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 390,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 1440,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 768,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 390,
+    "compiledIdentical": true,
+    "shortSourceSizeTextIdentical": true
+  }
+]

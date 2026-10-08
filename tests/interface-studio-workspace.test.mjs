@@ -1,3 +1,4 @@
+import { studioSource } from './studio-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
@@ -8,7 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { stripTypeScriptTypes } from 'node:module';
 
 const skill = new URL('../metamodern-interface-studio/', import.meta.url);
-const shell = new URL('./assets/studio-shell/', skill);
+const shell = new URL(`file://${studioSource}/`);
 const read = (path) => readFileSync(new URL(path, shell), 'utf8');
 
 /** Load a pure shell module (it may import types only) without a TypeScript toolchain. */
@@ -482,9 +483,9 @@ test('WM-14 the core shell reaches the workspace only through lazy slots', () =>
   assert.match(slots, /import\("\.\/workspace-nav"\)/);
   assert.match(slots, /import\("\.\/workspace-page"\)/);
   // A build whose adapter declares no workspace drops both imports, so it has exactly the chunks it had before workspaces.
-  assert.match(slots, /!__STUDIO_WORKSPACE__ \? never\(\) : import\("\.\/workspace-nav"\)/);
-  assert.match(slots, /!__STUDIO_WORKSPACE__ \? never\(\) : import\("\.\/workspace-page"\)/);
-  assert.match(slots, /hasWorkspace = __STUDIO_WORKSPACE__ && !!adapter\.workspace/);
+  assert.match(slots, /!workspaceEnabled \? never\(\) : import\("\.\/workspace-nav"\)/);
+  assert.match(slots, /!workspaceEnabled \? never\(\) : import\("\.\/workspace-page"\)/);
+  assert.match(slots, /hasWorkspace = workspaceEnabled && !!adapter\.workspace/);
   assert.match(read('vite.config.ts'), /__STUDIO_WORKSPACE__: JSON\.stringify\(!loaded \|\| "error" in loaded \|\| !!loaded\.adapter\.workspace\)/);
   for (const file of ['src/App.tsx', 'src/store.tsx', 'src/components/studio/rail-panel.tsx', 'src/components/studio/chrome.tsx', 'src/components/studio/command.tsx']) {
     const text = read(file);

@@ -1,0 +1,1822 @@
+[
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 1440,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 270,
+        "height": 133,
+        "x": 68.84187316894531,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      },
+      {
+        "width": 1100,
+        "height": 33,
+        "x": 340,
+        "text": "Source baseline · ready"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 340,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 57.65625,
+          "y": 93,
+          "width": 340,
+          "height": 197,
+          "top": 93,
+          "right": 397.65625,
+          "bottom": 290,
+          "left": 57.65625
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 316,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 69.65625,
+                "right": 231.828125,
+                "width": 162.171875
+              },
+              {
+                "left": 69.65625,
+                "right": 644.765625,
+                "width": 575.109375
+              },
+              {
+                "left": 69.65625,
+                "right": 638.828125,
+                "width": 569.171875
+              },
+              {
+                "left": 69.65625,
+                "right": 689.78125,
+                "width": 620.125
+              },
+              {
+                "left": 69.65625,
+                "right": 226.484375,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      },
+      {
+        "width": 1100,
+        "scrollWidth": 1100,
+        "rect": {
+          "x": 340,
+          "y": 150,
+          "width": 1100,
+          "height": 97,
+          "top": 150,
+          "right": 1440,
+          "bottom": 247,
+          "left": 340
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 1076,
+            "scrollWidth": 1076,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 352,
+                "right": 1092.28125,
+                "width": 740.28125
+              },
+              {
+                "left": 352,
+                "right": 921.171875,
+                "width": 569.171875
+              },
+              {
+                "left": 352,
+                "right": 1131.953125,
+                "width": 779.953125
+              }
+            ],
+            "rangeInside": true
+          }
+        ],
+        "controls": []
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 768,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 270,
+        "height": 133,
+        "x": 68.93359375,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      },
+      {
+        "width": 428,
+        "height": 33,
+        "x": 340,
+        "text": "Source baseline · ready"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 340,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 57.65625,
+          "y": 93,
+          "width": 340,
+          "height": 197,
+          "top": 93,
+          "right": 397.65625,
+          "bottom": 290,
+          "left": 57.65625
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 316,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 69.65625,
+                "right": 231.828125,
+                "width": 162.171875
+              },
+              {
+                "left": 69.65625,
+                "right": 644.765625,
+                "width": 575.109375
+              },
+              {
+                "left": 69.65625,
+                "right": 638.828125,
+                "width": 569.171875
+              },
+              {
+                "left": 69.65625,
+                "right": 689.78125,
+                "width": 620.125
+              },
+              {
+                "left": 69.65625,
+                "right": 226.484375,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      },
+      {
+        "width": 428,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 340,
+          "y": 286,
+          "width": 428,
+          "height": 129,
+          "top": 286,
+          "right": 768,
+          "bottom": 415,
+          "left": 340
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 404,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 352,
+                "right": 514.171875,
+                "width": 162.171875
+              },
+              {
+                "left": 352,
+                "right": 927.109375,
+                "width": 575.109375
+              },
+              {
+                "left": 352,
+                "right": 921.171875,
+                "width": 569.171875
+              },
+              {
+                "left": 352,
+                "right": 972.125,
+                "width": 620.125
+              },
+              {
+                "left": 352,
+                "right": 508.828125,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": []
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 390,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 390,
+        "height": 33,
+        "x": 0,
+        "text": "Source baseline · ready"
+      },
+      {
+        "width": 372,
+        "height": 101,
+        "x": 9,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 390,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 0,
+          "y": 286,
+          "width": 390,
+          "height": 129,
+          "top": 286,
+          "right": 390,
+          "bottom": 415,
+          "left": 0
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 366,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 12,
+                "right": 174.171875,
+                "width": 162.171875
+              },
+              {
+                "left": 12,
+                "right": 587.109375,
+                "width": 575.109375
+              },
+              {
+                "left": 12,
+                "right": 581.171875,
+                "width": 569.171875
+              },
+              {
+                "left": 12,
+                "right": 632.125,
+                "width": 620.125
+              },
+              {
+                "left": 12,
+                "right": 168.828125,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": []
+      },
+      {
+        "width": 372,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 9,
+          "y": 269,
+          "width": 372,
+          "height": 197,
+          "top": 269,
+          "right": 381,
+          "bottom": 466,
+          "left": 9
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 348,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 21,
+                "right": 183.171875,
+                "width": 162.171875
+              },
+              {
+                "left": 21,
+                "right": 596.109375,
+                "width": 575.109375
+              },
+              {
+                "left": 21,
+                "right": 590.171875,
+                "width": 569.171875
+              },
+              {
+                "left": 21,
+                "right": 641.125,
+                "width": 620.125
+              },
+              {
+                "left": 21,
+                "right": 177.828125,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 1440,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 270,
+        "height": 133,
+        "x": 68.84220886230469,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      },
+      {
+        "width": 1100,
+        "height": 33,
+        "x": 340,
+        "text": "Source baseline · ready"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 340,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 57.65625,
+          "y": 93,
+          "width": 340,
+          "height": 197,
+          "top": 93,
+          "right": 397.65625,
+          "bottom": 290,
+          "left": 57.65625
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 316,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 69.65625,
+                "right": 231.828125,
+                "width": 162.171875
+              },
+              {
+                "left": 69.65625,
+                "right": 644.765625,
+                "width": 575.109375
+              },
+              {
+                "left": 69.65625,
+                "right": 638.828125,
+                "width": 569.171875
+              },
+              {
+                "left": 69.65625,
+                "right": 689.78125,
+                "width": 620.125
+              },
+              {
+                "left": 69.65625,
+                "right": 226.484375,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      },
+      {
+        "width": 1100,
+        "scrollWidth": 1100,
+        "rect": {
+          "x": 340,
+          "y": 150,
+          "width": 1100,
+          "height": 97,
+          "top": 150,
+          "right": 1440,
+          "bottom": 247,
+          "left": 340
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 1076,
+            "scrollWidth": 1076,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 352,
+                "right": 1092.28125,
+                "width": 740.28125
+              },
+              {
+                "left": 352,
+                "right": 921.171875,
+                "width": 569.171875
+              },
+              {
+                "left": 352,
+                "right": 1131.953125,
+                "width": 779.953125
+              }
+            ],
+            "rangeInside": true
+          }
+        ],
+        "controls": []
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 768,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 270,
+        "height": 133,
+        "x": 68.98434448242188,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      },
+      {
+        "width": 428,
+        "height": 33,
+        "x": 340,
+        "text": "Source baseline · ready"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 340,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 57.65625,
+          "y": 93,
+          "width": 340,
+          "height": 197,
+          "top": 93,
+          "right": 397.65625,
+          "bottom": 290,
+          "left": 57.65625
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 316,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 69.65625,
+                "right": 231.828125,
+                "width": 162.171875
+              },
+              {
+                "left": 69.65625,
+                "right": 644.765625,
+                "width": 575.109375
+              },
+              {
+                "left": 69.65625,
+                "right": 638.828125,
+                "width": 569.171875
+              },
+              {
+                "left": 69.65625,
+                "right": 689.78125,
+                "width": 620.125
+              },
+              {
+                "left": 69.65625,
+                "right": 226.484375,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      },
+      {
+        "width": 428,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 340,
+          "y": 286,
+          "width": 428,
+          "height": 129,
+          "top": 286,
+          "right": 768,
+          "bottom": 415,
+          "left": 340
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 404,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 352,
+                "right": 514.171875,
+                "width": 162.171875
+              },
+              {
+                "left": 352,
+                "right": 927.109375,
+                "width": 575.109375
+              },
+              {
+                "left": 352,
+                "right": 921.171875,
+                "width": 569.171875
+              },
+              {
+                "left": 352,
+                "right": 972.125,
+                "width": 620.125
+              },
+              {
+                "left": 352,
+                "right": 508.828125,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": []
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 390,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 390,
+        "height": 33,
+        "x": 0,
+        "text": "Source baseline · ready"
+      },
+      {
+        "width": 372,
+        "height": 101,
+        "x": 9,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 390,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 0,
+          "y": 286,
+          "width": 390,
+          "height": 129,
+          "top": 286,
+          "right": 390,
+          "bottom": 415,
+          "left": 0
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 366,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 12,
+                "right": 174.171875,
+                "width": 162.171875
+              },
+              {
+                "left": 12,
+                "right": 587.109375,
+                "width": 575.109375
+              },
+              {
+                "left": 12,
+                "right": 581.171875,
+                "width": 569.171875
+              },
+              {
+                "left": 12,
+                "right": 632.125,
+                "width": 620.125
+              },
+              {
+                "left": 12,
+                "right": 168.828125,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": []
+      },
+      {
+        "width": 372,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 9,
+          "y": 269,
+          "width": 372,
+          "height": 197,
+          "top": 269,
+          "right": 381,
+          "bottom": 466,
+          "left": 9
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 348,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 21,
+                "right": 183.171875,
+                "width": 162.171875
+              },
+              {
+                "left": 21,
+                "right": 596.109375,
+                "width": 575.109375
+              },
+              {
+                "left": 21,
+                "right": 590.171875,
+                "width": 569.171875
+              },
+              {
+                "left": 21,
+                "right": 641.125,
+                "width": 620.125
+              },
+              {
+                "left": 21,
+                "right": 177.828125,
+                "width": 156.828125
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 1440,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 270,
+        "height": 133,
+        "x": 69,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      },
+      {
+        "width": 1100,
+        "height": 33,
+        "x": 340,
+        "text": "Source baseline · ready"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 340,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 57.65625,
+          "y": 93,
+          "width": 340,
+          "height": 197,
+          "top": 93,
+          "right": 397.65625,
+          "bottom": 290,
+          "left": 57.65625
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 316,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 69.65625,
+                "right": 231.82424926757812,
+                "width": 162.16799926757812
+              },
+              {
+                "left": 69.65625,
+                "right": 644.7559814453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 69.65625,
+                "right": 638.8276977539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 69.65625,
+                "right": 689.7798461914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 69.65625,
+                "right": 226.4842529296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      },
+      {
+        "width": 1100,
+        "scrollWidth": 1100,
+        "rect": {
+          "x": 340,
+          "y": 150,
+          "width": 1100,
+          "height": 97,
+          "top": 150,
+          "right": 1440,
+          "bottom": 247,
+          "left": 340
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 1076,
+            "scrollWidth": 1076,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 352,
+                "right": 1092.2677001953125,
+                "width": 740.2677001953125
+              },
+              {
+                "left": 352,
+                "right": 921.1714477539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 352,
+                "right": 1131.95166015625,
+                "width": 779.95166015625
+              }
+            ],
+            "rangeInside": true
+          }
+        ],
+        "controls": []
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 768,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 270,
+        "height": 133,
+        "x": 69,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      },
+      {
+        "width": 428,
+        "height": 33,
+        "x": 340,
+        "text": "Source baseline · ready"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 340,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 57.65625,
+          "y": 93,
+          "width": 340,
+          "height": 197,
+          "top": 93,
+          "right": 397.65625,
+          "bottom": 290,
+          "left": 57.65625
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 316,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 69.65625,
+                "right": 231.82424926757812,
+                "width": 162.16799926757812
+              },
+              {
+                "left": 69.65625,
+                "right": 644.7559814453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 69.65625,
+                "right": 638.8276977539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 69.65625,
+                "right": 689.7798461914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 69.65625,
+                "right": 226.4842529296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      },
+      {
+        "width": 428,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 340,
+          "y": 286,
+          "width": 428,
+          "height": 129,
+          "top": 286,
+          "right": 768,
+          "bottom": 415,
+          "left": 340
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 404,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 352,
+                "right": 514.16796875,
+                "width": 162.16796875
+              },
+              {
+                "left": 352,
+                "right": 927.0997314453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 352,
+                "right": 921.1714477539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 352,
+                "right": 972.1235961914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 352,
+                "right": 508.8280029296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": []
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 390,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 390,
+        "height": 33,
+        "x": 0,
+        "text": "Source baseline · ready"
+      },
+      {
+        "width": 372,
+        "height": 101,
+        "x": 9,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 390,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 0,
+          "y": 286,
+          "width": 390,
+          "height": 129,
+          "top": 286,
+          "right": 390,
+          "bottom": 415,
+          "left": 0
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 366,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 12,
+                "right": 174.16799926757812,
+                "width": 162.16799926757812
+              },
+              {
+                "left": 12,
+                "right": 587.0997314453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 12,
+                "right": 581.1714477539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 12,
+                "right": 632.1235961914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 12,
+                "right": 168.8280029296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": []
+      },
+      {
+        "width": 372,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 9,
+          "y": 268,
+          "width": 372,
+          "height": 197,
+          "top": 268,
+          "right": 381,
+          "bottom": 465,
+          "left": 9
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 348,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 21,
+                "right": 183.16799926757812,
+                "width": 162.16799926757812
+              },
+              {
+                "left": 21,
+                "right": 596.0997314453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 21,
+                "right": 590.1714477539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 21,
+                "right": 641.1235961914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 21,
+                "right": 177.8280029296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 1440,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 270,
+        "height": 133,
+        "x": 69,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      },
+      {
+        "width": 1100,
+        "height": 33,
+        "x": 340,
+        "text": "Source baseline · ready"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 340,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 57.65625,
+          "y": 93,
+          "width": 340,
+          "height": 197,
+          "top": 93,
+          "right": 397.65625,
+          "bottom": 290,
+          "left": 57.65625
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 316,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 69.65625,
+                "right": 231.82424926757812,
+                "width": 162.16799926757812
+              },
+              {
+                "left": 69.65625,
+                "right": 644.7559814453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 69.65625,
+                "right": 638.8276977539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 69.65625,
+                "right": 689.7798461914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 69.65625,
+                "right": 226.4842529296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      },
+      {
+        "width": 1100,
+        "scrollWidth": 1100,
+        "rect": {
+          "x": 340,
+          "y": 150,
+          "width": 1100,
+          "height": 97,
+          "top": 150,
+          "right": 1440,
+          "bottom": 247,
+          "left": 340
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 1076,
+            "scrollWidth": 1076,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 352,
+                "right": 1092.2677001953125,
+                "width": 740.2677001953125
+              },
+              {
+                "left": 352,
+                "right": 921.1714477539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 352,
+                "right": 1131.95166015625,
+                "width": 779.95166015625
+              }
+            ],
+            "rangeInside": true
+          }
+        ],
+        "controls": []
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 768,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 270,
+        "height": 133,
+        "x": 69,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      },
+      {
+        "width": 428,
+        "height": 33,
+        "x": 340,
+        "text": "Source baseline · ready"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 340,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 57.65625,
+          "y": 93,
+          "width": 340,
+          "height": 197,
+          "top": 93,
+          "right": 397.65625,
+          "bottom": 290,
+          "left": 57.65625
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 316,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 69.65625,
+                "right": 231.82424926757812,
+                "width": 162.16799926757812
+              },
+              {
+                "left": 69.65625,
+                "right": 644.7559814453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 69.65625,
+                "right": 638.8276977539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 69.65625,
+                "right": 689.7798461914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 69.65625,
+                "right": 226.4842529296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      },
+      {
+        "width": 428,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 340,
+          "y": 286,
+          "width": 428,
+          "height": 129,
+          "top": 286,
+          "right": 768,
+          "bottom": 415,
+          "left": 340
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 404,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 352,
+                "right": 514.16796875,
+                "width": 162.16796875
+              },
+              {
+                "left": 352,
+                "right": 927.0997314453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 352,
+                "right": 921.1714477539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 352,
+                "right": 972.1235961914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 352,
+                "right": 508.8280029296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": []
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 390,
+    "pass": true,
+    "red": true,
+    "ready": [
+      {
+        "width": 390,
+        "height": 33,
+        "x": 0,
+        "text": "Source baseline · ready"
+      },
+      {
+        "width": 372,
+        "height": 101,
+        "x": 9,
+        "text": "Source baseline · readyUndoRedoReset to savedReset to source"
+      }
+    ],
+    "diagnostic": [
+      {
+        "width": 390,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 0,
+          "y": 286,
+          "width": 390,
+          "height": 129,
+          "top": 286,
+          "right": 390,
+          "bottom": 415,
+          "left": 0
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 366,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 12,
+                "right": 174.16799926757812,
+                "width": 162.16799926757812
+              },
+              {
+                "left": 12,
+                "right": 587.0997314453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 12,
+                "right": 581.1714477539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 12,
+                "right": 632.1235961914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 12,
+                "right": 168.8280029296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": []
+      },
+      {
+        "width": 372,
+        "scrollWidth": 632,
+        "rect": {
+          "x": 9,
+          "y": 268,
+          "width": 372,
+          "height": 197,
+          "top": 268,
+          "right": 381,
+          "bottom": 465,
+          "left": 9
+        },
+        "text": "Draft · revision 1 · errorShowing last valid revision 0Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.UndoRedoReset to savedReset to source",
+        "paragraphs": [
+          {
+            "text": "Synthetic source mismatch at /synthetic/ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.css; expected_sha256=8888888888888888888888888888888888888888888888888888888888888888 received_sha256=0000000000000000000000000000000000000000000000000000000000000000. Save/export remain blocked.",
+            "full": true,
+            "width": 348,
+            "scrollWidth": 620,
+            "wrap": "normal",
+            "rects": [
+              {
+                "left": 21,
+                "right": 183.16799926757812,
+                "width": 162.16799926757812
+              },
+              {
+                "left": 21,
+                "right": 596.0997314453125,
+                "width": 575.0997314453125
+              },
+              {
+                "left": 21,
+                "right": 590.1714477539062,
+                "width": 569.1714477539062
+              },
+              {
+                "left": 21,
+                "right": 641.1235961914062,
+                "width": 620.1235961914062
+              },
+              {
+                "left": 21,
+                "right": 177.8280029296875,
+                "width": 156.8280029296875
+              }
+            ],
+            "rangeInside": false
+          }
+        ],
+        "controls": [
+          {
+            "text": "Undo",
+            "inside": true
+          },
+          {
+            "text": "Redo",
+            "inside": true
+          },
+          {
+            "text": "Reset to saved",
+            "inside": true
+          },
+          {
+            "text": "Reset to source",
+            "inside": true
+          }
+        ]
+      }
+    ],
+    "frame": {
+      "asset": "loaded",
+      "scale": 1,
+      "sameDocument": true,
+      "sameBody": true
+    },
+    "saveBlocked": true,
+    "errors": [],
+    "posts": []
+  }
+]

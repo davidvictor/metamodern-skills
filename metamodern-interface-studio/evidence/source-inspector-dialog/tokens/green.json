@@ -1,0 +1,46 @@
+[
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "pass": true,
+    "readonlyRows": 8,
+    "sourceReadable": true,
+    "legacySearchMatches": 2,
+    "legacyNoMatches": true,
+    "legacyUnread": true,
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "pass": true,
+    "readonlyRows": 8,
+    "sourceReadable": true,
+    "legacySearchMatches": 2,
+    "legacyNoMatches": true,
+    "legacyUnread": true,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "pass": true,
+    "readonlyRows": 8,
+    "sourceReadable": true,
+    "legacySearchMatches": 2,
+    "legacyNoMatches": true,
+    "legacyUnread": true,
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "pass": true,
+    "readonlyRows": 8,
+    "sourceReadable": true,
+    "legacySearchMatches": 2,
+    "legacyNoMatches": true,
+    "legacyUnread": true,
+    "errors": []
+  }
+]

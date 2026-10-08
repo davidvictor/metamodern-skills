@@ -1,0 +1,72 @@
+(node:52913) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ journal retains immutable history, monotonic revisions and recoverable deletion; no replacement or ID ambiguity (62.3005ms)
+✔ prepared saved adoption is atomic/latest-wins and never changes original source; draft recovery remains undoable (10.118583ms)
+✔ confirmed captured save A keeps newer B dirty; rename/duplicate/delete preserve payload/history and source basis (34.885458ms)
+✔ invalid/newer imports retain exact raw bytes and prior saved data; known legacy problems recover as editable blocked input (11.384167ms)
+✔ source/fingerprint drift blocks reopen, conflict never overwrites, static cannot write and recovery restores raw draft separately (14.03325ms)
+✔ new envelope identity starts at revision1 after prior save; acknowledgement is truthful with newer edits (11.163ms)
+✔ offered recovery survives fresh edits and save until explicit decision; metadata prevents reinterpretation (13.051458ms)
+✔ deep bounded-size payloads reject without stack overflow (7.9225ms)
+✔ late GET success or failure cannot replace a confirmed newer journal write (22.140084ms)
+✔ failed selection can be explicitly replaced by a validated imported draft and saved under a new identity (9.209291ms)
+✔ recovery uses schema/product codec and restores last-valid output atomically with raw invalid text (9.916917ms)
+✖ valid recovery captured during pending compilation resumes its own compile without a ready A/B mismatch (8.125959ms)
+✖ denied browser storage reads never poison canonical editing or compilation (9.098125ms)
+✖ independent immutable draft pin records survive unrelated initialized tabs (14.529791ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 11
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 310.873958
+
+✖ failing tests:
+
+test at tests/interface-studio-directions.test.mjs:23:1
+✖ valid recovery captured during pending compilation resumes its own compile without a ready A/B mismatch (8.125959ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 2
+  
+      at TestContext.<anonymous> (file://<canonical>/tests/interface-studio-directions.test.mjs:23:434)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/interface-studio-directions.test.mjs:24:1
+✖ denied browser storage reads never poison canonical editing or compilation (9.098125ms)
+  Error: storage read denied
+      at Object.getItem (file://<canonical>/tests/interface-studio-directions.test.mjs:24:123)
+      at cacheDraft (file:///private/var/folders/qj/b_tbl0j577d9tnzhnvkk7g2m0000gn/T/direction-life-KTN4xt/direction-service.mjs:65:99)
+      at DesignController.publish (file:///private/var/folders/qj/b_tbl0j577d9tnzhnvkk7g2m0000gn/T/direction-life-KTN4xt/controller.mjs:45:44)
+      at work.Promise.all.then.publish.status (file:///private/var/folders/qj/b_tbl0j577d9tnzhnvkk7g2m0000gn/T/direction-life-KTN4xt/controller.mjs:63:12)
+      at async DesignController.settled (file:///private/var/folders/qj/b_tbl0j577d9tnzhnvkk7g2m0000gn/T/direction-life-KTN4xt/controller.mjs:116:27)
+      at async TestContext.<anonymous> (file://<canonical>/tests/interface-studio-directions.test.mjs:24:421)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7)
+
+test at tests/interface-studio-directions.test.mjs:25:1
+✖ independent immutable draft pin records survive unrelated initialized tabs (14.529791ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(reopened.getSnapshot().pins.some(p=>p.key===key))
+  
+      at TestContext.<anonymous> (file://<canonical>/tests/interface-studio-directions.test.mjs:25:798)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

@@ -1,3 +1,4 @@
+import { studioSource } from './studio-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
@@ -6,7 +7,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { stripTypeScriptTypes } from 'node:module';
 
-const shell = new URL('../metamodern-interface-studio/assets/studio-shell/', import.meta.url);
+const shell = new URL(`file://${studioSource}/`);
 
 /** Load pure shell modules that import each other: strip types, point relative imports at the stripped copies. */
 async function loadPure(names) {

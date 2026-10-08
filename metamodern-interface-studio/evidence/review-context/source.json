@@ -1,0 +1,34 @@
+{
+  "base": "25218f9fbf4633efdf4df43f9399cce52000bb3f",
+  "packageVersion": "0.17.1",
+  "commonFiles": [
+    {
+      "path": "src/studio/design-ui/types.ts",
+      "sha256": "42245a3682c2038075c377a7c512df9e7afec2123bc195168b29a1dd38b83410"
+    },
+    {
+      "path": "src/studio/design-ui/api.ts",
+      "sha256": "92c7e58d8e73b519f6a4a846d01482d7172ca5fb7ae3c91dc3bdbf503eb22772"
+    },
+    {
+      "path": "src/studio/design-ui/review.ts",
+      "sha256": "72dc0169497db77615f441f9a83554cb09aa6c2067a476203ff0e0b09a8fcd1a"
+    },
+    {
+      "path": "src/studio/design-ui/slots.tsx",
+      "sha256": "79650a424594b5a6e7f5567d91e764834cd6dd3acf1a722bcb7f948b985bf78a"
+    },
+    {
+      "path": "src/kit/field.tsx",
+      "sha256": "23876355ed9a092dee32189bdef7ad60b99790fe72084632e9b8525aa56eae5b"
+    },
+    {
+      "path": "example/design-ui/index.tsx",
+      "sha256": "f3301e8b5e4aa161fb8406e912585d5fd78c4e54d2d0f91c079e45c040bd623a"
+    }
+  ],
+  "consumerSourceMismatches": {
+    "vite": 0,
+    "next": 0
+  }
+}

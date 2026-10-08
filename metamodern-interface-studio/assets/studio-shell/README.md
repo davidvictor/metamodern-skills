@@ -1,3 +1,5 @@
+This directory is the common Studio UI source. Generate a runnable consumer with `node ../../scripts/update-studio.mjs <empty-directory> --create --host vite` or `--host next`. Framework entries/configuration/package manifests live in `../studio-hosts/`; generated Vite layout stays compatible with prior Studios.
+
 # Interface Studio shell
 
 The product-neutral starter for an Interface Studio. It is a complete, running Studio: the grey stage, the icon rail with contextual panels, the five views, the details panel, the command menu, the walkthrough player, the Design view (Adjust and Tokens) and the Studio settings. A synthetic example product runs live inside it so every part can be seen working before a real product is connected.

@@ -1,0 +1,3032 @@
+
+> metamodern-skills@1.19.1 test
+> node --test
+
+TAP version 13
+# presenter overlay tests passed
+# Subtest: metamodern-interface-studio/assets/studio-shell/tests/interface-studio-presenter.test.mjs
+ok 1 - metamodern-interface-studio/assets/studio-shell/tests/interface-studio-presenter.test.mjs
+  ---
+  duration_ms: 180.235417
+  type: 'test'
+  ...
+# Subtest: permits prose edits that preserve protected anchors
+ok 2 - permits prose edits that preserve protected anchors
+  ---
+  duration_ms: 150.697416
+  type: 'test'
+  ...
+# Subtest: reports removed and invented protected anchors
+ok 3 - reports removed and invented protected anchors
+  ---
+  duration_ms: 128.13675
+  type: 'test'
+  ...
+# Subtest: default dry run describes the plan without creating or changing files
+ok 4 - default dry run describes the plan without creating or changing files
+  ---
+  duration_ms: 307.575625
+  type: 'test'
+  ...
+# Subtest: install works without an application and records root, lead, and 17 native role configurations
+ok 5 - install works without an application and records root, lead, and 17 native role configurations
+  ---
+  duration_ms: 463.760042
+  type: 'test'
+  ...
+# Subtest: low roles select the newest permitted discovered model and fall back when it is absent
+ok 6 - low roles select the newest permitted discovered model and fall back when it is absent
+  ---
+  duration_ms: 469.495084
+  type: 'test'
+  ...
+# Subtest: repeat application and checker are idempotent
+ok 7 - repeat application and checker are idempotent
+  ---
+  duration_ms: 1321.372334
+  type: 'test'
+  ...
+# Subtest: checker rejects native model drift
+ok 8 - checker rejects native model drift
+  ---
+  duration_ms: 414.85325
+  type: 'test'
+  ...
+# Subtest: checker rejects native effort drift
+ok 9 - checker rejects native effort drift
+  ---
+  duration_ms: 522.382958
+  type: 'test'
+  ...
+# Subtest: checker rejects native instructions drift
+ok 10 - checker rejects native instructions drift
+  ---
+  duration_ms: 692.481459
+  type: 'test'
+  ...
+# Subtest: checker rejects native unnamed dispatch effort drift
+ok 11 - checker rejects native unnamed dispatch effort drift
+  ---
+  duration_ms: 441.422709
+  type: 'test'
+  ...
+# Subtest: checker rejects native role registration drift
+ok 12 - checker rejects native role registration drift
+  ---
+  duration_ms: 379.72875
+  type: 'test'
+  ...
+# Subtest: checker rejects native Claude default effort drift
+ok 13 - checker rejects native Claude default effort drift
+  ---
+  duration_ms: 352.210167
+  type: 'test'
+  ...
+# Subtest: checker rejects native Claude model drift
+ok 14 - checker rejects native Claude model drift
+  ---
+  duration_ms: 317.892459
+  type: 'test'
+  ...
+# Subtest: preserves unrelated native settings, hooks, MCP configuration, and project prose
+ok 15 - preserves unrelated native settings, hooks, MCP configuration, and project prose
+  ---
+  duration_ms: 346.244833
+  type: 'test'
+  ...
+# Subtest: unmanaged collision at .codex/agents/explorer.toml refuses the entire install before writing
+ok 16 - unmanaged collision at .codex/agents/explorer.toml refuses the entire install before writing
+  ---
+  duration_ms: 140.852125
+  type: 'test'
+  ...
+# Subtest: unmanaged collision at .claude/agents/worker.md refuses the entire install before writing
+ok 17 - unmanaged collision at .claude/agents/worker.md refuses the entire install before writing
+  ---
+  duration_ms: 151.071208
+  type: 'test'
+  ...
+# Subtest: unmanaged collision at docs/engineering/profile.json refuses the entire install before writing
+ok 18 - unmanaged collision at docs/engineering/profile.json refuses the entire install before writing
+  ---
+  duration_ms: 120.89
+  type: 'test'
+  ...
+# Subtest: unmanaged collision at scripts/check-engineering.py refuses the entire install before writing
+ok 19 - unmanaged collision at scripts/check-engineering.py refuses the entire install before writing
+  ---
+  duration_ms: 112.409625
+  type: 'test'
+  ...
+# Subtest: changed generated content is rejected without silently overwriting user changes
+ok 20 - changed generated content is rejected without silently overwriting user changes
+  ---
+  duration_ms: 348.373917
+  type: 'test'
+  ...
+# Subtest: symlinked output directories cannot write outside the project
+ok 21 - symlinked output directories cannot write outside the project
+  ---
+  duration_ms: 124.038042
+  type: 'test'
+  ...
+# Subtest: missing availability is explicit unknown evidence while structural configuration can pass
+ok 22 - missing availability is explicit unknown evidence while structural configuration can pass
+  ---
+  duration_ms: 377.928333
+  type: 'test'
+  ...
+# Subtest: provider evidence is preserved and a verified model catalog remains a distinct result
+ok 23 - provider evidence is preserved and a verified model catalog remains a distinct result
+  ---
+  duration_ms: 235.815958
+  type: 'test'
+  ...
+# Subtest: an absent required provider model cannot produce an availability success claim
+ok 24 - an absent required provider model cannot produce an availability success claim
+  ---
+  duration_ms: 201.228292
+  type: 'test'
+  ...
+# Subtest: newer low model without the required effort is skipped for a supported permitted candidate
+ok 25 - newer low model without the required effort is skipped for a supported permitted candidate
+  ---
+  duration_ms: 272.419042
+  type: 'test'
+  ...
+# Subtest: existing native role registration is a collision even when its role file is elsewhere
+ok 26 - existing native role registration is a collision even when its role file is elsewhere
+  ---
+  duration_ms: 110.993541
+  type: 'test'
+  ...
+# Subtest: explicit catalogs with no permitted low model block application before any writes
+ok 27 - explicit catalogs with no permitted low model block application before any writes
+  ---
+  duration_ms: 79.845333
+  type: 'test'
+  ...
+# Subtest: availability evidence for one provider does not verify the other provider
+ok 28 - availability evidence for one provider does not verify the other provider
+  ---
+  duration_ms: 101.803458
+  type: 'test'
+  ...
+# Subtest: malformed catalog with missing source is refused before writing
+ok 29 - malformed catalog with missing source is refused before writing
+  ---
+  duration_ms: 70.847042
+  type: 'test'
+  ...
+# Subtest: malformed catalog with invalid verification date is refused before writing
+ok 30 - malformed catalog with invalid verification date is refused before writing
+  ---
+  duration_ms: 69.942417
+  type: 'test'
+  ...
+# Subtest: malformed catalog with duplicate models is refused before writing
+ok 31 - malformed catalog with duplicate models is refused before writing
+  ---
+  duration_ms: 69.175875
+  type: 'test'
+  ...
+# Subtest: an old model catalog cannot silently claim fresh verified availability
+ok 32 - an old model catalog cannot silently claim fresh verified availability
+  ---
+  duration_ms: 104.227708
+  type: 'test'
+  ...
+# Subtest: editing the profile receipt cannot authorize overwriting a changed generated role
+ok 33 - editing the profile receipt cannot authorize overwriting a changed generated role
+  ---
+  duration_ms: 275.041167
+  type: 'test'
+  ...
+# Subtest: explicitly unverified catalog entries do not prove model access or select newer models
+ok 34 - explicitly unverified catalog entries do not prove model access or select newer models
+  ---
+  duration_ms: 154.265375
+  type: 'test'
+  ...
+# Subtest: conflicting existing lead and default routing is preserved until explicitly adopted
+ok 35 - conflicting existing lead and default routing is preserved until explicitly adopted
+  ---
+  duration_ms: 467.551208
+  type: 'test'
+  ...
+# Subtest: explicit routing adoption replaces reviewed root assignments and preserves unrelated settings
+ok 36 - explicit routing adoption replaces reviewed root assignments and preserves unrelated settings
+  ---
+  duration_ms: 275.166583
+  type: 'test'
+  ...
+# Subtest: reapplying preserves deliberate routing and registration changes until explicit adoption
+ok 37 - reapplying preserves deliberate routing and registration changes until explicit adoption
+  ---
+  duration_ms: 1202.657209
+  type: 'test'
+  ...
+# Subtest: Claude duplicate identities prevent installation and fail later configuration checks
+ok 38 - Claude duplicate identities prevent installation and fail later configuration checks
+  ---
+  duration_ms: 258.829
+  type: 'test'
+  ...
+# Subtest: Claude with quoted identity key duplicate identities prevent installation and fail later configuration checks
+ok 39 - Claude with quoted identity key duplicate identities prevent installation and fail later configuration checks
+  ---
+  duration_ms: 309.060084
+  type: 'test'
+  ...
+# Subtest: Codex duplicate identities prevent installation and fail later configuration checks
+ok 40 - Codex duplicate identities prevent installation and fail later configuration checks
+  ---
+  duration_ms: 258.529209
+  type: 'test'
+  ...
+# Subtest: installs a selected package only and preserves Codex-Claude parity
+ok 41 - installs a selected package only and preserves Codex-Claude parity
+  ---
+  duration_ms: 988.0395
+  type: 'test'
+  ...
+# Subtest: local install, update, and reinstall preserve external personal and project prompt knowledge
+ok 42 - local install, update, and reinstall preserve external personal and project prompt knowledge
+  ---
+  duration_ms: 1818.843042
+  type: 'test'
+  ...
+# Subtest: ordinary local installation does not create personal or project prompt knowledge
+ok 43 - ordinary local installation does not create personal or project prompt knowledge
+  ---
+  duration_ms: 939.63625
+  type: 'test'
+  ...
+# Subtest: refuses an unknown selection before altering an installation
+ok 44 - refuses an unknown selection before altering an installation
+  ---
+  duration_ms: 265.36375
+  type: 'test'
+  ...
+# Subtest: refuses an unrelated installed package collision
+ok 45 - refuses an unrelated installed package collision
+  ---
+  duration_ms: 195.974875
+  type: 'test'
+  ...
+# Subtest: retires owned prompt aliases only after the replacement installs
+ok 46 - retires owned prompt aliases only after the replacement installs
+  ---
+  duration_ms: 759.472458
+  type: 'test'
+  ...
+# Subtest: keeps an owned legacy package when replacement installation fails
+ok 47 - keeps an owned legacy package when replacement installation fails
+  ---
+  duration_ms: 659.722375
+  type: 'test'
+  ...
+# Subtest: the public collection installs every canonical package with verified parity
+not ok 48 - the public collection installs every canonical package with verified parity
+  ---
+  duration_ms: 5301.601708
+  type: 'test'
+  location: '<canonical>/tests/install.test.mjs:213:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+
+      [
+        'PACKAGE_ID',
+        'PACKAGE_VERSION',
+        'SKILL.md',
+        'agents',
+    ...
+        'evidence/source-inspector-dialog/lineage/lineage.mjs',
+    -   'evidence/source-inspector-dialog/source-freeze.json',
+        'references',
+        'references/adapters.md',
+        'references/design-ui.md',
+        'references/directions.md',
+        'references/frame-protocol.md',
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'PACKAGE_ID'
+    1: 'PACKAGE_VERSION'
+    2: 'SKILL.md'
+    3: 'agents'
+    4: 'agents/openai.yaml'
+    5: 'assets'
+    6: 'assets/studio-hosts'
+    7: 'assets/studio-hosts/next'
+    8: 'assets/studio-hosts/next/app'
+    9: 'assets/studio-hosts/next/app/layout.tsx'
+    10: 'assets/studio-hosts/next/app/page.tsx'
+    11: 'assets/studio-hosts/next/app/saved-route.ts'
+    12: 'assets/studio-hosts/next/app/studio-client.tsx'
+    13: 'assets/studio-hosts/next/eslint.config.js'
+    14: 'assets/studio-hosts/next/next-env.d.ts'
+    15: 'assets/studio-hosts/next/next.config.mjs'
+    16: 'assets/studio-hosts/next/package-lock.json'
+    17: 'assets/studio-hosts/next/package.json'
+    18: 'assets/studio-hosts/next/postcss.config.mjs'
+    19: 'assets/studio-hosts/next/scripts'
+    20: 'assets/studio-hosts/next/scripts/lint-acceptance.mjs'
+    21: 'assets/studio-hosts/next/scripts/prepare-next.ts'
+    22: 'assets/studio-hosts/next/scripts/preview.vite.ts'
+    23: 'assets/studio-hosts/next/src'
+    24: 'assets/studio-hosts/next/src/studio-entry.tsx'
+    25: 'assets/studio-hosts/next/src/studio-host.ts'
+    26: 'assets/studio-hosts/next/tsconfig.json'
+    27: 'assets/studio-hosts/vite'
+    28: 'assets/studio-hosts/vite/eslint.config.js'
+    29: 'assets/studio-hosts/vite/index.html'
+    30: 'assets/studio-hosts/vite/package-lock.json'
+    31: 'assets/studio-hosts/vite/package.json'
+    32: 'assets/studio-hosts/vite/src'
+    33: 'assets/studio-hosts/vite/src/main.tsx'
+    34: 'assets/studio-hosts/vite/src/studio-host.ts'
+    35: 'assets/studio-hosts/vite/tsconfig.app.json'
+    36: 'assets/studio-hosts/vite/tsconfig.json'
+    37: 'assets/studio-hosts/vite/tsconfig.node.json'
+    38: 'assets/studio-hosts/vite/vite.config.ts'
+    39: 'assets/studio-shell'
+    40: 'assets/studio-shell.releases.json'
+    41: 'assets/studio-shell/.gitignore'
+    42: 'assets/studio-shell/.prettierignore'
+    43: 'assets/studio-shell/.prettierrc'
+    44: 'assets/studio-shell/README.md'
+    45: 'assets/studio-shell/UPDATING.md'
+    46: 'assets/studio-shell/components.json'
+    47: 'assets/studio-shell/example'
+    48: 'assets/studio-shell/example/design-adapter.ts'
+    49: 'assets/studio-shell/example/design-runtime'
+    50: 'assets/studio-shell/example/design-runtime/assets.css'
+    51: 'assets/studio-shell/example/design-runtime/index.ts'
+    52: 'assets/studio-shell/example/design-runtime/loaders.ts'
+    53: 'assets/studio-shell/example/design-ui'
+    54: 'assets/studio-shell/example/design-ui/index.tsx'
+    55: 'assets/studio-shell/example/design-ui/loaders.ts'
+    56: 'assets/studio-shell/example/index.html'
+    57: 'assets/studio-shell/example/library'
+    58: 'assets/studio-shell/example/library/adapter.ts'
+    59: 'assets/studio-shell/example/library/button-row.ts'
+    60: 'assets/studio-shell/example/library/button.ts'
+    61: 'assets/studio-shell/example/library/declaration.ts'
+    62: 'assets/studio-shell/example/library/frame.html'
+    63: 'assets/studio-shell/example/library/frame.ts'
+    64: 'assets/studio-shell/example/library/icon-button.ts'
+    65: 'assets/studio-shell/example/library/index.ts'
+    66: 'assets/studio-shell/example/library/invalid.ts'
+    67: 'assets/studio-shell/example/library/library.css'
+    68: 'assets/studio-shell/example/library/sections.ts'
+    69: 'assets/studio-shell/example/library/static.ts'
+    70: 'assets/studio-shell/example/library/text-field.ts'
+    71: 'assets/studio-shell/example/main.ts'
+    72: 'assets/studio-shell/example/product.css'
+    73: 'assets/studio-shell/example/static-adapter.ts'
+    74: 'assets/studio-shell/example/workspace'
+    75: 'assets/studio-shell/example/workspace/adapter.ts'
+    76: 'assets/studio-shell/example/workspace/catalog.tsx'
+    77: 'assets/studio-shell/example/workspace/index.ts'
+    78: 'assets/studio-shell/example/workspace/mock-host.mjs'
+    79: 'assets/studio-shell/example/workspace/orphan.ts'
+    80: 'assets/studio-shell/example/workspace/site.tsx'
+    81: 'assets/studio-shell/example/workspace/static.ts'
+    82: 'assets/studio-shell/public'
+    83: 'assets/studio-shell/public/favicon.svg'
+    84: 'assets/studio-shell/scripts'
+    85: 'assets/studio-shell/scripts/acceptance.mjs'
+    86: 'assets/studio-shell/scripts/design-ui-boundary.mjs'
+    87: 'assets/studio-shell/scripts/host-acceptance.mjs'
+    88: 'assets/studio-shell/scripts/library-boundary.mjs'
+    89: 'assets/studio-shell/scripts/saved-file.ts'
+    90: 'assets/studio-shell/scripts/saved-sources.ts'
+    91: 'assets/studio-shell/scripts/workspace-boundary.mjs'
+    92: 'assets/studio-shell/src'
+    93: 'assets/studio-shell/src/App.tsx'
+    94: 'assets/studio-shell/src/adapter.ts'
+    95: 'assets/studio-shell/src/adapters'
+    96: 'assets/studio-shell/src/adapters/example.ts'
+    97: 'assets/studio-shell/src/adapters/synthetic.ts'
+    98: 'assets/studio-shell/src/components'
+    99: 'assets/studio-shell/src/components/studio'
+    100: 'assets/studio-shell/src/components/studio/bits.tsx'
+    101: 'assets/studio-shell/src/components/studio/canvas.tsx'
+    102: 'assets/studio-shell/src/components/studio/chrome.tsx'
+    103: 'assets/studio-shell/src/components/studio/command.tsx'
+    104: 'assets/studio-shell/src/components/studio/design.tsx'
+    105: 'assets/studio-shell/src/components/studio/preview.tsx'
+    106: 'assets/studio-shell/src/components/studio/properties.tsx'
+    107: 'assets/studio-shell/src/components/studio/rail-panel.tsx'
+    108: 'assets/studio-shell/src/components/studio/resize-handles.tsx'
+    109: 'assets/studio-shell/src/components/studio/responsive.tsx'
+    110: 'assets/studio-shell/src/components/studio/stage-nav.tsx'
+    111: 'assets/studio-shell/src/components/studio/views.tsx'
+    112: 'assets/studio-shell/src/components/theme-provider.tsx'
+    113: 'assets/studio-shell/src/components/ui'
+    114: 'assets/studio-shell/src/components/ui/alert.tsx'
+    115: 'assets/studio-shell/src/components/ui/badge.tsx'
+    116: 'assets/studio-shell/src/components/ui/breadcrumb.tsx'
+    117: 'assets/studio-shell/src/components/ui/button.tsx'
+    118: 'assets/studio-shell/src/components/ui/checkbox.tsx'
+    119: 'assets/studio-shell/src/components/ui/collapsible.tsx'
+    120: 'assets/studio-shell/src/components/ui/command.tsx'
+    121: 'assets/studio-shell/src/components/ui/dialog.tsx'
+    122: 'assets/studio-shell/src/components/ui/drawer.tsx'
+    123: 'assets/studio-shell/src/components/ui/dropdown-menu.tsx'
+    124: 'assets/studio-shell/src/components/ui/empty.tsx'
+    125: 'assets/studio-shell/src/components/ui/field.tsx'
+    126: 'assets/studio-shell/src/components/ui/hover-card.tsx'
+    127: 'assets/studio-shell/src/components/ui/input-group.tsx'
+    128: 'assets/studio-shell/src/components/ui/input.tsx'
+    129: 'assets/studio-shell/src/components/ui/item.tsx'
+    130: 'assets/studio-shell/src/components/ui/kbd.tsx'
+    131: 'assets/studio-shell/src/components/ui/label.tsx'
+    132: 'assets/studio-shell/src/components/ui/popover.tsx'
+    133: 'assets/studio-shell/src/components/ui/radio-group.tsx'
+    134: 'assets/studio-shell/src/components/ui/resizable.tsx'
+    135: 'assets/studio-shell/src/components/ui/scroll-area.tsx'
+    136: 'assets/studio-shell/src/components/ui/select.tsx'
+    137: 'assets/studio-shell/src/components/ui/separator.tsx'
+    138: 'assets/studio-shell/src/components/ui/sheet.tsx'
+    139: 'assets/studio-shell/src/components/ui/sidebar.tsx'
+    140: 'assets/studio-shell/src/components/ui/skeleton.tsx'
+    141: 'assets/studio-shell/src/components/ui/slider.tsx'
+    142: 'assets/studio-shell/src/components/ui/sonner.tsx'
+    143: 'assets/studio-shell/src/components/ui/spinner.tsx'
+    144: 'assets/studio-shell/src/components/ui/switch.tsx'
+    145: 'assets/studio-shell/src/components/ui/tabs.tsx'
+    146: 'assets/studio-shell/src/components/ui/textarea.tsx'
+    147: 'assets/studio-shell/src/components/ui/toggle-group.tsx'
+    148: 'assets/studio-shell/src/components/ui/toggle.tsx'
+    149: 'assets/studio-shell/src/components/ui/tooltip.tsx'
+    150: 'assets/studio-shell/src/design-runtime'
+    151: 'assets/studio-shell/src/design-runtime/index.ts'
+    152: 'assets/studio-shell/src/design-ui'
+    153: 'assets/studio-shell/src/design-ui/index.ts'
+    154: 'assets/studio-shell/src/hooks'
+    155: 'assets/studio-shell/src/hooks/use-mobile.ts'
+    156: 'assets/studio-shell/src/index.css'
+    157: 'assets/studio-shell/src/kit'
+    158: 'assets/studio-shell/src/kit/data.tsx'
+    159: 'assets/studio-shell/src/kit/design-controls.tsx'
+    160: 'assets/studio-shell/src/kit/editor-dialog.tsx'
+    161: 'assets/studio-shell/src/kit/empty.tsx'
+    162: 'assets/studio-shell/src/kit/field.tsx'
+    163: 'assets/studio-shell/src/kit/icons.tsx'
+    164: 'assets/studio-shell/src/kit/index.ts'
+    165: 'assets/studio-shell/src/kit/layout.tsx'
+    166: 'assets/studio-shell/src/kit/preview-frame.tsx'
+    167: 'assets/studio-shell/src/kit/save.tsx'
+    168: 'assets/studio-shell/src/kit/select-list.tsx'
+    169: 'assets/studio-shell/src/kit/table-model.ts'
+    170: 'assets/studio-shell/src/kit/tokens.ts'
+    171: 'assets/studio-shell/src/lib'
+    172: 'assets/studio-shell/src/lib/utils.ts'
+    173: 'assets/studio-shell/src/library'
+    174: 'assets/studio-shell/src/library/index.ts'
+    175: 'assets/studio-shell/src/store.tsx'
+    176: 'assets/studio-shell/src/studio'
+    177: 'assets/studio-shell/src/studio.css'
+    178: 'assets/studio-shell/src/studio/compare.ts'
+    179: 'assets/studio-shell/src/studio/config.ts'
+    180: 'assets/studio-shell/src/studio/design-runtime.ts'
+    181: 'assets/studio-shell/src/studio/design-ui'
+    182: 'assets/studio-shell/src/studio/design-ui/api.ts'
+    183: 'assets/studio-shell/src/studio/design-ui/controller.ts'
+    184: 'assets/studio-shell/src/studio/design-ui/direction-manager.tsx'
+    185: 'assets/studio-shell/src/studio/design-ui/direction-service.ts'
+    186: 'assets/studio-shell/src/studio/design-ui/loader.ts'
+    187: 'assets/studio-shell/src/studio/design-ui/react.tsx'
+    188: 'assets/studio-shell/src/studio/design-ui/review.ts'
+    189: 'assets/studio-shell/src/studio/design-ui/slots.tsx'
+    190: 'assets/studio-shell/src/studio/design-ui/types.ts'
+    191: 'assets/studio-shell/src/studio/design.ts'
+    192: 'assets/studio-shell/src/studio/directions.ts'
+    193: 'assets/studio-shell/src/studio/format.ts'
+    194: 'assets/studio-shell/src/studio/frame-client.ts'
+    195: 'assets/studio-shell/src/studio/frame-gestures.ts'
+    196: 'assets/studio-shell/src/studio/frame-sync.ts'
+    197: 'assets/studio-shell/src/studio/host.ts'
+    198: 'assets/studio-shell/src/studio/input.ts'
+    199: 'assets/studio-shell/src/studio/layouts.ts'
+    200: 'assets/studio-shell/src/studio/library'
+    201: 'assets/studio-shell/src/studio/library/api.ts'
+    202: 'assets/studio-shell/src/studio/library/code-block.tsx'
+    203: 'assets/studio-shell/src/studio/library/highlight.ts'
+    204: 'assets/studio-shell/src/studio/library/library-nav.tsx'
+    205: 'assets/studio-shell/src/studio/library/library-page.tsx'
+    206: 'assets/studio-shell/src/studio/library/link.ts'
+    207: 'assets/studio-shell/src/studio/library/model.ts'
+    208: 'assets/studio-shell/src/studio/library/preview-block.tsx'
+    209: 'assets/studio-shell/src/studio/library/rich-text.tsx'
+    210: 'assets/studio-shell/src/studio/library/schema.ts'
+    211: 'assets/studio-shell/src/studio/library/slots.tsx'
+    212: 'assets/studio-shell/src/studio/live-preview.tsx'
+    213: 'assets/studio-shell/src/studio/presenter-overlay.ts'
+    214: 'assets/studio-shell/src/studio/profile-frame.ts'
+    215: 'assets/studio-shell/src/studio/properties.ts'
+    216: 'assets/studio-shell/src/studio/protocol.ts'
+    217: 'assets/studio-shell/src/studio/saved.ts'
+    218: 'assets/studio-shell/src/studio/scenarios.ts'
+    219: 'assets/studio-shell/src/studio/stage-gestures.ts'
+    220: 'assets/studio-shell/src/studio/types.ts'
+    221: 'assets/studio-shell/src/studio/virtual-list.tsx'
+    222: 'assets/studio-shell/src/studio/workspace'
+    223: 'assets/studio-shell/src/studio/workspace/api.ts'
+    224: 'assets/studio-shell/src/studio/workspace/context.ts'
+    225: 'assets/studio-shell/src/studio/workspace/declaration.ts'
+    226: 'assets/studio-shell/src/studio/workspace/link.ts'
+    227: 'assets/studio-shell/src/studio/workspace/operations.ts'
+    228: 'assets/studio-shell/src/studio/workspace/slots.tsx'
+    229: 'assets/studio-shell/src/studio/workspace/stores.ts'
+    230: 'assets/studio-shell/src/studio/workspace/workspace-nav.tsx'
+    231: 'assets/studio-shell/src/studio/workspace/workspace-page.tsx'
+    232: 'assets/studio-shell/src/workspace'
+    233: 'assets/studio-shell/src/workspace/index.ts'
+    234: 'assets/studio-shell/studio.config.ts'
+    235: 'assets/studio-shell/tests'
+    236: 'assets/studio-shell/tests/interface-studio-presenter.test.mjs'
+    237: 'evidence'
+    238: 'evidence/design-editor'
+    239: 'evidence/design-editor/README.md'
+    240: 'evidence/design-editor/artifacts.json'
+    241: 'evidence/design-editor/browser-delta.json'
+    242: 'evidence/design-editor/browser-proof.json'
+    243: 'evidence/design-editor/browser-raw-input.json'
+    244: 'evidence/design-editor/browser-selected-basis.json'
+    245: 'evidence/design-editor/checks.json'
+    246: 'evidence/design-editor/screenshots'
+    247: 'evidence/design-editor/screenshots/chromium-NoCompiled.png'
+    248: 'evidence/design-editor/screenshots/chromium-RollbackReject.png'
+    249: 'evidence/design-editor/screenshots/chromium-component-only-design.png'
+    250: 'evidence/design-editor/screenshots/chromium-component-only-treatment.png'
+    251: 'evidence/design-editor/screenshots/chromium-next-1440-foundation.png'
+    252: 'evidence/design-editor/screenshots/chromium-next-1440-palette.png'
+    253: 'evidence/design-editor/screenshots/chromium-next-390-foundation.png'
+    254: 'evidence/design-editor/screenshots/chromium-next-390-palette.png'
+    255: 'evidence/design-editor/screenshots/chromium-next-768-foundation.png'
+    256: 'evidence/design-editor/screenshots/chromium-next-768-palette.png'
+    257: 'evidence/design-editor/screenshots/chromium-next-asset-error.png'
+    258: 'evidence/design-editor/screenshots/chromium-next-delta-foundation.png'
+    259: 'evidence/design-editor/screenshots/chromium-next-delta-radius-after-undo.png'
+    260: 'evidence/design-editor/screenshots/chromium-next-raw-radius-reopened.png'
+    261: 'evidence/design-editor/screenshots/chromium-next-raw-radius-reset.png'
+    262: 'evidence/design-editor/screenshots/chromium-next-raw-scale-cleared.png'
+    263: 'evidence/design-editor/screenshots/chromium-next-raw-scale-invalid.png'
+    264: 'evidence/design-editor/screenshots/chromium-vite-1440-foundation.png'
+    265: 'evidence/design-editor/screenshots/chromium-vite-1440-palette.png'
+    266: 'evidence/design-editor/screenshots/chromium-vite-390-foundation.png'
+    267: 'evidence/design-editor/screenshots/chromium-vite-390-palette.png'
+    268: 'evidence/design-editor/screenshots/chromium-vite-768-foundation.png'
+    269: 'evidence/design-editor/screenshots/chromium-vite-768-palette.png'
+    270: 'evidence/design-editor/screenshots/chromium-vite-asset-error.png'
+    271: 'evidence/design-editor/screenshots/chromium-vite-delta-foundation.png'
+    272: 'evidence/design-editor/screenshots/chromium-vite-delta-radius-after-undo.png'
+    273: 'evidence/design-editor/screenshots/chromium-vite-raw-radius-reopened.png'
+    274: 'evidence/design-editor/screenshots/chromium-vite-raw-radius-reset.png'
+    275: 'evidence/design-editor/screenshots/chromium-vite-raw-scale-cleared.png'
+    276: 'evidence/design-editor/screenshots/chromium-vite-raw-scale-invalid.png'
+    277: 'evidence/design-editor/screenshots/selected-basis-compare.png'
+    278: 'evidence/design-editor/screenshots/selected-basis-present.png'
+    279: 'evidence/design-editor/screenshots/webkit-NoCompiled.png'
+    280: 'evidence/design-editor/screenshots/webkit-RollbackReject.png'
+    281: 'evidence/design-editor/screenshots/webkit-component-only-design.png'
+    282: 'evidence/design-editor/screenshots/webkit-component-only-treatment.png'
+    283: 'evidence/design-editor/screenshots/webkit-next-1440-foundation.png'
+    284: 'evidence/design-editor/screenshots/webkit-next-1440-palette.png'
+    285: 'evidence/design-editor/screenshots/webkit-next-390-foundation.png'
+    286: 'evidence/design-editor/screenshots/webkit-next-390-palette.png'
+    287: 'evidence/design-editor/screenshots/webkit-next-768-foundation.png'
+    288: 'evidence/design-editor/screenshots/webkit-next-768-palette.png'
+    289: 'evidence/design-editor/screenshots/webkit-next-asset-error.png'
+    290: 'evidence/design-editor/screenshots/webkit-next-delta-foundation.png'
+    291: 'evidence/design-editor/screenshots/webkit-next-delta-radius-after-undo.png'
+    292: 'evidence/design-editor/screenshots/webkit-next-raw-radius-reopened.png'
+    293: 'evidence/design-editor/screenshots/webkit-next-raw-radius-reset.png'
+    294: 'evidence/design-editor/screenshots/webkit-next-raw-scale-cleared.png'
+    295: 'evidence/design-editor/screenshots/webkit-next-raw-scale-invalid.png'
+    296: 'evidence/design-editor/screenshots/webkit-vite-1440-foundation.png'
+    297: 'evidence/design-editor/screenshots/webkit-vite-1440-palette.png'
+    298: 'evidence/design-editor/screenshots/webkit-vite-390-foundation.png'
+    299: 'evidence/design-editor/screenshots/webkit-vite-390-palette.png'
+    300: 'evidence/design-editor/screenshots/webkit-vite-768-foundation.png'
+    301: 'evidence/design-editor/screenshots/webkit-vite-768-palette.png'
+    302: 'evidence/design-editor/screenshots/webkit-vite-asset-error.png'
+    303: 'evidence/design-editor/screenshots/webkit-vite-delta-foundation.png'
+    304: 'evidence/design-editor/screenshots/webkit-vite-delta-radius-after-undo.png'
+    305: 'evidence/design-editor/screenshots/webkit-vite-raw-radius-reopened.png'
+    306: 'evidence/design-editor/screenshots/webkit-vite-raw-radius-reset.png'
+    307: 'evidence/design-editor/screenshots/webkit-vite-raw-scale-cleared.png'
+    308: 'evidence/design-editor/screenshots/webkit-vite-raw-scale-invalid.png'
+    309: 'evidence/direction-labels'
+    310: 'evidence/direction-labels/README.md'
+    311: 'evidence/direction-labels/artifacts.json'
+    312: 'evidence/direction-labels/checks'
+    313: 'evidence/direction-labels/checks/next-build.txt'
+    314: 'evidence/direction-labels/checks/next-lint.txt'
+    315: 'evidence/direction-labels/checks/next-type.txt'
+    316: 'evidence/direction-labels/checks/node22-test.txt'
+    317: 'evidence/direction-labels/checks/node22-validate.txt'
+    318: 'evidence/direction-labels/checks/node24-test.txt'
+    319: 'evidence/direction-labels/checks/node24-validate.txt'
+    320: 'evidence/direction-labels/checks/vite-build.txt'
+    321: 'evidence/direction-labels/checks/vite-lint.txt'
+    322: 'evidence/direction-labels/checks/vite-type.txt'
+    323: 'evidence/direction-labels/green.json'
+    324: 'evidence/direction-labels/notice-green.json'
+    325: 'evidence/direction-labels/notice-red.json'
+    326: 'evidence/direction-labels/red.json'
+    327: 'evidence/direction-labels/review.md'
+    328: 'evidence/direction-labels/screenshots'
+    329: 'evidence/direction-labels/screenshots/chromium-next-1440-imported.png'
+    330: 'evidence/direction-labels/screenshots/chromium-next-1440-picker.png'
+    331: 'evidence/direction-labels/screenshots/chromium-next-1440-saved.png'
+    332: 'evidence/direction-labels/screenshots/chromium-next-390-imported.png'
+    333: 'evidence/direction-labels/screenshots/chromium-next-390-picker.png'
+    334: 'evidence/direction-labels/screenshots/chromium-next-390-saved.png'
+    335: 'evidence/direction-labels/screenshots/chromium-next-768-imported.png'
+    336: 'evidence/direction-labels/screenshots/chromium-next-768-picker.png'
+    337: 'evidence/direction-labels/screenshots/chromium-next-768-saved.png'
+    338: 'evidence/direction-labels/screenshots/chromium-vite-1440-imported.png'
+    339: 'evidence/direction-labels/screenshots/chromium-vite-1440-picker.png'
+    340: 'evidence/direction-labels/screenshots/chromium-vite-1440-saved.png'
+    341: 'evidence/direction-labels/screenshots/chromium-vite-390-imported.png'
+    342: 'evidence/direction-labels/screenshots/chromium-vite-390-picker.png'
+    343: 'evidence/direction-labels/screenshots/chromium-vite-390-saved.png'
+    344: 'evidence/direction-labels/screenshots/chromium-vite-768-imported.png'
+    345: 'evidence/direction-labels/screenshots/chromium-vite-768-picker.png'
+    346: 'evidence/direction-labels/screenshots/chromium-vite-768-saved.png'
+    347: 'evidence/direction-labels/screenshots/notice-chromium-next-1440.png'
+    348: 'evidence/direction-labels/screenshots/notice-chromium-next-390.png'
+    349: 'evidence/direction-labels/screenshots/notice-chromium-next-768.png'
+    350: 'evidence/direction-labels/screenshots/notice-chromium-vite-1440.png'
+    351: 'evidence/direction-labels/screenshots/notice-chromium-vite-390.png'
+    352: 'evidence/direction-labels/screenshots/notice-chromium-vite-768.png'
+    353: 'evidence/direction-labels/screenshots/notice-webkit-next-1440.png'
+    354: 'evidence/direction-labels/screenshots/notice-webkit-next-390.png'
+    355: 'evidence/direction-labels/screenshots/notice-webkit-next-768.png'
+    356: 'evidence/direction-labels/screenshots/notice-webkit-vite-1440.png'
+    357: 'evidence/direction-labels/screenshots/notice-webkit-vite-390.png'
+    358: 'evidence/direction-labels/screenshots/notice-webkit-vite-768.png'
+    359: 'evidence/direction-labels/screenshots/red-next.png'
+    360: 'evidence/direction-labels/screenshots/red-vite.png'
+    361: 'evidence/direction-labels/screenshots/webkit-next-1440-imported.png'
+    362: 'evidence/direction-labels/screenshots/webkit-next-1440-picker.png'
+    363: 'evidence/direction-labels/screenshots/webkit-next-1440-saved.png'
+    364: 'evidence/direction-labels/screenshots/webkit-next-390-imported.png'
+    365: 'evidence/direction-labels/screenshots/webkit-next-390-picker.png'
+    366: 'evidence/direction-labels/screenshots/webkit-next-390-saved.png'
+    367: 'evidence/direction-labels/screenshots/webkit-next-768-imported.png'
+    368: 'evidence/direction-labels/screenshots/webkit-next-768-picker.png'
+    369: 'evidence/direction-labels/screenshots/webkit-next-768-saved.png'
+    370: 'evidence/direction-labels/screenshots/webkit-vite-1440-imported.png'
+    371: 'evidence/direction-labels/screenshots/webkit-vite-1440-picker.png'
+    372: 'evidence/direction-labels/screenshots/webkit-vite-1440-saved.png'
+    373: 'evidence/direction-labels/screenshots/webkit-vite-390-imported.png'
+    374: 'evidence/direction-labels/screenshots/webkit-vite-390-picker.png'
+    375: 'evidence/direction-labels/screenshots/webkit-vite-390-saved.png'
+    376: 'evidence/direction-labels/screenshots/webkit-vite-768-imported.png'
+    377: 'evidence/direction-labels/screenshots/webkit-vite-768-picker.png'
+    378: 'evidence/direction-labels/screenshots/webkit-vite-768-saved.png'
+    379: 'evidence/direction-labels/source-cold-picker.json'
+    380: 'evidence/direction-labels/source.json'
+    381: 'evidence/directions'
+    382: 'evidence/directions/README.md'
+    383: 'evidence/directions/artifacts.json'
+    384: 'evidence/directions/browser-availability.json'
+    385: 'evidence/directions/browser-chromium.json'
+    386: 'evidence/directions/browser-live-unavailable.json'
+    387: 'evidence/directions/browser-native.json'
+    388: 'evidence/directions/browser-operations.json'
+    389: 'evidence/directions/browser-static.json'
+    390: 'evidence/directions/browser-webkit-focus.json'
+    391: 'evidence/directions/browser-webkit.json'
+    392: 'evidence/directions/checks'
+    393: 'evidence/directions/checks.json'
+    394: 'evidence/directions/checks/mm-directions-complete-node22-test.log'
+    395: 'evidence/directions/checks/mm-directions-complete-node22-validate.log'
+    396: 'evidence/directions/checks/mm-directions-complete-node24-test.log'
+    397: 'evidence/directions/checks/mm-directions-complete-node24-validate.log'
+    398: 'evidence/directions/checks/mm-directions-delivery-next-build.log'
+    399: 'evidence/directions/checks/mm-directions-delivery-next-lint.log'
+    400: 'evidence/directions/checks/mm-directions-delivery-next-type.log'
+    401: 'evidence/directions/checks/mm-directions-delivery-node22-test.log'
+    402: 'evidence/directions/checks/mm-directions-delivery-node22-validate.log'
+    403: 'evidence/directions/checks/mm-directions-delivery-node24-test.log'
+    404: 'evidence/directions/checks/mm-directions-delivery-node24-validate.log'
+    405: 'evidence/directions/checks/mm-directions-delivery-vite-build.log'
+    406: 'evidence/directions/checks/mm-directions-delivery-vite-lint.log'
+    407: 'evidence/directions/checks/mm-directions-delivery-vite-type.log'
+    408: 'evidence/directions/checks/mm-directions-final-next-build.log'
+    409: 'evidence/directions/checks/mm-directions-final-next-lint.log'
+    410: 'evidence/directions/checks/mm-directions-final-next-type.log'
+    411: 'evidence/directions/checks/mm-directions-final-vite-build.log'
+    412: 'evidence/directions/checks/mm-directions-final-vite-lint.log'
+    413: 'evidence/directions/checks/mm-directions-final-vite-type.log'
+    414: 'evidence/directions/checks/mm-directions-races-green.log'
+    415: 'evidence/directions/checks/mm-directions-races-red.log'
+    416: 'evidence/directions/native-freeze.json'
+    417: 'evidence/directions/native-receipt.json'
+    418: 'evidence/directions/next-type-transition.json'
+    419: 'evidence/directions/review.md'
+    420: 'evidence/directions/runtime-final.json'
+    421: 'evidence/directions/runtime-freeze.json'
+    422: 'evidence/directions/screenshots'
+    423: 'evidence/directions/screenshots/final-next-live-unavailable.png'
+    424: 'evidence/directions/screenshots/final-next-navigation.png'
+    425: 'evidence/directions/screenshots/final-next-operations.png'
+    426: 'evidence/directions/screenshots/final-next-production.png'
+    427: 'evidence/directions/screenshots/final-vite-live-unavailable.png'
+    428: 'evidence/directions/screenshots/final-vite-navigation.png'
+    429: 'evidence/directions/screenshots/final-vite-operations.png'
+    430: 'evidence/directions/screenshots/final-vite-production.png'
+    431: 'evidence/directions/screenshots/lineage-next-navigation.png'
+    432: 'evidence/directions/screenshots/lineage-vite-navigation.png'
+    433: 'evidence/directions/screenshots/native-next-1440-coarse-close.png'
+    434: 'evidence/directions/screenshots/native-next-1440-coarse-options.png'
+    435: 'evidence/directions/screenshots/native-next-1440-fine-close.png'
+    436: 'evidence/directions/screenshots/native-next-1440-fine-options.png'
+    437: 'evidence/directions/screenshots/native-next-390-coarse-close.png'
+    438: 'evidence/directions/screenshots/native-next-390-coarse-options.png'
+    439: 'evidence/directions/screenshots/native-next-390-fine-close.png'
+    440: 'evidence/directions/screenshots/native-next-390-fine-options.png'
+    441: 'evidence/directions/screenshots/native-next-768-coarse-close.png'
+    442: 'evidence/directions/screenshots/native-next-768-coarse-options.png'
+    443: 'evidence/directions/screenshots/native-next-768-fine-close.png'
+    444: 'evidence/directions/screenshots/native-next-768-fine-options.png'
+    445: 'evidence/directions/screenshots/native-next-static-compact.png'
+    446: 'evidence/directions/screenshots/native-next-static-failure.png'
+    447: 'evidence/directions/screenshots/native-next-static-recovery.png'
+    448: 'evidence/directions/screenshots/native-vite-1440-coarse-close.png'
+    449: 'evidence/directions/screenshots/native-vite-1440-coarse-options.png'
+    450: 'evidence/directions/screenshots/native-vite-1440-fine-close.png'
+    451: 'evidence/directions/screenshots/native-vite-1440-fine-options.png'
+    452: 'evidence/directions/screenshots/native-vite-390-coarse-close.png'
+    453: 'evidence/directions/screenshots/native-vite-390-coarse-options.png'
+    454: 'evidence/directions/screenshots/native-vite-390-fine-close.png'
+    455: 'evidence/directions/screenshots/native-vite-390-fine-options.png'
+    456: 'evidence/directions/screenshots/native-vite-768-coarse-close.png'
+    457: 'evidence/directions/screenshots/native-vite-768-coarse-options.png'
+    458: 'evidence/directions/screenshots/native-vite-768-fine-close.png'
+    459: 'evidence/directions/screenshots/native-vite-768-fine-options.png'
+    460: 'evidence/directions/screenshots/native-vite-static-compact.png'
+    461: 'evidence/directions/screenshots/native-vite-static-recovery.png'
+    462: 'evidence/directions/screenshots/next-compare-saved.png'
+    463: 'evidence/directions/screenshots/next-recovery.png'
+    464: 'evidence/directions/screenshots/next-saved-two.png'
+    465: 'evidence/directions/screenshots/next-webkit-compare-saved.png'
+    466: 'evidence/directions/screenshots/next-webkit-focus-1440.png'
+    467: 'evidence/directions/screenshots/next-webkit-focus-390.png'
+    468: 'evidence/directions/screenshots/next-webkit-recovery.png'
+    469: 'evidence/directions/screenshots/vite-compare-saved.png'
+    470: 'evidence/directions/screenshots/vite-recovery.png'
+    471: 'evidence/directions/screenshots/vite-saved-two.png'
+    472: 'evidence/directions/screenshots/vite-webkit-compare-saved.png'
+    473: 'evidence/directions/screenshots/vite-webkit-focus-1440.png'
+    474: 'evidence/directions/screenshots/vite-webkit-focus-390.png'
+    475: 'evidence/directions/screenshots/vite-webkit-recovery.png'
+    476: 'evidence/directions/served-lineage-final.json'
+    477: 'evidence/directions/served-lineage.json'
+    478: 'evidence/directions/watch-atomic-and-source-hmr.json'
+    479: 'evidence/directions/watch-configured-exclusion-green.json'
+    480: 'evidence/directions/watch-custom-paths.json'
+    481: 'evidence/directions/watch-custom-vite-conflict.json'
+    482: 'evidence/directions/watch-pre-fix-reproduction.json'
+    483: 'evidence/directions/watch-red-source.json'
+    484: 'evidence/popover-focus'
+    485: 'evidence/popover-focus/README.md'
+    486: 'evidence/popover-focus/artifacts.json'
+    487: 'evidence/popover-focus/capture.mjs'
+    488: 'evidence/popover-focus/checks'
+    489: 'evidence/popover-focus/checks.json'
+    490: 'evidence/popover-focus/checks/final-vite-build.txt'
+    491: 'evidence/popover-focus/checks/final-vite-lint.txt'
+    492: 'evidence/popover-focus/checks/final-vite-type.txt'
+    493: 'evidence/popover-focus/checks/next-build.txt'
+    494: 'evidence/popover-focus/checks/next-lineage.json'
+    495: 'evidence/popover-focus/checks/next-lint.txt'
+    496: 'evidence/popover-focus/checks/next-receipt.json'
+    497: 'evidence/popover-focus/checks/next-type.txt'
+    498: 'evidence/popover-focus/checks/node22-test.txt'
+    499: 'evidence/popover-focus/checks/node22-validate.txt'
+    500: 'evidence/popover-focus/checks/node24-test.txt'
+    501: 'evidence/popover-focus/checks/node24-validate.txt'
+    502: 'evidence/popover-focus/comparison.json'
+    503: 'evidence/popover-focus/diagnostics'
+    504: 'evidence/popover-focus/diagnostics/green-resources.json'
+    505: 'evidence/popover-focus/diagnostics/green.json'
+    506: 'evidence/popover-focus/diagnostics/message.txt'
+    507: 'evidence/popover-focus/diagnostics/reasons-resources.json'
+    508: 'evidence/popover-focus/diagnostics/reasons.json'
+    509: 'evidence/popover-focus/diagnostics/reasons.mjs'
+    510: 'evidence/popover-focus/diagnostics/red.json'
+    511: 'evidence/popover-focus/diagnostics/verify.mjs'
+    512: 'evidence/popover-focus/focus'
+    513: 'evidence/popover-focus/focus/green-resources.json'
+    514: 'evidence/popover-focus/focus/green.json'
+    515: 'evidence/popover-focus/focus/modes-resources.json'
+    516: 'evidence/popover-focus/focus/modes.json'
+    517: 'evidence/popover-focus/focus/red.json'
+    518: 'evidence/popover-focus/independent-review.md'
+    519: 'evidence/popover-focus/modes.mjs'
+    520: 'evidence/popover-focus/screenshots'
+    521: 'evidence/popover-focus/screenshots/diagnostic-chromium-next-initial-failure.png'
+    522: 'evidence/popover-focus/screenshots/diagnostic-chromium-next-loader-failure.png'
+    523: 'evidence/popover-focus/screenshots/diagnostic-chromium-next-selection.png'
+    524: 'evidence/popover-focus/screenshots/diagnostic-chromium-vite-initial-failure.png'
+    525: 'evidence/popover-focus/screenshots/diagnostic-chromium-vite-loader-failure.png'
+    526: 'evidence/popover-focus/screenshots/diagnostic-chromium-vite-selection.png'
+    527: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-next-1440.png'
+    528: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-next-390.png'
+    529: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-next-768.png'
+    530: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-vite-1440.png'
+    531: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-vite-390.png'
+    532: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-vite-768.png'
+    533: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-next-1440.png'
+    534: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-next-390.png'
+    535: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-next-768.png'
+    536: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-vite-1440.png'
+    537: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-vite-390.png'
+    538: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-vite-768.png'
+    539: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-next-1440.png'
+    540: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-next-390.png'
+    541: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-next-768.png'
+    542: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-vite-1440.png'
+    543: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-vite-390.png'
+    544: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-vite-768.png'
+    545: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-next-1440.png'
+    546: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-next-390.png'
+    547: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-next-768.png'
+    548: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-vite-1440.png'
+    549: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-vite-390.png'
+    550: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-vite-768.png'
+    551: 'evidence/popover-focus/screenshots/diagnostic-webkit-next-initial-failure.png'
+    552: 'evidence/popover-focus/screenshots/diagnostic-webkit-next-loader-failure.png'
+    553: 'evidence/popover-focus/screenshots/diagnostic-webkit-next-selection.png'
+    554: 'evidence/popover-focus/screenshots/diagnostic-webkit-vite-initial-failure.png'
+    555: 'evidence/popover-focus/screenshots/diagnostic-webkit-vite-loader-failure.png'
+    556: 'evidence/popover-focus/screenshots/diagnostic-webkit-vite-selection.png'
+    557: 'evidence/popover-focus/screenshots/focus-chromium-next-1440-controlled-choice.png'
+    558: 'evidence/popover-focus/screenshots/focus-chromium-next-1440-uncontrolled.png'
+    559: 'evidence/popover-focus/screenshots/focus-chromium-next-390-controlled-choice.png'
+    560: 'evidence/popover-focus/screenshots/focus-chromium-next-390-uncontrolled.png'
+    561: 'evidence/popover-focus/screenshots/focus-chromium-vite-1440-controlled-choice.png'
+    562: 'evidence/popover-focus/screenshots/focus-chromium-vite-1440-uncontrolled.png'
+    563: 'evidence/popover-focus/screenshots/focus-chromium-vite-390-controlled-choice.png'
+    564: 'evidence/popover-focus/screenshots/focus-chromium-vite-390-uncontrolled.png'
+    565: 'evidence/popover-focus/screenshots/focus-green-chromium-next-1440-directions.png'
+    566: 'evidence/popover-focus/screenshots/focus-green-chromium-next-1440-palette.png'
+    567: 'evidence/popover-focus/screenshots/focus-green-chromium-next-390-directions.png'
+    568: 'evidence/popover-focus/screenshots/focus-green-chromium-next-390-palette.png'
+    569: 'evidence/popover-focus/screenshots/focus-green-chromium-vite-1440-directions.png'
+    570: 'evidence/popover-focus/screenshots/focus-green-chromium-vite-1440-palette.png'
+    571: 'evidence/popover-focus/screenshots/focus-green-chromium-vite-390-directions.png'
+    572: 'evidence/popover-focus/screenshots/focus-green-chromium-vite-390-palette.png'
+    573: 'evidence/popover-focus/screenshots/focus-green-webkit-next-1440-directions.png'
+    574: 'evidence/popover-focus/screenshots/focus-green-webkit-next-1440-palette.png'
+    575: 'evidence/popover-focus/screenshots/focus-green-webkit-next-390-directions.png'
+    576: 'evidence/popover-focus/screenshots/focus-green-webkit-next-390-palette.png'
+    577: 'evidence/popover-focus/screenshots/focus-green-webkit-vite-1440-directions.png'
+    578: 'evidence/popover-focus/screenshots/focus-green-webkit-vite-1440-palette.png'
+    579: 'evidence/popover-focus/screenshots/focus-green-webkit-vite-390-directions.png'
+    580: 'evidence/popover-focus/screenshots/focus-green-webkit-vite-390-palette.png'
+    581: 'evidence/popover-focus/screenshots/focus-red-chromium-next-1440-directions.png'
+    582: 'evidence/popover-focus/screenshots/focus-red-chromium-next-1440-palette.png'
+    583: 'evidence/popover-focus/screenshots/focus-red-chromium-next-390-directions.png'
+    584: 'evidence/popover-focus/screenshots/focus-red-chromium-next-390-palette.png'
+    585: 'evidence/popover-focus/screenshots/focus-red-chromium-vite-1440-directions.png'
+    586: 'evidence/popover-focus/screenshots/focus-red-chromium-vite-1440-palette.png'
+    587: 'evidence/popover-focus/screenshots/focus-red-chromium-vite-390-directions.png'
+    588: 'evidence/popover-focus/screenshots/focus-red-chromium-vite-390-palette.png'
+    589: 'evidence/popover-focus/screenshots/focus-red-webkit-next-1440-directions.png'
+    590: 'evidence/popover-focus/screenshots/focus-red-webkit-next-1440-palette.png'
+    591: 'evidence/popover-focus/screenshots/focus-red-webkit-next-390-directions.png'
+    592: 'evidence/popover-focus/screenshots/focus-red-webkit-next-390-palette.png'
+    593: 'evidence/popover-focus/screenshots/focus-red-webkit-vite-1440-directions.png'
+    594: 'evidence/popover-focus/screenshots/focus-red-webkit-vite-1440-palette.png'
+    595: 'evidence/popover-focus/screenshots/focus-red-webkit-vite-390-directions.png'
+    596: 'evidence/popover-focus/screenshots/focus-red-webkit-vite-390-palette.png'
+    597: 'evidence/popover-focus/screenshots/focus-webkit-next-1440-controlled-choice.png'
+    598: 'evidence/popover-focus/screenshots/focus-webkit-next-1440-uncontrolled.png'
+    599: 'evidence/popover-focus/screenshots/focus-webkit-next-390-controlled-choice.png'
+    600: 'evidence/popover-focus/screenshots/focus-webkit-next-390-uncontrolled.png'
+    601: 'evidence/popover-focus/screenshots/focus-webkit-vite-1440-controlled-choice.png'
+    602: 'evidence/popover-focus/screenshots/focus-webkit-vite-1440-uncontrolled.png'
+    603: 'evidence/popover-focus/screenshots/focus-webkit-vite-390-controlled-choice.png'
+    604: 'evidence/popover-focus/screenshots/focus-webkit-vite-390-uncontrolled.png'
+    605: 'evidence/popover-focus/source-freeze.json'
+    606: 'evidence/popover-focus/source.json'
+    607: 'evidence/popover-focus/update-preservation.json'
+    608: 'evidence/popover-focus/vendor.json'
+    609: 'evidence/popover-focus/verified-fetches.json'
+    610: 'evidence/popover-focus/verify.mjs'
+    611: 'evidence/review-context'
+    612: 'evidence/review-context/README.md'
+    613: 'evidence/review-context/artifacts.json'
+    614: 'evidence/review-context/browser.json'
+    615: 'evidence/review-context/checks.json'
+    616: 'evidence/review-context/picker-production.json'
+    617: 'evidence/review-context/picker-source.json'
+    618: 'evidence/review-context/picker.json'
+    619: 'evidence/review-context/screenshots'
+    620: 'evidence/review-context/screenshots/next-1440-picker-production.png'
+    621: 'evidence/review-context/screenshots/next-1440-picker.png'
+    622: 'evidence/review-context/screenshots/next-1440.png'
+    623: 'evidence/review-context/screenshots/next-390-picker-production.png'
+    624: 'evidence/review-context/screenshots/next-390-picker.png'
+    625: 'evidence/review-context/screenshots/next-390.png'
+    626: 'evidence/review-context/screenshots/next-768.png'
+    627: 'evidence/review-context/screenshots/vite-1440-picker-production.png'
+    628: 'evidence/review-context/screenshots/vite-1440-picker.png'
+    629: 'evidence/review-context/screenshots/vite-1440.png'
+    630: 'evidence/review-context/screenshots/vite-390-picker-production.png'
+    631: 'evidence/review-context/screenshots/vite-390-picker.png'
+    632: 'evidence/review-context/screenshots/vite-390.png'
+    633: 'evidence/review-context/screenshots/vite-768.png'
+    634: 'evidence/review-context/source.json'
+    635: 'evidence/select-items'
+    636: 'evidence/select-items/README.md'
+    637: 'evidence/select-items/artifacts.json'
+    638: 'evidence/select-items/checks'
+    639: 'evidence/select-items/checks/next-build.log'
+    640: 'evidence/select-items/checks/next-lint.log'
+    641: 'evidence/select-items/checks/next-type.log'
+    642: 'evidence/select-items/checks/node22-test.log'
+    643: 'evidence/select-items/checks/node22-validate.log'
+    644: 'evidence/select-items/checks/node24-test.log'
+    645: 'evidence/select-items/checks/node24-validate.log'
+    646: 'evidence/select-items/checks/vite-build.log'
+    647: 'evidence/select-items/checks/vite-lint.log'
+    648: 'evidence/select-items/checks/vite-type.log'
+    649: 'evidence/select-items/green.json'
+    650: 'evidence/select-items/prior-check-log-delivery.json'
+    651: 'evidence/select-items/receipt-delivery-review.md'
+    652: 'evidence/select-items/red.json'
+    653: 'evidence/select-items/review.md'
+    654: 'evidence/select-items/screenshots'
+    655: 'evidence/select-items/screenshots/green-chromium-next-1440-coarse.png'
+    656: 'evidence/select-items/screenshots/green-chromium-next-1440-fine.png'
+    657: 'evidence/select-items/screenshots/green-chromium-next-390-fine.png'
+    658: 'evidence/select-items/screenshots/green-chromium-next-768-fine.png'
+    659: 'evidence/select-items/screenshots/green-chromium-vite-1440-coarse.png'
+    660: 'evidence/select-items/screenshots/green-chromium-vite-1440-fine.png'
+    661: 'evidence/select-items/screenshots/green-chromium-vite-390-fine.png'
+    662: 'evidence/select-items/screenshots/green-chromium-vite-768-fine.png'
+    663: 'evidence/select-items/screenshots/green-webkit-next-1440-coarse.png'
+    664: 'evidence/select-items/screenshots/green-webkit-next-1440-fine.png'
+    665: 'evidence/select-items/screenshots/green-webkit-next-390-fine.png'
+    666: 'evidence/select-items/screenshots/green-webkit-next-768-fine.png'
+    667: 'evidence/select-items/screenshots/green-webkit-vite-1440-coarse.png'
+    668: 'evidence/select-items/screenshots/green-webkit-vite-1440-fine.png'
+    669: 'evidence/select-items/screenshots/green-webkit-vite-390-fine.png'
+    670: 'evidence/select-items/screenshots/green-webkit-vite-768-fine.png'
+    671: 'evidence/select-items/screenshots/red-chromium-vite-390-fine.png'
+    672: 'evidence/select-items/screenshots/red-chromium-vite-768-fine.png'
+    673: 'evidence/select-items/source.json'
+    674: 'evidence/source-inspector-dialog'
+    675: 'evidence/source-inspector-dialog/dialog'
+    676: 'evidence/source-inspector-dialog/dialog/chromium-next-1440.png'
+    677: 'evidence/source-inspector-dialog/dialog/chromium-next-390.png'
+    678: 'evidence/source-inspector-dialog/dialog/chromium-next-768.png'
+    679: 'evidence/source-inspector-dialog/dialog/chromium-vite-1440.png'
+    680: 'evidence/source-inspector-dialog/dialog/chromium-vite-390.png'
+    681: 'evidence/source-inspector-dialog/dialog/chromium-vite-768.png'
+    682: 'evidence/source-inspector-dialog/dialog/fixture.tsx'
+    683: 'evidence/source-inspector-dialog/dialog/green.json'
+    684: 'evidence/source-inspector-dialog/dialog/verify.mjs'
+    685: 'evidence/source-inspector-dialog/dialog/webkit-next-1440.png'
+    686: 'evidence/source-inspector-dialog/dialog/webkit-next-390.png'
+    687: 'evidence/source-inspector-dialog/dialog/webkit-next-768.png'
+    688: 'evidence/source-inspector-dialog/dialog/webkit-vite-1440.png'
+    689: 'evidence/source-inspector-dialog/dialog/webkit-vite-390.png'
+    690: 'evidence/source-inspector-dialog/dialog/webkit-vite-768.png'
+    691: 'evidence/source-inspector-dialog/fixture-lineage.json'
+    692: 'evidence/source-inspector-dialog/fixtures'
+    693: 'evidence/source-inspector-dialog/fixtures/design-adapter.ts'
+    694: 'evidence/source-inspector-dialog/fixtures/design-runtime'
+    695: 'evidence/source-inspector-dialog/fixtures/design-runtime/index.ts'
+    696: 'evidence/source-inspector-dialog/fixtures/design-runtime/loaders.ts'
+    697: 'evidence/source-inspector-dialog/fixtures/design-runtime/provenance-long.ts'
+    698: 'evidence/source-inspector-dialog/fixtures/design-runtime/provenance-short.ts'
+    699: 'evidence/source-inspector-dialog/fixtures/design-ui'
+    700: 'evidence/source-inspector-dialog/fixtures/design-ui/centered.tsx'
+    701: 'evidence/source-inspector-dialog/fixtures/design-ui/loaders.ts'
+    702: 'evidence/source-inspector-dialog/inspector'
+    703: 'evidence/source-inspector-dialog/inspector/comparison.json'
+    704: 'evidence/source-inspector-dialog/inspector/fixture-data.json'
+    705: 'evidence/source-inspector-dialog/inspector/green-chromium-next-1440-long.png'
+    706: 'evidence/source-inspector-dialog/inspector/green-chromium-next-1440-short.png'
+    707: 'evidence/source-inspector-dialog/inspector/green-chromium-next-390-long.png'
+    708: 'evidence/source-inspector-dialog/inspector/green-chromium-next-390-short.png'
+    709: 'evidence/source-inspector-dialog/inspector/green-chromium-next-768-long.png'
+    710: 'evidence/source-inspector-dialog/inspector/green-chromium-next-768-short.png'
+    711: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-1440-long.png'
+    712: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-1440-short.png'
+    713: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-390-long.png'
+    714: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-390-short.png'
+    715: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-768-long.png'
+    716: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-768-short.png'
+    717: 'evidence/source-inspector-dialog/inspector/green-webkit-next-1440-long.png'
+    718: 'evidence/source-inspector-dialog/inspector/green-webkit-next-1440-short.png'
+    719: 'evidence/source-inspector-dialog/inspector/green-webkit-next-390-long.png'
+    720: 'evidence/source-inspector-dialog/inspector/green-webkit-next-390-short.png'
+    721: 'evidence/source-inspector-dialog/inspector/green-webkit-next-768-long.png'
+    722: 'evidence/source-inspector-dialog/inspector/green-webkit-next-768-short.png'
+    723: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-1440-long.png'
+    724: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-1440-short.png'
+    725: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-390-long.png'
+    726: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-390-short.png'
+    727: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-768-long.png'
+    728: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-768-short.png'
+    729: 'evidence/source-inspector-dialog/inspector/green.json'
+    730: 'evidence/source-inspector-dialog/inspector/red-chromium-next-1440-long.png'
+    731: 'evidence/source-inspector-dialog/inspector/red-chromium-next-1440-short.png'
+    732: 'evidence/source-inspector-dialog/inspector/red-chromium-next-390-long.png'
+    733: 'evidence/source-inspector-dialog/inspector/red-chromium-next-390-short.png'
+    734: 'evidence/source-inspector-dialog/inspector/red-chromium-next-768-long.png'
+    735: 'evidence/source-inspector-dialog/inspector/red-chromium-next-768-short.png'
+    736: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-1440-long.png'
+    737: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-1440-short.png'
+    738: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-390-long.png'
+    739: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-390-short.png'
+    740: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-768-long.png'
+    741: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-768-short.png'
+    742: 'evidence/source-inspector-dialog/inspector/red-webkit-next-1440-long.png'
+    743: 'evidence/source-inspector-dialog/inspector/red-webkit-next-1440-short.png'
+    744: 'evidence/source-inspector-dialog/inspector/red-webkit-next-390-long.png'
+    745: 'evidence/source-inspector-dialog/inspector/red-webkit-next-390-short.png'
+    746: 'evidence/source-inspector-dialog/inspector/red-webkit-next-768-long.png'
+    747: 'evidence/source-inspector-dialog/inspector/red-webkit-next-768-short.png'
+    748: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-1440-long.png'
+    749: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-1440-short.png'
+    750: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-390-long.png'
+    751: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-390-short.png'
+    752: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-768-long.png'
+    753: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-768-short.png'
+    754: 'evidence/source-inspector-dialog/inspector/red.json'
+    755: 'evidence/source-inspector-dialog/inspector/verify.mjs'
+    756: 'evidence/source-inspector-dialog/lineage'
+    757: 'evidence/source-inspector-dialog/lineage/capture.mjs'
+    758: 'evidence/source-inspector-dialog/lineage/lineage.json'
+    759: 'evidence/source-inspector-dialog/lineage/lineage.mjs'
+    760: 'evidence/source-inspector-dialog/source-freeze.json'
+    761: 'references'
+    762: 'references/adapters.md'
+    763: 'references/design-ui.md'
+    764: 'references/directions.md'
+    765: 'references/frame-protocol.md'
+    766: 'references/library.md'
+    767: 'references/manifest.md'
+    768: 'references/native.md'
+    769: 'references/presentation.md'
+    770: 'references/scenarios.md'
+    771: 'references/shell.md'
+    772: 'references/updating.md'
+    773: 'references/verification.md'
+    774: 'references/web.md'
+    775: 'references/workspace.md'
+    776: 'scripts'
+    777: 'scripts/compose-host.mjs'
+    778: 'scripts/update-studio.mjs'
+    779: 'scripts/validate-manifest.mjs'
+  actual:
+    0: 'PACKAGE_ID'
+    1: 'PACKAGE_VERSION'
+    2: 'SKILL.md'
+    3: 'agents'
+    4: 'agents/openai.yaml'
+    5: 'assets'
+    6: 'assets/studio-hosts'
+    7: 'assets/studio-hosts/next'
+    8: 'assets/studio-hosts/next/app'
+    9: 'assets/studio-hosts/next/app/layout.tsx'
+    10: 'assets/studio-hosts/next/app/page.tsx'
+    11: 'assets/studio-hosts/next/app/saved-route.ts'
+    12: 'assets/studio-hosts/next/app/studio-client.tsx'
+    13: 'assets/studio-hosts/next/eslint.config.js'
+    14: 'assets/studio-hosts/next/next-env.d.ts'
+    15: 'assets/studio-hosts/next/next.config.mjs'
+    16: 'assets/studio-hosts/next/package-lock.json'
+    17: 'assets/studio-hosts/next/package.json'
+    18: 'assets/studio-hosts/next/postcss.config.mjs'
+    19: 'assets/studio-hosts/next/scripts'
+    20: 'assets/studio-hosts/next/scripts/lint-acceptance.mjs'
+    21: 'assets/studio-hosts/next/scripts/prepare-next.ts'
+    22: 'assets/studio-hosts/next/scripts/preview.vite.ts'
+    23: 'assets/studio-hosts/next/src'
+    24: 'assets/studio-hosts/next/src/studio-entry.tsx'
+    25: 'assets/studio-hosts/next/src/studio-host.ts'
+    26: 'assets/studio-hosts/next/tsconfig.json'
+    27: 'assets/studio-hosts/vite'
+    28: 'assets/studio-hosts/vite/eslint.config.js'
+    29: 'assets/studio-hosts/vite/index.html'
+    30: 'assets/studio-hosts/vite/package-lock.json'
+    31: 'assets/studio-hosts/vite/package.json'
+    32: 'assets/studio-hosts/vite/src'
+    33: 'assets/studio-hosts/vite/src/main.tsx'
+    34: 'assets/studio-hosts/vite/src/studio-host.ts'
+    35: 'assets/studio-hosts/vite/tsconfig.app.json'
+    36: 'assets/studio-hosts/vite/tsconfig.json'
+    37: 'assets/studio-hosts/vite/tsconfig.node.json'
+    38: 'assets/studio-hosts/vite/vite.config.ts'
+    39: 'assets/studio-shell'
+    40: 'assets/studio-shell.releases.json'
+    41: 'assets/studio-shell/.gitignore'
+    42: 'assets/studio-shell/.prettierignore'
+    43: 'assets/studio-shell/.prettierrc'
+    44: 'assets/studio-shell/README.md'
+    45: 'assets/studio-shell/UPDATING.md'
+    46: 'assets/studio-shell/components.json'
+    47: 'assets/studio-shell/example'
+    48: 'assets/studio-shell/example/design-adapter.ts'
+    49: 'assets/studio-shell/example/design-runtime'
+    50: 'assets/studio-shell/example/design-runtime/assets.css'
+    51: 'assets/studio-shell/example/design-runtime/index.ts'
+    52: 'assets/studio-shell/example/design-runtime/loaders.ts'
+    53: 'assets/studio-shell/example/design-ui'
+    54: 'assets/studio-shell/example/design-ui/index.tsx'
+    55: 'assets/studio-shell/example/design-ui/loaders.ts'
+    56: 'assets/studio-shell/example/index.html'
+    57: 'assets/studio-shell/example/library'
+    58: 'assets/studio-shell/example/library/adapter.ts'
+    59: 'assets/studio-shell/example/library/button-row.ts'
+    60: 'assets/studio-shell/example/library/button.ts'
+    61: 'assets/studio-shell/example/library/declaration.ts'
+    62: 'assets/studio-shell/example/library/frame.html'
+    63: 'assets/studio-shell/example/library/frame.ts'
+    64: 'assets/studio-shell/example/library/icon-button.ts'
+    65: 'assets/studio-shell/example/library/index.ts'
+    66: 'assets/studio-shell/example/library/invalid.ts'
+    67: 'assets/studio-shell/example/library/library.css'
+    68: 'assets/studio-shell/example/library/sections.ts'
+    69: 'assets/studio-shell/example/library/static.ts'
+    70: 'assets/studio-shell/example/library/text-field.ts'
+    71: 'assets/studio-shell/example/main.ts'
+    72: 'assets/studio-shell/example/product.css'
+    73: 'assets/studio-shell/example/static-adapter.ts'
+    74: 'assets/studio-shell/example/workspace'
+    75: 'assets/studio-shell/example/workspace/adapter.ts'
+    76: 'assets/studio-shell/example/workspace/catalog.tsx'
+    77: 'assets/studio-shell/example/workspace/index.ts'
+    78: 'assets/studio-shell/example/workspace/mock-host.mjs'
+    79: 'assets/studio-shell/example/workspace/orphan.ts'
+    80: 'assets/studio-shell/example/workspace/site.tsx'
+    81: 'assets/studio-shell/example/workspace/static.ts'
+    82: 'assets/studio-shell/public'
+    83: 'assets/studio-shell/public/favicon.svg'
+    84: 'assets/studio-shell/scripts'
+    85: 'assets/studio-shell/scripts/acceptance.mjs'
+    86: 'assets/studio-shell/scripts/design-ui-boundary.mjs'
+    87: 'assets/studio-shell/scripts/host-acceptance.mjs'
+    88: 'assets/studio-shell/scripts/library-boundary.mjs'
+    89: 'assets/studio-shell/scripts/saved-file.ts'
+    90: 'assets/studio-shell/scripts/saved-sources.ts'
+    91: 'assets/studio-shell/scripts/workspace-boundary.mjs'
+    92: 'assets/studio-shell/src'
+    93: 'assets/studio-shell/src/App.tsx'
+    94: 'assets/studio-shell/src/adapter.ts'
+    95: 'assets/studio-shell/src/adapters'
+    96: 'assets/studio-shell/src/adapters/example.ts'
+    97: 'assets/studio-shell/src/adapters/synthetic.ts'
+    98: 'assets/studio-shell/src/components'
+    99: 'assets/studio-shell/src/components/studio'
+    100: 'assets/studio-shell/src/components/studio/bits.tsx'
+    101: 'assets/studio-shell/src/components/studio/canvas.tsx'
+    102: 'assets/studio-shell/src/components/studio/chrome.tsx'
+    103: 'assets/studio-shell/src/components/studio/command.tsx'
+    104: 'assets/studio-shell/src/components/studio/design.tsx'
+    105: 'assets/studio-shell/src/components/studio/preview.tsx'
+    106: 'assets/studio-shell/src/components/studio/properties.tsx'
+    107: 'assets/studio-shell/src/components/studio/rail-panel.tsx'
+    108: 'assets/studio-shell/src/components/studio/resize-handles.tsx'
+    109: 'assets/studio-shell/src/components/studio/responsive.tsx'
+    110: 'assets/studio-shell/src/components/studio/stage-nav.tsx'
+    111: 'assets/studio-shell/src/components/studio/views.tsx'
+    112: 'assets/studio-shell/src/components/theme-provider.tsx'
+    113: 'assets/studio-shell/src/components/ui'
+    114: 'assets/studio-shell/src/components/ui/alert.tsx'
+    115: 'assets/studio-shell/src/components/ui/badge.tsx'
+    116: 'assets/studio-shell/src/components/ui/breadcrumb.tsx'
+    117: 'assets/studio-shell/src/components/ui/button.tsx'
+    118: 'assets/studio-shell/src/components/ui/checkbox.tsx'
+    119: 'assets/studio-shell/src/components/ui/collapsible.tsx'
+    120: 'assets/studio-shell/src/components/ui/command.tsx'
+    121: 'assets/studio-shell/src/components/ui/dialog.tsx'
+    122: 'assets/studio-shell/src/components/ui/drawer.tsx'
+    123: 'assets/studio-shell/src/components/ui/dropdown-menu.tsx'
+    124: 'assets/studio-shell/src/components/ui/empty.tsx'
+    125: 'assets/studio-shell/src/components/ui/field.tsx'
+    126: 'assets/studio-shell/src/components/ui/hover-card.tsx'
+    127: 'assets/studio-shell/src/components/ui/input-group.tsx'
+    128: 'assets/studio-shell/src/components/ui/input.tsx'
+    129: 'assets/studio-shell/src/components/ui/item.tsx'
+    130: 'assets/studio-shell/src/components/ui/kbd.tsx'
+    131: 'assets/studio-shell/src/components/ui/label.tsx'
+    132: 'assets/studio-shell/src/components/ui/popover.tsx'
+    133: 'assets/studio-shell/src/components/ui/radio-group.tsx'
+    134: 'assets/studio-shell/src/components/ui/resizable.tsx'
+    135: 'assets/studio-shell/src/components/ui/scroll-area.tsx'
+    136: 'assets/studio-shell/src/components/ui/select.tsx'
+    137: 'assets/studio-shell/src/components/ui/separator.tsx'
+    138: 'assets/studio-shell/src/components/ui/sheet.tsx'
+    139: 'assets/studio-shell/src/components/ui/sidebar.tsx'
+    140: 'assets/studio-shell/src/components/ui/skeleton.tsx'
+    141: 'assets/studio-shell/src/components/ui/slider.tsx'
+    142: 'assets/studio-shell/src/components/ui/sonner.tsx'
+    143: 'assets/studio-shell/src/components/ui/spinner.tsx'
+    144: 'assets/studio-shell/src/components/ui/switch.tsx'
+    145: 'assets/studio-shell/src/components/ui/tabs.tsx'
+    146: 'assets/studio-shell/src/components/ui/textarea.tsx'
+    147: 'assets/studio-shell/src/components/ui/toggle-group.tsx'
+    148: 'assets/studio-shell/src/components/ui/toggle.tsx'
+    149: 'assets/studio-shell/src/components/ui/tooltip.tsx'
+    150: 'assets/studio-shell/src/design-runtime'
+    151: 'assets/studio-shell/src/design-runtime/index.ts'
+    152: 'assets/studio-shell/src/design-ui'
+    153: 'assets/studio-shell/src/design-ui/index.ts'
+    154: 'assets/studio-shell/src/hooks'
+    155: 'assets/studio-shell/src/hooks/use-mobile.ts'
+    156: 'assets/studio-shell/src/index.css'
+    157: 'assets/studio-shell/src/kit'
+    158: 'assets/studio-shell/src/kit/data.tsx'
+    159: 'assets/studio-shell/src/kit/design-controls.tsx'
+    160: 'assets/studio-shell/src/kit/editor-dialog.tsx'
+    161: 'assets/studio-shell/src/kit/empty.tsx'
+    162: 'assets/studio-shell/src/kit/field.tsx'
+    163: 'assets/studio-shell/src/kit/icons.tsx'
+    164: 'assets/studio-shell/src/kit/index.ts'
+    165: 'assets/studio-shell/src/kit/layout.tsx'
+    166: 'assets/studio-shell/src/kit/preview-frame.tsx'
+    167: 'assets/studio-shell/src/kit/save.tsx'
+    168: 'assets/studio-shell/src/kit/select-list.tsx'
+    169: 'assets/studio-shell/src/kit/table-model.ts'
+    170: 'assets/studio-shell/src/kit/tokens.ts'
+    171: 'assets/studio-shell/src/lib'
+    172: 'assets/studio-shell/src/lib/utils.ts'
+    173: 'assets/studio-shell/src/library'
+    174: 'assets/studio-shell/src/library/index.ts'
+    175: 'assets/studio-shell/src/store.tsx'
+    176: 'assets/studio-shell/src/studio'
+    177: 'assets/studio-shell/src/studio.css'
+    178: 'assets/studio-shell/src/studio/compare.ts'
+    179: 'assets/studio-shell/src/studio/config.ts'
+    180: 'assets/studio-shell/src/studio/design-runtime.ts'
+    181: 'assets/studio-shell/src/studio/design-ui'
+    182: 'assets/studio-shell/src/studio/design-ui/api.ts'
+    183: 'assets/studio-shell/src/studio/design-ui/controller.ts'
+    184: 'assets/studio-shell/src/studio/design-ui/direction-manager.tsx'
+    185: 'assets/studio-shell/src/studio/design-ui/direction-service.ts'
+    186: 'assets/studio-shell/src/studio/design-ui/loader.ts'
+    187: 'assets/studio-shell/src/studio/design-ui/react.tsx'
+    188: 'assets/studio-shell/src/studio/design-ui/review.ts'
+    189: 'assets/studio-shell/src/studio/design-ui/slots.tsx'
+    190: 'assets/studio-shell/src/studio/design-ui/types.ts'
+    191: 'assets/studio-shell/src/studio/design.ts'
+    192: 'assets/studio-shell/src/studio/directions.ts'
+    193: 'assets/studio-shell/src/studio/format.ts'
+    194: 'assets/studio-shell/src/studio/frame-client.ts'
+    195: 'assets/studio-shell/src/studio/frame-gestures.ts'
+    196: 'assets/studio-shell/src/studio/frame-sync.ts'
+    197: 'assets/studio-shell/src/studio/host.ts'
+    198: 'assets/studio-shell/src/studio/input.ts'
+    199: 'assets/studio-shell/src/studio/layouts.ts'
+    200: 'assets/studio-shell/src/studio/library'
+    201: 'assets/studio-shell/src/studio/library/api.ts'
+    202: 'assets/studio-shell/src/studio/library/code-block.tsx'
+    203: 'assets/studio-shell/src/studio/library/highlight.ts'
+    204: 'assets/studio-shell/src/studio/library/library-nav.tsx'
+    205: 'assets/studio-shell/src/studio/library/library-page.tsx'
+    206: 'assets/studio-shell/src/studio/library/link.ts'
+    207: 'assets/studio-shell/src/studio/library/model.ts'
+    208: 'assets/studio-shell/src/studio/library/preview-block.tsx'
+    209: 'assets/studio-shell/src/studio/library/rich-text.tsx'
+    210: 'assets/studio-shell/src/studio/library/schema.ts'
+    211: 'assets/studio-shell/src/studio/library/slots.tsx'
+    212: 'assets/studio-shell/src/studio/live-preview.tsx'
+    213: 'assets/studio-shell/src/studio/presenter-overlay.ts'
+    214: 'assets/studio-shell/src/studio/profile-frame.ts'
+    215: 'assets/studio-shell/src/studio/properties.ts'
+    216: 'assets/studio-shell/src/studio/protocol.ts'
+    217: 'assets/studio-shell/src/studio/saved.ts'
+    218: 'assets/studio-shell/src/studio/scenarios.ts'
+    219: 'assets/studio-shell/src/studio/stage-gestures.ts'
+    220: 'assets/studio-shell/src/studio/types.ts'
+    221: 'assets/studio-shell/src/studio/virtual-list.tsx'
+    222: 'assets/studio-shell/src/studio/workspace'
+    223: 'assets/studio-shell/src/studio/workspace/api.ts'
+    224: 'assets/studio-shell/src/studio/workspace/context.ts'
+    225: 'assets/studio-shell/src/studio/workspace/declaration.ts'
+    226: 'assets/studio-shell/src/studio/workspace/link.ts'
+    227: 'assets/studio-shell/src/studio/workspace/operations.ts'
+    228: 'assets/studio-shell/src/studio/workspace/slots.tsx'
+    229: 'assets/studio-shell/src/studio/workspace/stores.ts'
+    230: 'assets/studio-shell/src/studio/workspace/workspace-nav.tsx'
+    231: 'assets/studio-shell/src/studio/workspace/workspace-page.tsx'
+    232: 'assets/studio-shell/src/workspace'
+    233: 'assets/studio-shell/src/workspace/index.ts'
+    234: 'assets/studio-shell/studio.config.ts'
+    235: 'assets/studio-shell/tests'
+    236: 'assets/studio-shell/tests/interface-studio-presenter.test.mjs'
+    237: 'evidence'
+    238: 'evidence/design-editor'
+    239: 'evidence/design-editor/README.md'
+    240: 'evidence/design-editor/artifacts.json'
+    241: 'evidence/design-editor/browser-delta.json'
+    242: 'evidence/design-editor/browser-proof.json'
+    243: 'evidence/design-editor/browser-raw-input.json'
+    244: 'evidence/design-editor/browser-selected-basis.json'
+    245: 'evidence/design-editor/checks.json'
+    246: 'evidence/design-editor/screenshots'
+    247: 'evidence/design-editor/screenshots/chromium-NoCompiled.png'
+    248: 'evidence/design-editor/screenshots/chromium-RollbackReject.png'
+    249: 'evidence/design-editor/screenshots/chromium-component-only-design.png'
+    250: 'evidence/design-editor/screenshots/chromium-component-only-treatment.png'
+    251: 'evidence/design-editor/screenshots/chromium-next-1440-foundation.png'
+    252: 'evidence/design-editor/screenshots/chromium-next-1440-palette.png'
+    253: 'evidence/design-editor/screenshots/chromium-next-390-foundation.png'
+    254: 'evidence/design-editor/screenshots/chromium-next-390-palette.png'
+    255: 'evidence/design-editor/screenshots/chromium-next-768-foundation.png'
+    256: 'evidence/design-editor/screenshots/chromium-next-768-palette.png'
+    257: 'evidence/design-editor/screenshots/chromium-next-asset-error.png'
+    258: 'evidence/design-editor/screenshots/chromium-next-delta-foundation.png'
+    259: 'evidence/design-editor/screenshots/chromium-next-delta-radius-after-undo.png'
+    260: 'evidence/design-editor/screenshots/chromium-next-raw-radius-reopened.png'
+    261: 'evidence/design-editor/screenshots/chromium-next-raw-radius-reset.png'
+    262: 'evidence/design-editor/screenshots/chromium-next-raw-scale-cleared.png'
+    263: 'evidence/design-editor/screenshots/chromium-next-raw-scale-invalid.png'
+    264: 'evidence/design-editor/screenshots/chromium-vite-1440-foundation.png'
+    265: 'evidence/design-editor/screenshots/chromium-vite-1440-palette.png'
+    266: 'evidence/design-editor/screenshots/chromium-vite-390-foundation.png'
+    267: 'evidence/design-editor/screenshots/chromium-vite-390-palette.png'
+    268: 'evidence/design-editor/screenshots/chromium-vite-768-foundation.png'
+    269: 'evidence/design-editor/screenshots/chromium-vite-768-palette.png'
+    270: 'evidence/design-editor/screenshots/chromium-vite-asset-error.png'
+    271: 'evidence/design-editor/screenshots/chromium-vite-delta-foundation.png'
+    272: 'evidence/design-editor/screenshots/chromium-vite-delta-radius-after-undo.png'
+    273: 'evidence/design-editor/screenshots/chromium-vite-raw-radius-reopened.png'
+    274: 'evidence/design-editor/screenshots/chromium-vite-raw-radius-reset.png'
+    275: 'evidence/design-editor/screenshots/chromium-vite-raw-scale-cleared.png'
+    276: 'evidence/design-editor/screenshots/chromium-vite-raw-scale-invalid.png'
+    277: 'evidence/design-editor/screenshots/selected-basis-compare.png'
+    278: 'evidence/design-editor/screenshots/selected-basis-present.png'
+    279: 'evidence/design-editor/screenshots/webkit-NoCompiled.png'
+    280: 'evidence/design-editor/screenshots/webkit-RollbackReject.png'
+    281: 'evidence/design-editor/screenshots/webkit-component-only-design.png'
+    282: 'evidence/design-editor/screenshots/webkit-component-only-treatment.png'
+    283: 'evidence/design-editor/screenshots/webkit-next-1440-foundation.png'
+    284: 'evidence/design-editor/screenshots/webkit-next-1440-palette.png'
+    285: 'evidence/design-editor/screenshots/webkit-next-390-foundation.png'
+    286: 'evidence/design-editor/screenshots/webkit-next-390-palette.png'
+    287: 'evidence/design-editor/screenshots/webkit-next-768-foundation.png'
+    288: 'evidence/design-editor/screenshots/webkit-next-768-palette.png'
+    289: 'evidence/design-editor/screenshots/webkit-next-asset-error.png'
+    290: 'evidence/design-editor/screenshots/webkit-next-delta-foundation.png'
+    291: 'evidence/design-editor/screenshots/webkit-next-delta-radius-after-undo.png'
+    292: 'evidence/design-editor/screenshots/webkit-next-raw-radius-reopened.png'
+    293: 'evidence/design-editor/screenshots/webkit-next-raw-radius-reset.png'
+    294: 'evidence/design-editor/screenshots/webkit-next-raw-scale-cleared.png'
+    295: 'evidence/design-editor/screenshots/webkit-next-raw-scale-invalid.png'
+    296: 'evidence/design-editor/screenshots/webkit-vite-1440-foundation.png'
+    297: 'evidence/design-editor/screenshots/webkit-vite-1440-palette.png'
+    298: 'evidence/design-editor/screenshots/webkit-vite-390-foundation.png'
+    299: 'evidence/design-editor/screenshots/webkit-vite-390-palette.png'
+    300: 'evidence/design-editor/screenshots/webkit-vite-768-foundation.png'
+    301: 'evidence/design-editor/screenshots/webkit-vite-768-palette.png'
+    302: 'evidence/design-editor/screenshots/webkit-vite-asset-error.png'
+    303: 'evidence/design-editor/screenshots/webkit-vite-delta-foundation.png'
+    304: 'evidence/design-editor/screenshots/webkit-vite-delta-radius-after-undo.png'
+    305: 'evidence/design-editor/screenshots/webkit-vite-raw-radius-reopened.png'
+    306: 'evidence/design-editor/screenshots/webkit-vite-raw-radius-reset.png'
+    307: 'evidence/design-editor/screenshots/webkit-vite-raw-scale-cleared.png'
+    308: 'evidence/design-editor/screenshots/webkit-vite-raw-scale-invalid.png'
+    309: 'evidence/direction-labels'
+    310: 'evidence/direction-labels/README.md'
+    311: 'evidence/direction-labels/artifacts.json'
+    312: 'evidence/direction-labels/checks'
+    313: 'evidence/direction-labels/checks/next-build.txt'
+    314: 'evidence/direction-labels/checks/next-lint.txt'
+    315: 'evidence/direction-labels/checks/next-type.txt'
+    316: 'evidence/direction-labels/checks/node22-test.txt'
+    317: 'evidence/direction-labels/checks/node22-validate.txt'
+    318: 'evidence/direction-labels/checks/node24-test.txt'
+    319: 'evidence/direction-labels/checks/node24-validate.txt'
+    320: 'evidence/direction-labels/checks/vite-build.txt'
+    321: 'evidence/direction-labels/checks/vite-lint.txt'
+    322: 'evidence/direction-labels/checks/vite-type.txt'
+    323: 'evidence/direction-labels/green.json'
+    324: 'evidence/direction-labels/notice-green.json'
+    325: 'evidence/direction-labels/notice-red.json'
+    326: 'evidence/direction-labels/red.json'
+    327: 'evidence/direction-labels/review.md'
+    328: 'evidence/direction-labels/screenshots'
+    329: 'evidence/direction-labels/screenshots/chromium-next-1440-imported.png'
+    330: 'evidence/direction-labels/screenshots/chromium-next-1440-picker.png'
+    331: 'evidence/direction-labels/screenshots/chromium-next-1440-saved.png'
+    332: 'evidence/direction-labels/screenshots/chromium-next-390-imported.png'
+    333: 'evidence/direction-labels/screenshots/chromium-next-390-picker.png'
+    334: 'evidence/direction-labels/screenshots/chromium-next-390-saved.png'
+    335: 'evidence/direction-labels/screenshots/chromium-next-768-imported.png'
+    336: 'evidence/direction-labels/screenshots/chromium-next-768-picker.png'
+    337: 'evidence/direction-labels/screenshots/chromium-next-768-saved.png'
+    338: 'evidence/direction-labels/screenshots/chromium-vite-1440-imported.png'
+    339: 'evidence/direction-labels/screenshots/chromium-vite-1440-picker.png'
+    340: 'evidence/direction-labels/screenshots/chromium-vite-1440-saved.png'
+    341: 'evidence/direction-labels/screenshots/chromium-vite-390-imported.png'
+    342: 'evidence/direction-labels/screenshots/chromium-vite-390-picker.png'
+    343: 'evidence/direction-labels/screenshots/chromium-vite-390-saved.png'
+    344: 'evidence/direction-labels/screenshots/chromium-vite-768-imported.png'
+    345: 'evidence/direction-labels/screenshots/chromium-vite-768-picker.png'
+    346: 'evidence/direction-labels/screenshots/chromium-vite-768-saved.png'
+    347: 'evidence/direction-labels/screenshots/notice-chromium-next-1440.png'
+    348: 'evidence/direction-labels/screenshots/notice-chromium-next-390.png'
+    349: 'evidence/direction-labels/screenshots/notice-chromium-next-768.png'
+    350: 'evidence/direction-labels/screenshots/notice-chromium-vite-1440.png'
+    351: 'evidence/direction-labels/screenshots/notice-chromium-vite-390.png'
+    352: 'evidence/direction-labels/screenshots/notice-chromium-vite-768.png'
+    353: 'evidence/direction-labels/screenshots/notice-webkit-next-1440.png'
+    354: 'evidence/direction-labels/screenshots/notice-webkit-next-390.png'
+    355: 'evidence/direction-labels/screenshots/notice-webkit-next-768.png'
+    356: 'evidence/direction-labels/screenshots/notice-webkit-vite-1440.png'
+    357: 'evidence/direction-labels/screenshots/notice-webkit-vite-390.png'
+    358: 'evidence/direction-labels/screenshots/notice-webkit-vite-768.png'
+    359: 'evidence/direction-labels/screenshots/red-next.png'
+    360: 'evidence/direction-labels/screenshots/red-vite.png'
+    361: 'evidence/direction-labels/screenshots/webkit-next-1440-imported.png'
+    362: 'evidence/direction-labels/screenshots/webkit-next-1440-picker.png'
+    363: 'evidence/direction-labels/screenshots/webkit-next-1440-saved.png'
+    364: 'evidence/direction-labels/screenshots/webkit-next-390-imported.png'
+    365: 'evidence/direction-labels/screenshots/webkit-next-390-picker.png'
+    366: 'evidence/direction-labels/screenshots/webkit-next-390-saved.png'
+    367: 'evidence/direction-labels/screenshots/webkit-next-768-imported.png'
+    368: 'evidence/direction-labels/screenshots/webkit-next-768-picker.png'
+    369: 'evidence/direction-labels/screenshots/webkit-next-768-saved.png'
+    370: 'evidence/direction-labels/screenshots/webkit-vite-1440-imported.png'
+    371: 'evidence/direction-labels/screenshots/webkit-vite-1440-picker.png'
+    372: 'evidence/direction-labels/screenshots/webkit-vite-1440-saved.png'
+    373: 'evidence/direction-labels/screenshots/webkit-vite-390-imported.png'
+    374: 'evidence/direction-labels/screenshots/webkit-vite-390-picker.png'
+    375: 'evidence/direction-labels/screenshots/webkit-vite-390-saved.png'
+    376: 'evidence/direction-labels/screenshots/webkit-vite-768-imported.png'
+    377: 'evidence/direction-labels/screenshots/webkit-vite-768-picker.png'
+    378: 'evidence/direction-labels/screenshots/webkit-vite-768-saved.png'
+    379: 'evidence/direction-labels/source-cold-picker.json'
+    380: 'evidence/direction-labels/source.json'
+    381: 'evidence/directions'
+    382: 'evidence/directions/README.md'
+    383: 'evidence/directions/artifacts.json'
+    384: 'evidence/directions/browser-availability.json'
+    385: 'evidence/directions/browser-chromium.json'
+    386: 'evidence/directions/browser-live-unavailable.json'
+    387: 'evidence/directions/browser-native.json'
+    388: 'evidence/directions/browser-operations.json'
+    389: 'evidence/directions/browser-static.json'
+    390: 'evidence/directions/browser-webkit-focus.json'
+    391: 'evidence/directions/browser-webkit.json'
+    392: 'evidence/directions/checks'
+    393: 'evidence/directions/checks.json'
+    394: 'evidence/directions/checks/mm-directions-complete-node22-test.log'
+    395: 'evidence/directions/checks/mm-directions-complete-node22-validate.log'
+    396: 'evidence/directions/checks/mm-directions-complete-node24-test.log'
+    397: 'evidence/directions/checks/mm-directions-complete-node24-validate.log'
+    398: 'evidence/directions/checks/mm-directions-delivery-next-build.log'
+    399: 'evidence/directions/checks/mm-directions-delivery-next-lint.log'
+    400: 'evidence/directions/checks/mm-directions-delivery-next-type.log'
+    401: 'evidence/directions/checks/mm-directions-delivery-node22-test.log'
+    402: 'evidence/directions/checks/mm-directions-delivery-node22-validate.log'
+    403: 'evidence/directions/checks/mm-directions-delivery-node24-test.log'
+    404: 'evidence/directions/checks/mm-directions-delivery-node24-validate.log'
+    405: 'evidence/directions/checks/mm-directions-delivery-vite-build.log'
+    406: 'evidence/directions/checks/mm-directions-delivery-vite-lint.log'
+    407: 'evidence/directions/checks/mm-directions-delivery-vite-type.log'
+    408: 'evidence/directions/checks/mm-directions-final-next-build.log'
+    409: 'evidence/directions/checks/mm-directions-final-next-lint.log'
+    410: 'evidence/directions/checks/mm-directions-final-next-type.log'
+    411: 'evidence/directions/checks/mm-directions-final-vite-build.log'
+    412: 'evidence/directions/checks/mm-directions-final-vite-lint.log'
+    413: 'evidence/directions/checks/mm-directions-final-vite-type.log'
+    414: 'evidence/directions/checks/mm-directions-races-green.log'
+    415: 'evidence/directions/checks/mm-directions-races-red.log'
+    416: 'evidence/directions/native-freeze.json'
+    417: 'evidence/directions/native-receipt.json'
+    418: 'evidence/directions/next-type-transition.json'
+    419: 'evidence/directions/review.md'
+    420: 'evidence/directions/runtime-final.json'
+    421: 'evidence/directions/runtime-freeze.json'
+    422: 'evidence/directions/screenshots'
+    423: 'evidence/directions/screenshots/final-next-live-unavailable.png'
+    424: 'evidence/directions/screenshots/final-next-navigation.png'
+    425: 'evidence/directions/screenshots/final-next-operations.png'
+    426: 'evidence/directions/screenshots/final-next-production.png'
+    427: 'evidence/directions/screenshots/final-vite-live-unavailable.png'
+    428: 'evidence/directions/screenshots/final-vite-navigation.png'
+    429: 'evidence/directions/screenshots/final-vite-operations.png'
+    430: 'evidence/directions/screenshots/final-vite-production.png'
+    431: 'evidence/directions/screenshots/lineage-next-navigation.png'
+    432: 'evidence/directions/screenshots/lineage-vite-navigation.png'
+    433: 'evidence/directions/screenshots/native-next-1440-coarse-close.png'
+    434: 'evidence/directions/screenshots/native-next-1440-coarse-options.png'
+    435: 'evidence/directions/screenshots/native-next-1440-fine-close.png'
+    436: 'evidence/directions/screenshots/native-next-1440-fine-options.png'
+    437: 'evidence/directions/screenshots/native-next-390-coarse-close.png'
+    438: 'evidence/directions/screenshots/native-next-390-coarse-options.png'
+    439: 'evidence/directions/screenshots/native-next-390-fine-close.png'
+    440: 'evidence/directions/screenshots/native-next-390-fine-options.png'
+    441: 'evidence/directions/screenshots/native-next-768-coarse-close.png'
+    442: 'evidence/directions/screenshots/native-next-768-coarse-options.png'
+    443: 'evidence/directions/screenshots/native-next-768-fine-close.png'
+    444: 'evidence/directions/screenshots/native-next-768-fine-options.png'
+    445: 'evidence/directions/screenshots/native-next-static-compact.png'
+    446: 'evidence/directions/screenshots/native-next-static-failure.png'
+    447: 'evidence/directions/screenshots/native-next-static-recovery.png'
+    448: 'evidence/directions/screenshots/native-vite-1440-coarse-close.png'
+    449: 'evidence/directions/screenshots/native-vite-1440-coarse-options.png'
+    450: 'evidence/directions/screenshots/native-vite-1440-fine-close.png'
+    451: 'evidence/directions/screenshots/native-vite-1440-fine-options.png'
+    452: 'evidence/directions/screenshots/native-vite-390-coarse-close.png'
+    453: 'evidence/directions/screenshots/native-vite-390-coarse-options.png'
+    454: 'evidence/directions/screenshots/native-vite-390-fine-close.png'
+    455: 'evidence/directions/screenshots/native-vite-390-fine-options.png'
+    456: 'evidence/directions/screenshots/native-vite-768-coarse-close.png'
+    457: 'evidence/directions/screenshots/native-vite-768-coarse-options.png'
+    458: 'evidence/directions/screenshots/native-vite-768-fine-close.png'
+    459: 'evidence/directions/screenshots/native-vite-768-fine-options.png'
+    460: 'evidence/directions/screenshots/native-vite-static-compact.png'
+    461: 'evidence/directions/screenshots/native-vite-static-recovery.png'
+    462: 'evidence/directions/screenshots/next-compare-saved.png'
+    463: 'evidence/directions/screenshots/next-recovery.png'
+    464: 'evidence/directions/screenshots/next-saved-two.png'
+    465: 'evidence/directions/screenshots/next-webkit-compare-saved.png'
+    466: 'evidence/directions/screenshots/next-webkit-focus-1440.png'
+    467: 'evidence/directions/screenshots/next-webkit-focus-390.png'
+    468: 'evidence/directions/screenshots/next-webkit-recovery.png'
+    469: 'evidence/directions/screenshots/vite-compare-saved.png'
+    470: 'evidence/directions/screenshots/vite-recovery.png'
+    471: 'evidence/directions/screenshots/vite-saved-two.png'
+    472: 'evidence/directions/screenshots/vite-webkit-compare-saved.png'
+    473: 'evidence/directions/screenshots/vite-webkit-focus-1440.png'
+    474: 'evidence/directions/screenshots/vite-webkit-focus-390.png'
+    475: 'evidence/directions/screenshots/vite-webkit-recovery.png'
+    476: 'evidence/directions/served-lineage-final.json'
+    477: 'evidence/directions/served-lineage.json'
+    478: 'evidence/directions/watch-atomic-and-source-hmr.json'
+    479: 'evidence/directions/watch-configured-exclusion-green.json'
+    480: 'evidence/directions/watch-custom-paths.json'
+    481: 'evidence/directions/watch-custom-vite-conflict.json'
+    482: 'evidence/directions/watch-pre-fix-reproduction.json'
+    483: 'evidence/directions/watch-red-source.json'
+    484: 'evidence/popover-focus'
+    485: 'evidence/popover-focus/README.md'
+    486: 'evidence/popover-focus/artifacts.json'
+    487: 'evidence/popover-focus/capture.mjs'
+    488: 'evidence/popover-focus/checks'
+    489: 'evidence/popover-focus/checks.json'
+    490: 'evidence/popover-focus/checks/final-vite-build.txt'
+    491: 'evidence/popover-focus/checks/final-vite-lint.txt'
+    492: 'evidence/popover-focus/checks/final-vite-type.txt'
+    493: 'evidence/popover-focus/checks/next-build.txt'
+    494: 'evidence/popover-focus/checks/next-lineage.json'
+    495: 'evidence/popover-focus/checks/next-lint.txt'
+    496: 'evidence/popover-focus/checks/next-receipt.json'
+    497: 'evidence/popover-focus/checks/next-type.txt'
+    498: 'evidence/popover-focus/checks/node22-test.txt'
+    499: 'evidence/popover-focus/checks/node22-validate.txt'
+    500: 'evidence/popover-focus/checks/node24-test.txt'
+    501: 'evidence/popover-focus/checks/node24-validate.txt'
+    502: 'evidence/popover-focus/comparison.json'
+    503: 'evidence/popover-focus/diagnostics'
+    504: 'evidence/popover-focus/diagnostics/green-resources.json'
+    505: 'evidence/popover-focus/diagnostics/green.json'
+    506: 'evidence/popover-focus/diagnostics/message.txt'
+    507: 'evidence/popover-focus/diagnostics/reasons-resources.json'
+    508: 'evidence/popover-focus/diagnostics/reasons.json'
+    509: 'evidence/popover-focus/diagnostics/reasons.mjs'
+    510: 'evidence/popover-focus/diagnostics/red.json'
+    511: 'evidence/popover-focus/diagnostics/verify.mjs'
+    512: 'evidence/popover-focus/focus'
+    513: 'evidence/popover-focus/focus/green-resources.json'
+    514: 'evidence/popover-focus/focus/green.json'
+    515: 'evidence/popover-focus/focus/modes-resources.json'
+    516: 'evidence/popover-focus/focus/modes.json'
+    517: 'evidence/popover-focus/focus/red.json'
+    518: 'evidence/popover-focus/independent-review.md'
+    519: 'evidence/popover-focus/modes.mjs'
+    520: 'evidence/popover-focus/screenshots'
+    521: 'evidence/popover-focus/screenshots/diagnostic-chromium-next-initial-failure.png'
+    522: 'evidence/popover-focus/screenshots/diagnostic-chromium-next-loader-failure.png'
+    523: 'evidence/popover-focus/screenshots/diagnostic-chromium-next-selection.png'
+    524: 'evidence/popover-focus/screenshots/diagnostic-chromium-vite-initial-failure.png'
+    525: 'evidence/popover-focus/screenshots/diagnostic-chromium-vite-loader-failure.png'
+    526: 'evidence/popover-focus/screenshots/diagnostic-chromium-vite-selection.png'
+    527: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-next-1440.png'
+    528: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-next-390.png'
+    529: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-next-768.png'
+    530: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-vite-1440.png'
+    531: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-vite-390.png'
+    532: 'evidence/popover-focus/screenshots/diagnostic-green-chromium-vite-768.png'
+    533: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-next-1440.png'
+    534: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-next-390.png'
+    535: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-next-768.png'
+    536: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-vite-1440.png'
+    537: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-vite-390.png'
+    538: 'evidence/popover-focus/screenshots/diagnostic-green-webkit-vite-768.png'
+    539: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-next-1440.png'
+    540: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-next-390.png'
+    541: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-next-768.png'
+    542: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-vite-1440.png'
+    543: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-vite-390.png'
+    544: 'evidence/popover-focus/screenshots/diagnostic-red-chromium-vite-768.png'
+    545: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-next-1440.png'
+    546: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-next-390.png'
+    547: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-next-768.png'
+    548: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-vite-1440.png'
+    549: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-vite-390.png'
+    550: 'evidence/popover-focus/screenshots/diagnostic-red-webkit-vite-768.png'
+    551: 'evidence/popover-focus/screenshots/diagnostic-webkit-next-initial-failure.png'
+    552: 'evidence/popover-focus/screenshots/diagnostic-webkit-next-loader-failure.png'
+    553: 'evidence/popover-focus/screenshots/diagnostic-webkit-next-selection.png'
+    554: 'evidence/popover-focus/screenshots/diagnostic-webkit-vite-initial-failure.png'
+    555: 'evidence/popover-focus/screenshots/diagnostic-webkit-vite-loader-failure.png'
+    556: 'evidence/popover-focus/screenshots/diagnostic-webkit-vite-selection.png'
+    557: 'evidence/popover-focus/screenshots/focus-chromium-next-1440-controlled-choice.png'
+    558: 'evidence/popover-focus/screenshots/focus-chromium-next-1440-uncontrolled.png'
+    559: 'evidence/popover-focus/screenshots/focus-chromium-next-390-controlled-choice.png'
+    560: 'evidence/popover-focus/screenshots/focus-chromium-next-390-uncontrolled.png'
+    561: 'evidence/popover-focus/screenshots/focus-chromium-vite-1440-controlled-choice.png'
+    562: 'evidence/popover-focus/screenshots/focus-chromium-vite-1440-uncontrolled.png'
+    563: 'evidence/popover-focus/screenshots/focus-chromium-vite-390-controlled-choice.png'
+    564: 'evidence/popover-focus/screenshots/focus-chromium-vite-390-uncontrolled.png'
+    565: 'evidence/popover-focus/screenshots/focus-green-chromium-next-1440-directions.png'
+    566: 'evidence/popover-focus/screenshots/focus-green-chromium-next-1440-palette.png'
+    567: 'evidence/popover-focus/screenshots/focus-green-chromium-next-390-directions.png'
+    568: 'evidence/popover-focus/screenshots/focus-green-chromium-next-390-palette.png'
+    569: 'evidence/popover-focus/screenshots/focus-green-chromium-vite-1440-directions.png'
+    570: 'evidence/popover-focus/screenshots/focus-green-chromium-vite-1440-palette.png'
+    571: 'evidence/popover-focus/screenshots/focus-green-chromium-vite-390-directions.png'
+    572: 'evidence/popover-focus/screenshots/focus-green-chromium-vite-390-palette.png'
+    573: 'evidence/popover-focus/screenshots/focus-green-webkit-next-1440-directions.png'
+    574: 'evidence/popover-focus/screenshots/focus-green-webkit-next-1440-palette.png'
+    575: 'evidence/popover-focus/screenshots/focus-green-webkit-next-390-directions.png'
+    576: 'evidence/popover-focus/screenshots/focus-green-webkit-next-390-palette.png'
+    577: 'evidence/popover-focus/screenshots/focus-green-webkit-vite-1440-directions.png'
+    578: 'evidence/popover-focus/screenshots/focus-green-webkit-vite-1440-palette.png'
+    579: 'evidence/popover-focus/screenshots/focus-green-webkit-vite-390-directions.png'
+    580: 'evidence/popover-focus/screenshots/focus-green-webkit-vite-390-palette.png'
+    581: 'evidence/popover-focus/screenshots/focus-red-chromium-next-1440-directions.png'
+    582: 'evidence/popover-focus/screenshots/focus-red-chromium-next-1440-palette.png'
+    583: 'evidence/popover-focus/screenshots/focus-red-chromium-next-390-directions.png'
+    584: 'evidence/popover-focus/screenshots/focus-red-chromium-next-390-palette.png'
+    585: 'evidence/popover-focus/screenshots/focus-red-chromium-vite-1440-directions.png'
+    586: 'evidence/popover-focus/screenshots/focus-red-chromium-vite-1440-palette.png'
+    587: 'evidence/popover-focus/screenshots/focus-red-chromium-vite-390-directions.png'
+    588: 'evidence/popover-focus/screenshots/focus-red-chromium-vite-390-palette.png'
+    589: 'evidence/popover-focus/screenshots/focus-red-webkit-next-1440-directions.png'
+    590: 'evidence/popover-focus/screenshots/focus-red-webkit-next-1440-palette.png'
+    591: 'evidence/popover-focus/screenshots/focus-red-webkit-next-390-directions.png'
+    592: 'evidence/popover-focus/screenshots/focus-red-webkit-next-390-palette.png'
+    593: 'evidence/popover-focus/screenshots/focus-red-webkit-vite-1440-directions.png'
+    594: 'evidence/popover-focus/screenshots/focus-red-webkit-vite-1440-palette.png'
+    595: 'evidence/popover-focus/screenshots/focus-red-webkit-vite-390-directions.png'
+    596: 'evidence/popover-focus/screenshots/focus-red-webkit-vite-390-palette.png'
+    597: 'evidence/popover-focus/screenshots/focus-webkit-next-1440-controlled-choice.png'
+    598: 'evidence/popover-focus/screenshots/focus-webkit-next-1440-uncontrolled.png'
+    599: 'evidence/popover-focus/screenshots/focus-webkit-next-390-controlled-choice.png'
+    600: 'evidence/popover-focus/screenshots/focus-webkit-next-390-uncontrolled.png'
+    601: 'evidence/popover-focus/screenshots/focus-webkit-vite-1440-controlled-choice.png'
+    602: 'evidence/popover-focus/screenshots/focus-webkit-vite-1440-uncontrolled.png'
+    603: 'evidence/popover-focus/screenshots/focus-webkit-vite-390-controlled-choice.png'
+    604: 'evidence/popover-focus/screenshots/focus-webkit-vite-390-uncontrolled.png'
+    605: 'evidence/popover-focus/source-freeze.json'
+    606: 'evidence/popover-focus/source.json'
+    607: 'evidence/popover-focus/update-preservation.json'
+    608: 'evidence/popover-focus/vendor.json'
+    609: 'evidence/popover-focus/verified-fetches.json'
+    610: 'evidence/popover-focus/verify.mjs'
+    611: 'evidence/review-context'
+    612: 'evidence/review-context/README.md'
+    613: 'evidence/review-context/artifacts.json'
+    614: 'evidence/review-context/browser.json'
+    615: 'evidence/review-context/checks.json'
+    616: 'evidence/review-context/picker-production.json'
+    617: 'evidence/review-context/picker-source.json'
+    618: 'evidence/review-context/picker.json'
+    619: 'evidence/review-context/screenshots'
+    620: 'evidence/review-context/screenshots/next-1440-picker-production.png'
+    621: 'evidence/review-context/screenshots/next-1440-picker.png'
+    622: 'evidence/review-context/screenshots/next-1440.png'
+    623: 'evidence/review-context/screenshots/next-390-picker-production.png'
+    624: 'evidence/review-context/screenshots/next-390-picker.png'
+    625: 'evidence/review-context/screenshots/next-390.png'
+    626: 'evidence/review-context/screenshots/next-768.png'
+    627: 'evidence/review-context/screenshots/vite-1440-picker-production.png'
+    628: 'evidence/review-context/screenshots/vite-1440-picker.png'
+    629: 'evidence/review-context/screenshots/vite-1440.png'
+    630: 'evidence/review-context/screenshots/vite-390-picker-production.png'
+    631: 'evidence/review-context/screenshots/vite-390-picker.png'
+    632: 'evidence/review-context/screenshots/vite-390.png'
+    633: 'evidence/review-context/screenshots/vite-768.png'
+    634: 'evidence/review-context/source.json'
+    635: 'evidence/select-items'
+    636: 'evidence/select-items/README.md'
+    637: 'evidence/select-items/artifacts.json'
+    638: 'evidence/select-items/checks'
+    639: 'evidence/select-items/checks/next-build.log'
+    640: 'evidence/select-items/checks/next-lint.log'
+    641: 'evidence/select-items/checks/next-type.log'
+    642: 'evidence/select-items/checks/node22-test.log'
+    643: 'evidence/select-items/checks/node22-validate.log'
+    644: 'evidence/select-items/checks/node24-test.log'
+    645: 'evidence/select-items/checks/node24-validate.log'
+    646: 'evidence/select-items/checks/vite-build.log'
+    647: 'evidence/select-items/checks/vite-lint.log'
+    648: 'evidence/select-items/checks/vite-type.log'
+    649: 'evidence/select-items/green.json'
+    650: 'evidence/select-items/prior-check-log-delivery.json'
+    651: 'evidence/select-items/receipt-delivery-review.md'
+    652: 'evidence/select-items/red.json'
+    653: 'evidence/select-items/review.md'
+    654: 'evidence/select-items/screenshots'
+    655: 'evidence/select-items/screenshots/green-chromium-next-1440-coarse.png'
+    656: 'evidence/select-items/screenshots/green-chromium-next-1440-fine.png'
+    657: 'evidence/select-items/screenshots/green-chromium-next-390-fine.png'
+    658: 'evidence/select-items/screenshots/green-chromium-next-768-fine.png'
+    659: 'evidence/select-items/screenshots/green-chromium-vite-1440-coarse.png'
+    660: 'evidence/select-items/screenshots/green-chromium-vite-1440-fine.png'
+    661: 'evidence/select-items/screenshots/green-chromium-vite-390-fine.png'
+    662: 'evidence/select-items/screenshots/green-chromium-vite-768-fine.png'
+    663: 'evidence/select-items/screenshots/green-webkit-next-1440-coarse.png'
+    664: 'evidence/select-items/screenshots/green-webkit-next-1440-fine.png'
+    665: 'evidence/select-items/screenshots/green-webkit-next-390-fine.png'
+    666: 'evidence/select-items/screenshots/green-webkit-next-768-fine.png'
+    667: 'evidence/select-items/screenshots/green-webkit-vite-1440-coarse.png'
+    668: 'evidence/select-items/screenshots/green-webkit-vite-1440-fine.png'
+    669: 'evidence/select-items/screenshots/green-webkit-vite-390-fine.png'
+    670: 'evidence/select-items/screenshots/green-webkit-vite-768-fine.png'
+    671: 'evidence/select-items/screenshots/red-chromium-vite-390-fine.png'
+    672: 'evidence/select-items/screenshots/red-chromium-vite-768-fine.png'
+    673: 'evidence/select-items/source.json'
+    674: 'evidence/source-inspector-dialog'
+    675: 'evidence/source-inspector-dialog/dialog'
+    676: 'evidence/source-inspector-dialog/dialog/chromium-next-1440.png'
+    677: 'evidence/source-inspector-dialog/dialog/chromium-next-390.png'
+    678: 'evidence/source-inspector-dialog/dialog/chromium-next-768.png'
+    679: 'evidence/source-inspector-dialog/dialog/chromium-vite-1440.png'
+    680: 'evidence/source-inspector-dialog/dialog/chromium-vite-390.png'
+    681: 'evidence/source-inspector-dialog/dialog/chromium-vite-768.png'
+    682: 'evidence/source-inspector-dialog/dialog/fixture.tsx'
+    683: 'evidence/source-inspector-dialog/dialog/green.json'
+    684: 'evidence/source-inspector-dialog/dialog/verify.mjs'
+    685: 'evidence/source-inspector-dialog/dialog/webkit-next-1440.png'
+    686: 'evidence/source-inspector-dialog/dialog/webkit-next-390.png'
+    687: 'evidence/source-inspector-dialog/dialog/webkit-next-768.png'
+    688: 'evidence/source-inspector-dialog/dialog/webkit-vite-1440.png'
+    689: 'evidence/source-inspector-dialog/dialog/webkit-vite-390.png'
+    690: 'evidence/source-inspector-dialog/dialog/webkit-vite-768.png'
+    691: 'evidence/source-inspector-dialog/fixture-lineage.json'
+    692: 'evidence/source-inspector-dialog/fixtures'
+    693: 'evidence/source-inspector-dialog/fixtures/design-adapter.ts'
+    694: 'evidence/source-inspector-dialog/fixtures/design-runtime'
+    695: 'evidence/source-inspector-dialog/fixtures/design-runtime/index.ts'
+    696: 'evidence/source-inspector-dialog/fixtures/design-runtime/loaders.ts'
+    697: 'evidence/source-inspector-dialog/fixtures/design-runtime/provenance-long.ts'
+    698: 'evidence/source-inspector-dialog/fixtures/design-runtime/provenance-short.ts'
+    699: 'evidence/source-inspector-dialog/fixtures/design-ui'
+    700: 'evidence/source-inspector-dialog/fixtures/design-ui/centered.tsx'
+    701: 'evidence/source-inspector-dialog/fixtures/design-ui/loaders.ts'
+    702: 'evidence/source-inspector-dialog/inspector'
+    703: 'evidence/source-inspector-dialog/inspector/comparison.json'
+    704: 'evidence/source-inspector-dialog/inspector/fixture-data.json'
+    705: 'evidence/source-inspector-dialog/inspector/green-chromium-next-1440-long.png'
+    706: 'evidence/source-inspector-dialog/inspector/green-chromium-next-1440-short.png'
+    707: 'evidence/source-inspector-dialog/inspector/green-chromium-next-390-long.png'
+    708: 'evidence/source-inspector-dialog/inspector/green-chromium-next-390-short.png'
+    709: 'evidence/source-inspector-dialog/inspector/green-chromium-next-768-long.png'
+    710: 'evidence/source-inspector-dialog/inspector/green-chromium-next-768-short.png'
+    711: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-1440-long.png'
+    712: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-1440-short.png'
+    713: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-390-long.png'
+    714: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-390-short.png'
+    715: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-768-long.png'
+    716: 'evidence/source-inspector-dialog/inspector/green-chromium-vite-768-short.png'
+    717: 'evidence/source-inspector-dialog/inspector/green-webkit-next-1440-long.png'
+    718: 'evidence/source-inspector-dialog/inspector/green-webkit-next-1440-short.png'
+    719: 'evidence/source-inspector-dialog/inspector/green-webkit-next-390-long.png'
+    720: 'evidence/source-inspector-dialog/inspector/green-webkit-next-390-short.png'
+    721: 'evidence/source-inspector-dialog/inspector/green-webkit-next-768-long.png'
+    722: 'evidence/source-inspector-dialog/inspector/green-webkit-next-768-short.png'
+    723: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-1440-long.png'
+    724: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-1440-short.png'
+    725: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-390-long.png'
+    726: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-390-short.png'
+    727: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-768-long.png'
+    728: 'evidence/source-inspector-dialog/inspector/green-webkit-vite-768-short.png'
+    729: 'evidence/source-inspector-dialog/inspector/green.json'
+    730: 'evidence/source-inspector-dialog/inspector/red-chromium-next-1440-long.png'
+    731: 'evidence/source-inspector-dialog/inspector/red-chromium-next-1440-short.png'
+    732: 'evidence/source-inspector-dialog/inspector/red-chromium-next-390-long.png'
+    733: 'evidence/source-inspector-dialog/inspector/red-chromium-next-390-short.png'
+    734: 'evidence/source-inspector-dialog/inspector/red-chromium-next-768-long.png'
+    735: 'evidence/source-inspector-dialog/inspector/red-chromium-next-768-short.png'
+    736: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-1440-long.png'
+    737: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-1440-short.png'
+    738: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-390-long.png'
+    739: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-390-short.png'
+    740: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-768-long.png'
+    741: 'evidence/source-inspector-dialog/inspector/red-chromium-vite-768-short.png'
+    742: 'evidence/source-inspector-dialog/inspector/red-webkit-next-1440-long.png'
+    743: 'evidence/source-inspector-dialog/inspector/red-webkit-next-1440-short.png'
+    744: 'evidence/source-inspector-dialog/inspector/red-webkit-next-390-long.png'
+    745: 'evidence/source-inspector-dialog/inspector/red-webkit-next-390-short.png'
+    746: 'evidence/source-inspector-dialog/inspector/red-webkit-next-768-long.png'
+    747: 'evidence/source-inspector-dialog/inspector/red-webkit-next-768-short.png'
+    748: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-1440-long.png'
+    749: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-1440-short.png'
+    750: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-390-long.png'
+    751: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-390-short.png'
+    752: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-768-long.png'
+    753: 'evidence/source-inspector-dialog/inspector/red-webkit-vite-768-short.png'
+    754: 'evidence/source-inspector-dialog/inspector/red.json'
+    755: 'evidence/source-inspector-dialog/inspector/verify.mjs'
+    756: 'evidence/source-inspector-dialog/lineage'
+    757: 'evidence/source-inspector-dialog/lineage/capture.mjs'
+    758: 'evidence/source-inspector-dialog/lineage/lineage.json'
+    759: 'evidence/source-inspector-dialog/lineage/lineage.mjs'
+    760: 'references'
+    761: 'references/adapters.md'
+    762: 'references/design-ui.md'
+    763: 'references/directions.md'
+    764: 'references/frame-protocol.md'
+    765: 'references/library.md'
+    766: 'references/manifest.md'
+    767: 'references/native.md'
+    768: 'references/presentation.md'
+    769: 'references/scenarios.md'
+    770: 'references/shell.md'
+    771: 'references/updating.md'
+    772: 'references/verification.md'
+    773: 'references/web.md'
+    774: 'references/workspace.md'
+    775: 'scripts'
+    776: 'scripts/compose-host.mjs'
+    777: 'scripts/update-studio.mjs'
+    778: 'scripts/validate-manifest.mjs'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<canonical>/tests/install.test.mjs:223:12)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# (node:64144) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: a saved comparison keeps values and count in step
+ok 49 - a saved comparison keeps values and count in step
+  ---
+  duration_ms: 1.18525
+  type: 'test'
+  ...
+# Subtest: the resolved sides always start with the A and B the selectors show
+ok 50 - the resolved sides always start with the A and B the selectors show
+  ---
+  duration_ms: 3.18375
+  type: 'test'
+  ...
+# Subtest: the count is capped at the values an axis has and an axis without two is unavailable
+ok 51 - the count is capped at the values an axis has and an axis without two is unavailable
+  ---
+  duration_ms: 0.459833
+  type: 'test'
+  ...
+# Subtest: choosing a value another side shows swaps the two sides
+ok 52 - choosing a value another side shows swaps the two sides
+  ---
+  duration_ms: 0.273666
+  type: 'test'
+  ...
+# (node:64145) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: atomic gestures create one history entry; cancel and resets preserve immutable source/saved bases
+ok 53 - atomic gestures create one history entry; cancel and resets preserve immutable source/saved bases
+  ---
+  duration_ms: 74.666459
+  type: 'test'
+  ...
+# Subtest: invalid input and source/asset failures retain whole last-valid paired output and block save/export
+ok 54 - invalid input and source/asset failures retain whole last-valid paired output and block save/export
+  ---
+  duration_ms: 17.940583
+  type: 'test'
+  ...
+# Subtest: async compilation publishes themes atomically and stale success cannot clear a newer invalid/error revision
+ok 55 - async compilation publishes themes atomically and stale success cannot clear a newer invalid/error revision
+  ---
+  duration_ms: 11.214458
+  type: 'test'
+  ...
+# Subtest: explicit editor loader rejects inherited/missing IDs and incompatible interface/slot versions
+ok 56 - explicit editor loader rejects inherited/missing IDs and incompatible interface/slot versions
+  ---
+  duration_ms: 11.248791
+  type: 'test'
+  ...
+# Subtest: confirmed saved A keeps newer working B dirty and captured output immutable
+ok 57 - confirmed saved A keeps newer working B dirty and captured output immutable
+  ---
+  duration_ms: 19.193083
+  type: 'test'
+  ...
+# Subtest: preview failure C rolls whole map back to applied A, never compiler-only B; capabilities prevent mutation/history
+ok 58 - preview failure C rolls whole map back to applied A, never compiler-only B; capabilities prevent mutation/history
+  ---
+  duration_ms: 8.885083
+  type: 'test'
+  ...
+# Subtest: descriptor rejects executable data, unknown slots/capabilities and missing declared capability
+ok 59 - descriptor rejects executable data, unknown slots/capabilities and missing declared capability
+  ---
+  duration_ms: 52.351541
+  type: 'test'
+  ...
+# Subtest: managed host updates preserve every product editor file; editor imports cannot cross into shell or remote modules
+ok 60 - managed host updates preserve every product editor file; editor imports cannot cross into shell or remote modules
+  ---
+  duration_ms: 1765.350709
+  type: 'test'
+  ...
+# Subtest: cancelling an unrelated gesture restores pre-gesture invalid text instead of reporting save-ready
+ok 61 - cancelling an unrelated gesture restores pre-gesture invalid text instead of reporting save-ready
+  ---
+  duration_ms: 9.165625
+  type: 'test'
+  ...
+# Subtest: data-changing notifications are pending and cannot capture B with older A compilation
+ok 62 - data-changing notifications are pending and cannot capture B with older A compilation
+  ---
+  duration_ms: 18.734375
+  type: 'test'
+  ...
+# Subtest: failed source A followed by repaired working B cannot seed saved A with B on retry or repeated start
+ok 63 - failed source A followed by repaired working B cannot seed saved A with B on retry or repeated start
+  ---
+  duration_ms: 64.039542
+  type: 'test'
+  ...
+# Subtest: review context navigation is guarded and cannot change canonical values, compiled fingerprints or history
+ok 64 - review context navigation is guarded and cannot change canonical values, compiled fingerprints or history
+  ---
+  duration_ms: 15.262291
+  type: 'test'
+  ...
+# (node:64146) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Design model honors theme defaults and sends only input-backed parameters to frames
+ok 65 - Design model honors theme defaults and sends only input-backed parameters to frames
+  ---
+  duration_ms: 167.357625
+  type: 'test'
+  ...
+# Subtest: range inputs and diagnostics are carried by the stable shell contracts
+ok 66 - range inputs and diagnostics are carried by the stable shell contracts
+  ---
+  duration_ms: 0.915542
+  type: 'test'
+  ...
+# Subtest: decimal 24-hour range values use the declared time-hours formatter
+ok 67 - decimal 24-hour range values use the declared time-hours formatter
+  ---
+  duration_ms: 1.127125
+  type: 'test'
+  ...
+# Subtest: scenario input validation normalizes declared ranges and rejects unsupported values
+ok 68 - scenario input validation normalizes declared ranges and rejects unsupported values
+  ---
+  duration_ms: 5.739041
+  type: 'test'
+  ...
+# Subtest: a link keeps shared values that differ from any theme default and scoped values against the active theme
+ok 69 - a link keeps shared values that differ from any theme default and scoped values against the active theme
+  ---
+  duration_ms: 5.98375
+  type: 'test'
+  ...
+# Subtest: a link made in dark round-trips a shared value into light
+ok 70 - a link made in dark round-trips a shared value into light
+  ---
+  duration_ms: 13.333834
+  type: 'test'
+  ...
+# Subtest: a partial values change keeps the shared and themed values it does not name
+ok 71 - a partial values change keeps the shared and themed values it does not name
+  ---
+  duration_ms: 3.183709
+  type: 'test'
+  ...
+# Subtest: the type specimen reads the active theme default for typefaces and change detection
+ok 72 - the type specimen reads the active theme default for typefaces and change detection
+  ---
+  duration_ms: 0.188333
+  type: 'test'
+  ...
+# Subtest: a snapped range value never passes the declared maximum
+ok 73 - a snapped range value never passes the declared maximum
+  ---
+  duration_ms: 5.040375
+  type: 'test'
+  ...
+# Subtest: a generic font family stays unquoted in tokens and CSS
+ok 74 - a generic font family stays unquoted in tokens and CSS
+  ---
+  duration_ms: 6.267291
+  type: 'test'
+  ...
+# Subtest: a generic font family requests no web font stylesheet
+ok 75 - a generic font family requests no web font stylesheet
+  ---
+  duration_ms: 5.939916
+  type: 'test'
+  ...
+# (node:64147) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: fetch direction journal requires CAS and rejects immutable replacement without changing stored bytes
+ok 76 - fetch direction journal requires CAS and rejects immutable replacement without changing stored bytes
+  ---
+  duration_ms: 114.0595
+  type: 'test'
+  ...
+# Subtest: node direction journal requires CAS and rejects immutable replacement without changing stored bytes
+ok 77 - node direction journal requires CAS and rejects immutable replacement without changing stored bytes
+  ---
+  duration_ms: 201.599125
+  type: 'test'
+  ...
+# Subtest: direction reads fail closed for malformed, invalid and filesystem errors
+ok 78 - direction reads fail closed for malformed, invalid and filesystem errors
+  ---
+  duration_ms: 20.434584
+  type: 'test'
+  ...
+# Subtest: fetch origin rejection precedes body budget; prototype routes remain denied
+ok 79 - fetch origin rejection precedes body budget; prototype routes remain denied
+  ---
+  duration_ms: 8.54475
+  type: 'test'
+  ...
+# Subtest: node origin rejection precedes body budget; prototype routes remain denied
+ok 80 - node origin rejection precedes body budget; prototype routes remain denied
+  ---
+  duration_ms: 11.899667
+  type: 'test'
+  ...
+# Subtest: permission errors, interrupted uploads and failed final rename never overwrite a saved journal
+ok 81 - permission errors, interrupted uploads and failed final rename never overwrite a saved journal
+  ---
+  duration_ms: 34.276
+  type: 'test'
+  ...
+# Subtest: registered journal schema persists revisions/deletion history and refuses mutation with the correct CAS
+ok 82 - registered journal schema persists revisions/deletion history and refuses mutation with the correct CAS
+  ---
+  duration_ms: 46.428125
+  type: 'test'
+  ...
+# Subtest: fetch strict validator exceptions cannot crash or overwrite the journal
+ok 83 - fetch strict validator exceptions cannot crash or overwrite the journal
+  ---
+  duration_ms: 5.851209
+  type: 'test'
+  ...
+# Subtest: node strict validator exceptions cannot crash or overwrite the journal
+ok 84 - node strict validator exceptions cannot crash or overwrite the journal
+  ---
+  duration_ms: 9.257791
+  type: 'test'
+  ...
+# Subtest: bootstrap returns explicit unavailable data for malformed/invalid/deep journal files without changing bytes
+ok 85 - bootstrap returns explicit unavailable data for malformed/invalid/deep journal files without changing bytes
+  ---
+  duration_ms: 46.184458
+  type: 'test'
+  ...
+# (node:64148) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: journal retains immutable history, monotonic revisions and recoverable deletion; no replacement or ID ambiguity
+ok 86 - journal retains immutable history, monotonic revisions and recoverable deletion; no replacement or ID ambiguity
+  ---
+  duration_ms: 118.679625
+  type: 'test'
+  ...
+# Subtest: prepared saved adoption is atomic/latest-wins and never changes original source; draft recovery remains undoable
+ok 87 - prepared saved adoption is atomic/latest-wins and never changes original source; draft recovery remains undoable
+  ---
+  duration_ms: 24.315083
+  type: 'test'
+  ...
+# Subtest: confirmed captured save A keeps newer B dirty; rename/duplicate/delete preserve payload/history and source basis
+ok 88 - confirmed captured save A keeps newer B dirty; rename/duplicate/delete preserve payload/history and source basis
+  ---
+  duration_ms: 196.160875
+  type: 'test'
+  ...
+# Subtest: invalid/newer imports retain exact raw bytes and prior saved data; known legacy problems recover as editable blocked input
+ok 89 - invalid/newer imports retain exact raw bytes and prior saved data; known legacy problems recover as editable blocked input
+  ---
+  duration_ms: 40.898083
+  type: 'test'
+  ...
+# Subtest: source/fingerprint drift blocks reopen, conflict never overwrites, static cannot write and recovery restores raw draft separately
+ok 90 - source/fingerprint drift blocks reopen, conflict never overwrites, static cannot write and recovery restores raw draft separately
+  ---
+  duration_ms: 22.773917
+  type: 'test'
+  ...
+# Subtest: new envelope identity starts at revision1 after prior save; acknowledgement is truthful with newer edits
+ok 91 - new envelope identity starts at revision1 after prior save; acknowledgement is truthful with newer edits
+  ---
+  duration_ms: 66.148875
+  type: 'test'
+  ...
+# Subtest: offered recovery survives fresh edits and save until explicit decision; metadata prevents reinterpretation
+ok 92 - offered recovery survives fresh edits and save until explicit decision; metadata prevents reinterpretation
+  ---
+  duration_ms: 26.770083
+  type: 'test'
+  ...
+# Subtest: deep bounded-size payloads reject without stack overflow
+ok 93 - deep bounded-size payloads reject without stack overflow
+  ---
+  duration_ms: 160.667583
+  type: 'test'
+  ...
+# Subtest: late GET success or failure cannot replace a confirmed newer journal write
+ok 94 - late GET success or failure cannot replace a confirmed newer journal write
+  ---
+  duration_ms: 67.359125
+  type: 'test'
+  ...
+# Subtest: failed selection can be explicitly replaced by a validated imported draft and saved under a new identity
+ok 95 - failed selection can be explicitly replaced by a validated imported draft and saved under a new identity
+  ---
+  duration_ms: 21.083625
+  type: 'test'
+  ...
+# Subtest: recovery uses schema/product codec and restores last-valid output atomically with raw invalid text
+ok 96 - recovery uses schema/product codec and restores last-valid output atomically with raw invalid text
+  ---
+  duration_ms: 25.088875
+  type: 'test'
+  ...
+# Subtest: valid recovery captured during pending compilation resumes its own compile without a ready A/B mismatch
+ok 97 - valid recovery captured during pending compilation resumes its own compile without a ready A/B mismatch
+  ---
+  duration_ms: 40.368333
+  type: 'test'
+  ...
+# Subtest: denied browser storage reads never poison canonical editing or compilation
+ok 98 - denied browser storage reads never poison canonical editing or compilation
+  ---
+  duration_ms: 38.477958
+  type: 'test'
+  ...
+# Subtest: independent immutable draft pin records survive unrelated initialized tabs
+ok 99 - independent immutable draft pin records survive unrelated initialized tabs
+  ---
+  duration_ms: 15.369542
+  type: 'test'
+  ...
+# (node:64182) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: declared device corners match the renderer at fractional, small and large zoom
+ok 100 - declared device corners match the renderer at fractional, small and large zoom
+  ---
+  duration_ms: 3.137375
+  type: 'test'
+  ...
+# Subtest: tablets get their own defaults and a flat renderer can explicitly opt out
+ok 101 - tablets get their own defaults and a flat renderer can explicitly opt out
+  ---
+  duration_ms: 0.115875
+  type: 'test'
+  ...
+# Subtest: a failing diagnostics handler reports none and never blocks the ready reply
+ok 102 - a failing diagnostics handler reports none and never blocks the ready reply
+  ---
+  duration_ms: 19.049459
+  type: 'test'
+  ...
+# Subtest: preview frames carry the adapter frame isolation, and nothing when it is undeclared
+ok 103 - preview frames carry the adapter frame isolation, and nothing when it is undeclared
+  ---
+  duration_ms: 106.653041
+  type: 'test'
+  ...
+# (node:64192) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: host creation, legacy Vite interpretation, preservation, and mismatch refuse writes
+ok 104 - host creation, legacy Vite interpretation, preservation, and mismatch refuse writes
+  ---
+  duration_ms: 4804.122167
+  type: 'test'
+  ...
+# Subtest: compiler seam is opt-in, resolves explicit map, rejects mismatched authority and executable output
+ok 105 - compiler seam is opt-in, resolves explicit map, rejects mismatched authority and executable output
+  ---
+  duration_ms: 56.218041
+  type: 'test'
+  ...
+# Subtest: Fetch save transport retains revision, schema, size, origin and unreadable-file protections
+ok 106 - Fetch save transport retains revision, schema, size, origin and unreadable-file protections
+  ---
+  duration_ms: 53.143083
+  type: 'test'
+  ...
+# Subtest: Next live saved-file bootstrap resolves new scenario/layout IDs before common store initialization; review builds use snapshots
+ok 107 - Next live saved-file bootstrap resolves new scenario/layout IDs before common store initialization; review builds use snapshots
+  ---
+  duration_ms: 25.609334
+  type: 'test'
+  ...
+# (node:64258) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: LM-01 the declaration is checked, grouped in declared order and searched on every field
+ok 108 - LM-01 the declaration is checked, grouped in declared order and searched on every field
+  ---
+  duration_ms: 169.08175
+  type: 'test'
+  ...
+# Subtest: LM-02 links name a component and a section; a module link wins, and an unknown component is reported
+ok 109 - LM-02 links name a component and a section; a module link wins, and an unknown component is reported
+  ---
+  duration_ms: 9.659917
+  type: 'test'
+  ...
+# Subtest: LM-03 previews load only from the adapter entry on the frame origin; captures only from the Studio or inline
+ok 110 - LM-03 previews load only from the adapter entry on the frame origin; captures only from the Studio or inline
+  ---
+  duration_ms: 3.759
+  type: 'test'
+  ...
+# Subtest: LM-04 playground values are declared, validated and complete
+ok 111 - LM-04 playground values are declared, validated and complete
+  ---
+  duration_ms: 3.113708
+  type: 'test'
+  ...
+# Subtest: LM-05 documentation is checked before a page renders it
+ok 112 - LM-05 documentation is checked before a page renders it
+  ---
+  duration_ms: 6.016666
+  type: 'test'
+  ...
+# Subtest: LM-06 at most LIVE_FRAMES previews are live, nearest first, the playground preferred, only near ones
+ok 113 - LM-06 at most LIVE_FRAMES previews are live, nearest first, the playground preferred, only near ones
+  ---
+  duration_ms: 3.941417
+  type: 'test'
+  ...
+# Subtest: LM-08 the build reads the component IDs src/library/index.ts documents, or says why it cannot
+ok 114 - LM-08 the build reads the component IDs src/library/index.ts documents, or says why it cannot
+  ---
+  duration_ms: 4.215875
+  type: 'test'
+  ...
+# Subtest: LM-09 the library model files stay pure and the adapter type declares the library
+ok 115 - LM-09 the library model files stay pure and the adapter type declares the library
+  ---
+  duration_ms: 0.422875
+  type: 'test'
+  ...
+# Subtest: LM-07 code is tokenized losslessly into kinds the page draws as text
+ok 116 - LM-07 code is tokenized losslessly into kinds the page draws as text
+  ---
+  duration_ms: 3.699416
+  type: 'test'
+  ...
+# Subtest: LM-10 documentation files import only @studio/library and their own files
+ok 117 - LM-10 documentation files import only @studio/library and their own files
+  ---
+  duration_ms: 1.289709
+  type: 'test'
+  ...
+# Subtest: LM-11 the product seed is empty, the API is the published surface, and the build and lint know the library
+ok 118 - LM-11 the product seed is empty, the API is the published surface, and the build and lint know the library
+  ---
+  duration_ms: 0.857958
+  type: 'test'
+  ...
+# Subtest: LM-12 the example library is a valid declaration, and every documented component has valid documentation
+ok 119 - LM-12 the example library is a valid declaration, and every documented component has valid documentation
+  ---
+  duration_ms: 48.681125
+  type: 'test'
+  ...
+# Subtest: LM-13 library pages render documentation as React text, load frames only from the adapter, and never remount for values
+ok 120 - LM-13 library pages render documentation as React text, load frames only from the adapter, and never remount for values
+  ---
+  duration_ms: 1.161042
+  type: 'test'
+  ...
+# Subtest: LM-14 the core shell reaches the library only through lazy slots, and library is a reserved link key
+ok 121 - LM-14 the core shell reaches the library only through lazy slots, and library is a reserved link key
+  ---
+  duration_ms: 1.284041
+  type: 'test'
+  ...
+# Subtest: LM-16 the library reference documents the contract and SKILL.md routes to it only for a component library
+ok 122 - LM-16 the library reference documents the contract and SKILL.md routes to it only for a component library
+  ---
+  duration_ms: 3.716125
+  type: 'test'
+  ...
+# Subtest: LM-17 the library files ship with the starter
+ok 123 - LM-17 the library files ship with the starter
+  ---
+  duration_ms: 0.425084
+  type: 'test'
+  ...
+# Subtest: LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported
+ok 124 - LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported
+  ---
+  duration_ms: 4.726375
+  type: 'test'
+  ...
+# Subtest: 0.13.1 the library comes first in the rail with a divider after it, and its Go to groups precede the views
+ok 125 - 0.13.1 the library comes first in the rail with a divider after it, and its Go to groups precede the views
+  ---
+  duration_ms: 19.318917
+  type: 'test'
+  ...
+# Subtest: 0.13.1 Home, End and the page keys typed in a field inside a frame never scroll the Studio around it
+ok 126 - 0.13.1 Home, End and the page keys typed in a field inside a frame never scroll the Studio around it
+  ---
+  duration_ms: 8.375584
+  type: 'test'
+  ...
+# Subtest: 0.13.2 Page Up and Page Down typed in a field never scroll the Studio on any platform
+ok 127 - 0.13.2 Page Up and Page Down typed in a field never scroll the Studio on any platform
+  ---
+  duration_ms: 4.665584
+  type: 'test'
+  ...
+# Subtest: 0.14.0 sections nest groups in declared order; alsoIn cross-lists at the component position; the home path names the section
+ok 128 - 0.14.0 sections nest groups in declared order; alsoIn cross-lists at the component position; the home path names the section
+  ---
+  duration_ms: 2.983541
+  type: 'test'
+  ...
+# Subtest: 0.14.0 invalid sections and alsoIn are named, and the panel, Go to and breadcrumb use them
+ok 129 - 0.14.0 invalid sections and alsoIn are named, and the panel, Go to and breadcrumb use them
+  ---
+  duration_ms: 7.880792
+  type: 'test'
+  ...
+# Subtest: valid local v1 manifest validates without writing and CLI reports bounded coverage
+ok 130 - valid local v1 manifest validates without writing and CLI reports bounded coverage
+  ---
+  duration_ms: 108.527875
+  type: 'test'
+  ...
+# Subtest: typed missing, wrong-kind and removed references remain distinct failures
+ok 131 - typed missing, wrong-kind and removed references remain distinct failures
+  ---
+  duration_ms: 10.912958
+  type: 'test'
+  ...
+# Subtest: duplicate IDs, source mappings, record ownership and required envelopes are checked
+ok 132 - duplicate IDs, source mappings, record ownership and required envelopes are checked
+  ---
+  duration_ms: 7.78525
+  type: 'test'
+  ...
+# Subtest: fixture byte changes, scenario version drift, missing provenance and audiences fail
+ok 133 - fixture byte changes, scenario version drift, missing provenance and audiences fail
+  ---
+  duration_ms: 8.448583
+  type: 'test'
+  ...
+# Subtest: contained file checks reject absolute, traversal and symlink escape paths
+ok 134 - contained file checks reject absolute, traversal and symlink escape paths
+  ---
+  duration_ms: 18.016791
+  type: 'test'
+  ...
+# Subtest: presenter overrides and walkthrough references retain unresolved diagnostics
+ok 135 - presenter overrides and walkthrough references retain unresolved diagnostics
+  ---
+  duration_ms: 5.859708
+  type: 'test'
+  ...
+# Subtest: target/profile mismatches and unsupported schemas fail honestly
+ok 136 - target/profile mismatches and unsupported schemas fail honestly
+  ---
+  duration_ms: 138.874542
+  type: 'test'
+  ...
+# Subtest: status claims require passing evidence; status axes remain independent
+ok 137 - status claims require passing evidence; status axes remain independent
+  ---
+  duration_ms: 10.102625
+  type: 'test'
+  ...
+# Subtest: malformed sidecar JSON and absent local files fail without exceptions
+ok 138 - malformed sidecar JSON and absent local files fail without exceptions
+  ---
+  duration_ms: 7.06825
+  type: 'test'
+  ...
+# Subtest: unreferenced tombstones keep historic paths and dependencies without becoming runnable
+ok 139 - unreferenced tombstones keep historic paths and dependencies without becoming runnable
+  ---
+  duration_ms: 6.572291
+  type: 'test'
+  ...
+# Subtest: aggregate and reference-changing overrides cannot bypass the presentation-only allowlist
+ok 140 - aggregate and reference-changing overrides cannot bypass the presentation-only allowlist
+  ---
+  duration_ms: 11.772625
+  type: 'test'
+  ...
+# Subtest: saved baseline needs a supported structured envelope
+ok 141 - saved baseline needs a supported structured envelope
+  ---
+  duration_ms: 24.468083
+  type: 'test'
+  ...
+# Subtest: Next standalone checks regenerate current production route types and exclude stale development validators
+ok 142 - Next standalone checks regenerate current production route types and exclude stale development validators
+  ---
+  duration_ms: 0.706834
+  type: 'test'
+  ...
+# (node:64416) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: switches, text, numbers and choices normalize; booleans stay booleans; readonly takes nothing
+ok 143 - switches, text, numbers and choices normalize; booleans stay booleans; readonly takes nothing
+  ---
+  duration_ms: 0.714667
+  type: 'test'
+  ...
+# Subtest: a range still snaps to its last in-range step when the range is not a whole number of steps (0.10.2)
+ok 144 - a range still snaps to its last in-range step when the range is not a whole number of steps (0.10.2)
+  ---
+  duration_ms: 0.173375
+  type: 'test'
+  ...
+# Subtest: a property whose ID is a reserved link key is rejected with a clear error
+ok 145 - a property whose ID is a reserved link key is rejected with a clear error
+  ---
+  duration_ms: 0.935583
+  type: 'test'
+  ...
+# Subtest: properties apply to their surfaces, curated first, in declaration order
+ok 146 - properties apply to their surfaces, curated first, in declaration order
+  ---
+  duration_ms: 0.867541
+  type: 'test'
+  ...
+# Subtest: links carry every value except text that is not shareable, which leaves edited=local
+ok 147 - links carry every value except text that is not shareable, which leaves edited=local
+  ---
+  duration_ms: 0.390958
+  type: 'test'
+  ...
+# Subtest: a link sets the linked scenario: values that travel from the link, local text only with edited=local
+ok 148 - a link sets the linked scenario: values that travel from the link, local text only with edited=local
+  ---
+  duration_ms: 0.252084
+  type: 'test'
+  ...
+# Subtest: a property with a reserved link key never travels in links, in either direction
+ok 149 - a property with a reserved link key never travels in links, in either direction
+  ---
+  duration_ms: 0.19825
+  type: 'test'
+  ...
+# Subtest: a property with a reserved link key gets no row and is named once in the console
+ok 150 - a property with a reserved link key gets no row and is named once in the console
+  ---
+  duration_ms: 0.134416
+  type: 'test'
+  ...
+# Subtest: stored local text passes the same normalization as a link: stale, corrupt or readonly values are dropped
+ok 151 - stored local text passes the same normalization as a link: stale, corrupt or readonly values are dropped
+  ---
+  duration_ms: 0.317916
+  type: 'test'
+  ...
+# Subtest: linkEdits round-trips through a URL to editsFromLink, keeping false and decimals
+ok 152 - linkEdits round-trips through a URL to editsFromLink, keeping false and decimals
+  ---
+  duration_ms: 0.415833
+  type: 'test'
+  ...
+# Subtest: linkEdits writes only values that still normalize, so a stale stored edit never reaches a link
+ok 153 - linkEdits writes only values that still normalize, so a stale stored edit never reaches a link
+  ---
+  duration_ms: 1.245792
+  type: 'test'
+  ...
+# Subtest: keptEdits keeps only a scenario's own properties at values that normalize
+ok 154 - keptEdits keeps only a scenario's own properties at values that normalize
+  ---
+  duration_ms: 0.129291
+  type: 'test'
+  ...
+# Subtest: a link shows its own state but keeps this browser's stored edits for that scenario until the person edits there
+ok 155 - a link shows its own state but keeps this browser's stored edits for that scenario until the person edits there
+  ---
+  duration_ms: 0.201042
+  type: 'test'
+  ...
+# Subtest: Compare offers switches, selects, choices and numbers with presets; never text
+ok 156 - Compare offers switches, selects, choices and numbers with presets; never text
+  ---
+  duration_ms: 0.108042
+  type: 'test'
+  ...
+# Subtest: saved states join the catalog after their surface, nested under the base, rendering the base
+ok 157 - saved states join the catalog after their surface, nested under the base, rendering the base
+  ---
+  duration_ms: 0.12875
+  type: 'test'
+  ...
+# Subtest: a hand-edited scenarios.json adds only usable saved states, with only their base's own property values
+ok 158 - a hand-edited scenarios.json adds only usable saved states, with only their base's own property values
+  ---
+  duration_ms: 0.318917
+  type: 'test'
+  ...
+# Subtest: usableSaved applies the same per-entry limits as studio-scenarios/1, so a skipped entry never blocks a save
+ok 159 - usableSaved applies the same per-entry limits as studio-scenarios/1, so a skipped entry never blocks a save
+  ---
+  duration_ms: 0.268208
+  type: 'test'
+  ...
+# Subtest: a saved-state ID never ends in a hyphen
+ok 160 - a saved-state ID never ends in a hyphen
+  ---
+  duration_ms: 0.154917
+  type: 'test'
+  ...
+# Subtest: studio-scenarios/1 accepts saved states and refuses what it should
+ok 161 - studio-scenarios/1 accepts saved states and refuses what it should
+  ---
+  duration_ms: 0.179375
+  type: 'test'
+  ...
+# Subtest: an optional property a state designs can be unset: stored, kept out of links as local, restored only with edited=local
+ok 162 - an optional property a state designs can be unset: stored, kept out of links as local, restored only with edited=local
+  ---
+  duration_ms: 0.091833
+  type: 'test'
+  ...
+# (node:64422) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Tailwind exclusions derive only owned saved paths and exact atomic-temp family, including custom paths
+ok 163 - Tailwind exclusions derive only owned saved paths and exact atomic-temp family, including custom paths
+  ---
+  duration_ms: 122.829583
+  type: 'test'
+  ...
+# (node:64426) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: shell starter ships source only
+ok 164 - shell starter ships source only
+  ---
+  duration_ms: 1.172916
+  type: 'test'
+  ...
+# Subtest: the whole package names no client
+ok 165 - the whole package names no client
+  ---
+  duration_ms: 103.734291
+  type: 'test'
+  ...
+# Subtest: shell starter stays product-neutral and portable
+ok 166 - shell starter stays product-neutral and portable
+  ---
+  duration_ms: 72.291459
+  type: 'test'
+  ...
+# Subtest: the adapter is the only product seam in the shell
+ok 167 - the adapter is the only product seam in the shell
+  ---
+  duration_ms: 52.732459
+  type: 'test'
+  ...
+# Subtest: frame protocol is versioned and validates origin and source on both sides
+ok 168 - frame protocol is versioned and validates origin and source on both sides
+  ---
+  duration_ms: 0.445584
+  type: 'test'
+  ...
+# Subtest: frame sync stays framework free and never reports private fields
+ok 169 - frame sync stays framework free and never reports private fields
+  ---
+  duration_ms: 0.243792
+  type: 'test'
+  ...
+# Subtest: modified is a state set by real changes, not a click count
+ok 170 - modified is a state set by real changes, not a click count
+  ---
+  duration_ms: 0.302584
+  type: 'test'
+  ...
+# Subtest: acceptance script covers every shell criterion
+ok 171 - acceptance script covers every shell criterion
+  ---
+  duration_ms: 4.163083
+  type: 'test'
+  ...
+# Subtest: large lists are windowed with one tab stop
+ok 172 - large lists are windowed with one tab stop
+  ---
+  duration_ms: 1.495041
+  type: 'test'
+  ...
+# Subtest: starter documents local edits and the shell reference exists
+ok 173 - starter documents local edits and the shell reference exists
+  ---
+  duration_ms: 0.519083
+  type: 'test'
+  ...
+# Subtest: the frame can be resized in place and the Size menu lists every profile
+ok 174 - the frame can be resized in place and the Size menu lists every profile
+  ---
+  duration_ms: 3.155458
+  type: 'test'
+  ...
+# Subtest: property values and code cross the frame boundary only as announced capabilities
+ok 175 - property values and code cross the frame boundary only as announced capabilities
+  ---
+  duration_ms: 68.828625
+  type: 'test'
+  ...
+# Subtest: every key the Studio writes to or reads from its links is reserved against property IDs
+ok 176 - every key the Studio writes to or reads from its links is reserved against property IDs
+  ---
+  duration_ms: 16.703292
+  type: 'test'
+  ...
+# Subtest: properties stay out of scenario inputs and the dock, reach Compare only with named values, and edit without a remount
+ok 177 - properties stay out of scenario inputs and the dock, reach Compare only with named values, and edit without a remount
+  ---
+  duration_ms: 102.18125
+  type: 'test'
+  ...
+# Subtest: Properties load lazily, edit only the scenario of the update, and keep stored edits a link does not carry
+ok 178 - Properties load lazily, edit only the scenario of the update, and keep stored edits a link does not carry
+  ---
+  duration_ms: 0.409458
+  type: 'test'
+  ...
+# Subtest: saved states share the layouts guards and stay pure
+ok 179 - saved states share the layouts guards and stay pure
+  ---
+  duration_ms: 0.624834
+  type: 'test'
+  ...
+# Subtest: saved files carry a revision: a stale save gets 409 with the current file and writes nothing
+ok 180 - saved files carry a revision: a stale save gets 409 with the current file and writes nothing
+  ---
+  duration_ms: 547.337417
+  type: 'test'
+  ...
+# Subtest: final fix wave: ordered value updates, file-preserving saves, a lazy-chunk boundary and a fresh runtime per Present step
+ok 181 - final fix wave: ordered value updates, file-preserving saves, a lazy-chunk boundary and a fresh runtime per Present step
+  ---
+  duration_ms: 0.808125
+  type: 'test'
+  ...
+# Subtest: acceptance script covers the workspace criteria
+ok 182 - acceptance script covers the workspace criteria
+  ---
+  duration_ms: 2.161708
+  type: 'test'
+  ...
+# Subtest: acceptance script covers the library criteria
+ok 183 - acceptance script covers the library criteria
+  ---
+  duration_ms: 7.445208
+  type: 'test'
+  ...
+# Subtest: 0.12.1 touch and focus floors: stacked controls keep their own targets and focus is drawn whole
+ok 184 - 0.12.1 touch and focus floors: stacked controls keep their own targets and focus is drawn whole
+  ---
+  duration_ms: 2.266125
+  type: 'test'
+  ...
+# Subtest: 0.12.1 a focused slider outlines its thumb and AC-66 walks the Design sliders
+ok 185 - 0.12.1 a focused slider outlines its thumb and AC-66 walks the Design sliders
+  ---
+  duration_ms: 0.8145
+  type: 'test'
+  ...
+# Subtest: 0.12.1 kit: the SaveBar message wraps above its actions and a DataTable keeps its announcement inside the page
+ok 186 - 0.12.1 kit: the SaveBar message wraps above its actions and a DataTable keeps its announcement inside the page
+  ---
+  duration_ms: 0.722917
+  type: 'test'
+  ...
+# Subtest: 0.12.2 Present anchor label and Compare headers: AA text, whole on the stage, a forced-colors highlight
+ok 187 - 0.12.2 Present anchor label and Compare headers: AA text, whole on the stage, a forced-colors highlight
+  ---
+  duration_ms: 4.580167
+  type: 'test'
+  ...
+# Subtest: UP-01 a created Studio is stamped with the shell files only
+ok 188 - UP-01 a created Studio is stamped with the shell files only
+  ---
+  duration_ms: 1250.820084
+  type: 'test'
+  ...
+# Subtest: UP-02 a report writes nothing and lists every action
+ok 189 - UP-02 a report writes nothing and lists every action
+  ---
+  duration_ms: 1615.279959
+  type: 'test'
+  ...
+# Subtest: UP-03 applying replaces, adds and deletes shell files and rewrites the lock
+ok 190 - UP-03 applying replaces, adds and deletes shell files and rewrites the lock
+  ---
+  duration_ms: 1146.254
+  type: 'test'
+  ...
+# Subtest: UP-04 product files never change
+ok 191 - UP-04 product files never change
+  ---
+  duration_ms: 804.448666
+  type: 'test'
+  ...
+# Subtest: UP-05 a local edit blocks until it is replaced or kept with a reason
+ok 192 - UP-05 a local edit blocks until it is replaced or kept with a reason
+  ---
+  duration_ms: 1471.283583
+  type: 'test'
+  ...
+# Subtest: UP-06 deleted optional files stay deleted once recorded; other missing files block
+ok 193 - UP-06 deleted optional files stay deleted once recorded; other missing files block
+  ---
+  duration_ms: 714.956041
+  type: 'test'
+  ...
+# Subtest: UP-07 package.json keeps the Studio additions and takes the shell versions
+ok 194 - UP-07 package.json keeps the Studio additions and takes the shell versions
+  ---
+  duration_ms: 440.673125
+  type: 'test'
+  ...
+# Subtest: UP-08 the report prints the update notes between the two versions
+ok 195 - UP-08 the report prints the update notes between the two versions
+  ---
+  duration_ms: 550.598292
+  type: 'test'
+  ...
+# Subtest: UP-09 adoption finds the release a Studio came from and lists exactly what differs
+ok 196 - UP-09 adoption finds the release a Studio came from and lists exactly what differs
+  ---
+  duration_ms: 1120.747209
+  type: 'test'
+  ...
+# Subtest: UP-10 applying refuses uncommitted changes to shell files
+ok 197 - UP-10 applying refuses uncommitted changes to shell files
+  ---
+  duration_ms: 1299.399292
+  type: 'test'
+  ...
+# Subtest: UP-11 the workspace seed is created once, and nothing in src/workspace/ is ever compared or updated
+ok 198 - UP-11 the workspace seed is created once, and nothing in src/workspace/ is ever compared or updated
+  ---
+  duration_ms: 655.001792
+  type: 'test'
+  ...
+# Subtest: UP-12 a major kit change is reported as breaking and applied only when accepted
+ok 199 - UP-12 a major kit change is reported as breaking and applied only when accepted
+  ---
+  duration_ms: 871.308583
+  type: 'test'
+  ...
+# Subtest: UP-13 acceptance is skipped with a reason when the workspace example it loads is missing
+ok 200 - UP-13 acceptance is skipped with a reason when the workspace example it loads is missing
+  ---
+  duration_ms: 1098.672041
+  type: 'test'
+  ...
+# Subtest: UP-14 the library seed is created once, and nothing in src/library/ is ever compared or updated
+ok 201 - UP-14 the library seed is created once, and nothing in src/library/ is ever compared or updated
+  ---
+  duration_ms: 509.563541
+  type: 'test'
+  ...
+# Subtest: release fingerprints include the current shell
+ok 202 - release fingerprints include the current shell
+  ---
+  duration_ms: 16.292416
+  type: 'test'
+  ...
+# (node:64485) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: WM-01 modules resolve in declaration order with the first reason each cannot open
+ok 203 - WM-01 modules resolve in declaration order with the first reason each cannot open
+  ---
+  duration_ms: 464.9345
+  type: 'test'
+  ...
+# Subtest: WM-01b module groups draw a divider only between consecutive modules whose groups differ
+ok 204 - WM-01b module groups draw a divider only between consecutive modules whose groups differ
+  ---
+  duration_ms: 4.523125
+  type: 'test'
+  ...
+# Subtest: WM-02 a module file and the adapter must agree, and the declaration must be well formed
+ok 205 - WM-02 a module file and the adapter must agree, and the declaration must be well formed
+  ---
+  duration_ms: 9.097875
+  type: 'test'
+  ...
+# Subtest: WM-03 links name a module and a section; a missing section falls back, an unknown module is reported
+ok 206 - WM-03 links name a module and a section; a missing section falls back, an unknown module is reported
+  ---
+  duration_ms: 3.420167
+  type: 'test'
+  ...
+# Subtest: WM-04 undeclared names, kind mismatches, cross-origin and missing hosts are refused without a request
+ok 207 - WM-04 undeclared names, kind mismatches, cross-origin and missing hosts are refused without a request
+  ---
+  duration_ms: 5.777875
+  type: 'test'
+  ...
+# Subtest: WM-04b the runtime operation-name pattern matches the declaration rule
+ok 208 - WM-04b the runtime operation-name pattern matches the declaration rule
+  ---
+  duration_ms: 0.265625
+  type: 'test'
+  ...
+# Subtest: WM-05 a declared operation is one same-origin JSON POST to {operations}/{name}
+ok 209 - WM-05 a declared operation is one same-origin JSON POST to {operations}/{name}
+  ---
+  duration_ms: 3.201709
+  type: 'test'
+  ...
+# Subtest: WM-06 results use one envelope; anything else is a host problem, never data
+ok 210 - WM-06 results use one envelope; anything else is a host problem, never data
+  ---
+  duration_ms: 2.269625
+  type: 'test'
+  ...
+# Subtest: WM-07 stores notify their subscribers and the guard registry asks until released
+ok 211 - WM-07 stores notify their subscribers and the guard registry asks until released
+  ---
+  duration_ms: 4.007125
+  type: 'test'
+  ...
+# Subtest: WM-08 the workspace model files stay pure
+ok 212 - WM-08 the workspace model files stay pure
+  ---
+  duration_ms: 0.751
+  type: 'test'
+  ...
+# Subtest: WM-09 tables filter on every column, sort stably both ways and toggle direction
+ok 213 - WM-09 tables filter on every column, sort stably both ways and toggle direction
+  ---
+  duration_ms: 11.036166
+  type: 'test'
+  ...
+# Subtest: WM-10 the kit is one versioned barrel with the floors built in
+ok 214 - WM-10 the kit is one versioned barrel with the floors built in
+  ---
+  duration_ms: 1.205708
+  type: 'test'
+  ...
+# Subtest: WM-11 workspace files import only the kit, the workspace API, React and their own files
+ok 215 - WM-11 workspace files import only the kit, the workspace API, React and their own files
+  ---
+  duration_ms: 1.714583
+  type: 'test'
+  ...
+# Subtest: WM-13 the build reads the module IDs a workspace file defines, or says why it cannot
+ok 216 - WM-13 the build reads the module IDs a workspace file defines, or says why it cannot
+  ---
+  duration_ms: 109.302
+  type: 'test'
+  ...
+# Subtest: WM-12 the product seed is empty and the workspace API is the published surface
+ok 217 - WM-12 the product seed is empty and the workspace API is the published surface
+  ---
+  duration_ms: 0.582458
+  type: 'test'
+  ...
+# Subtest: WM-13b the example host reads, writes with compare-and-set, and refuses what the contract refuses
+ok 218 - WM-13b the example host reads, writes with compare-and-set, and refuses what the contract refuses
+  ---
+  duration_ms: 229.678
+  type: 'test'
+  ...
+# Subtest: WM-13c the dev server middleware applies the endpoint guard, keeps empty writes and caps history
+ok 219 - WM-13c the dev server middleware applies the endpoint guard, keeps empty writes and caps history
+  ---
+  duration_ms: 225.527416
+  type: 'test'
+  ...
+# Subtest: WM-14 the core shell reaches the workspace only through lazy slots
+ok 220 - WM-14 the core shell reaches the workspace only through lazy slots
+  ---
+  duration_ms: 0.999333
+  type: 'test'
+  ...
+# Subtest: WM-15 the workspace reference documents the contract and SKILL.md routes to it only for workspace tools
+ok 221 - WM-15 the workspace reference documents the contract and SKILL.md routes to it only for workspace tools
+  ---
+  duration_ms: 1.527916
+  type: 'test'
+  ...
+# Subtest: WM-17 a missing host stops a module only on a read before the host answered it, never under unsaved changes
+ok 222 - WM-17 a missing host stops a module only on a read before the host answered it, never under unsaved changes
+  ---
+  duration_ms: 7.665541
+  type: 'test'
+  ...
+# Subtest: WM-17b a missing host is recorded per module, so another module is never stopped by it
+ok 223 - WM-17b a missing host is recorded per module, so another module is never stopped by it
+  ---
+  duration_ms: 3.068666
+  type: 'test'
+  ...
+# Subtest: WM-16 the workspace files ship with the starter
+ok 224 - WM-16 the workspace files ship with the starter
+  ---
+  duration_ms: 0.185625
+  type: 'test'
+  ...
+# Subtest: WM-17 0.15.0: groups, host-free modules, items, SelectList and step keys are public, documented and measured
+ok 225 - WM-17 0.15.0: groups, host-free modules, items, SelectList and step keys are public, documented and measured
+  ---
+  duration_ms: 2.224708
+  type: 'test'
+  ...
+# Subtest: WM-18 a sandbox without allow-same-origin makes every preview frame opaque, wherever it is served
+ok 226 - WM-18 a sandbox without allow-same-origin makes every preview frame opaque, wherever it is served
+  ---
+  duration_ms: 0.129375
+  type: 'test'
+  ...
+# Subtest: all new and existing domain guides are reachable from the skill entrypoint
+ok 227 - all new and existing domain guides are reachable from the skill entrypoint
+  ---
+  duration_ms: 202.094792
+  type: 'test'
+  ...
+# Subtest: evaluation requests cover the new domains, every mode, and a consequential conflict
+ok 228 - evaluation requests cover the new domains, every mode, and a consequential conflict
+  ---
+  duration_ms: 3.998083
+  type: 'test'
+  ...
+# Subtest: the published collection validates after package material is present
+ok 229 - the published collection validates after package material is present
+  ---
+  duration_ms: 368.352584
+  type: 'test'
+  ...
+# Subtest: rejects catalog and package drift
+ok 230 - rejects catalog and package drift
+  ---
+  duration_ms: 31.656042
+  type: 'test'
+  ...
+# Subtest: rejects a package version that diverges from the catalog
+ok 231 - rejects a package version that diverges from the catalog
+  ---
+  duration_ms: 106.710416
+  type: 'test'
+  ...
+# Subtest: accepts a portable canonical package
+ok 232 - accepts a portable canonical package
+  ---
+  duration_ms: 41.546125
+  type: 'test'
+  ...
+# Subtest: rejects a non-portable machine path
+ok 233 - rejects a non-portable machine path
+  ---
+  duration_ms: 182.197459
+  type: 'test'
+  ...
+# Subtest: rejects a malformed canonical package identity
+ok 234 - rejects a malformed canonical package identity
+  ---
+  duration_ms: 60.731125
+  type: 'test'
+  ...
+1..234
+# tests 234
+# suites 0
+# pass 233
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15262.482083

@@ -1,0 +1,1850 @@
+[
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 1440,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 269,
+          "right": 270
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 286,
+          "right": 402.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 286,
+          "right": 405.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 286,
+          "right": 393.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 401.859375,
+          "right": 481.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 286,
+          "right": 374.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 286,
+          "right": 434.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        }
+      ],
+      "bounds": {
+        "x": 270,
+        "y": 112,
+        "width": 256,
+        "height": 448,
+        "top": 112,
+        "right": 526,
+        "bottom": 560,
+        "left": 270
+      }
+    },
+    "bar": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 528.25,
+      "width": 224,
+      "height": 32
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 112,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 768,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 269,
+          "right": 270
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 286,
+          "right": 402.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 286,
+          "right": 405.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 286,
+          "right": 393.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 401.859375,
+          "right": 481.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 286,
+          "right": 374.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 286,
+          "right": 434.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        }
+      ],
+      "bounds": {
+        "x": 270,
+        "y": 128,
+        "width": 256,
+        "height": 448,
+        "top": 128,
+        "right": 526,
+        "bottom": 576,
+        "left": 270
+      }
+    },
+    "bar": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 390,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 4,
+          "right": 5
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 21,
+          "right": 137.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 21,
+          "right": 140.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 21,
+          "right": 128.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 136.859375,
+          "right": 216.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 21,
+          "right": 109.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 21,
+          "right": 169.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        }
+      ],
+      "bounds": {
+        "x": 5,
+        "y": 128,
+        "width": 256,
+        "height": 448,
+        "top": 128,
+        "right": 261,
+        "bottom": 576,
+        "left": 5
+      }
+    },
+    "bar": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 21,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 5,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 1440,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 269,
+          "right": 270
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 286,
+          "right": 402.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 286,
+          "right": 405.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 286,
+          "right": 393.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 401.859375,
+          "right": 481.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 286,
+          "right": 374.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 286,
+          "right": 434.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        }
+      ],
+      "bounds": {
+        "x": 270,
+        "y": 112,
+        "width": 256,
+        "height": 448,
+        "top": 112,
+        "right": 526,
+        "bottom": 560,
+        "left": 270
+      }
+    },
+    "bar": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 528.25,
+      "width": 224,
+      "height": 32
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 112,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 768,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 269,
+          "right": 270
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 286,
+          "right": 402.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 286,
+          "right": 405.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 286,
+          "right": 393.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 401.859375,
+          "right": 481.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 286,
+          "right": 374.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 286,
+          "right": 434.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        }
+      ],
+      "bounds": {
+        "x": 270,
+        "y": 128,
+        "width": 256,
+        "height": 448,
+        "top": 128,
+        "right": 526,
+        "bottom": 576,
+        "left": 270
+      }
+    },
+    "bar": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 390,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 4,
+          "right": 5
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 21,
+          "right": 137.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 21,
+          "right": 140.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 21,
+          "right": 128.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 136.859375,
+          "right": 216.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 21,
+          "right": 109.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 21,
+          "right": 169.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        }
+      ],
+      "bounds": {
+        "x": 5,
+        "y": 128,
+        "width": 256,
+        "height": 448,
+        "top": 128,
+        "right": 261,
+        "bottom": 576,
+        "left": 5
+      }
+    },
+    "bar": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 21,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 5,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 1440,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 269,
+          "right": 270
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 286,
+          "right": 402.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 286,
+          "right": 405.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 286,
+          "right": 393.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 401.859375,
+          "right": 481.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 286,
+          "right": 374.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 286,
+          "right": 434.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        }
+      ],
+      "bounds": {
+        "x": 270,
+        "y": 112,
+        "width": 256,
+        "height": 448,
+        "top": 112,
+        "right": 526,
+        "bottom": 560,
+        "left": 270
+      }
+    },
+    "bar": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 528.25,
+      "width": 224,
+      "height": 32
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 112,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 768,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 269,
+          "right": 270
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 286,
+          "right": 402.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 286,
+          "right": 405.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 286,
+          "right": 393.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 401.859375,
+          "right": 481.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 286,
+          "right": 374.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 286,
+          "right": 434.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        }
+      ],
+      "bounds": {
+        "x": 270,
+        "y": 128,
+        "width": 256,
+        "height": 448,
+        "top": 128,
+        "right": 526,
+        "bottom": 576,
+        "left": 270
+      }
+    },
+    "bar": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 390,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 4,
+          "right": 5
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 21,
+          "right": 137.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 21,
+          "right": 140.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 21,
+          "right": 128.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 136.859375,
+          "right": 216.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 21,
+          "right": 109.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 21,
+          "right": 169.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        }
+      ],
+      "bounds": {
+        "x": 5,
+        "y": 128,
+        "width": 256,
+        "height": 448,
+        "top": 128,
+        "right": 261,
+        "bottom": 576,
+        "left": 5
+      }
+    },
+    "bar": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 21,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 5,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 1440,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 269,
+          "right": 270
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 286,
+          "right": 402.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 286,
+          "right": 405.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 286,
+          "right": 393.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 401.859375,
+          "right": 481.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 286,
+          "right": 374.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 286,
+          "right": 434.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        }
+      ],
+      "bounds": {
+        "x": 270,
+        "y": 112,
+        "width": 256,
+        "height": 448,
+        "top": 112,
+        "right": 526,
+        "bottom": 560,
+        "left": 270
+      }
+    },
+    "bar": {
+      "width": 1100,
+      "scrollWidth": 1100,
+      "documentWidth": 1440,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 528.25,
+      "width": 224,
+      "height": 32
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 112,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 768,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 269,
+          "right": 270
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 286,
+          "right": 402.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 286,
+          "right": 405.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 286,
+          "right": 393.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 401.859375,
+          "right": 481.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 286,
+          "right": 374.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 286,
+          "right": 434.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 286,
+          "right": 510
+        }
+      ],
+      "bounds": {
+        "x": 270,
+        "y": 128,
+        "width": 256,
+        "height": 448,
+        "top": 128,
+        "right": 526,
+        "bottom": 576,
+        "left": 270
+      }
+    },
+    "bar": {
+      "width": 428,
+      "scrollWidth": 428,
+      "documentWidth": 768,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 286,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 270,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 390,
+    "pass": true,
+    "geometry": {
+      "width": 256,
+      "scrollWidth": 256,
+      "paragraphs": [
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Saved WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW revision 1."
+        },
+        {
+          "width": 224,
+          "scrollWidth": 224,
+          "wrap": "anywhere",
+          "text": "Save writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded."
+        }
+      ],
+      "fields": [
+        {
+          "tag": "BUTTON",
+          "text": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· r1▼",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 1,
+          "left": 4,
+          "right": 5
+        },
+        {
+          "tag": "INPUT",
+          "text": "",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "New direction",
+          "width": 116.640625,
+          "left": 21,
+          "right": 137.640625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save direction",
+          "width": 119.375,
+          "left": 21,
+          "right": 140.375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save as new",
+          "width": 107.859375,
+          "left": 21,
+          "right": 128.859375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Rename",
+          "width": 79.53125,
+          "left": 136.859375,
+          "right": 216.390625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Duplicate",
+          "width": 88.484375,
+          "left": 21,
+          "right": 109.484375
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete recoverably",
+          "width": 148.890625,
+          "left": 21,
+          "right": 169.890625
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download saved",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Download draft recovery",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "TEXTAREA",
+          "text": "",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Import as draft",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Close directions",
+          "width": 224,
+          "left": 21,
+          "right": 245
+        }
+      ],
+      "bounds": {
+        "x": 5,
+        "y": 128,
+        "width": 256,
+        "height": 448,
+        "top": 128,
+        "right": 261,
+        "bottom": 576,
+        "left": 5
+      }
+    },
+    "bar": {
+      "width": 390,
+      "scrollWidth": 390,
+      "documentWidth": 390,
+      "identity": "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW· saved r1"
+    },
+    "closeFocused": true,
+    "closeBounds": {
+      "x": 21,
+      "y": 516.25,
+      "width": 224,
+      "height": 44
+    },
+    "dialogBounds": {
+      "x": 5,
+      "y": 128,
+      "width": 256,
+      "height": 448
+    },
+    "errors": []
+  }
+]

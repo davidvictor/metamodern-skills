@@ -1,0 +1,2754 @@
+[
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 1440,
+    "height": 1000,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 510,
+        "y": 58.375,
+        "width": 420,
+        "height": 883.25,
+        "top": 58.375,
+        "right": 930,
+        "bottom": 941.625,
+        "left": 510
+      },
+      "client": 881,
+      "scroll": 881,
+      "scrollWidth": 418,
+      "clientWidth": 418,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "968px",
+      "border": "1px"
+    },
+    "mask": {
+      "background": "oklab(0 0 0 / 0.18)",
+      "blur": "none"
+    },
+    "options": {
+      "columns": "185px 185px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": {
+      "width": 448,
+      "padding": "24px",
+      "radius": "24px"
+    },
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 768,
+    "height": 1000,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 174,
+        "y": 16,
+        "width": 420,
+        "height": 968,
+        "top": 16,
+        "right": 594,
+        "bottom": 984,
+        "left": 174
+      },
+      "client": 966,
+      "scroll": 995,
+      "scrollWidth": 418,
+      "clientWidth": 418,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "968px",
+      "border": "1px"
+    },
+    "mask": {
+      "background": "oklab(0 0 0 / 0.18)",
+      "blur": "none"
+    },
+    "options": {
+      "columns": "185px 185px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": null,
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "vite",
+    "width": 390,
+    "height": 844,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 16,
+        "y": 16,
+        "width": 358,
+        "height": 812,
+        "top": 16,
+        "right": 374,
+        "bottom": 828,
+        "left": 16
+      },
+      "client": 810,
+      "scroll": 995,
+      "scrollWidth": 356,
+      "clientWidth": 356,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "812px",
+      "border": "1px"
+    },
+    "mask": {
+      "nested": true,
+      "overlayCount": 0
+    },
+    "options": {
+      "columns": "154px 154px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": null,
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 1440,
+    "height": 1000,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 510,
+        "y": 58.375,
+        "width": 420,
+        "height": 883.25,
+        "top": 58.375,
+        "right": 930,
+        "bottom": 941.625,
+        "left": 510
+      },
+      "client": 881,
+      "scroll": 881,
+      "scrollWidth": 418,
+      "clientWidth": 418,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "968px",
+      "border": "1px"
+    },
+    "mask": {
+      "background": "oklab(0 0 0 / 0.18)",
+      "blur": "none"
+    },
+    "options": {
+      "columns": "185px 185px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": {
+      "width": 448,
+      "padding": "24px",
+      "radius": "24px"
+    },
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 768,
+    "height": 1000,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 174,
+        "y": 16,
+        "width": 420,
+        "height": 968,
+        "top": 16,
+        "right": 594,
+        "bottom": 984,
+        "left": 174
+      },
+      "client": 966,
+      "scroll": 995,
+      "scrollWidth": 418,
+      "clientWidth": 418,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "968px",
+      "border": "1px"
+    },
+    "mask": {
+      "background": "oklab(0 0 0 / 0.18)",
+      "blur": "none"
+    },
+    "options": {
+      "columns": "185px 185px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": null,
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "chromium",
+    "host": "next",
+    "width": 390,
+    "height": 844,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 16,
+        "y": 16,
+        "width": 358,
+        "height": 812,
+        "top": 16,
+        "right": 374,
+        "bottom": 828,
+        "left": 16
+      },
+      "client": 810,
+      "scroll": 995,
+      "scrollWidth": 356,
+      "clientWidth": 356,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "812px",
+      "border": "1px"
+    },
+    "mask": {
+      "nested": true,
+      "overlayCount": 0
+    },
+    "options": {
+      "columns": "154px 154px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": null,
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 1440,
+    "height": 1000,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 510,
+        "y": 58.5,
+        "width": 420,
+        "height": 883.25,
+        "top": 58.5,
+        "right": 930,
+        "bottom": 941.75,
+        "left": 510
+      },
+      "client": 881,
+      "scroll": 881,
+      "scrollWidth": 418,
+      "clientWidth": 418,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "968px",
+      "border": "1px"
+    },
+    "mask": {
+      "background": "oklab(0 0 0 / 0.18)",
+      "blur": "none"
+    },
+    "options": {
+      "columns": "185px 185px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": {
+      "width": 448,
+      "padding": "24px",
+      "radius": "24px"
+    },
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 768,
+    "height": 1000,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 174,
+        "y": 16,
+        "width": 420,
+        "height": 968,
+        "top": 16,
+        "right": 594,
+        "bottom": 984,
+        "left": 174
+      },
+      "client": 966,
+      "scroll": 995,
+      "scrollWidth": 418,
+      "clientWidth": 418,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "968px",
+      "border": "1px"
+    },
+    "mask": {
+      "background": "oklab(0 0 0 / 0.18)",
+      "blur": "none"
+    },
+    "options": {
+      "columns": "185px 185px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": null,
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "vite",
+    "width": 390,
+    "height": 844,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 16,
+        "y": 16,
+        "width": 358,
+        "height": 812,
+        "top": 16,
+        "right": 374,
+        "bottom": 828,
+        "left": 16
+      },
+      "client": 810,
+      "scroll": 995,
+      "scrollWidth": 356,
+      "clientWidth": 356,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "812px",
+      "border": "1px"
+    },
+    "mask": {
+      "nested": true,
+      "overlayCount": 0
+    },
+    "options": {
+      "columns": "154px 154px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": null,
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 1440,
+    "height": 1000,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 510,
+        "y": 58.5,
+        "width": 420,
+        "height": 883.25,
+        "top": 58.5,
+        "right": 930,
+        "bottom": 941.75,
+        "left": 510
+      },
+      "client": 881,
+      "scroll": 881,
+      "scrollWidth": 418,
+      "clientWidth": 418,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "968px",
+      "border": "1px"
+    },
+    "mask": {
+      "background": "oklab(0 0 0 / 0.18)",
+      "blur": "none"
+    },
+    "options": {
+      "columns": "185px 185px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 185,
+          "height": 38
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": {
+      "width": 448,
+      "padding": "24px",
+      "radius": "24px"
+    },
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 768,
+    "height": 1000,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 174,
+        "y": 16,
+        "width": 420,
+        "height": 968,
+        "top": 16,
+        "right": 594,
+        "bottom": 984,
+        "left": 174
+      },
+      "client": 966,
+      "scroll": 995,
+      "scrollWidth": 418,
+      "clientWidth": 418,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "968px",
+      "border": "1px"
+    },
+    "mask": {
+      "background": "oklab(0 0 0 / 0.18)",
+      "blur": "none"
+    },
+    "options": {
+      "columns": "185px 185px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 185,
+          "height": 44
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": null,
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  },
+  {
+    "engine": "webkit",
+    "host": "next",
+    "width": 390,
+    "height": 844,
+    "pass": true,
+    "geometry": {
+      "rect": {
+        "x": 16,
+        "y": 16,
+        "width": 358,
+        "height": 812,
+        "top": 16,
+        "right": 374,
+        "bottom": 828,
+        "left": 16
+      },
+      "client": 810,
+      "scroll": 995,
+      "scrollWidth": 356,
+      "clientWidth": 356,
+      "padding": "20px",
+      "gap": "16px",
+      "radius": "16px",
+      "maxHeight": "812px",
+      "border": "1px"
+    },
+    "mask": {
+      "nested": true,
+      "overlayCount": 0
+    },
+    "options": {
+      "columns": "154px 154px",
+      "buttons": [
+        {
+          "name": "Choice 01",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 02",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 03",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 04",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 05",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 06",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 07",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 08",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 09",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 10",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 11",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 12",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 13",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 14",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 15",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 16",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 17",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 18",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 19",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 20",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 21",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 22",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 23",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 24",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 25",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 26",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 27",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 28",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 29",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        },
+        {
+          "name": "Choice 30",
+          "swatch": true,
+          "width": 154,
+          "height": 44
+        }
+      ]
+    },
+    "firstReverse": true,
+    "lastForward": true,
+    "controlledChoiceFocus": true,
+    "escapeFocus": true,
+    "visibleCloseFocus": true,
+    "uncontrolledCloseFocus": true,
+    "legacyWidth": 256,
+    "confirmation": null,
+    "sheetSurvived": true,
+    "errors": [],
+    "posts": []
+  }
+]

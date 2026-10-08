@@ -1,3 +1,4 @@
+import { studioSource } from './studio-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
@@ -7,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 import { stripTypeScriptTypes } from 'node:module';
 
 const skill = new URL('../metamodern-interface-studio/', import.meta.url);
-const shell = new URL('./assets/studio-shell/', skill);
+const shell = new URL(`file://${studioSource}/`);
 const read = (path) => readFileSync(new URL(path, shell), 'utf8');
 
 /** Execute the pure design model without adding a runtime dependency to the source-only starter. */

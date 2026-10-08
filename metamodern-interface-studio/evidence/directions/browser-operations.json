@@ -1,0 +1,362 @@
+[
+  {
+    "host": "vite",
+    "pass": true,
+    "rename": {
+      "before": {
+        "schema": "studio-direction/1",
+        "id": "direction.52d07a2f-ebfe-4aea-a894-c1a9956f6851",
+        "label": "Lifecycle named 1791444040852",
+        "revision": 3,
+        "createdAt": "2026-10-08T07:02:13.659Z",
+        "updatedAt": "2026-10-08T07:20:40.901Z",
+        "product": {
+          "id": "example-tasks",
+          "revision": "1"
+        },
+        "payloadSchema": "fixture-direction/1",
+        "payload": {
+          "scale": 1.4,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        },
+        "receipt": {
+          "compiler": {
+            "id": "fixture",
+            "version": "1"
+          },
+          "sourceLockId": "fixture-source/1",
+          "fingerprints": {
+            "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+          },
+          "basis": {
+            "fixtureSource": "fixture-source/1",
+            "bindings": "fixture-bindings/1",
+            "assets": "fixture-assets/1"
+          }
+        }
+      },
+      "after": {
+        "schema": "studio-direction/1",
+        "id": "direction.52d07a2f-ebfe-4aea-a894-c1a9956f6851",
+        "label": "Lifecycle named 1791444084555",
+        "revision": 4,
+        "createdAt": "2026-10-08T07:02:13.659Z",
+        "updatedAt": "2026-10-08T07:21:24.607Z",
+        "product": {
+          "id": "example-tasks",
+          "revision": "1"
+        },
+        "payloadSchema": "fixture-direction/1",
+        "payload": {
+          "scale": 1.4,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        },
+        "receipt": {
+          "compiler": {
+            "id": "fixture",
+            "version": "1"
+          },
+          "sourceLockId": "fixture-source/1",
+          "fingerprints": {
+            "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+          },
+          "basis": {
+            "fixtureSource": "fixture-source/1",
+            "bindings": "fixture-bindings/1",
+            "assets": "fixture-assets/1"
+          }
+        }
+      }
+    },
+    "copy": {
+      "schema": "studio-direction/1",
+      "id": "direction.9a2ba602-5bd0-43c6-9570-9686051ffe13",
+      "label": "Lifecycle named 1791444084555 copy",
+      "revision": 1,
+      "createdAt": "2026-10-08T07:21:24.785Z",
+      "updatedAt": "2026-10-08T07:21:24.785Z",
+      "product": {
+        "id": "example-tasks",
+        "revision": "1"
+      },
+      "payloadSchema": "fixture-direction/1",
+      "payload": {
+        "scale": 1.4,
+        "light": "green",
+        "dark": "green",
+        "linked": true,
+        "asset": "loaded",
+        "radius": null
+      },
+      "receipt": {
+        "compiler": {
+          "id": "fixture",
+          "version": "1"
+        },
+        "sourceLockId": "fixture-source/1",
+        "fingerprints": {
+          "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+        },
+        "basis": {
+          "fixtureSource": "fixture-source/1",
+          "bindings": "fixture-bindings/1",
+          "assets": "fixture-assets/1"
+        }
+      }
+    },
+    "download": {
+      "schema": "studio-direction/1",
+      "id": "direction.52d07a2f-ebfe-4aea-a894-c1a9956f6851",
+      "label": "Lifecycle named 1791444084555",
+      "revision": 4,
+      "createdAt": "2026-10-08T07:02:13.659Z",
+      "updatedAt": "2026-10-08T07:21:24.607Z",
+      "product": {
+        "id": "example-tasks",
+        "revision": "1"
+      },
+      "payloadSchema": "fixture-direction/1",
+      "payload": {
+        "scale": 1.4,
+        "light": "green",
+        "dark": "green",
+        "linked": true,
+        "asset": "loaded",
+        "radius": null
+      },
+      "receipt": {
+        "compiler": {
+          "id": "fixture",
+          "version": "1"
+        },
+        "sourceLockId": "fixture-source/1",
+        "fingerprints": {
+          "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+        },
+        "basis": {
+          "fixtureSource": "fixture-source/1",
+          "bindings": "fixture-bindings/1",
+          "assets": "fixture-assets/1"
+        }
+      }
+    },
+    "events": [
+      {
+        "id": "event.eb8f8fec-0b84-4c4d-8e42-e876ebc5e361",
+        "directionId": "direction.52d07a2f-ebfe-4aea-a894-c1a9956f6851",
+        "revision": 4,
+        "kind": "delete",
+        "at": "2026-10-08T07:21:24.853Z"
+      },
+      {
+        "id": "event.1571b889-245c-4916-aa5e-5ed41ed0e36c",
+        "directionId": "direction.52d07a2f-ebfe-4aea-a894-c1a9956f6851",
+        "revision": 4,
+        "kind": "restore",
+        "at": "2026-10-08T07:21:24.987Z"
+      }
+    ],
+    "importDidNotWrite": true,
+    "errors": []
+  },
+  {
+    "host": "next",
+    "pass": true,
+    "rename": {
+      "before": {
+        "schema": "studio-direction/1",
+        "id": "direction.c5ffb5f3-0a45-4d1c-89db-3a4e8d250618",
+        "label": "next-1791442939578 Beta external",
+        "revision": 2,
+        "createdAt": "2026-10-08T07:02:22.672Z",
+        "updatedAt": "2026-10-08T07:02:28.161Z",
+        "product": {
+          "id": "example-tasks",
+          "revision": "1"
+        },
+        "payloadSchema": "fixture-direction/1",
+        "payload": {
+          "scale": 1.4,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        },
+        "receipt": {
+          "compiler": {
+            "id": "fixture",
+            "version": "1"
+          },
+          "sourceLockId": "fixture-source/1",
+          "fingerprints": {
+            "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+          },
+          "basis": {
+            "fixtureSource": "fixture-source/1",
+            "bindings": "fixture-bindings/1",
+            "assets": "fixture-assets/1"
+          }
+        }
+      },
+      "after": {
+        "schema": "studio-direction/1",
+        "id": "direction.c5ffb5f3-0a45-4d1c-89db-3a4e8d250618",
+        "label": "Lifecycle named 1791444087744",
+        "revision": 3,
+        "createdAt": "2026-10-08T07:02:22.672Z",
+        "updatedAt": "2026-10-08T07:21:27.779Z",
+        "product": {
+          "id": "example-tasks",
+          "revision": "1"
+        },
+        "payloadSchema": "fixture-direction/1",
+        "payload": {
+          "scale": 1.4,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        },
+        "receipt": {
+          "compiler": {
+            "id": "fixture",
+            "version": "1"
+          },
+          "sourceLockId": "fixture-source/1",
+          "fingerprints": {
+            "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+          },
+          "basis": {
+            "fixtureSource": "fixture-source/1",
+            "bindings": "fixture-bindings/1",
+            "assets": "fixture-assets/1"
+          }
+        }
+      }
+    },
+    "copy": {
+      "schema": "studio-direction/1",
+      "id": "direction.ca5b8373-8089-4a7f-981d-4370e682ca0c",
+      "label": "Lifecycle named 1791444087744 copy",
+      "revision": 1,
+      "createdAt": "2026-10-08T07:21:27.918Z",
+      "updatedAt": "2026-10-08T07:21:27.918Z",
+      "product": {
+        "id": "example-tasks",
+        "revision": "1"
+      },
+      "payloadSchema": "fixture-direction/1",
+      "payload": {
+        "scale": 1.4,
+        "light": "green",
+        "dark": "green",
+        "linked": true,
+        "asset": "loaded",
+        "radius": null
+      },
+      "receipt": {
+        "compiler": {
+          "id": "fixture",
+          "version": "1"
+        },
+        "sourceLockId": "fixture-source/1",
+        "fingerprints": {
+          "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+        },
+        "basis": {
+          "fixtureSource": "fixture-source/1",
+          "bindings": "fixture-bindings/1",
+          "assets": "fixture-assets/1"
+        }
+      }
+    },
+    "download": {
+      "schema": "studio-direction/1",
+      "id": "direction.c5ffb5f3-0a45-4d1c-89db-3a4e8d250618",
+      "label": "Lifecycle named 1791444087744",
+      "revision": 3,
+      "createdAt": "2026-10-08T07:02:22.672Z",
+      "updatedAt": "2026-10-08T07:21:27.779Z",
+      "product": {
+        "id": "example-tasks",
+        "revision": "1"
+      },
+      "payloadSchema": "fixture-direction/1",
+      "payload": {
+        "scale": 1.4,
+        "light": "green",
+        "dark": "green",
+        "linked": true,
+        "asset": "loaded",
+        "radius": null
+      },
+      "receipt": {
+        "compiler": {
+          "id": "fixture",
+          "version": "1"
+        },
+        "sourceLockId": "fixture-source/1",
+        "fingerprints": {
+          "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+          "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+        },
+        "basis": {
+          "fixtureSource": "fixture-source/1",
+          "bindings": "fixture-bindings/1",
+          "assets": "fixture-assets/1"
+        }
+      }
+    },
+    "events": [
+      {
+        "id": "event.b4dbd5bb-cb92-43f8-ad8a-663b6bf802ee",
+        "directionId": "direction.c5ffb5f3-0a45-4d1c-89db-3a4e8d250618",
+        "revision": 3,
+        "kind": "delete",
+        "at": "2026-10-08T07:21:27.992Z"
+      },
+      {
+        "id": "event.460d1534-0238-468c-9898-7af798f22907",
+        "directionId": "direction.c5ffb5f3-0a45-4d1c-89db-3a4e8d250618",
+        "revision": 3,
+        "kind": "restore",
+        "at": "2026-10-08T07:21:28.076Z"
+      }
+    ],
+    "importDidNotWrite": true,
+    "errors": []
+  }
+]

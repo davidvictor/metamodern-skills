@@ -13,7 +13,7 @@ type TextLike = Common & { value: string; onChange: (value: string) => void; pla
 export type FieldProps =
   | (TextLike & { kind: "text" })
   | (TextLike & { kind: "secret" })
-  | (Common & { kind: "select"; value: string; onChange: (value: string) => void; options: { id: string; label: string }[] })
+  | (Common & { kind: "select"; itemClassName?: string; value: string; onChange: (value: string) => void; options: readonly { id: string; label: string; disabled?: boolean }[] })
   | (Common & { kind: "switch"; checked: boolean; onChange: (checked: boolean) => void })
 
 /** A labeled control: text, select, switch, or a secret masked until Reveal. */
@@ -29,7 +29,7 @@ export function Field(props: FieldProps) {
   ) : null
   if (props.kind === "switch")
     return (
-      <UIField orientation="horizontal" className="justify-between" data-invalid={invalid}>
+      <UIField orientation="horizontal" className="justify-between pointer-coarse:min-h-11" data-invalid={invalid}>
         <div className="grid gap-1">
           <FieldLabel htmlFor={id}>{props.label}</FieldLabel>
           {note}
@@ -48,7 +48,7 @@ export function Field(props: FieldProps) {
           </SelectTrigger>
           <SelectContent data-kit>
             {options.map((o) => (
-              <SelectItem key={o.id} value={o.id} className={TARGET}>
+              <SelectItem key={o.id} value={o.id} disabled={o.disabled} className={cn(TARGET, props.itemClassName)}>
                 {o.label}
               </SelectItem>
             ))}

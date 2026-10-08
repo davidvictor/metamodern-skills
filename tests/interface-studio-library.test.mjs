@@ -1,3 +1,4 @@
+import { studioSource } from './studio-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
@@ -7,7 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { stripTypeScriptTypes } from 'node:module';
 
 const skill = new URL('../metamodern-interface-studio/', import.meta.url);
-const shell = new URL('./assets/studio-shell/', skill);
+const shell = new URL(`file://${studioSource}/`);
 const read = (path) => readFileSync(new URL(path, shell), 'utf8');
 
 /** Load a pure shell module (it may import types only) without a TypeScript toolchain. */
@@ -270,7 +271,7 @@ test('LM-13 library pages render documentation as React text, load frames only f
     assert.doesNotMatch(text, /<a[\s>]|<iframe/, `${file} draws a link or a frame itself`);
   }
   const block = read('src/studio/library/preview-block.tsx');
-  assert.match(block, /const SOURCE = previewSource\(adapter, location\.href\)/);
+  assert.match(block, /const SOURCE = previewSource\(adapter, typeof location/);
   assert.match(block, /src=\{frame\.src\}\s+origin=\{frame\.origin\}\s+isolation=\{adapter\.frameIsolation\}/);
   assert.match(block, /mountKey=\{JSON\.stringify\(\[frame\.scenario, s\.theme, retry\]\)\}/, 'values and width never remount');
   assert.match(block, /pickLive\(/);
@@ -283,9 +284,9 @@ test('LM-13 library pages render documentation as React text, load frames only f
 
 test('LM-14 the core shell reaches the library only through lazy slots, and library is a reserved link key', () => {
   const slots = read('src/studio/library/slots.tsx');
-  assert.match(slots, /!__STUDIO_LIBRARY__ \? never\(\) : import\("\.\/library-nav"\)/);
-  assert.match(slots, /!__STUDIO_LIBRARY__ \? never\(\) : import\("\.\/library-page"\)/);
-  assert.match(slots, /hasLibrary = __STUDIO_LIBRARY__ && !!adapter\.library/);
+  assert.match(slots, /!libraryEnabled \? never\(\) : import\("\.\/library-nav"\)/);
+  assert.match(slots, /!libraryEnabled \? never\(\) : import\("\.\/library-page"\)/);
+  assert.match(slots, /hasLibrary = libraryEnabled && !!adapter\.library/);
   for (const file of ['src/App.tsx', 'src/store.tsx', 'src/components/studio/rail-panel.tsx', 'src/components/studio/chrome.tsx', 'src/components/studio/command.tsx', 'src/studio/workspace/workspace-nav.tsx']) {
     assert.doesNotMatch(read(file), /from "@\/studio\/library\/(library-nav|library-page|preview-block|rich-text|code-block|model|highlight|api)"/, `${file} imports library code eagerly`);
   }
@@ -319,7 +320,7 @@ test('LM-17 the library files ship with the starter', () => {
   for (const path of ['src/studio/library/schema.ts', 'src/studio/library/model.ts', 'src/studio/library/link.ts', 'src/studio/library/highlight.ts', 'src/studio/library/api.ts', 'src/studio/library/slots.tsx', 'src/studio/library/library-nav.tsx', 'src/studio/library/library-page.tsx', 'src/studio/library/rich-text.tsx', 'src/studio/library/code-block.tsx', 'src/studio/library/preview-block.tsx', 'src/library/index.ts', 'scripts/library-boundary.mjs', 'example/library/declaration.ts', 'example/library/adapter.ts', 'example/library/sections.ts', 'example/library/invalid.ts', 'example/library/index.ts', 'example/library/button.ts', 'example/library/icon-button.ts', 'example/library/text-field.ts', 'example/library/frame.html', 'example/library/frame.ts', 'example/library/library.css']) {
     assert.ok(existsSync(join(root, path)), `${path} is missing`);
   }
-  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.15.0');
+  assert.equal(readFileSync(new URL('PACKAGE_VERSION', skill), 'utf8').trim(), 'metamodern-interface-studio@0.18.4');
 });
 
 test('LM-18 malformed documentation yields problems, never an exception, and undeclared references are reported', async () => {

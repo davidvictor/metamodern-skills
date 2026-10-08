@@ -472,6 +472,10 @@ function DesignPanel() {
 
 function TokensPanel({ tabs }: { tabs?: React.ReactNode }) {
   const s = useStudio()
+  if (adapter.design?.editor) return <>
+    <PanelHeader title={tabs ? "Design" : "Tokens"}>{tabs}</PanelHeader>
+    <SidebarContent><SidebarGroup><p className="px-2 py-2 text-xs leading-relaxed text-muted-foreground">Read only. Inspect the paired compiler output and its source receipts in Compiled and Source.</p></SidebarGroup></SidebarContent>
+  </>
   const t = adapter.tokens!
   const drafts = Object.keys(s.tokens.drafts).length
   return (

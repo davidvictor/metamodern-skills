@@ -1,3 +1,7 @@
+import { validDirectionId, validDirectionPin, validDirectionRevision } from "@/studio/directions"
+import { useOptionalDesignEditor, useDesignSnapshot, useDirectionSnapshot } from "@/studio/design-ui/react"
+import type { DesignPreviewIdentity } from "@/studio/design-ui/types"
+import { host } from "@/studio-host"
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
 import { toast } from "sonner"
@@ -16,7 +20,7 @@ import { moduleHash, parseModuleLink } from "@/studio/workspace/link"
 import { parseLibraryLink } from "@/studio/library/link"
 
 /** One draft layer, as a preview receives it. */
-export type Draft = { tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>> }
+export type Draft = { compiledData?: import("@/studio/design-runtime").JsonValue; direction?: DesignPreviewIdentity; tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>>; unavailable?: string }
 export const NO_DRAFT: Draft = { tokens: {}, css: "", stylesheets: [] }
 
 export type View = "inspect" | "compare" | "responsive" | "gallery" | "present" | "design"
@@ -115,14 +119,14 @@ const joinSaved = (list: unknown) => {
   return usable
 }
 /** Saved states bundled into a built Studio; the dev server serves the live file instead. Joined before the link is read, so a link to one resolves. */
-const bundledScenarios = Object.values(import.meta.glob("/scenarios.json", { eager: true, import: "default" }))[0] as ScenariosFile | undefined
+const bundledScenarios = host.scenarios as ScenariosFile | undefined
 const bundledSaved = hasProperties ? joinSaved(bundledScenarios?.scenarios) : []
-export const canSaveScenarios = import.meta.env.DEV
+export const canSaveScenarios = host.canSave
 /** Design shows the Adjust tab when the adapter declares parameters and the Tokens tab when it has a token source. */
-export const hasAdjust = !!A.design?.parameters.length
-export const hasDesign = hasAdjust || !!A.tokens
+export const hasAdjust = !!A.design?.parameters.length || !!A.design?.editor?.slots?.includes("foundation")
+export const hasDesign = hasAdjust || !!A.tokens || !!A.design?.editor
 /** The Design tab that shows: the chosen one when both exist, else the only one. */
-export const designTab = (tab: "adjust" | "tokens") => (!A.tokens ? "adjust" : !hasAdjust ? "tokens" : tab)
+export const designTab = (tab: "adjust" | "tokens") => (!A.tokens && !A.design?.editor ? "adjust" : !hasAdjust ? "tokens" : tab)
 const firstScenario = A.scenarios.find((x) => x.status !== "later") ?? A.scenarios[0]
 const hasCaptures = A.scenarios.some((x) => Object.keys(x.captures ?? {}).length > 0)
 
@@ -145,9 +149,9 @@ function writeJSON(key: string, value: unknown) {
 export const PRESETS: ResponsiveLayout[] = [...(A.axes.responsive?.presets ?? []), ...(A.axes.responsive?.replaceShellPresets ? [] : SHELL_PRESETS)].map((p) => fromPreset(p, A.axes.profiles))
 const RESPONSIVE_KEY = `studio.${A.id}.responsive`
 /** Saved layouts bundled into a built Studio; the dev server serves the live file instead. */
-const bundledLayouts = Object.values(import.meta.glob("/layouts.json", { eager: true, import: "default" }))[0] as LayoutsFile | undefined
+const bundledLayouts = host.layouts as LayoutsFile | undefined
 export const layoutsProblems = (data: unknown) => validateLayouts(data)
-export const canSaveLayouts = import.meta.env.DEV
+export const canSaveLayouts = host.canSave
 const initialResponsive = (): State["responsive"] => {
   const p = PRESETS[0]
   return { layout: p.id, name: p.name, frames: p.frames, arrangement: p.arrangement, height: p.height, sync: DEFAULT_SYNC, dirty: false, resetNonce: 0 }
@@ -170,10 +174,14 @@ function readHash(stored: Record<string, Edits>): Partial<State> {
   if (link.module) Object.assign(out, { module: link.module, section: link.section, item: link.item })
   const lib = parseLibraryLink(location.hash, A.library)
   if (lib.library) Object.assign(out, { library: lib.library, libraryAt: lib.at })
+  if (A.design?.directions && q.get("directionA") && q.get("directionB")) {
+    const values = [q.get("directionA")!, q.get("directionB")!, q.get("directionC"), q.get("directionD")].filter((v): v is string => !!v).slice(0, 4).map((v, i) => validDirectionPin(v) ? v : `invalid.pin.${i}`)
+    out.compare = { ...initial.compare, axis: "direction", a: values[0], b: values[1], values, count: values.length as 2 | 3 | 4 }
+  }
   const view = q.get("view")
   if (view && VIEWS.includes(view as View)) out.view = view as View
   // The Design view grew out of Tokens; old links land on its Tokens tab.
-  if (view === "tokens" && A.tokens) out.view = "design"
+  if (view === "tokens" && (A.tokens || A.design?.editor)) out.view = "design"
   const tab = view === "tokens" ? "tokens" : q.get("tab")
   const values = decodeDesign(A, q.get("design"))
   if (tab === "adjust" || tab === "tokens" || Object.keys(values).length) {
@@ -288,6 +296,7 @@ export const compareAxes = (sc?: Scenario, draft = false) => [
   { id: "profile", label: "Profile" },
   ...[...choosableFor(sc), ...(hasProperties ? propertiesFor(A.axes.inputs, sc) : [])].filter(comparable).map((i) => ({ id: i.id, label: i.label })),
   ...(draft ? [{ id: "design", label: "Design" }] : []),
+  ...(A.design?.directions ? [{ id: "direction", label: "Directions" }] : []),
 ]
 export const axisOptions = (axis: string, sc?: Scenario): { id: string; label: string }[] => {
   if (axis === "theme") return A.axes.themes.map((t) => ({ id: t.id, label: t.label }))
@@ -377,6 +386,9 @@ type Ctx = State & {
   designFor: (theme: string) => DesignDraft
   /** The one draft layer sent to a preview: Adjust's values with hand-edited tokens winning, plus draft CSS and font stylesheets. */
   draftFor: (theme: string) => Draft
+  directionOptions: { id: string; label: string }[]
+  pinnedDirectionFor: (key: string, theme: string) => Draft
+  savedDesignFor: (theme: string) => Draft
   /** Whether any draft exists, from Adjust or from Tokens. */
   hasDraft: boolean
   /** The draft for Inspect, Gallery and Compare: only when the viewer turned on draft everywhere. */
@@ -417,6 +429,14 @@ function handDrafts(drafts: Record<string, Record<string, string>>, theme: strin
 }
 
 export function StudioProvider({ children }: { children: React.ReactNode }) {
+  const editor = useOptionalDesignEditor()
+  const direction = useDesignSnapshot()
+  const lifecycle = useDirectionSnapshot()
+  const projection = (theme: string, basis: "saved" | "draft"): Draft => {
+    if (lifecycle?.selectionProblem) return { ...NO_DRAFT, unavailable: lifecycle.selectionProblem }
+    const projected = editor?.controller?.preview(theme, basis)
+    return projected?.output ? { tokens: projected.output.tokens, css: projected.output.css, stylesheets: projected.output.stylesheets, scoped: projected.output.scoped, compiledData: projected.output.data, direction: projected.identity } : NO_DRAFT
+  }
   const [state, setState] = React.useState<State>(() => {
     const options = readJSON<Partial<Options>>(OPTIONS_KEY)
     const drafts = readJSON<State["tokens"]["drafts"]>(DRAFTS_KEY)
@@ -491,17 +511,26 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => writeJSON(PRESENT_PREFS_KEY, { speed: state.present.speed, focus: state.present.focus }), [state.present.speed, state.present.focus])
   React.useEffect(() => writeJSON(DESIGN_KEY, { version: 1, values: state.design.values, valuesByTheme: state.design.valuesByTheme }), [state.design.values, state.design.valuesByTheme])
   React.useEffect(() => {
+    const writeDirectionIds = (q: URLSearchParams) => {
+      if (!editor?.lifecycle || !direction) return
+      const requested = new URLSearchParams(location.hash.slice(1))
+      q.set("direction", lifecycle?.selectionProblem ? (validDirectionId(requested.get("direction") ?? "") ? requested.get("direction")! : "direction.invalid") : direction.id)
+      q.set("revision", lifecycle?.selectionProblem ? (validDirectionRevision(requested.get("revision") ?? "") ? requested.get("revision")! : "0") : String(direction.savedRevision))
+      if (state.view === "compare" && state.compare.axis === "direction") state.compare.values.forEach((value, i) => q.set(`direction${String.fromCharCode(65 + i)}`, value))
+    }
     // An open workspace module's link names only the module, its section and its item.
-    if (state.module) return history.replaceState(null, "", moduleHash({ module: state.module, section: state.section, item: state.item }))
+    if (state.module) { const q = new URLSearchParams(moduleHash({ module: state.module, section: state.section, item: state.item }).slice(1)); writeDirectionIds(q); return history.replaceState(null, "", `#${q}`) }
     // An open library page's link names the component, the section asked for, and the theme its previews use.
     if (state.library) {
       const q = new URLSearchParams()
       q.set("library", state.library)
       if (state.libraryAt) q.set("section", state.libraryAt)
       q.set("theme", state.theme)
+      writeDirectionIds(q)
       return history.replaceState(null, "", `#${q}`)
     }
     const q = new URLSearchParams({ view: state.view, scenario: state.scenario, theme: state.theme, profile: state.profile })
+    writeDirectionIds(q)
     if (state.size) q.set("size", `${state.size.w}x${state.size.h}`)
     for (const i of A.axes.inputs) if (i.placement === "dock" && !isProperty(i) && !RESERVED_LINK_KEYS.includes(i.id) && state.values[i.id] !== undefined) q.set(i.id, String(state.values[i.id]))
     // Property edits are written only through linkEdits, which leaves out readonly and reserved-key properties.
@@ -510,7 +539,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       for (const [k, v] of params) q.set(k, v)
       if (local) q.set("edited", "local")
     }
-    if (state.view === "design" && hasAdjust && A.tokens) q.set("tab", state.design.tab)
+    if (state.view === "design" && hasAdjust && (A.tokens || A.design?.editor)) q.set("tab", state.design.tab)
     if (state.view === "responsive") {
       const r = state.responsive
       q.set("layout", r.layout)
@@ -524,7 +553,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     const design = encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, state.theme), state.theme)
     if (design) q.set("design", design)
     history.replaceState(null, "", `#${q}`)
-  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive, state.module, state.section, state.item, state.library, state.libraryAt])
+  }, [state.view, state.scenario, state.theme, state.profile, state.size, state.values, state.props, state.design.tab, state.design.values, state.design.valuesByTheme, state.responsive, state.module, state.section, state.item, state.library, state.libraryAt, state.compare, direction, editor?.lifecycle, lifecycle?.selectionProblem])
   // Unsaved Responsive edits stay in this browser until saved or reverted.
   React.useEffect(() => {
     const { resetNonce: _, ...keep } = state.responsive
@@ -611,12 +640,17 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     updatePresenter: (tourId, patch) => set((s) => ({ presenter: updateOverlay(s.presenter, tourId, patch) })),
     draftsFor: (theme) => handDrafts(state.tokens.drafts, theme),
     designFor: (theme) => designDraft(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme), theme),
+    directionOptions: lifecycle?.pins.map(p => ({ id: p.key, label: p.label })) ?? [],
+    pinnedDirectionFor: (key, theme) => { const p = editor?.lifecycle?.projection(key, theme); return p?.output ? { tokens: p.output.tokens, css: p.output.css, stylesheets: p.output.stylesheets, scoped: p.output.scoped, compiledData: p.output.data, direction: p.identity } : { ...NO_DRAFT, unavailable: p?.reason ?? "Pinned direction is unavailable" } },
+    savedDesignFor: (theme) => editor ? projection(theme, "saved") : NO_DRAFT,
     draftFor: (theme) => {
+      if (editor) return projection(theme, "draft")
       const d = designDraft(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme), theme)
       return { tokens: { ...d.tokens, ...handDrafts(state.tokens.drafts, theme) }, css: d.css, stylesheets: d.stylesheets, scoped: d.scoped }
     },
-    hasDraft: Object.keys(state.tokens.drafts).length > 0 || A.axes.themes.some((theme) => !!encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme.id), theme.id)),
+    hasDraft: editor ? !!editor.controller?.getSnapshot().dirty : Object.keys(state.tokens.drafts).length > 0 || A.axes.themes.some((theme) => !!encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme.id), theme.id)),
     viewDraft: (theme) => {
+      if (editor) return projection(theme, state.view === "present" ? "saved" : "draft")
       if (!state.options.draftEverywhere) return NO_DRAFT
       // A shared value can be a change in another theme yet as built in this one; only this theme's changes count here.
       const d = designDraft(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme), theme)

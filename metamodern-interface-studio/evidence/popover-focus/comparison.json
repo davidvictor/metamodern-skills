@@ -1,0 +1,7 @@
+{
+  "closeGeometryEqual": true,
+  "legacyStatesEqual": true,
+  "readyDimensionsAndTextEqual": true,
+  "maximumReadyXDelta": 0.234649658203125,
+  "positionLimit": "Subpixel ready x differences reflect entrance-animation sampling. Widths/heights/text match; this is not a pixel-parity claim."
+}

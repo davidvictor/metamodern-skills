@@ -1,0 +1,14 @@
+
+> metamodern-skills@1.19.1 validate
+> npm run validate:collection && npm run validate:packages
+
+
+> metamodern-skills@1.19.1 validate:collection
+> node scripts/validate-skill-collection.mjs
+
+Skill collection validation passed.
+
+> metamodern-skills@1.19.1 validate:packages
+> node scripts/validate-skill-package.mjs
+
+Skill package validation passed (20 packages).

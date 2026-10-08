@@ -1,3 +1,5 @@
+import type { JsonValue } from "./design-runtime"
+import type { DesignPreviewIdentity } from "./design-ui/types"
 /*
  * studio-preview/1: the only channel between the shell and a preview frame.
  * Every message carries the protocol, the frame instance and, for requests
@@ -11,6 +13,8 @@ export const PROTOCOL = "studio-preview/1" as const
 
 /** Everything needed to materialize one preview. Stable IDs only, never fixture values. */
 export type MountInputs = {
+  compiledData?: JsonValue
+  direction?: DesignPreviewIdentity
   scenario: string
   theme: string
   profile: string
@@ -28,7 +32,7 @@ export type MountInputs = {
 }
 
 /** What a frame client can do beyond the base protocol, announced in `hello`. */
-export type FrameCapability = "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation" | "stage-gestures" | "live-values" | "code"
+export type FrameCapability = "compiled-data" | "registered-stylesheets" | "direction-identity" | "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation" | "stage-gestures" | "live-values" | "code"
 
 /**
  * Stage navigation that starts over a frame, for the Studio to apply to its stage. Wheel positions are in the
@@ -91,6 +95,7 @@ export type AnchorRect = {
 }
 
 export type ReadyPayload = {
+  direction?: DesignPreviewIdentity
   fingerprint: string
   appearance: "light" | "dark"
   location: string
@@ -109,6 +114,8 @@ export type ShellBody =
   | { type: "product-back"; requestId: string }
   | {
       type: "draft-overrides"
+      compiledData?: JsonValue
+      direction?: DesignPreviewIdentity
       requestId: string
       tokens: Record<string, string>
       css?: string
@@ -125,6 +132,7 @@ export type ShellBody =
 
 /** frame to shell */
 export type FrameBody =
+  | { type: "direction-state"; requestId: string; direction: DesignPreviewIdentity; fingerprint: string }
   | { type: "hello"; capabilities?: FrameCapability[] }
   | ({ type: "ready"; requestId: string } & ReadyPayload)
   | {

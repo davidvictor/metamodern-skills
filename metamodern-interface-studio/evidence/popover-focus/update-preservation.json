@@ -1,0 +1,59 @@
+{
+  "schema": "cr19-managed-update-proof/1",
+  "oldSourceCommit": "e3e026fd72c9559ed9218e8bfb352b25334de473",
+  "targetVersion": "0.18.3",
+  "results": [
+    {
+      "host": "vite",
+      "pass": true,
+      "from": "0.18.2",
+      "to": "0.18.3",
+      "hostPreserved": true,
+      "protected": {
+        "src/adapter.ts": "281605d454c8738aba387502a7a13f58a61dec3b8fb2500dd85f30df1029ecec",
+        "studio.config.ts": "916373215c9a84d6bc01e88dcbda2a1cc071e56cd9be71fb0111f5a0445bc18b",
+        "src/design-ui/index.ts": "a32fb4000c1c963d3e376087c2d901dd0008239489989914f66af9847c992559",
+        "src/design-runtime/index.ts": "88778dfb965d7cdae863294ed1ad8b4fa1de684060135458a2741885f5e88c1c",
+        "src/design-ui/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "src/design-runtime/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "src/library/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "src/workspace/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "public/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "layouts.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "scenarios.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "directions.json": "5d0a820d42dc8566247a49e28d099b33b68d7444c3f8e0e63a930de76a731898"
+      },
+      "changedProtected": [],
+      "packageProductSettingsPreserved": true,
+      "blocked": [],
+      "checks": "intentionally skipped; separate final host checks cover compilation",
+      "target": "<task-owned>/mm-cr19-upgrade-4bstltdi/vite"
+    },
+    {
+      "host": "next",
+      "pass": true,
+      "from": "0.18.2",
+      "to": "0.18.3",
+      "hostPreserved": true,
+      "protected": {
+        "src/adapter.ts": "281605d454c8738aba387502a7a13f58a61dec3b8fb2500dd85f30df1029ecec",
+        "studio.config.ts": "916373215c9a84d6bc01e88dcbda2a1cc071e56cd9be71fb0111f5a0445bc18b",
+        "src/design-ui/index.ts": "a32fb4000c1c963d3e376087c2d901dd0008239489989914f66af9847c992559",
+        "src/design-runtime/index.ts": "88778dfb965d7cdae863294ed1ad8b4fa1de684060135458a2741885f5e88c1c",
+        "src/design-ui/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "src/design-runtime/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "src/library/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "src/workspace/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "public/owned.txt": "59c438d226c7c65a415f0120f4999ea54e80ff19f05d1ba6a63e5630a12a0674",
+        "layouts.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "scenarios.json": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+        "directions.json": "5d0a820d42dc8566247a49e28d099b33b68d7444c3f8e0e63a930de76a731898"
+      },
+      "changedProtected": [],
+      "packageProductSettingsPreserved": true,
+      "blocked": [],
+      "checks": "intentionally skipped; separate final host checks cover compilation",
+      "target": "<task-owned>/mm-cr19-upgrade-4bstltdi/next"
+    }
+  ]
+}
