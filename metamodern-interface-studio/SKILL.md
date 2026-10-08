@@ -24,7 +24,7 @@ When a product asks for its own workspace tools in its Studio, such as environme
 
 When a product asks for a component library in its Studio (one documentation page per component, with live, grouped previews and a playground), also read [library](references/library.md). No other request needs it.
 
-When a product requests reviewed rich Design controls or a component-treatment inspector, read [Design editors](references/design-ui.md). Use its opt-in controller and protected panels; retain the product compiler as the only interpretation path.
+When a product requests reviewed rich Design controls or a component-treatment inspector, read [Design editors](references/design-ui.md). Use its opt-in controller and protected panels; retain the product compiler as the only interpretation path. For named saved directions, hydration, imports, recovery or independent comparison pins, also read [saved directions](references/directions.md).
 
 ## Non-negotiable boundaries
 

@@ -30,11 +30,11 @@ The active source/confirmed saved basis applies to previews. Working drafts over
 
 A frame may register exact same-origin `FrameOptions.registeredStylesheets`. Opted-in assets must have a successful CSS MIME/content response (SPA fallback HTML is not a stylesheet), load without error, and remain non-applying until the complete set is ready. Local fonts/assets and hashes remain product-owned. A custom `applyCss`/`settle` must implement the same readiness/atomic rejection guarantee. Unconfirmed opaque restoration makes the frame unavailable; Retry rematerializes it. Legacy Google stylesheet behavior is retained for legacy previews.
 
-## Confirmed-save hook, not persistence
+## Confirmed-save hook and optional lifecycle
 
 `captureSave()` returns an immutable `DesignSaveCandidate` containing the captured ID, base saved revision, draft revision, payload and compiled theme map. Only the persistence owner calls `acknowledgeSaved(id, revision, candidate)` after a confirmed write. If A was captured and B was edited during that write, confirmation saves A as the basis and keeps B dirty. Unknown, reused and stale candidates are rejected.
 
-This interface implements no direction file/envelope service, browser recovery, import/export UI or canonical storage. That lifecycle is a separate batch. A browser cache is not represented as durable saved state.
+The optional [saved-direction lifecycle](directions.md) owns envelopes, canonical local writes, recovery and import/export UI. The controller alone does not persist anything. A browser cache is never represented as durable saved state.
 
 ## Synthetic checks
 

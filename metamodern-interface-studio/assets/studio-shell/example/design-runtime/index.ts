@@ -5,7 +5,7 @@ const original: Values = { scale: 1, light: "blue", dark: "blue", linked: true, 
 const read = (value: JsonValue) => value as unknown as Values
 const model: DesignModel = {
   initial: original as unknown as JsonValue,
-  validate(value) { const v = read(value); return Number.isFinite(v.scale) && v.scale >= .5 && v.scale <= 2 ? [] : [{ id: "scale", controlId: "scale", message: "Scale must be 0.5–2", severity: "error" }] },
+  validate(value) { const v = read(value); return Number.isFinite(v.scale) && v.scale >= .5 && v.scale <= 2 && Math.abs((v.scale - .5) / .1 - Math.round((v.scale - .5) / .1)) < 1e-7 ? [] : [{ id: "scale", controlId: "scale", raw: String(v.scale), message: "Scale must be 0.5–2 in steps of0.1", severity: "error" }] },
   edit(value, intent) {
     const v = read(value)
     if (intent.target && intent.target.component !== "button") throw new Error("This fixture has no bound treatment for that component")
@@ -24,6 +24,11 @@ const model: DesignModel = {
 }
 export const modelRuntime: DesignRuntimeModule = {
   model,
+  directionCodec: {
+    decode({ schema, payload }) { if (schema !== "fixture-direction/1") return { problems: [{ id: "schema", message: "Unsupported fixture payload schema; raw bytes retained", severity: "error" }] }; const v = read(payload); if (!v || typeof v.scale !== "number" || typeof v.light !== "string" || typeof v.dark !== "string" || typeof v.linked !== "boolean" || typeof v.asset !== "string" || !(v.radius === null || typeof v.radius === "number")) return { problems: [{ id: "shape", message: "Invalid fixture payload shape", severity: "error" }] }; return { payload, problems: model.validate(payload) } },
+    legacy(variant) { const v = variant as { scale?: number; css?: string }; if (!v || typeof v !== "object" || Array.isArray(v) || Object.keys(v).some(k => !["schema", "scale"].includes(k)) || typeof v.scale !== "number") return { problems: [{ id: "legacy", message: "Legacy CSS cannot be represented by the product model", severity: "error" }] }; return { payload: { ...original, scale: v.scale } as unknown as JsonValue, migratedFrom: "studio-variant/1", problems: model.validate({ ...original, scale: v.scale } as unknown as JsonValue) } },
+  },
+  checkDirection({ values }) { if (read(values).asset === "missing") return { problems: [{ id: "asset", message: "Fixture source asset unavailable", severity: "error" }] }; return { problems: [], basis: { fixtureSource: "fixture-source/1", bindings: "fixture-bindings/1", assets: "fixture-assets/1" } } },
   async compile(input: CompileDesignInput) {
     const v = read(input.direction)
     if (v.asset === "missing") throw new Error("Registered fixture asset is missing; save/export blocked")

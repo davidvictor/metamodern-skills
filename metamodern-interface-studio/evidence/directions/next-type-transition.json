@@ -1,0 +1,24 @@
+{
+  "schema": "studio-next-type-transition-proof/1",
+  "nextVersion": "16.4.0",
+  "before": "real development request generated stale validator; normal static build failed TS2307",
+  "after": {
+    "devToStaticNormalBuild": "passed",
+    "staticToNodeNormalBuild": "passed",
+    "manualCacheRemoval": false,
+    "production": {
+      "nodePageStatus": 200,
+      "GET": 405,
+      "POST": 405
+    },
+    "productOwnedBytesPreserved": true
+  },
+  "productFiles": {
+    "directions.json": "5d0a820d42dc8566247a49e28d099b33b68d7444c3f8e0e63a930de76a731898",
+    "public/product-owned.txt": "f4b3fa83bb73520ae424f2f3846b7624592862cee97c987284ae2a8ba8b73899"
+  },
+  "sourceFiles": {
+    "package.json": "7e2eab3468a4ac75fa4dc83b8ee2c4b6770c4843a03b226488bd27d8e35cb8c8",
+    "tsconfig.json": "327604c45984783fb493e6495b561ebf93406973f438c7de9a31812b22fe3074"
+  }
+}

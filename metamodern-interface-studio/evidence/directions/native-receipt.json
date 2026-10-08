@@ -1,0 +1,191 @@
+{
+  "scope": "Independent bounded lifecycle native controls and static read-only synthetic verification",
+  "engine": "Chromium1248 via Playwright owned installation",
+  "sourceFreeze": "freeze-final.json",
+  "sourceUnchanged": {
+    "vite": [],
+    "next": []
+  },
+  "native": {
+    "file": "native.json",
+    "passed": 12,
+    "total": 12,
+    "widths": [
+      1440,
+      768,
+      390
+    ],
+    "pointer": [
+      "fine",
+      "coarse"
+    ],
+    "checks": [
+      "44px Directions/name/picker/options/Close where width<1000 orcoarse",
+      "16px name input at width<1000",
+      "Tab reaches Close; Enter closes andreturnsfocus",
+      "Escape andoutside dismiss withfocusreturn"
+    ]
+  },
+  "static": {
+    "file": "static-final.json",
+    "passed": 2,
+    "total": 2,
+    "checks": [
+      "Read-only saved selection andcompiledscale0.8",
+      "Airy import as local draft scale1.4",
+      "Browser recovery afterreload scale1.4",
+      "Saved/draft JSON downloads",
+      "Save/SaveAsNew/Rename/Delete/Duplicate disabled",
+      "0POST",
+      "canonicaljournalbytesunchanged",
+      "0pageerrors"
+    ],
+    "served": [
+      "vite-served.json",
+      "next-served.json"
+    ]
+  },
+  "builds": {
+    "vite": "vite-build.log",
+    "nextClean": "next-build-final.log",
+    "nextDevToStaticFailure": "next-build.log"
+  },
+  "screenshots": [
+    {
+      "path": "next-1440-coarse-close.png",
+      "sha256": "6304ffd3c0a0ed386acf7fa27e3fbd14a0a33ef306acffc42fa76df44a47d10a"
+    },
+    {
+      "path": "next-1440-coarse-options.png",
+      "sha256": "db3f8206ce20d77b95eeeedb5f5efea92d074ecb193f8b1fc7eb23bae62e2ffd"
+    },
+    {
+      "path": "next-1440-fine-close.png",
+      "sha256": "0148118b8e25d3da0de0ed6d7899be780ab6dfa53ebaf194b7b942b42adac769"
+    },
+    {
+      "path": "next-1440-fine-options.png",
+      "sha256": "e5f8e91f6548b396ef2343332024ce044913da1957c787a28085c86d84ddfcd6"
+    },
+    {
+      "path": "next-390-coarse-close.png",
+      "sha256": "3ec0427ce79a3a421494e8053ce75857c00a8e5b3edd680d718d1485bcb89a1a"
+    },
+    {
+      "path": "next-390-coarse-options.png",
+      "sha256": "f8a8be4a44c9677470a0771d41f4de148d19a7cbb6bf1b9d494f483bfa005d76"
+    },
+    {
+      "path": "next-390-fine-close.png",
+      "sha256": "5151fb365fdeff4cf531434d3696099800df1c9d2f200f884258d00f1b4a73d0"
+    },
+    {
+      "path": "next-390-fine-options.png",
+      "sha256": "ef425ae144f31f263e88ca13f51ee3f3609039d10ee13263caa3e43d613beb07"
+    },
+    {
+      "path": "next-768-coarse-close.png",
+      "sha256": "189b3f99642f7edab885ef7a2b81d514f725be05764d716e8c30a9a44936f641"
+    },
+    {
+      "path": "next-768-coarse-options.png",
+      "sha256": "25f01a65dbd8d4f2afa04267a74f3f6a2c822ce68fc6bd943751ab22ae959abb"
+    },
+    {
+      "path": "next-768-fine-close.png",
+      "sha256": "2ea8fc140fcacec3e0d61ca2f15e1ecb7c1997c3827c0f73b89796874edad0c8"
+    },
+    {
+      "path": "next-768-fine-options.png",
+      "sha256": "006d5704c073b4dfc28c74ac8b64e00745429181aa0a93a0fc5ab89488127a7e"
+    },
+    {
+      "path": "next-static-compact.png",
+      "sha256": "fc6be6e74e72016d5861261bce467195a6c2228cc8a1310b4ce28aef2029f710"
+    },
+    {
+      "path": "next-static-recovery.png",
+      "sha256": "352bc57dea7082ffe7de62c7225d5c80a513a7baf2d5b9e139cfcb2b4439e9c5"
+    },
+    {
+      "path": "vite-1440-coarse-close.png",
+      "sha256": "6304ffd3c0a0ed386acf7fa27e3fbd14a0a33ef306acffc42fa76df44a47d10a"
+    },
+    {
+      "path": "vite-1440-coarse-options.png",
+      "sha256": "db3f8206ce20d77b95eeeedb5f5efea92d074ecb193f8b1fc7eb23bae62e2ffd"
+    },
+    {
+      "path": "vite-1440-fine-close.png",
+      "sha256": "0148118b8e25d3da0de0ed6d7899be780ab6dfa53ebaf194b7b942b42adac769"
+    },
+    {
+      "path": "vite-1440-fine-options.png",
+      "sha256": "e5f8e91f6548b396ef2343332024ce044913da1957c787a28085c86d84ddfcd6"
+    },
+    {
+      "path": "vite-390-coarse-close.png",
+      "sha256": "3ec0427ce79a3a421494e8053ce75857c00a8e5b3edd680d718d1485bcb89a1a"
+    },
+    {
+      "path": "vite-390-coarse-options.png",
+      "sha256": "f8a8be4a44c9677470a0771d41f4de148d19a7cbb6bf1b9d494f483bfa005d76"
+    },
+    {
+      "path": "vite-390-fine-close.png",
+      "sha256": "c06b215323cc021d4c77ab8fb51fed88a9f5fb3b50496d223353c2e3839e33f8"
+    },
+    {
+      "path": "vite-390-fine-options.png",
+      "sha256": "6ae3aaadada68e09fb10cae8f505f855df189196e7e526e2ca26903e2fbb7784"
+    },
+    {
+      "path": "vite-768-coarse-close.png",
+      "sha256": "968a17b62ec6539070c643642ae5e3561d3d01f314b6376ebce8c7d40edde873"
+    },
+    {
+      "path": "vite-768-coarse-options.png",
+      "sha256": "09658c95da8a84dcf3901e2d715cf525addb768859e0d329a2aa89d3461c4cda"
+    },
+    {
+      "path": "vite-768-fine-close.png",
+      "sha256": "5a2f081684e17f3671892583a1db672fad795f943d86f21feef7ce848766e5c0"
+    },
+    {
+      "path": "vite-768-fine-options.png",
+      "sha256": "520637b019d6e5ceaa1d1b9e22c1711fd3b92708c7dfc1c5446c0ae81682624c"
+    },
+    {
+      "path": "vite-static-compact.png",
+      "sha256": "f6efca1496136ca95de68217b13e1f8ae7e1b40331b1397fb71fed664ffb5e0e"
+    },
+    {
+      "path": "vite-static-recovery.png",
+      "sha256": "352bc57dea7082ffe7de62c7225d5c80a513a7baf2d5b9e139cfcb2b4439e9c5"
+    }
+  ],
+  "limitations": [
+    "Synthetic generic fixtures only; no private Arc acceptance",
+    "Chromium native document andtouch emulation; no physical-device acceptance or WebKitmatrix",
+    "Full save/restart/compare/conflict lifecycles belong to implementationowner proof",
+    "Next dev→static firstbuild failed on stale .next/dev/types/validator routeimport; clean task-owned .next built; owner assessing usabilitydefect",
+    "Pre-settle diagnostic geometry excluded; measurements await finishedopeninganimations",
+    "First Nextstatic navigation occurredbeforeownserverstarted; isolated next-onlyrerunpassed, retainedinitialdiagnostic outsidepasscount",
+    "Next automatically rewrites next-env.d.ts between dev andstaticbuild; generated file hashtransition recorded separately, allruntimeUI/module sourcefiles unchanged"
+  ],
+  "repositoryWrites": false,
+  "servicePorts": [
+    4203,
+    4204,
+    4213,
+    4214
+  ],
+  "generatedFileDelta": [
+    {
+      "path": "next-env.d.ts",
+      "expected": "sha256:0f70629890b72a0a82e91972cc032c04b658b26c265373cb711cf576bfbf8fcc",
+      "actual": "sha256:1862ac4bbbc5192d4bf562161df66ea547ed3e67173100656ab606ae9797db2b"
+    }
+  ],
+  "servicesStopped": true
+}

@@ -4,7 +4,7 @@ import { useDesignSnapshot, type DesignPanelProps, type DesignEditorModule } fro
 function Foundation({ controller, review }: DesignPanelProps) {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const state = useDesignSnapshot(controller)!
-  const read = controller.readout("scale")
+  const read = controller.readout("scale", state.inputProblems.scale && state.compiledValues ? "last-valid" : "working")
   const palette = controller.readout("palette")
   const value = Number(read.effective)
   const error = state.inputProblems.scale
@@ -23,7 +23,7 @@ function Foundation({ controller, review }: DesignPanelProps) {
 }
 function Component({ controller, component }: DesignPanelProps) {
   const state = useDesignSnapshot(controller)!
-  const read = controller.readout("radius")
+  const read = controller.readout("radius", state.inputProblems.radius && state.compiledValues ? "last-valid" : "working")
   if (component !== "button") return <p className="text-xs text-muted-foreground">No treatment binding for this fixture component.</p>
   return <><NumberField label="Component radius" value={Number(read.effective)} min={0} max={32} step={1} unit="px" invalidText={state.inputProblems.radius?.raw} inputError={state.inputProblems.radius?.message} resetKey={state.inputEpoch} onGestureStart={() => controller.beginGesture()} onGestureCommit={() => controller.commitGesture()} onGestureCancel={() => { controller.cancelGesture(); controller.clearInputProblem("radius") }} onChange={v => controller.edit({ controlId: "radius", value: v })} onInvalid={(message, raw) => controller.inputProblem("radius", message, raw)} /><PropertyList items={[{ label: "Inherited", value: String(read.inherited) }, { label: "Source", value: read.sourceScope }]} /><Button onClick={() => controller.reset({ basis: "inherited", controlId: "radius" })}>Reset to inherited</Button></>
 }

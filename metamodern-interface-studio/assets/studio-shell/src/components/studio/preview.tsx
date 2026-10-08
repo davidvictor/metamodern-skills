@@ -135,14 +135,15 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   // Present and every “as built” pane pass the shared NO_DRAFT sentinel. Input-backed
   // design experiments then stay out of those product states just like token drafts.
   const shownDraft = adapter.design?.editor && draft === NO_DRAFT ? studio.savedDesignFor(theme) : draft
-  const unavailableDirection = !!adapter.design?.editor && live && !shownDraft.direction
+  const unavailableDirection = live && (!!shownDraft.unavailable || !!adapter.design?.editor && !shownDraft.direction)
+  const unavailableReason = shownDraft.unavailable ?? "This direction basis has no valid compiled output."
   React.useEffect(() => {
-    if (unavailableDirection) onStatusRef.current?.({ status: "error", modified: false, canGoBack: false, capabilities: [], anchors: [], reason: "This direction basis has no valid compiled output." })
+    if (unavailableDirection) onStatusRef.current?.({ status: "error", modified: false, canGoBack: false, capabilities: [], anchors: [], reason: unavailableReason })
     else if (!live) onStatusRef.current?.(null)
-  }, [live, unavailableDirection])
+  }, [live, unavailableDirection, unavailableReason])
   if (unavailableDirection) empty = {
     title: draft === NO_DRAFT ? "Source or saved direction is unavailable" : "Compiled direction is unavailable",
-    description: draft === NO_DRAFT ? "This basis has no valid compiled output. A working draft cannot substitute for the source or confirmed saved direction." : "No valid compiled output is available for this preview.",
+    description: shownDraft.unavailable ?? (draft === NO_DRAFT ? "This basis has no valid compiled output. A working draft cannot substitute for the source or confirmed saved direction." : "No valid compiled output is available for this preview."),
     tone: "danger",
   }
   const design = draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)

@@ -477,7 +477,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
               {!narrow && <Specimen />}
             </div>
             <ScaleChip w={pr.w} h={pr.h} scale={scale} />
-            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">{adapter.design?.editor ? "Working changes preview in the review views. Present uses the confirmed saved or source basis. Direction payloads stay out of links; this editor does not implement persistence." : "A draft is exploration. It shows here only, travels in the link, and never changes the product or a walkthrough."}</p>
+            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">{adapter.design?.directions ? "Working changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only." : adapter.design?.editor ? "Working changes preview in the review views. Present uses the confirmed saved or source basis. Direction payloads stay out of links; this editor does not implement persistence." : "A draft is exploration. It shows here only, travels in the link, and never changes the product or a walkthrough."}</p>
           </div>
         </div>
       </StageNav>

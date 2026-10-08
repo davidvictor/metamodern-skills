@@ -5,6 +5,7 @@ export type StudioHost = {
   variant?: string
   scenarios?: unknown
   layouts?: unknown
+  directions?: unknown
   workspace: boolean
   library: boolean
 }

@@ -18,11 +18,13 @@ test('host creation, legacy Vite interpretation, preservation, and mismatch refu
     assert.equal(lock.host, host); assert.equal(lock.schema, 'studio-shell-lock/2');
     assert.ok(lock.composition.common['src/App.tsx']); assert.ok(lock.composition.overlay['package.json']);
     const product = join(dir, 'src/design-runtime/index.ts'); writeFileSync(product, '// owned compiler map\n');
+    const directions = join(dir, 'directions.json'); writeFileSync(directions, '{\"product-owned\":true}\n');
     const bytes = readFileSync(lockPath, 'utf8');
     const mismatch = run(dir, ['--apply', '--host', host === 'vite' ? 'next' : 'vite', '--skip-checks']);
     assert.notEqual(mismatch.status, 0); assert.match(mismatch.stderr, /explicit migration/); assert.equal(readFileSync(lockPath, 'utf8'), bytes);
     const result = run(dir, ['--apply', '--skip-checks']); assert.equal(result.status, 0, result.stderr); assert.equal(JSON.parse(result.stdout).host, host);
     assert.equal(readFileSync(product, 'utf8'), '// owned compiler map\n');
+    assert.equal(readFileSync(directions, 'utf8'), '{\"product-owned\":true}\n');
     if (host === 'vite') {
       delete lock.host; delete lock.composition; lock.schema = 'studio-shell-lock/1'; writeFileSync(lockPath, JSON.stringify(lock));
       const legacy = run(dir, ['--apply', '--skip-checks']); assert.equal(legacy.status, 0, legacy.stderr); assert.equal(JSON.parse(readFileSync(lockPath)).host, 'vite');
@@ -85,10 +87,10 @@ test('Next live saved-file bootstrap resolves new scenario/layout IDs before com
   writeFileSync(join(dir, 'host.mjs'), stripTypeScriptTypes(source, { mode: 'strip' }).replace('../.studio-generated/runtime', './runtime.mjs'));
   const { host, initializeHost } = await import(pathToFileURL(join(dir, 'host.mjs')).href);
   const fetchBefore = globalThis.fetch; t.after(() => { globalThis.fetch = fetchBefore; });
-  const live = { scenarios: { schema: 'studio-scenarios/1', scenarios: [{ id: 'saved.new', values: { done: true } }] }, layouts: { schema: 'studio-layouts/1', layouts: [{ id: 'layout.new', frames: [{ w: 390, h: 844 }] }] } };
+  const live = { scenarios: { schema: 'studio-scenarios/1', scenarios: [{ id: 'saved.new', values: { done: true } }] }, layouts: { schema: 'studio-layouts/1', layouts: [{ id: 'layout.new', frames: [{ w: 390, h: 844 }] }] }, directions: { schema: 'studio-directions/1', revisions: [], events: [] } };
   const calls = [];
   globalThis.fetch = async url => { calls.push(url); return Response.json(live[url.split('/').at(-1)]); };
   host.canSave = true; await initializeHost();
-  assert.deepEqual(host.scenarios, live.scenarios); assert.deepEqual(host.layouts, live.layouts); assert.equal(calls.length, 2);
-  host.canSave = false; await initializeHost(); assert.equal(calls.length, 2, 'review builds never fetch a development service');
+  assert.deepEqual(host.directions, live.directions); assert.deepEqual(host.scenarios, live.scenarios); assert.deepEqual(host.layouts, live.layouts); assert.equal(calls.length, 3);
+  host.canSave = false; await initializeHost(); assert.equal(calls.length, 3, 'review builds never fetch a development service');
 });

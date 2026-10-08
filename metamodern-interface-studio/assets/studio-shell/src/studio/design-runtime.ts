@@ -1,3 +1,4 @@
+import type { DirectionCodec, DirectionReadiness } from "./directions"
 import type { DesignModel } from "./design-ui/types"
 /** Generic opt-in compiler contract; private implementation and rich Design panels belong to the product. */
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
@@ -24,15 +25,16 @@ export type CompiledDesign = {
   diagnostics?: { id: string; label: string; status: "ok" | "warning" | "error"; message: string }[]
 }
 export type CompileDesignInput = { direction: JsonValue; theme: string; sourceLockId?: string }
-export type DesignCompilerModule = { model?: DesignModel; compile(input: CompileDesignInput): CompiledDesign | Promise<CompiledDesign> }
+export type DesignCompilerModule = { model?: DesignModel; directionCodec?: DirectionCodec; checkDirection?(input: { purpose: "save" | "adopt" | "compare" | "import"; values: JsonValue; compiled: Readonly<Record<string, CompiledDesign>> }): DirectionReadiness | Promise<DirectionReadiness>; compile(input: CompileDesignInput): CompiledDesign | Promise<CompiledDesign> }
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value)
 const strings = (value: unknown) => record(value) && Object.values(value).every(v => typeof v === "string")
-function dataOnly(value: unknown, seen = new WeakSet<object>()): boolean {
+function dataOnly(value: unknown, seen = new WeakSet<object>(), depth = 0, budget = { nodes: 0 }): boolean {
+  if (depth > 64 || ++budget.nodes > 50000) return false
   if (value === null || typeof value === "string" || typeof value === "boolean") return true
   if (typeof value === "number") return Number.isFinite(value)
   if (typeof value !== "object" || !value || seen.has(value)) return false
   seen.add(value)
-  const valid = Array.isArray(value) ? value.every(v => dataOnly(v, seen)) : record(value) && Object.getPrototypeOf(value) === Object.prototype && Object.values(value).every(v => dataOnly(v, seen))
+  const valid = Array.isArray(value) ? value.every(v => dataOnly(v, seen, depth + 1, budget)) : record(value) && Object.getPrototypeOf(value) === Object.prototype && Object.values(value).every(v => dataOnly(v, seen, depth + 1, budget))
   seen.delete(value)
   return valid
 }

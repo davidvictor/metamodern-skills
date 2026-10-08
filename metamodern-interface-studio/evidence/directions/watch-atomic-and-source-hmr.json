@@ -1,0 +1,237 @@
+{
+  "steps": [
+    {
+      "step": "before-external",
+      "url": "http://127.0.0.1:4201/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.7d1835ae-f55b-423c-8c55-95683b2daa19&revision=4&tab=adjust",
+      "nonce": "516d5842-4083-4d08-bc12-dbde97ff5e27",
+      "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 1 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.6×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nBeta external phase 1791441871328 · saved r4 + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\nUnsaved changes\nDiscard\nSave\n\nDraft · revision 1 · ready\n\nSaved basis\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions\n\nOpen direction\nBeta external phase 1791441871328 · r4\nDirection name\nNew direction\nSave direction\nSave as new\nRename\nDuplicate\nDelete recoverably\n\nSave writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded.\n\nDownload saved\nDownload draft recovery\nImport direction or legacy variant\nImport as draft\nClose directions",
+      "frames": [
+        {
+          "scale": 1.6,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        }
+      ]
+    },
+    {
+      "step": "after-external",
+      "url": "http://127.0.0.1:4201/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.7d1835ae-f55b-423c-8c55-95683b2daa19&revision=4&tab=adjust",
+      "nonce": "516d5842-4083-4d08-bc12-dbde97ff5e27",
+      "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 1 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.6×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nBeta external phase 1791441871328 · saved r4 + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\nUnsaved changes\nDiscard\nSave\n\nDraft · revision 1 · ready\n\nSaved basis\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions\n\nOpen direction\nBeta external phase 1791441871328 · r4\nDirection name\nNew direction\nSave direction\nSave as new\nRename\nDuplicate\nDelete recoverably\n\nSave writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded.\n\nDownload saved\nDownload draft recovery\nImport direction or legacy variant\nImport as draft\nClose directions",
+      "frames": [
+        {
+          "scale": 1.6,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        }
+      ]
+    },
+    {
+      "step": "after-save",
+      "url": "http://127.0.0.1:4201/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.7d1835ae-f55b-423c-8c55-95683b2daa19&revision=4&tab=adjust",
+      "nonce": "516d5842-4083-4d08-bc12-dbde97ff5e27",
+      "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 1 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.6×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nBeta external phase 1791441871328 · saved r4 + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\n\nSave conflict: nothing was overwritten\n\nChanged elsewhere. Your edit is kept and nothing was overwritten.\nSave conflict: nothing was overwritten\nCurrent value\nLatest file retained. Keep your edit as a new direction or load a saved revision.\nLoad latest saved\nKeep as new direction\n\nDraft · revision 1 · ready\n\nSaved basis\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions\n\nOpen direction\ndirection.7d1835ae-f55b-423c-8c55-95683b2daa19@4\n\nSave conflict: nothing was overwritten\n\nDirection name\nNew direction\nSave direction\nSave as new\nRename\nDuplicate\nDelete recoverably\n\nSave writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded.\n\nDownload saved\nDownload draft recovery\nImport direction or legacy variant\nImport as draft\nClose directions",
+      "frames": [
+        {
+          "scale": 1.6,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        }
+      ]
+    },
+    {
+      "step": "confirmed-save-with-newer-draft",
+      "url": "http://127.0.0.1:4201/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.e661bde7-8dd8-4fed-ae5a-e1ae7bfdee34&revision=1&tab=adjust",
+      "nonce": "516d5842-4083-4d08-bc12-dbde97ff5e27",
+      "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 2 · ready · applying previews\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.7×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nPhase recovered · saved r1 + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\n\nSaved Phase recovered revision 1; newer edits are still unsaved.\n\nUnsaved changes\nDiscard\nSave\n\nDraft · revision 2 · ready · applying previews\n\nSaved basis\nDraft\nSide by side\nHold to see as built\nDraft design\nShowing previous settings\nStaging new preview\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nLoading\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions\n\nOpen direction\nPhase recovered · r1\n\nSaved Phase recovered revision 1; newer edits are still unsaved.\n\nDirection name\nNew direction\nSave direction\nSave as new\nRename\nDuplicate\nDelete recoverably\n\nSave writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded.\n\nDownload saved\nDownload draft recovery\nImport direction or legacy variant\nImport as draft\nClose directions",
+      "frames": [
+        {
+          "scale": 1.7,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        }
+      ]
+    },
+    {
+      "step": "normal-tsx-hmr",
+      "url": "http://127.0.0.1:4201/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.e661bde7-8dd8-4fed-ae5a-e1ae7bfdee34&revision=1&tab=adjust",
+      "nonce": "516d5842-4083-4d08-bc12-dbde97ff5e27",
+      "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 2 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.7×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nPhase recovered · saved r1 + unsaved draft\nDirections HMR probe\nPin working draft\nRefresh saved directions\n\nSaved Phase recovered revision 1; newer edits are still unsaved.\n\nUnsaved changes\nDiscard\nSave\n\nDraft · revision 2 · ready\n\nSaved basis\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions",
+      "frames": [
+        {
+          "scale": 1.7,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        }
+      ]
+    },
+    {
+      "step": "normal-style-hmr",
+      "url": "http://127.0.0.1:4201/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.e661bde7-8dd8-4fed-ae5a-e1ae7bfdee34&revision=1&tab=adjust",
+      "nonce": "516d5842-4083-4d08-bc12-dbde97ff5e27",
+      "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 2 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.7×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nPhase recovered · saved r1 + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\n\nSaved Phase recovered revision 1; newer edits are still unsaved.\n\nUnsaved changes\nDiscard\nSave\n\nDraft · revision 2 · ready\n\nSaved basis\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions",
+      "frames": [
+        {
+          "scale": 1.7,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        }
+      ]
+    }
+  ],
+  "navigation": [
+    "http://127.0.0.1:4201/"
+  ],
+  "hmr": [
+    {
+      "type": "connected"
+    },
+    {
+      "type": "connected"
+    },
+    {
+      "type": "update",
+      "updates": [
+        {
+          "type": "js-update",
+          "timestamp": 1791442227072,
+          "path": "/src/index.css",
+          "acceptedPath": "/src/index.css",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        },
+        {
+          "type": "js-update",
+          "timestamp": 1791442227072,
+          "path": "/src/studio/design-ui/direction-manager.tsx",
+          "acceptedPath": "/src/studio/design-ui/direction-manager.tsx",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        }
+      ]
+    },
+    {
+      "type": "update",
+      "updates": [
+        {
+          "type": "js-update",
+          "timestamp": 1791442227072,
+          "path": "/src/index.css",
+          "acceptedPath": "/src/index.css",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        },
+        {
+          "type": "js-update",
+          "timestamp": 1791442227072,
+          "path": "/src/studio/design-ui/direction-manager.tsx",
+          "acceptedPath": "/src/studio/design-ui/direction-manager.tsx",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        }
+      ]
+    },
+    {
+      "type": "update",
+      "updates": [
+        {
+          "type": "js-update",
+          "timestamp": 1791442227200,
+          "path": "/src/index.css",
+          "acceptedPath": "/src/index.css",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        },
+        {
+          "type": "js-update",
+          "timestamp": 1791442227200,
+          "path": "/src/studio/design-ui/direction-manager.tsx",
+          "acceptedPath": "/src/studio/design-ui/direction-manager.tsx",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        }
+      ]
+    },
+    {
+      "type": "update",
+      "updates": [
+        {
+          "type": "js-update",
+          "timestamp": 1791442227200,
+          "path": "/src/index.css",
+          "acceptedPath": "/src/index.css",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        },
+        {
+          "type": "js-update",
+          "timestamp": 1791442227200,
+          "path": "/src/studio/design-ui/direction-manager.tsx",
+          "acceptedPath": "/src/studio/design-ui/direction-manager.tsx",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        }
+      ]
+    },
+    {
+      "type": "update",
+      "updates": [
+        {
+          "type": "js-update",
+          "timestamp": 1791442227300,
+          "path": "/src/index.css",
+          "acceptedPath": "/src/index.css",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        }
+      ]
+    },
+    {
+      "type": "update",
+      "updates": [
+        {
+          "type": "js-update",
+          "timestamp": 1791442227300,
+          "path": "/src/index.css",
+          "acceptedPath": "/src/index.css",
+          "explicitImportRequired": false,
+          "isWithinCircularImport": false
+        }
+      ]
+    }
+  ],
+  "console": [
+    "[vite] connecting...",
+    "[vite] connected.",
+    "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[vite] connecting...",
+    "[vite] connected.",
+    "Failed to load resource: the server responded with a status of 409 (Conflict)",
+    "[vite] hot updated: /src/index.css",
+    "[vite] hot updated: /src/studio/design-ui/direction-manager.tsx",
+    "[vite] hot updated: /src/index.css",
+    "[vite] hot updated: /src/studio/design-ui/direction-manager.tsx",
+    "[vite] hot updated: /src/index.css"
+  ],
+  "errors": [],
+  "postStatus": 200,
+  "pass": true
+}

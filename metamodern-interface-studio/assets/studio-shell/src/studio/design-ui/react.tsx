@@ -1,4 +1,7 @@
 import * as React from "react"
+import { DIRECTION_LINK_KEYS } from "../directions"
+import { host } from "@/studio-host"
+import { DesignDirectionService } from "./direction-service"
 import { adapter } from "@/adapter"
 import { designCompilers } from "@/design-runtime"
 import { designEditors } from "@/design-ui"
@@ -6,7 +9,7 @@ import { createDesignController, type DesignController } from "./controller"
 import { loadDesignEditor } from "./loader"
 import type { DesignEditorModule, DesignRuntimeModule } from "./types"
 
-type Context = { declaration?: import("./types").DesignEditorDeclaration; controller: DesignController | null; module: DesignEditorModule | null; reason?: string }
+type Context = { declaration?: import("./types").DesignEditorDeclaration; controller: DesignController | null; module: DesignEditorModule | null; reason?: string; lifecycle?: DesignDirectionService }
 const Context = React.createContext<Context | null>(null)
 export function DesignEditorProvider({ children }: { children: React.ReactNode }) {
   const declaration = adapter.design?.editor
@@ -14,6 +17,7 @@ export function DesignEditorProvider({ children }: { children: React.ReactNode }
   React.useEffect(() => {
     if (!declaration) return
     let active = true
+    let lifecycle: DesignDirectionService | undefined
     const load = async () => {
       try {
         const compiler = adapter.design?.compiler
@@ -24,12 +28,21 @@ export function DesignEditorProvider({ children }: { children: React.ReactNode }
         if (!runtime.model) throw new Error("Design compiler has no product model")
         const controller = createDesignController({ compiler, runtime: runtime as DesignRuntimeModule, themes: adapter.axes.themes.map(t => t.id), capabilities: declaration.capabilities })
         await controller.start()
-        if (active) setValue({ controller, module, declaration })
+        if (adapter.design?.directions) {
+          const reserved = adapter.axes.inputs.filter(i => (DIRECTION_LINK_KEYS as readonly string[]).includes(i.id)); if (reserved.length) throw new Error(`Direction lifecycle uses reserved link keys: ${reserved.map(i => i.id).join(", ")}. Rename those review inputs before opting in.`)
+          let storage: Storage | undefined; try { storage = window.localStorage } catch { /* browser recovery may be unavailable */ }
+          lifecycle = new DesignDirectionService({ declaration: adapter.design.directions, controller, runtime: runtime as DesignRuntimeModule, canSave: host.canSave, editable: declaration.capabilities.includes("edit"), bundled: host.directions, storage })
+          await lifecycle.initialize()
+        }
+        if (active) setValue({ controller, module, declaration, lifecycle })
+        else lifecycle?.dispose()
       } catch (error) { if (active) setValue({ controller: null, module: null, declaration, reason: error instanceof Error ? error.message : String(error) }) }
     }
     void load()
-    return () => { active = false }
+    return () => { active = false; lifecycle?.dispose() }
   }, [declaration])
+  // A named-direction link must hydrate before the shared store can read/rewrite its URL.
+  if (adapter.design?.directions && !value.controller) return <div role={value.reason ? "alert" : "status"} className="p-4 text-sm">{value.reason ?? "Loading saved direction and recovery…"}</div>
   return declaration ? <Context.Provider value={value}>{children}</Context.Provider> : children
 }
 export const useOptionalDesignEditor = () => React.useContext(Context)
@@ -45,3 +58,6 @@ export function useDesignSnapshot(controller?: DesignController | null) {
   const c = controller ?? context?.controller
   return React.useSyncExternalStore(c?.subscribe ?? noSubscribe, c?.getSnapshot ?? none, c?.getSnapshot ?? none)
 }
+
+export function useDesignDirections() { return useOptionalDesignEditor()?.lifecycle }
+export function useDirectionSnapshot() { const service = useDesignDirections(); return React.useSyncExternalStore(service?.subscribe ?? noSubscribe, service?.getSnapshot ?? none, service?.getSnapshot ?? none) }

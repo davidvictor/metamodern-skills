@@ -1,0 +1,91 @@
+{
+  "steps": [
+    {
+      "step": "before-external",
+      "url": "http://127.0.0.1:4205/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.7d1835ae-f55b-423c-8c55-95683b2daa19&revision=4&tab=adjust",
+      "nonce": "2832b773-c25c-40d6-ae0a-d379e854df17",
+      "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 1 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.6×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nBeta external phase 1791441871328 · saved r4 + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\nUnsaved changes\nDiscard\nSave\n\nDraft · revision 1 · ready\n\nSaved basis\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions\n\nOpen direction\nBeta external phase 1791441871328 · r4\nDirection name\nNew direction\nSave direction\nSave as new\nRename\nDuplicate\nDelete recoverably\n\nSave writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded.\n\nDownload saved\nDownload draft recovery\nImport direction or legacy variant\nImport as draft\nClose directions",
+      "frames": [
+        {
+          "scale": 1.6,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        }
+      ]
+    },
+    {
+      "step": "after-external",
+      "url": "http://127.0.0.1:4205/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.7d1835ae-f55b-423c-8c55-95683b2daa19&revision=4&tab=adjust",
+      "nonce": "8b3be4c6-9d4c-4557-890d-66c5a8166e56",
+      "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nSaved · revision 4 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.4×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nBeta external phase 1791441871328 · saved r4\nDirections\nPin working draft\nRefresh saved directions\nUnsaved browser draft available.\nRecover draft\nDiscard recovery\n\nSaved · revision 4 · ready\n\nSaved basis\nDraft\nSide by side\nSaved basis\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions",
+      "frames": [
+        {
+          "scale": 1.4,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        }
+      ]
+    },
+    {
+      "step": "failure",
+      "url": "http://127.0.0.1:4205/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.7d1835ae-f55b-423c-8c55-95683b2daa19&revision=4&tab=adjust",
+      "nonce": "8b3be4c6-9d4c-4557-890d-66c5a8166e56",
+      "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nSaved · revision 4 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.4×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nBeta external phase 1791441871328 · saved r4\nDirections\nPin working draft\nRefresh saved directions\nUnsaved browser draft available.\nRecover draft\nDiscard recovery\n\nSaved · revision 4 · ready\n\nSaved basis\nDraft\nSide by side\nSaved basis\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions",
+      "frames": [
+        {
+          "scale": 1.4,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        }
+      ]
+    }
+  ],
+  "navigation": [
+    "http://127.0.0.1:4205/",
+    "http://127.0.0.1:4205/"
+  ],
+  "hmr": [
+    {
+      "type": "connected"
+    },
+    {
+      "type": "connected"
+    },
+    {
+      "type": "full-reload"
+    },
+    {
+      "type": "full-reload"
+    },
+    {
+      "type": "connected"
+    },
+    {
+      "type": "connected"
+    }
+  ],
+  "console": [
+    "[vite] connecting...",
+    "[vite] connected.",
+    "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[vite] connecting...",
+    "[vite] connected.",
+    "[vite] connecting...",
+    "[vite] connected.",
+    "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+    "[vite] connecting...",
+    "[vite] connected."
+  ],
+  "errors": [],
+  "postStatus": 200,
+  "failure": "locator.click: Timeout 5000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Save direction', exact: true })\u001b[22m\n"
+}

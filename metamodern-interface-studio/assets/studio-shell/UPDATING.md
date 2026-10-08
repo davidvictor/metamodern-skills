@@ -1,3 +1,7 @@
+## 0.18.0
+
+Opted-in studio-direction-lifecycle/1 consumers gain named immutable local directions, captured saves, browser draft recovery and independently pinned source/saved/draft comparisons. Product codecs and readiness checks remain in protected src/design-runtime/. Read references/directions.md before opting in; legacy consumers retain their existing behavior. directions.json is product-owned and never replaced by managed updates. studio.config.ts may configure savedFiles.directions as a relative JSON path within the Studio. Generated saved-source exclusions prevent canonical journals and atomic temporary files from causing preview reloads while preserving normal source HMR. Next typecheck/build regenerate official route types and exclude obsolete dev validators when changing between development and static modes.
+
 ## 0.17.1
 
 DesignPanelProps now supplies review context (scenarioId, readonly scenario options and selectScenario) to Foundation and Component panels. Use it for a Review fixture selector and contextual reach readouts; navigation never edits direction payloads or undo history. Private panels still import only the public kit/design-ui APIs and their own files. Product-owned modules remain protected by managed updates. EditorPopover adds optional open/onOpenChange for controlled Close picker and choice dismissal; existing uncontrolled callers retain their behavior.

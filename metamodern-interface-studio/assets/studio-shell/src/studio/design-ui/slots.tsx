@@ -2,7 +2,7 @@ import * as React from "react"
 import { adapter } from "@/adapter"
 import { useStudio } from "@/store"
 import { createDesignReviewContext } from "./review"
-import { useOptionalDesignEditor, useDesignSnapshot } from "./react"
+import { useOptionalDesignEditor, useDesignSnapshot, useDirectionSnapshot } from "./react"
 import { Button } from "@/components/ui/button"
 import { SidebarContent, SidebarGroup } from "@/components/ui/sidebar"
 
@@ -13,9 +13,10 @@ export function EditorReason() {
   return <div role={state?.status === "error" || state?.status === "invalid" || context?.reason ? "alert" : "status"} className="p-4 text-sm text-muted-foreground">{reason}</div>
 }
 export function DesignEditorStatus({ compact = false }: { compact?: boolean }) {
+  const lifecycle = useDirectionSnapshot()
   const context = useOptionalDesignEditor()
   const state = useDesignSnapshot()
-  if (!context) return null
+  if (!context || lifecycle?.selectionProblem) return null
   if (!state) return <EditorReason />
   return <div data-design-status className="border-b px-3 py-2 text-xs" aria-live="polite">
     <p className="font-medium">{state.dirty ? `Draft · revision ${state.draftRevision}` : state.savedRevision ? `Saved · revision ${state.savedRevision}` : "Source baseline"} · {state.status}{state.previewPending ? " · applying previews" : ""}</p>
@@ -25,21 +26,25 @@ export function DesignEditorStatus({ compact = false }: { compact?: boolean }) {
   </div>
 }
 export function FoundationSlot() {
+  const lifecycle = useDirectionSnapshot()
   const s = useStudio()
   const review = createDesignReviewContext(s.scenario, adapter.scenarios, id => s.selectScenario(id, { mobilePanel: s.mobilePanel }))
   const context = useOptionalDesignEditor()
   const Panel = context?.declaration?.slots.includes("foundation") ? context.module?.Foundation : undefined
   React.useEffect(() => { context?.controller?.setTarget(undefined) }, [context?.controller])
+  if (lifecycle?.selectionProblem) return <p role="alert" className="p-4 text-sm">{lifecycle.selectionProblem}</p>
   if (context?.declaration && !context.declaration.slots.includes("foundation")) return <SidebarContent><DesignEditorStatus /><p className="p-4 text-sm text-muted-foreground">Foundation panel is not provided by this editor.</p></SidebarContent>
   return <SidebarContent><DesignEditorStatus /><SidebarGroup data-kit className="gap-5 px-3 py-3">{Panel && context?.controller ? <Panel controller={context.controller} review={review} /> : <EditorReason />}</SidebarGroup></SidebarContent>
 }
 export function ComponentSlot({ component }: { component: string }) {
+  const lifecycle = useDirectionSnapshot()
   const s = useStudio()
   const review = createDesignReviewContext(s.scenario, adapter.scenarios, id => s.selectScenario(id, { mobilePanel: s.mobilePanel }))
   const context = useOptionalDesignEditor()
   const Panel = context?.declaration?.slots.includes("component") ? context.module?.Component : undefined
   React.useEffect(() => { context?.controller?.setTarget({ component }) }, [context?.controller, component])
   if (!context || !Panel) return null
+  if (lifecycle?.selectionProblem) return <p role="alert">{lifecycle.selectionProblem}</p>
   return <section aria-label="Treatment" className="grid gap-3 border-t pt-4"><h3 className="text-sm font-medium">Treatment</h3><DesignEditorStatus />{context.controller ? <Panel controller={context.controller} component={component} review={review} /> : <EditorReason />}</section>
 }
 /** Opt-in tokens inspect the compiler output; they never edit a second interpretation path. */

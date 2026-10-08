@@ -1,0 +1,46 @@
+[
+  {
+    "host": "vite",
+    "width": 1440,
+    "engine": "webkit",
+    "pass": true,
+    "closeKeyboardReachable": true,
+    "enterClosed": true,
+    "escapeClosed": true,
+    "triggerFocusReturned": true,
+    "errors": []
+  },
+  {
+    "host": "vite",
+    "width": 390,
+    "engine": "webkit",
+    "pass": true,
+    "closeKeyboardReachable": true,
+    "enterClosed": true,
+    "escapeClosed": true,
+    "triggerFocusReturned": true,
+    "errors": []
+  },
+  {
+    "host": "next",
+    "width": 1440,
+    "engine": "webkit",
+    "pass": true,
+    "closeKeyboardReachable": true,
+    "enterClosed": true,
+    "escapeClosed": true,
+    "triggerFocusReturned": true,
+    "errors": []
+  },
+  {
+    "host": "next",
+    "width": 390,
+    "engine": "webkit",
+    "pass": true,
+    "closeKeyboardReachable": true,
+    "enterClosed": true,
+    "escapeClosed": true,
+    "triggerFocusReturned": true,
+    "errors": []
+  }
+]

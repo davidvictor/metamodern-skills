@@ -1,0 +1,1853 @@
+[
+  {
+    "host": "vite",
+    "pass": true,
+    "prefix": "vite-1791443108447",
+    "savedPair": {
+      "a": {
+        "schema": "studio-direction/1",
+        "id": "direction.6114cbf4-a882-4536-a122-cd3956839992",
+        "label": "vite-1791443108447 Alpha",
+        "revision": 1,
+        "createdAt": "2026-10-08T07:05:09.703Z",
+        "updatedAt": "2026-10-08T07:05:09.703Z",
+        "product": {
+          "id": "example-tasks",
+          "revision": "1"
+        },
+        "payloadSchema": "fixture-direction/1",
+        "payload": {
+          "scale": 0.8,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        },
+        "receipt": {
+          "compiler": {
+            "id": "fixture",
+            "version": "1"
+          },
+          "sourceLockId": "fixture-source/1",
+          "fingerprints": {
+            "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+          },
+          "basis": {
+            "fixtureSource": "fixture-source/1",
+            "bindings": "fixture-bindings/1",
+            "assets": "fixture-assets/1"
+          }
+        }
+      },
+      "b": {
+        "schema": "studio-direction/1",
+        "id": "direction.6093c2f2-c608-40be-8931-d0e84561b2b8",
+        "label": "vite-1791443108447 Beta",
+        "revision": 1,
+        "createdAt": "2026-10-08T07:05:10.034Z",
+        "updatedAt": "2026-10-08T07:05:10.034Z",
+        "product": {
+          "id": "example-tasks",
+          "revision": "1"
+        },
+        "payloadSchema": "fixture-direction/1",
+        "payload": {
+          "scale": 1.4,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        },
+        "receipt": {
+          "compiler": {
+            "id": "fixture",
+            "version": "1"
+          },
+          "sourceLockId": "fixture-source/1",
+          "fingerprints": {
+            "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+          },
+          "basis": {
+            "fixtureSource": "fixture-source/1",
+            "bindings": "fixture-bindings/1",
+            "assets": "fixture-assets/1"
+          }
+        }
+      }
+    },
+    "savedAppearance": [
+      {
+        "scale": 0.8,
+        "fingerprint": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+        "row": "38px",
+        "radius": "10px"
+      },
+      {
+        "scale": 1.4,
+        "fingerprint": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+        "row": "67px",
+        "radius": "10px"
+      }
+    ],
+    "linkedAppearance": [
+      {
+        "scale": 0.8,
+        "fingerprint": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+        "row": "38px",
+        "radius": "10px"
+      },
+      {
+        "scale": 1.4,
+        "fingerprint": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+        "row": "67px",
+        "radius": "10px"
+      }
+    ],
+    "pinURL": "http://127.0.0.1:4201/#view=compare&scenario=tasks.list&theme=light&profile=desktop&direction=direction.6093c2f2-c608-40be-8931-d0e84561b2b8&revision=1&directionA=direction.6114cbf4-a882-4536-a122-cd3956839992%401&directionB=draft.fe5efb38-d3c5-427f-a028-f6cbe09f8788",
+    "final": {
+      "data": {
+        "schema": "studio-directions/1",
+        "revisions": [
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.759ca683-0dfc-4d1a-a93d-08719dbc7f38",
+            "label": "First 1791438847333",
+            "revision": 1,
+            "createdAt": "2026-10-08T05:54:07.473Z",
+            "updatedAt": "2026-10-08T05:54:07.473Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.37db3a78-b06a-4fbf-8b9b-77cd2655650c",
+            "label": "Second 1791438847768",
+            "revision": 1,
+            "createdAt": "2026-10-08T05:54:08.062Z",
+            "updatedAt": "2026-10-08T05:54:08.062Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.d6885ffc-bb98-49a9-86bd-119bbc19a319",
+            "label": "vite-1791439434583 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:03:56.238Z",
+            "updatedAt": "2026-10-08T06:03:56.238Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.213580d0-af81-4fcf-9b9b-bc260a1efeff",
+            "label": "vite-1791439434583 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:03:57.156Z",
+            "updatedAt": "2026-10-08T06:03:57.156Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.90978c74-4a9b-4ab7-8734-766d63e5bd29",
+            "label": "vite-1791439802667 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:10:04.201Z",
+            "updatedAt": "2026-10-08T06:10:04.201Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.f3ed47ea-6f99-45a8-a3be-b7dc08df033f",
+            "label": "vite-1791439802667 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:10:05.351Z",
+            "updatedAt": "2026-10-08T06:10:05.351Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.23b70799-558a-456d-a95c-2700b3f38c18",
+            "label": "vite-1791440661155 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:24:22.518Z",
+            "updatedAt": "2026-10-08T06:24:22.518Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.7d1835ae-f55b-423c-8c55-95683b2daa19",
+            "label": "vite-1791440661155 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:24:23.645Z",
+            "updatedAt": "2026-10-08T06:24:23.645Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.7d1835ae-f55b-423c-8c55-95683b2daa19",
+            "label": "vite-1791440661155 Beta external",
+            "revision": 2,
+            "createdAt": "2026-10-08T06:24:23.645Z",
+            "updatedAt": "2026-10-08T06:24:29.423Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.7d1835ae-f55b-423c-8c55-95683b2daa19",
+            "label": "Beta external phase 1791441111600",
+            "revision": 3,
+            "createdAt": "2026-10-08T06:24:23.645Z",
+            "updatedAt": "2026-10-08T06:31:51.600Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.7d1835ae-f55b-423c-8c55-95683b2daa19",
+            "label": "Beta external phase 1791441871328",
+            "revision": 4,
+            "createdAt": "2026-10-08T06:24:23.645Z",
+            "updatedAt": "2026-10-08T06:44:31.327Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.7d1835ae-f55b-423c-8c55-95683b2daa19",
+            "label": "Beta external phase 1791442225528",
+            "revision": 5,
+            "createdAt": "2026-10-08T06:24:23.645Z",
+            "updatedAt": "2026-10-08T06:50:25.528Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.e661bde7-8dd8-4fed-ae5a-e1ae7bfdee34",
+            "label": "Phase recovered",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:50:26.848Z",
+            "updatedAt": "2026-10-08T06:50:26.848Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.6,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.a13b3842-06a9-4f92-9d40-5b3c64b517f1",
+            "label": "vite-1791442931841 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:02:13.329Z",
+            "updatedAt": "2026-10-08T07:02:13.329Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.52d07a2f-ebfe-4aea-a894-c1a9956f6851",
+            "label": "vite-1791442931841 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:02:13.659Z",
+            "updatedAt": "2026-10-08T07:02:13.659Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.52d07a2f-ebfe-4aea-a894-c1a9956f6851",
+            "label": "vite-1791442931841 Beta external",
+            "revision": 2,
+            "createdAt": "2026-10-08T07:02:13.659Z",
+            "updatedAt": "2026-10-08T07:02:18.659Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.3f74c0f8-2c58-4a7b-8f31-62baa4e91cd3",
+            "label": "vite-1791442931841 Recovered",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:02:18.871Z",
+            "updatedAt": "2026-10-08T07:02:18.871Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.6,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.6114cbf4-a882-4536-a122-cd3956839992",
+            "label": "vite-1791443108447 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:05:09.703Z",
+            "updatedAt": "2026-10-08T07:05:09.703Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.6093c2f2-c608-40be-8931-d0e84561b2b8",
+            "label": "vite-1791443108447 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:05:10.034Z",
+            "updatedAt": "2026-10-08T07:05:10.034Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.6093c2f2-c608-40be-8931-d0e84561b2b8",
+            "label": "vite-1791443108447 Beta external",
+            "revision": 2,
+            "createdAt": "2026-10-08T07:05:10.034Z",
+            "updatedAt": "2026-10-08T07:05:14.930Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.8c346df7-bb4f-4eac-a01c-64bebf2f43a7",
+            "label": "vite-1791443108447 Recovered",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:05:15.139Z",
+            "updatedAt": "2026-10-08T07:05:15.139Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.6,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          }
+        ],
+        "events": []
+      },
+      "revision": "fe20e3b0e1a04adb70d577cd85dc5e8346140ddd7adb4d8d91cfd004975f3feb"
+    },
+    "url": "http://127.0.0.1:4201/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.8c346df7-bb4f-4eac-a01c-64bebf2f43a7&revision=1&tab=adjust",
+    "errors": [],
+    "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 1 · invalid\n\nShowing last valid revision 1\n\nEnter 0.5–2× in steps of 0.1: 999\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.6×\nEnter 0.5–2× in steps of 0.1: 999\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nvite-1791443108447 Recovered · saved r1 + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\nSource readiness waits for a valid draft\n\nRecovered unsaved draft; canonical saved data is unchanged.\n\nUnsaved changes\nDiscard\nSave\n\nDraft · revision 1 · invalid\n\nShowing last valid revision 1\n\nEnter 0.5–2× in steps of 0.1: 999\n\nSaved basis\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions"
+  },
+  {
+    "host": "next",
+    "pass": true,
+    "prefix": "next-1791443116026",
+    "savedPair": {
+      "a": {
+        "schema": "studio-direction/1",
+        "id": "direction.906c0092-a9f2-4a05-ae2b-1ec8e0c98aa6",
+        "label": "next-1791443116026 Alpha",
+        "revision": 1,
+        "createdAt": "2026-10-08T07:05:17.067Z",
+        "updatedAt": "2026-10-08T07:05:17.067Z",
+        "product": {
+          "id": "example-tasks",
+          "revision": "1"
+        },
+        "payloadSchema": "fixture-direction/1",
+        "payload": {
+          "scale": 0.8,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        },
+        "receipt": {
+          "compiler": {
+            "id": "fixture",
+            "version": "1"
+          },
+          "sourceLockId": "fixture-source/1",
+          "fingerprints": {
+            "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+          },
+          "basis": {
+            "fixtureSource": "fixture-source/1",
+            "bindings": "fixture-bindings/1",
+            "assets": "fixture-assets/1"
+          }
+        }
+      },
+      "b": {
+        "schema": "studio-direction/1",
+        "id": "direction.b0500557-b298-4611-8302-439cfec9b72c",
+        "label": "next-1791443116026 Beta",
+        "revision": 1,
+        "createdAt": "2026-10-08T07:05:17.408Z",
+        "updatedAt": "2026-10-08T07:05:17.408Z",
+        "product": {
+          "id": "example-tasks",
+          "revision": "1"
+        },
+        "payloadSchema": "fixture-direction/1",
+        "payload": {
+          "scale": 1.4,
+          "light": "green",
+          "dark": "green",
+          "linked": true,
+          "asset": "loaded",
+          "radius": null
+        },
+        "receipt": {
+          "compiler": {
+            "id": "fixture",
+            "version": "1"
+          },
+          "sourceLockId": "fixture-source/1",
+          "fingerprints": {
+            "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+            "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+          },
+          "basis": {
+            "fixtureSource": "fixture-source/1",
+            "bindings": "fixture-bindings/1",
+            "assets": "fixture-assets/1"
+          }
+        }
+      }
+    },
+    "savedAppearance": [
+      {
+        "scale": 0.8,
+        "fingerprint": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+        "row": "38px",
+        "radius": "10px"
+      },
+      {
+        "scale": 1.4,
+        "fingerprint": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+        "row": "67px",
+        "radius": "10px"
+      }
+    ],
+    "linkedAppearance": [
+      {
+        "scale": 0.8,
+        "fingerprint": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+        "row": "38px",
+        "radius": "10px"
+      },
+      {
+        "scale": 1.4,
+        "fingerprint": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+        "row": "67px",
+        "radius": "10px"
+      }
+    ],
+    "pinURL": "http://127.0.0.1:4202/#view=compare&scenario=tasks.list&theme=light&profile=desktop&direction=direction.b0500557-b298-4611-8302-439cfec9b72c&revision=1&directionA=direction.906c0092-a9f2-4a05-ae2b-1ec8e0c98aa6%401&directionB=draft.fe44ed9e-0490-4c0b-973e-f071b686cfc4",
+    "final": {
+      "data": {
+        "schema": "studio-directions/1",
+        "revisions": [
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.af3ab76e-e6a0-4705-9b7e-78096cc67416",
+            "label": "First 1791438852223",
+            "revision": 1,
+            "createdAt": "2026-10-08T05:54:12.357Z",
+            "updatedAt": "2026-10-08T05:54:12.357Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.d35916d1-4d35-4932-9276-c4651f405852",
+            "label": "Second 1791438852687",
+            "revision": 1,
+            "createdAt": "2026-10-08T05:54:12.851Z",
+            "updatedAt": "2026-10-08T05:54:12.851Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.e1d24003-dbe3-45a6-8007-d257b148167b",
+            "label": "next-1791439469570 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:04:32.389Z",
+            "updatedAt": "2026-10-08T06:04:32.389Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.be96985b-9bc8-4589-a19c-9440f9723849",
+            "label": "next-1791439469570 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:04:33.162Z",
+            "updatedAt": "2026-10-08T06:04:33.162Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.a9ab6b1d-9de3-4d3b-bd8e-6949c15d7d4f",
+            "label": "next-1791439835551 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:10:37.976Z",
+            "updatedAt": "2026-10-08T06:10:37.976Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.5cc8c62f-a482-4624-9161-b49d7a4ced5f",
+            "label": "next-1791439835551 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:10:38.809Z",
+            "updatedAt": "2026-10-08T06:10:38.809Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.5cc8c62f-a482-4624-9161-b49d7a4ced5f",
+            "label": "next-1791439835551 Beta external",
+            "revision": 2,
+            "createdAt": "2026-10-08T06:10:38.809Z",
+            "updatedAt": "2026-10-08T06:10:44.819Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.22ccb605-5153-4f23-9505-0ac7b1b17140",
+            "label": "next-1791439835551 Recovered",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:10:45.387Z",
+            "updatedAt": "2026-10-08T06:10:45.387Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.6,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.50ea2a64-ba74-4428-9dc4-9bf3a704f2b3",
+            "label": "next-1791440699592 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:25:00.823Z",
+            "updatedAt": "2026-10-08T06:25:00.823Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.00f03f1d-e5de-4155-b5f1-4db89f0a41a4",
+            "label": "next-1791440699592 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:25:01.648Z",
+            "updatedAt": "2026-10-08T06:25:01.648Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.00f03f1d-e5de-4155-b5f1-4db89f0a41a4",
+            "label": "next-1791440699592 Beta external",
+            "revision": 2,
+            "createdAt": "2026-10-08T06:25:01.648Z",
+            "updatedAt": "2026-10-08T06:25:07.896Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.1859dbd3-b5cd-42fb-b81f-805bfed847c5",
+            "label": "next-1791440699592 Recovered",
+            "revision": 1,
+            "createdAt": "2026-10-08T06:25:08.401Z",
+            "updatedAt": "2026-10-08T06:25:08.401Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.6,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.6f3580b6-3da5-431e-92ad-148e130c3fc1",
+            "label": "next-1791442939578 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:02:22.308Z",
+            "updatedAt": "2026-10-08T07:02:22.308Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.c5ffb5f3-0a45-4d1c-89db-3a4e8d250618",
+            "label": "next-1791442939578 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:02:22.672Z",
+            "updatedAt": "2026-10-08T07:02:22.672Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.c5ffb5f3-0a45-4d1c-89db-3a4e8d250618",
+            "label": "next-1791442939578 Beta external",
+            "revision": 2,
+            "createdAt": "2026-10-08T07:02:22.672Z",
+            "updatedAt": "2026-10-08T07:02:28.161Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.4393108b-dd22-4463-9671-8053e0a9a4e6",
+            "label": "next-1791442939578 Recovered",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:02:28.413Z",
+            "updatedAt": "2026-10-08T07:02:28.413Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.6,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.906c0092-a9f2-4a05-ae2b-1ec8e0c98aa6",
+            "label": "next-1791443116026 Alpha",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:05:17.067Z",
+            "updatedAt": "2026-10-08T07:05:17.067Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 0.8,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":0.8,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.b0500557-b298-4611-8302-439cfec9b72c",
+            "label": "next-1791443116026 Beta",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:05:17.408Z",
+            "updatedAt": "2026-10-08T07:05:17.408Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.b0500557-b298-4611-8302-439cfec9b72c",
+            "label": "next-1791443116026 Beta external",
+            "revision": 2,
+            "createdAt": "2026-10-08T07:05:17.408Z",
+            "updatedAt": "2026-10-08T07:05:22.614Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.4,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.4,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          },
+          {
+            "schema": "studio-direction/1",
+            "id": "direction.d8f760e3-85d3-4f9c-8029-b162e4b9a13e",
+            "label": "next-1791443116026 Recovered",
+            "revision": 1,
+            "createdAt": "2026-10-08T07:05:22.816Z",
+            "updatedAt": "2026-10-08T07:05:22.816Z",
+            "product": {
+              "id": "example-tasks",
+              "revision": "1"
+            },
+            "payloadSchema": "fixture-direction/1",
+            "payload": {
+              "scale": 1.6,
+              "light": "green",
+              "dark": "green",
+              "linked": true,
+              "asset": "loaded",
+              "radius": null
+            },
+            "receipt": {
+              "compiler": {
+                "id": "fixture",
+                "version": "1"
+              },
+              "sourceLockId": "fixture-source/1",
+              "fingerprints": {
+                "light": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "light-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}",
+                "dark-contrast": "{\"scale\":1.6,\"light\":\"green\",\"dark\":\"green\",\"linked\":true,\"asset\":\"loaded\",\"radius\":null}"
+              },
+              "basis": {
+                "fixtureSource": "fixture-source/1",
+                "bindings": "fixture-bindings/1",
+                "assets": "fixture-assets/1"
+              }
+            }
+          }
+        ],
+        "events": []
+      },
+      "revision": "2a4e2de27e255de927a945ff7c16d51f50faf47e58bb0ff8985a720cf7e54eb0"
+    },
+    "url": "http://127.0.0.1:4202/#view=design&scenario=tasks.list&theme=light&profile=desktop&direction=direction.d8f760e3-85d3-4f9c-8029-b162e4b9a13e&revision=1&tab=adjust",
+    "errors": [],
+    "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 1 · invalid\n\nShowing last valid revision 1\n\nEnter 0.5–2× in steps of 0.1: 999\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.6×\nEnter 0.5–2× in steps of 0.1: 999\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nnext-1791443116026 Recovered · saved r1 + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\nSource readiness waits for a valid draft\n\nRecovered unsaved draft; canonical saved data is unchanged.\n\nUnsaved changes\nDiscard\nSave\n\nDraft · revision 1 · invalid\n\nShowing last valid revision 1\n\nEnter 0.5–2× in steps of 0.1: 999\n\nSaved basis\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 56%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions"
+  }
+]

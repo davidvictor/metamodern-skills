@@ -15,7 +15,7 @@ export type SaveBarState =
   | { kind: "error"; reason: string; recoverable: boolean }
 
 /** The bar under a module page that owns saving. Nothing is overwritten without the person's choice. */
-export function SaveBar({ state, onSave, onDiscard, onRetry, saveLabel = "Save" }: { state: SaveBarState; onSave: () => void; onDiscard: () => void; onRetry: () => void; saveLabel?: string }) {
+export function SaveBar({ state, onSave, onDiscard, onRetry, saveLabel = "Save", disabled = false, conflictSaveLabel = "Save mine again", conflictDiscardLabel = "Use current value" }: { state: SaveBarState; onSave: () => void; onDiscard: () => void; onRetry: () => void; saveLabel?: string; disabled?: boolean; conflictSaveLabel?: string; conflictDiscardLabel?: string }) {
   if (state.kind === "clean") return null
   const trouble = state.kind === "conflict" || state.kind === "error"
   return (
@@ -58,16 +58,16 @@ export function SaveBar({ state, onSave, onDiscard, onRetry, saveLabel = "Save" 
         <div className="flex shrink-0 flex-wrap gap-2">
           {state.kind !== "saved" && (
             <Button variant="outline" disabled={state.kind === "saving"} onClick={onDiscard}>
-              {state.kind === "conflict" ? "Use current value" : "Discard"}
+              {state.kind === "conflict" ? conflictDiscardLabel : "Discard"}
             </Button>
           )}
           {(state.kind === "dirty" || state.kind === "saving") && (
-            <Button disabled={state.kind === "saving"} onClick={onSave}>
+            <Button disabled={state.kind === "saving" || disabled} onClick={onSave}>
               {saveLabel}
             </Button>
           )}
-          {state.kind === "conflict" && <Button onClick={onRetry}>Save mine again</Button>}
-          {state.kind === "error" && state.recoverable && <Button onClick={onRetry}>Retry</Button>}
+          {state.kind === "conflict" && <Button disabled={disabled} onClick={onRetry}>{conflictSaveLabel}</Button>}
+          {state.kind === "error" && state.recoverable && <Button disabled={disabled} onClick={onRetry}>Retry</Button>}
         </div>
       </div>
     </div>

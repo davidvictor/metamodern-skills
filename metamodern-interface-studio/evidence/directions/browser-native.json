@@ -1,0 +1,674 @@
+[
+  {
+    "key": "vite-1440-fine",
+    "host": "vite",
+    "width": 1440,
+    "coarse": false,
+    "pageErrors": [],
+    "pointer": false,
+    "trigger": {
+      "width": 92.6875,
+      "height": 28,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 32,
+      "font": 14
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 32,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 32,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 32,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 32,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 32,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "vite-1440-coarse",
+    "host": "vite",
+    "width": 1440,
+    "coarse": true,
+    "pageErrors": [],
+    "pointer": true,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "vite-768-fine",
+    "host": "vite",
+    "width": 768,
+    "coarse": false,
+    "pageErrors": [],
+    "pointer": false,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "vite-768-coarse",
+    "host": "vite",
+    "width": 768,
+    "coarse": true,
+    "pageErrors": [],
+    "pointer": true,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "vite-390-fine",
+    "host": "vite",
+    "width": 390,
+    "coarse": false,
+    "pageErrors": [],
+    "pointer": false,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "vite-390-coarse",
+    "host": "vite",
+    "width": 390,
+    "coarse": true,
+    "pageErrors": [],
+    "pointer": true,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "next-1440-fine",
+    "host": "next",
+    "width": 1440,
+    "coarse": false,
+    "pageErrors": [],
+    "pointer": false,
+    "trigger": {
+      "width": 92.6875,
+      "height": 28,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 32,
+      "font": 14
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 32,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 32,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 32,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 32,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 32,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "next-1440-coarse",
+    "host": "next",
+    "width": 1440,
+    "coarse": true,
+    "pageErrors": [],
+    "pointer": true,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "next-768-fine",
+    "host": "next",
+    "width": 768,
+    "coarse": false,
+    "pageErrors": [],
+    "pointer": false,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "next-768-coarse",
+    "host": "next",
+    "width": 768,
+    "coarse": true,
+    "pageErrors": [],
+    "pointer": true,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "next-390-fine",
+    "host": "next",
+    "width": 390,
+    "coarse": false,
+    "pageErrors": [],
+    "pointer": false,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  },
+  {
+    "key": "next-390-coarse",
+    "host": "next",
+    "width": 390,
+    "coarse": true,
+    "pageErrors": [],
+    "pointer": true,
+    "trigger": {
+      "width": 92.6875,
+      "height": 44,
+      "font": 14
+    },
+    "name": {
+      "width": 224,
+      "height": 44,
+      "font": 16
+    },
+    "picker": {
+      "width": 144.109375,
+      "height": 44,
+      "font": 14
+    },
+    "rows": [
+      {
+        "label": "Original source",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Compact · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      },
+      {
+        "label": "Independent Airy · r1",
+        "width": 136,
+        "height": 44,
+        "font": 14
+      }
+    ],
+    "closeReachedByTab": true,
+    "close": {
+      "width": 224,
+      "height": 44,
+      "font": 14
+    },
+    "closeInViewport": true,
+    "closeReturnsFocus": true,
+    "escapeReturnsFocus": true,
+    "outsideDismissed": true,
+    "outsideReturnsFocus": true,
+    "failures": [],
+    "pass": true
+  }
+]

@@ -1,0 +1,48 @@
+{
+  "schema": "studio-direction-checks/1",
+  "packageVersion": "0.18.0",
+  "runtimeDigest": "36dae0ed35f4a6f188a20f616844ebc84f887a18a796c84439fd00c3a7029546",
+  "collection": [
+    {
+      "node": "22",
+      "tests": 234,
+      "passed": 234,
+      "validationPackages": 20,
+      "testLog": "checks/mm-directions-delivery-node22-test.log",
+      "validateLog": "checks/mm-directions-delivery-node22-validate.log"
+    },
+    {
+      "node": "24",
+      "tests": 234,
+      "passed": 234,
+      "validationPackages": 20,
+      "testLog": "checks/mm-directions-delivery-node24-test.log",
+      "validateLog": "checks/mm-directions-delivery-node24-validate.log"
+    }
+  ],
+  "hosts": [
+    {
+      "host": "vite",
+      "typecheck": "passed",
+      "lint": "passed with recorded warnings",
+      "build": "passed",
+      "logs": [
+        "checks/mm-directions-delivery-vite-type.log",
+        "checks/mm-directions-delivery-vite-lint.log",
+        "checks/mm-directions-delivery-vite-build.log"
+      ]
+    },
+    {
+      "host": "next",
+      "typecheck": "passed",
+      "lint": "passed with recorded warnings",
+      "build": "passed",
+      "logs": [
+        "checks/mm-directions-delivery-next-type.log",
+        "checks/mm-directions-delivery-next-lint.log",
+        "checks/mm-directions-delivery-next-build.log"
+      ]
+    }
+  ],
+  "remoteCI": "Separate delivery state; previous GitHub runs did not start due account billing lock. Local Node22/24 equivalents are not represented as remote CI."
+}

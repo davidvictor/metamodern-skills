@@ -1,5 +1,6 @@
 import { CompiledInspector } from "@/studio/design-ui/slots"
 import * as React from "react"
+import { useDesignDirections, useDirectionSnapshot } from "@/studio/design-ui/react"
 import {
   ArrowLeftRightIcon,
   CheckIcon,
@@ -162,7 +163,12 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   // A scoped axis (such as Role) that this scenario does not use falls back to the theme axis.
   const fallback = !axes.some((x) => x.id === s.compare.axis)
   const axis = fallback ? "theme" : s.compare.axis
-  const options = axisOptions(axis, sc)
+  const directionService = useDesignDirections()
+  useDirectionSnapshot()
+  const baseOptions = axis === "direction" ? s.directionOptions : axisOptions(axis, sc)
+  const options = axis === "direction" ? [...baseOptions, ...s.compare.values.filter(id => !baseOptions.some(o => o.id === id)).map(id => ({ id, label: `Unavailable pin: ${id}` }))] : baseOptions
+  const pinnedKeys = axis === "direction" ? s.compare.values.join("|") : ""
+  React.useEffect(() => { if (pinnedKeys) for (const key of pinnedKeys.split("|")) void directionService?.resolvePin(key) }, [pinnedKeys, directionService])
   // A saved pair that names an option this scenario cannot render falls back to the first two it can.
   // A saved n-up comparison carries one tuple; A and B lead it, so the selectors and previews agree.
   const saved = s.compare.values.length ? s.compare.values : [s.compare.a, s.compare.b]
@@ -206,7 +212,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   const setC = (patch: Partial<typeof s.compare>) => s.set({ compare: { ...s.compare, ...patch } })
   const changeAxis = (next: string) => {
     if (next === axis) return
-    const opts = axisOptions(next, sc)
+    const opts = next === "direction" ? s.directionOptions : axisOptions(next, sc)
     const current = next === "design" ? "built" : next === "theme" ? s.theme : next === "profile" ? s.profile : (s.edits[next] ?? s.values[next] ?? sc.designed?.[next] ?? adapter.axes.inputs.find((i) => i.id === next)?.default)
     const at = Math.max(0, opts.findIndex((o) => o.id === String(current)))
     // The requested count stays; the new axis shows as many of those sides as it has values.
@@ -245,7 +251,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
         theme={sideTheme(k)}
         profile={sideProfile(k).id}
         {...sideInputs(pick(k))}
-        draft={axis === "design" ? (pick(k) === "draft" ? s.draftFor(sideTheme(k)) : NO_DRAFT) : s.viewDraft(sideTheme(k))}
+        draft={axis === "direction" ? s.pinnedDirectionFor(pick(k), sideTheme(k)) : axis === "design" ? (pick(k) === "draft" ? s.draftFor(sideTheme(k)) : NO_DRAFT) : s.viewDraft(sideTheme(k))}
         resetNonce={x.nonce}
         scale={scale}
         interactive={interactive}
@@ -264,7 +270,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
         theme={theme}
         profile={profile.id}
         {...sideInputs(value)}
-        draft={axis === "design" ? (value === "draft" ? s.draftFor(theme) : NO_DRAFT) : s.viewDraft(theme)}
+        draft={axis === "direction" ? s.pinnedDirectionFor(value, theme) : axis === "design" ? (value === "draft" ? s.draftFor(theme) : NO_DRAFT) : s.viewDraft(theme)}
         resetNonce={x.nonce}
         scale={scale}
         label={`Side ${String.fromCharCode(65 + index)}: ${label(value)}`}
@@ -279,10 +285,11 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
   return (
     <Stage controls={false}>
       <StageNav nav={nav}>
+      {axis === "direction" && <div data-direction-pins className="flex flex-wrap justify-center gap-2 px-3 pt-2 text-xs">{compared.map(key => { const p = s.pinnedDirectionFor(key, s.theme); return <details key={key} className="max-w-xs rounded-lg border bg-popover px-2 py-1"><summary>{optionLabel(key)} · {themeOf(s.theme).label} · {profileOf(s.profile).label}</summary>{p.direction ? <div className="break-all pt-1"><p>{p.direction.basis} · direction {p.direction.id} · saved r{p.direction.savedRevision} · draft r{p.direction.draftRevision}</p><p>Source: {p.direction.sourceLockId ?? "Not declared"}</p><p>Fingerprint: {p.direction.fingerprint}</p></div> : <p role="status">{p.unavailable}</p>}</details> })}</div>}
       <div className="flex flex-wrap items-center justify-center gap-2 px-3 pt-3">
         <div className="flex flex-wrap items-center gap-1 rounded-xl border bg-popover/95 p-1 shadow-[var(--dock-shadow)] backdrop-blur-md">
           <Select value={axis} items={Object.fromEntries(axes.map((x) => [x.id, x.label]))} onValueChange={(v) => v && changeAxis(v as string)} disabled={!s.compare.editable}>
-            <SelectTrigger size="sm" className="border-0 shadow-none" aria-label="Changing axis"><SelectValue /></SelectTrigger>
+            <SelectTrigger size="sm" className={cn("border-0 shadow-none", axis === "direction" && "pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[1000px]:min-h-11 max-[1000px]:min-w-11")} aria-label="Changing axis"><SelectValue /></SelectTrigger>
             <SelectContent>{axes.map((x) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}</SelectContent>
           </Select>
           <Separator orientation="vertical" className="h-5! self-center!" />
@@ -295,7 +302,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
                 <Badge variant="secondary" className="h-4 px-1 text-[10px]">{k.toUpperCase()}</Badge>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>{options.map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
+              <SelectContent>{options.map((o) => <SelectItem key={o.id} value={o.id} className={axis === "direction" ? "pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[1000px]:min-h-11 max-[1000px]:min-w-11" : undefined}>{o.label}</SelectItem>)}</SelectContent>
             </Select>
           ))}
           {compared.slice(2).map((value, index) => {
@@ -305,7 +312,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
                 const values = chooseCompared(compared, slot, v as string)
                 setC({ a: values[0], b: values[1], values })
               }} disabled={!s.compare.editable}>
-                <SelectTrigger size="sm" className="gap-1 border-0 shadow-none" aria-label={`Side ${String.fromCharCode(65 + slot)}`}>
+                <SelectTrigger size="sm" className={cn("gap-1 border-0 shadow-none", axis === "direction" && "pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[1000px]:min-h-11 max-[1000px]:min-w-11")} aria-label={`Side ${String.fromCharCode(65 + slot)}`}>
                   <Badge variant="secondary" className="h-4 px-1 text-[10px]">{String.fromCharCode(65 + slot)}</Badge>
                   <SelectValue />
                 </SelectTrigger>

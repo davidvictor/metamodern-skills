@@ -6,6 +6,12 @@ import { pathToFileURL } from "node:url"
 import { parseAst } from "vite"
 import { astLang, definedModules, undeclaredDefinitions, workspaceProblems } from "../src/studio/workspace/declaration"
 import { definedDocs, libraryProblems, undeclaredDocs } from "../src/studio/library/model"
+import { ownedSavedFiles, writeSavedSources } from "./saved-sources"
+import { savedFileSnapshot } from "./saved-file"
+import { DIRECTIONS_MAX_BYTES, validateDirections } from "../src/studio/directions"
+const { default: productConfig } = await import(pathToFileURL(path.resolve("studio.config.ts")).href)
+const savedPaths = ownedSavedFiles(process.cwd(), productConfig)
+writeSavedSources(process.cwd(), Object.values(savedPaths))
 const variant = process.env.STUDIO_ADAPTER ?? process.env.VITE_STUDIO_ADAPTER
 const library = ["editor", "library", "sections", "static"].includes(variant ?? "")
 const workspace = variant === "workspace" || library
@@ -14,7 +20,7 @@ const workspaceMap = workspace ? variant === "static" ? "example/workspace/stati
 const libraryMap = library ? variant === "static" ? "example/library/static.ts" : "example/library/index.ts" : "src/library/index.ts"
 mkdirSync(".studio-generated", { recursive: true })
 const bundled = (name: string) => existsSync(`${name}.json`) ? JSON.parse(readFileSync(`${name}.json`, "utf8")) as unknown : undefined
-writeFileSync(".studio-generated/runtime.ts", `export const bundled = ${JSON.stringify({ variant, workspace: true, library: true, scenarios: bundled("scenarios"), layouts: bundled("layouts") })}\n`)
+writeFileSync(".studio-generated/runtime.ts", `export const bundled = ${JSON.stringify({ variant, workspace: true, library: true, scenarios: bundled("scenarios"), layouts: bundled("layouts"), directions: savedFileSnapshot({ file: savedPaths.directions, maxBytes: DIRECTIONS_MAX_BYTES, validate: validateDirections }) })}\n`)
 writeFileSync(".studio-generated/selection.json", JSON.stringify({ "@/adapter": `./${adapter}`, "@/workspace": `./${workspaceMap}`, "@/library": `./${libraryMap}`, ...(variant === "editor" ? { "@/design-ui": "./example/design-ui/loaders.ts", "@/design-runtime": "./example/design-runtime/loaders.ts" } : {}) }))
 const { adapter: declaration } = await import(pathToFileURL(path.resolve(adapter)).href)
 const problems = [...workspaceProblems(declaration.workspace), ...libraryProblems(declaration.library)]

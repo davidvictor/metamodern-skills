@@ -5,13 +5,15 @@ import react from "@vitejs/plugin-react"
 import { defineConfig, parseAst, runnerImport, type Plugin } from "vite"
 
 import config from "./studio.config"
+import { ownedSavedFiles, writeSavedSources } from "./scripts/saved-sources"
 import type { StudioConfig } from "./src/studio/config"
 import { LAYOUTS_MAX_BYTES, validateLayouts } from "./src/studio/layouts"
 import { SCENARIOS_MAX_BYTES, validateScenarios } from "./src/studio/scenarios"
 import type { IncomingMessage, ServerResponse } from "http"
 import { pathToFileURL } from "url"
 import type { StudioAdapter } from "./src/studio/types"
-import { savedFileMiddleware } from "./scripts/saved-file"
+import { DIRECTIONS_MAX_BYTES, validateDirections, validateDirectionTransition } from "./src/studio/directions"
+import { savedFileMiddleware, savedFileSnapshot, type SavedFileOptions } from "./scripts/saved-file"
 import { astLang, definedModules, undeclaredDefinitions, workspaceProblems } from "./src/studio/workspace/declaration"
 import { definedDocs, libraryProblems, undeclaredDocs } from "./src/studio/library/model"
 
@@ -20,6 +22,8 @@ import { definedDocs, libraryProblems, undeclaredDocs } from "./src/studio/libra
 // config names, such as the example product's preview entry.
 const studio: StudioConfig = config
 const root = import.meta.dirname
+const savedPaths = ownedSavedFiles(root, studio)
+writeSavedSources(root, Object.values(savedPaths))
 const html = (text: string) => text.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!)
 
 const title = (): Plugin => ({
@@ -31,7 +35,7 @@ const title = (): Plugin => ({
 // files. Only the dev server can write them, through scripts/saved-file.ts: same-origin JSON, schema-checked,
 // 256 KB at most, written atomically, with a revision so a save never overwrites a change made elsewhere. A built
 // Studio bundles them and cannot save. The contract is in the skill's shell.md, so a host other than Vite can implement it.
-type SavedFile = { file: string; route: string; schema: string; maxBytes: number; validate: (data: unknown) => string[]; list: string; forbidden: string; tooBig: string }
+type SavedFile = SavedFileOptions & { route: string }
 const savedFile = (o: SavedFile): Plugin => {
   const file = path.resolve(root, o.file)
   return {
@@ -54,6 +58,8 @@ const savedFile = (o: SavedFile): Plugin => {
 }
 const layouts = () => savedFile({ file: "layouts.json", route: "/__studio/layouts", schema: "studio-layouts/1", maxBytes: LAYOUTS_MAX_BYTES, validate: validateLayouts, list: "layouts", forbidden: "Only this Studio can save its layouts", tooBig: "Layouts are limited to 256 KB" })
 const scenarios = () => savedFile({ file: "scenarios.json", route: "/__studio/scenarios", schema: "studio-scenarios/1", maxBytes: SCENARIOS_MAX_BYTES, validate: (data) => validateScenarios(data), list: "scenarios", forbidden: "Only this Studio can save its scenarios", tooBig: "Saved scenarios are limited to 256 KB" })
+
+const directions = () => savedFile({ file: savedPaths.directions, route: "/__studio/directions", schema: "studio-directions/1", maxBytes: DIRECTIONS_MAX_BYTES, validate: validateDirections, validateTransition: validateDirectionTransition, requireRevision: true, empty: () => ({ schema: "studio-directions/1", revisions: [], events: [] }), list: "revisions", forbidden: "Only this Studio can save its directions", tooBig: "Saved directions are limited to 1 MB" })
 
 // npm run acceptance builds the stress and capture-only adapters by pointing
 // "@/adapter" at the acceptance module; a normal build never includes them.
@@ -193,7 +199,8 @@ const editorFixtureAssets = (): Plugin => ({
 })
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock(), editorFixtureAssets()],
+  define: { __STUDIO_DIRECTIONS__: JSON.stringify(savedFileSnapshot({ file: savedPaths.directions, maxBytes: DIRECTIONS_MAX_BYTES, validate: validateDirections })) ?? "undefined" },
+  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), directions(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock(), editorFixtureAssets()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
     emptyOutDir: true,

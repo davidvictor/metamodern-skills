@@ -1,0 +1,42 @@
+[
+  {
+    "kind": "readfail",
+    "host": "vite",
+    "pass": true,
+    "status": 500,
+    "saveDisabled": true,
+    "originalMalformedHash": "ee27328155eccdda6fa4ccf0ab4b90978e9b966d0545b44cb9fa6c1c56a8e8eb",
+    "afterHash": "ee27328155eccdda6fa4ccf0ab4b90978e9b966d0545b44cb9fa6c1c56a8e8eb",
+    "errors": [],
+    "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nSource baseline · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nOriginal source · source\nDirections\nPin working draft\nRefresh saved directions\nSaved files unreadable\n\nThe saved direction journal is unreadable. Nothing will be overwritten.\n\nSource baseline · ready\n\nSource baseline\nDraft\nSide by side\nSource baseline\n1280 × 800 · 43%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions\n\nOpen direction\nOriginal source\n\nThe saved direction journal is unreadable. Nothing will be overwritten.\n\nDirection name\nNew direction\nSave direction\nSave as new\nRename\nDuplicate\nDelete recoverably\n\nSave writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded.\n\nDownload saved\nDownload draft recovery\nImport direction or legacy variant\nImport as draft\nClose directions"
+  },
+  {
+    "kind": "readfail",
+    "host": "next",
+    "pass": true,
+    "status": 500,
+    "saveDisabled": true,
+    "originalMalformedHash": "ee27328155eccdda6fa4ccf0ab4b90978e9b966d0545b44cb9fa6c1c56a8e8eb",
+    "afterHash": "ee27328155eccdda6fa4ccf0ab4b90978e9b966d0545b44cb9fa6c1c56a8e8eb",
+    "errors": [],
+    "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nSource baseline · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nOriginal source · source\nDirections\nPin working draft\nRefresh saved directions\nSaved files unreadable\n\nThe saved direction journal is unreadable. Nothing will be overwritten.\n\nSource baseline · ready\n\nSource baseline\nDraft\nSide by side\nSource baseline\n1280 × 800 · 43%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions\n\nOpen direction\nOriginal source\n\nThe saved direction journal is unreadable. Nothing will be overwritten.\n\nDirection name\nNew direction\nSave direction\nSave as new\nRename\nDuplicate\nDelete recoverably\n\nSave writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded.\n\nDownload saved\nDownload draft recovery\nImport direction or legacy variant\nImport as draft\nClose directions"
+  },
+  {
+    "kind": "production",
+    "host": "next",
+    "pass": true,
+    "workingScale": 1.4,
+    "saveDisabled": true,
+    "errors": [],
+    "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 1 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.4×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nOriginal source · source + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\nRead-only review · draft recovery/download available\n\nDraft · revision 1 · ready\n\nSource baseline\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 43%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions\n\nOpen direction\nOriginal source\nDirection name\nNew direction\nSave direction\nSave as new\nRename\nDuplicate\nDelete recoverably\n\nSave writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded.\n\nDownload saved\nDownload draft recovery\nImport direction or legacy variant\nImport as draft\nClose directions"
+  },
+  {
+    "kind": "production",
+    "host": "vite",
+    "pass": true,
+    "workingScale": 1.4,
+    "saveDisabled": true,
+    "errors": [],
+    "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nDesign\nAdjust\nTokens\n\nDraft · revision 1 · ready\n\nUndo\nRedo\nReset to saved\nReset to source\nFixture direction\nReview fixture\nToday\n\nReview context: tasks.list\n\nRecipe\nCompact\nAiry\nTheme scope\nBoth\nLight\nDark\nLink theme values\nPalette picker\nScale\n1.4×\n\n0.5–2× · step 0.1\n\nRegistered asset\nLoaded\n\nMacro changes preserve explicit component radius overrides.\n\nExample Tasks\nDesign\nGo to scenario…\n⌘\nK\nOriginal source · source + unsaved draft\nDirections\nPin working draft\nRefresh saved directions\nRead-only review · draft recovery/download available\n\nDraft · revision 1 · ready\n\nSource baseline\nDraft\nSide by side\nHold to see as built\nDraft design\n1280 × 800 · 43%\n100%\n\nWorking changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only.\n\n1 of 13\n·\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nReady\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nLocation\n/tasks\nGo to\n\nSearch scenarios, views and actions\n\nOpen direction\nOriginal source\nDirection name\nNew direction\nSave direction\nSave as new\nRename\nDuplicate\nDelete recoverably\n\nSave writes the whole validated direction, paired themes and treatments. Fixture selection and preview interactions are excluded.\n\nDownload saved\nDownload draft recovery\nImport direction or legacy variant\nImport as draft\nClose directions"
+  }
+]

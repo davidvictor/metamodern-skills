@@ -59,8 +59,12 @@ export type DesignSnapshot = {
   scope: DesignScope; target?: DesignTarget
   status: "pending" | "ready" | "invalid" | "error"
   problems: readonly DesignProblem[]; inputProblems: Readonly<Record<string, DesignProblem>>
-  compiled: CompiledThemes; savedCompiled: CompiledThemes
+  compiled: CompiledThemes; savedCompiled: CompiledThemes; compiledValues?: JsonValue
   dirty: boolean; previewPending: boolean; canUndo: boolean; canRedo: boolean; canSave: boolean; canExport: boolean
 }
 export type DesignSaveCandidate = { readonly id: string; readonly baseSavedRevision: number; readonly draftRevision: number; readonly values: JsonValue; readonly compiled: CompiledThemes }
 export type DesignControllerOptions = { capabilities?: DesignEditorDeclaration["capabilities"]; compiler: DesignCompilerDescriptor; runtime: DesignRuntimeModule; themes: readonly string[]; id?: string; savedRevision?: number }
+
+export type PreparedDesign = { readonly id: string; readonly revision: number; readonly values: JsonValue; readonly compiled: CompiledThemes }
+
+export type PreparedDraft = { readonly values: JsonValue; readonly compiledValues: JsonValue; readonly compiled: CompiledThemes }

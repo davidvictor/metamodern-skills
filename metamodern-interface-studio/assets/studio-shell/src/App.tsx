@@ -1,3 +1,5 @@
+import { DirectionManager } from "@/studio/design-ui/direction-manager"
+import { useDirectionSnapshot } from "@/studio/design-ui/react"
 import { DesignEditorProvider, useOptionalDesignEditor, useDesignSnapshot } from "@/studio/design-ui/react"
 import { EditorReason, DesignEditorStatus } from "@/studio/design-ui/slots"
 import * as React from "react"
@@ -88,10 +90,18 @@ function usePresentFocus() {
 }
 
 function StageForView({ narrow }: { narrow?: boolean }) {
+  const lifecycle = useDirectionSnapshot()
   const s = useStudio()
   const editor = useOptionalDesignEditor()
   const direction = useDesignSnapshot()
-  if (editor && (!direction || !Object.keys(direction.compiled).length)) return <EditorReason />
+  const independentComparison = s.view === "compare" && s.compare.axis === "direction" && !!editor?.lifecycle
+  const unavailableSelection = !independentComparison ? lifecycle?.selectionProblem : undefined
+  const set = s.set
+  React.useEffect(() => {
+    if (unavailableSelection && (s.preview.status !== "error" || s.preview.reason !== unavailableSelection)) set({ preview: { status: "error", modified: false, canGoBack: false, reason: unavailableSelection, previous: false } })
+  }, [set, unavailableSelection, s.preview.status, s.preview.reason])
+  if (lifecycle?.selectionProblem && !independentComparison) return <p role="alert" className="p-4 text-sm text-muted-foreground">{lifecycle.selectionProblem}</p>
+  if (editor && !independentComparison && (!direction || !Object.keys(direction.compiled).length)) return <EditorReason />
   if (editor && s.view === "present" && !Object.keys(direction?.savedCompiled ?? {}).length) return <p role="alert" className="p-4 text-sm text-muted-foreground">No validated source or confirmed saved basis is available for Present.</p>
   return (
     <div key={s.library ? "library" : s.module ? "module" : s.view} className="flex min-h-0 min-w-0 flex-1 animate-in fade-in-0 duration-200">
@@ -174,7 +184,7 @@ function DesktopShell() {
         <SidebarRail aria-label={s.panelOpen ? "Hide panel" : "Show panel"} title={s.panelOpen ? "Hide panel (⌘B)" : "Show panel (⌘B)"} className="after:transition-colors hover:after:bg-sidebar-primary/60" />
       </Sidebar>
       <SidebarInset className="min-w-0 overflow-hidden">
-        <TopBar /><DesignEditorStatus compact />
+        <TopBar /><DirectionManager /><DesignEditorStatus compact />
         <div className="relative flex min-h-0 flex-1">
           <StageForView />
           <Details />
@@ -200,7 +210,7 @@ function MobileShell() {
   const tabs = VIEWS
   return (
     <SidebarProvider className="h-svh flex-col" open={false}>
-      <TopBar mobile /><DesignEditorStatus compact />
+      <TopBar mobile /><DirectionManager /><DesignEditorStatus compact />
       <div className="relative flex min-h-0 flex-1 flex-col">
         <StageForView narrow />
       </div>
