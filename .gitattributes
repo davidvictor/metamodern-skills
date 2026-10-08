@@ -1,0 +1,4 @@
+# Preserve hash-verified command output exactly, including terminal whitespace.
+# Source files retain the repository whitespace checks and text behavior.
+metamodern-interface-studio/evidence/directions/checks/*.log -text -whitespace
+metamodern-interface-studio/evidence/select-items/checks/*.log -text -whitespace
