@@ -66,7 +66,7 @@ function appearanceIcon() {
   return `<svg data-example-icon viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">${geometry.map(([tag, attrs]) => `<${tag} ${Object.entries(attrs).map(([name, value]) => `${name}="${String(value)}"`).join(" ")}/>`).join("")}</svg>`
 }
 function applyAppearance(inputs: MountInputs) {
-  const next = inputs.design?.iconStyle ?? inputs.values.iconStyle ?? "stroke-rounded"
+  const next = inputs.design?.iconStyle ?? "stroke-rounded"
   if (next !== "stroke-rounded" && !(next === "test-only-square" && testing.__studioTestAppearance)) throw new Error("Unsupported icon style")
   iconStyle = String(next)
   document.documentElement.dataset.iconStyle = iconStyle

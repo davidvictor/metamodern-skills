@@ -209,3 +209,13 @@ test('a generic font family requests no web font stylesheet', async () => {
   };
   assert.deepEqual(designDraft(adapter, { face: 'serif' }, 'light').stylesheets, []);
 });
+
+test('Design-only appearance inputs include defaults and never require an axes/component property', async () => {
+  const { designDraft } = await designModel();
+  const adapter = { axes: { themes: [{ id: 'light' }], inputs: [] }, design: { parameters: [
+    { id: 'style', label: 'Icon style', kind: 'enum', default: 'stroke-rounded', choices: [{ id: 'stroke-rounded' }, { id: 'test-only-square' }], apply: { input: 'iconStyle', live: true } },
+  ] } };
+  assert.deepEqual(designDraft(adapter, {}, 'light').inputs, { iconStyle: 'stroke-rounded' });
+  assert.deepEqual(designDraft(adapter, { style: 'test-only-square' }, 'light').inputs, { iconStyle: 'test-only-square' });
+  assert.deepEqual(adapter.axes.inputs, []);
+});

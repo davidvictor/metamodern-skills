@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { adapter } from "@/adapter"
 import { captureFor, NO_DRAFT, propertyIds, resolveValues, useStudio, type Draft } from "@/store"
-import { appearanceKey, liveAppearanceIds, withoutAppearance } from "@/studio/appearance"
+import { appearanceFields, appearanceKey, liveAppearanceIds, withoutAppearance } from "@/studio/appearance"
 import { frameDesignValues, valuesForTheme } from "@/studio/design"
 import { LivePreview, type LivePreviewHandle, type LiveStatus, type PreviewSync } from "@/studio/live-preview"
 import type { Edits } from "@/studio/properties"
@@ -149,7 +149,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
     description: shownDraft.unavailable ?? (draft === NO_DRAFT ? "This basis has no valid compiled output. A working draft cannot substitute for the source or confirmed saved direction." : "No valid compiled output is available for this preview."),
     tone: "danger",
   }
-  const design = draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)
+  const design = { ...appearanceFields(studio.designFor(theme).inputs, appearanceIds), ...(draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)) }
   const mountKey = JSON.stringify([scenario, theme, profile, fixed, withoutAppearance(design, appearanceIds), commands, resetNonce, retry])
   const frameKey = JSON.stringify([scenario, theme, profile, fixed, withoutAppearance(design, appearanceIds), appearanceKey({ values: resolved, design }, appearanceIds), commands, resetNonce])
   // A failure belongs to the frame that reported it: another scenario, theme, profile or input mounts afresh.

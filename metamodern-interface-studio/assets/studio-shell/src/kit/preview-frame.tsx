@@ -1,6 +1,6 @@
 import * as React from "react"
 import { useStudio } from "@/store"
-import { liveAppearanceIds } from "@/studio/appearance"
+import { appearanceFields, liveAppearanceIds } from "@/studio/appearance"
 import { adapter } from "@/adapter"
 import { FidelityBadge, lookOf, PreviewFrame as Boundary, useFit } from "@/components/studio/bits"
 import { LivePreview, type LiveStatus } from "@/studio/live-preview"
@@ -64,6 +64,7 @@ export function PreviewFrame(props: PreviewFrameProps) {
           {props.w} × {props.h}
           {scale < 0.995 ? ` · ${Math.round(scale * 100)}%` : " · actual size"}
         </span>
+        {status?.previous && <span role="status" className="text-warning">Showing previous settings: {status.reason}</span>}
       </figcaption>
       <div ref={box} className="stage-surface flex justify-center overflow-hidden rounded-xl p-6">
         <Boundary w={props.w} h={props.h} scale={scale} profile={{ kind: props.kind ?? "desktop" }} appearance={status?.appearance ?? props.appearance} empty={failed} loading={!!live && (!status || status.status === "loading")} label={props.label}>
@@ -72,7 +73,7 @@ export function PreviewFrame(props: PreviewFrameProps) {
               src={live.src}
               origin={live.origin}
               isolation={adapter.frameIsolation}
-              inputs={{ scenario: live.scenario, theme: live.theme, profile: live.profile, values: { ...Object.fromEntries(liveAppearanceIds(adapter).map(id => [id, studio.values[id] ?? adapter.axes.inputs.find(input => input.id === id)?.default ?? ""])), ...live.values }, commands: [] }}
+              inputs={{ scenario: live.scenario, theme: live.theme, profile: live.profile, values: live.values ?? {}, design: appearanceFields(studio.designFor(live.theme).inputs, liveAppearanceIds(adapter)), commands: [] }}
               // Values travel in inputs: a frame with live-values takes them in place, as in every preview. Retry mounts a fresh runtime.
               mountKey={JSON.stringify([live.scenario, live.theme, live.profile, retry])}
               appearanceIds={liveAppearanceIds(adapter)}

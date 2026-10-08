@@ -1,0 +1,17 @@
+[
+  {
+    "check": "DesignParameter-only style reaches inline Library and workspace design channel",
+    "pass": true,
+    "propertyLeak": false,
+    "retainedDrafts": true
+  },
+  {
+    "check": "Expanded Library keeps form/document when Design-only appearance updates",
+    "pass": true,
+    "propertyLeak": false
+  },
+  {
+    "check": "Design-only old client refuses unsupported style and recovers by remount",
+    "pass": true
+  }
+]

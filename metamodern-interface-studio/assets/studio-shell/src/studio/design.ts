@@ -16,6 +16,8 @@ export type DesignChange = {
 }
 export type DesignWarning = { param: string; text: string }
 export type DesignDraft = {
+  /** Input-backed Design parameters, including defaults, kept separate from component property values. */
+  inputs: Record<string, string | number>
   /** Values for the root, sent as draft tokens. */
   tokens: Record<string, string>
   /** Values the product reads under a selector, keyed by selector; sent as CSS rules. */
@@ -166,6 +168,7 @@ function tokenNames(adapter: StudioAdapter, p: DesignParameter) {
 /** The draft the current values produce for one theme. Parameters at their defaults produce nothing. */
 export function designDraft(adapter: StudioAdapter, values: DesignValues, theme: string): DesignDraft {
   const out: DesignDraft = {
+    inputs: frameDesignValues(adapter, values, theme),
     tokens: {},
     scoped: {},
     css: "",

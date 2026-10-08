@@ -4,11 +4,11 @@ Tracks public issue [#16](https://github.com/davidvictor/metamodern-skills/issue
 
 Checks run against the candidate source:
 
-- Collection `npm test`: 237 passed, none failed or skipped. `npm run validate`: both collection and all 20 packages passed.
+- Collection `npm test`: 238 passed, none failed or skipped. `npm run validate`: both collection and all 20 packages passed.
 - Fresh updater-created Vite and Next receivers: install, typecheck, lint and build passed. Vite lint retains one existing hook warning; Next retains six existing warnings. No new lint errors or warnings remain.
 - Both hosts' shared browser acceptance: Inspect, Compare, Responsive, Design, interaction/reset/keyboard, layout save/reload/new-browser link, scenario save/reload/link and Library all passed (8 checks each).
 - Genuine released 0.15.0 source from the main baseline created the prior receiver. Candidate report then apply completed with no blocked files; install/typecheck/lint/build passed. A modified product-owned adapter and presenter scenarios file survived byte-for-byte. The updater explicitly skipped optional browser acceptance because that receiver had no Playwright install; separate browser checks ran with a task-local Playwright module.
-- Actual Chromium appearance proof: one mounted document retains unsaved form text and an open dialog across a synthetic alternate map; an old client without appearance capability retains the prior preview on unsupported-style mount refusal and recovers through a valid remount. Saved and shared stale enum values restore `stroke-rounded` with a visible notice.
+- Initial candidate Chromium appearance proof (retained in `appearance.json`): one mounted document retains unsaved form text and an open dialog across a synthetic alternate map; an old client without appearance capability retains the prior preview on unsupported-style mount refusal and recovers through a valid remount. Saved and shared stale enum values restore `stroke-rounded` with a visible notice.
 - The selective `CheckIcon` production bundle is 2,128 bytes with unrelated mapped exports eliminated. Only named Free imports are used.
 - Focused actual-client tests cover invalid payloads/styles, channel ownership, rejected appearance followed by ordinary values, and concurrent draft/appearance success and rollback in both directions. They add under one second to collection CI; no new browser matrix is added to CI.
 
@@ -17,3 +17,5 @@ Local browser execution required permission outside the filesystem sandbox. A de
 The icon mapping and all example fixtures are generic. `stroke-rounded` describes the installed Free appearance; the alternate square is explicitly test-only synthetic geometry. No paid geometry, credentials or product source is included. Public publication, downstream pin changes, global installation and deployment remain separate operations.
 
 Harness: Codex. Assigned reviewer role: GPT-6.1 Sol/high. Native runtime model/effort metadata was not exposed by the available agent receipt; actual identity is not asserted from inheritance.
+
+Integration correction: a real receiver refused `iconStyle` when Library sent it as a component property. `DesignDraft.inputs` now resolves input-backed Design defaults/overrides, and Scenario, inline/Expanded Library and workspace previews send declared appearance through `MountInputs.design`; `values` remain component properties. The example no longer fakes an axes declaration for this parameter. `design-channel.json` records current-source browser proof with an actual Design-only receiver that rejects property leakage: inline/Expanded/workspace retain their documents and form drafts, and an old client displays refusal then recovers by remount. Targeted independent review of this correction found no actionable defects.
