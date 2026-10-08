@@ -1,0 +1,39 @@
+{
+  "base": "25218f9fbf4633efdf4df43f9399cce52000bb3f",
+  "packageVersion": "0.17.1",
+  "contracts": {
+    "designEditorTests": 12,
+    "pass": true
+  },
+  "collection": {
+    "npm test": {
+      "passed": 208,
+      "failed": 0
+    },
+    "npm run validate": {
+      "packages": 20,
+      "pass": true
+    }
+  },
+  "hosts": {
+    "vite": {
+      "typecheck": "pass",
+      "lint": "pass (existing warnings)",
+      "productionBuild": "pass",
+      "productionStart": "pass"
+    },
+    "next": {
+      "typecheck": "pass",
+      "lint": "pass (existing warnings)",
+      "productionBuild": "pass",
+      "productionStart": "pass"
+    }
+  },
+  "browser": {
+    "contextNativeCases": 6,
+    "controlledPickerDevelopmentCases": 4,
+    "controlledPickerProductionCases": 4,
+    "pageErrors": 0
+  },
+  "provenance": "Context6nativeproof predates picker-only delta; context/controller implementation unchanged. Picker source freeze is final for this patch. Prior0.17.0 controller/frame/uncontrolled primitive proof remains separate. No private content or saved lifecycle implementation."
+}

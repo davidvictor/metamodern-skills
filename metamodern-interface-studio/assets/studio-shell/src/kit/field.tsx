@@ -13,7 +13,7 @@ type TextLike = Common & { value: string; onChange: (value: string) => void; pla
 export type FieldProps =
   | (TextLike & { kind: "text" })
   | (TextLike & { kind: "secret" })
-  | (Common & { kind: "select"; value: string; onChange: (value: string) => void; options: { id: string; label: string; disabled?: boolean }[] })
+  | (Common & { kind: "select"; value: string; onChange: (value: string) => void; options: readonly { id: string; label: string; disabled?: boolean }[] })
   | (Common & { kind: "switch"; checked: boolean; onChange: (checked: boolean) => void })
 
 /** A labeled control: text, select, switch, or a secret masked until Reveal. */

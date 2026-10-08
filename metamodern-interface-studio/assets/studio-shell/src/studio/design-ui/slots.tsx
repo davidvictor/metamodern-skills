@@ -1,4 +1,7 @@
 import * as React from "react"
+import { adapter } from "@/adapter"
+import { useStudio } from "@/store"
+import { createDesignReviewContext } from "./review"
 import { useOptionalDesignEditor, useDesignSnapshot } from "./react"
 import { Button } from "@/components/ui/button"
 import { SidebarContent, SidebarGroup } from "@/components/ui/sidebar"
@@ -22,18 +25,22 @@ export function DesignEditorStatus({ compact = false }: { compact?: boolean }) {
   </div>
 }
 export function FoundationSlot() {
+  const s = useStudio()
+  const review = createDesignReviewContext(s.scenario, adapter.scenarios, id => s.selectScenario(id, { mobilePanel: s.mobilePanel }))
   const context = useOptionalDesignEditor()
   const Panel = context?.declaration?.slots.includes("foundation") ? context.module?.Foundation : undefined
   React.useEffect(() => { context?.controller?.setTarget(undefined) }, [context?.controller])
   if (context?.declaration && !context.declaration.slots.includes("foundation")) return <SidebarContent><DesignEditorStatus /><p className="p-4 text-sm text-muted-foreground">Foundation panel is not provided by this editor.</p></SidebarContent>
-  return <SidebarContent><DesignEditorStatus /><SidebarGroup data-kit className="gap-5 px-3 py-3">{Panel && context?.controller ? <Panel controller={context.controller} /> : <EditorReason />}</SidebarGroup></SidebarContent>
+  return <SidebarContent><DesignEditorStatus /><SidebarGroup data-kit className="gap-5 px-3 py-3">{Panel && context?.controller ? <Panel controller={context.controller} review={review} /> : <EditorReason />}</SidebarGroup></SidebarContent>
 }
 export function ComponentSlot({ component }: { component: string }) {
+  const s = useStudio()
+  const review = createDesignReviewContext(s.scenario, adapter.scenarios, id => s.selectScenario(id, { mobilePanel: s.mobilePanel }))
   const context = useOptionalDesignEditor()
   const Panel = context?.declaration?.slots.includes("component") ? context.module?.Component : undefined
   React.useEffect(() => { context?.controller?.setTarget({ component }) }, [context?.controller, component])
   if (!context || !Panel) return null
-  return <section aria-label="Treatment" className="grid gap-3 border-t pt-4"><h3 className="text-sm font-medium">Treatment</h3><DesignEditorStatus />{context.controller ? <Panel controller={context.controller} component={component} /> : <EditorReason />}</section>
+  return <section aria-label="Treatment" className="grid gap-3 border-t pt-4"><h3 className="text-sm font-medium">Treatment</h3><DesignEditorStatus />{context.controller ? <Panel controller={context.controller} component={component} review={review} /> : <EditorReason />}</section>
 }
 /** Opt-in tokens inspect the compiler output; they never edit a second interpretation path. */
 export function CompiledInspector({ sourceOnly = false }: { sourceOnly?: boolean }) {

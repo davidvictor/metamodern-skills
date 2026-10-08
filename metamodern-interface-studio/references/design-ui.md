@@ -39,3 +39,9 @@ This interface implements no direction file/envelope service, browser recovery, 
 ## Synthetic checks
 
 The optional starter fixture uses `VITE_STUDIO_ADAPTER=editor` or `STUDIO_ADAPTER=editor` with the same product-neutral editor in both hosts. It exercises semantic macro/linked modes, inherited component radius, invalid input, async/error preservation, local stylesheet failures, opaque forwarding, no remount and saved-only Present. Use disposable consumers and named native/keyboard/coarse-pointer evidence. Required collection checks and real host type/lint/build still apply. Private panels/source are never copied into this generic fixture.
+
+## Review context
+
+Foundation and Component receive `DesignPanelProps.review: DesignReviewContext`: readonly `scenarioId`, readonly `scenarios: {id,label}[]` and `selectScenario(id)`. This is the current shared review navigation, supplied as UI props. It is never adapter executable data, a design-model edit or an undo entry. Unknown or Later scenarios cannot be selected through this callback. Use the selected ID with product-owned mappings for contextual reach/readouts; never import the shared store into product panels.
+
+`EditorPopover` accepts optional `open?: boolean` and `onOpenChange?: (open: boolean) => void`. Controlled product panels can close after a choice or a visible Close picker action using React state. Escape/outside dismissal uses the same callback and the existing modal primitive restores focus. Omit both props to keep the existing uncontrolled behavior; product panels need no Base UI or DOM imports.

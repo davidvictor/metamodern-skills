@@ -9,11 +9,11 @@ import { stripTypeScriptTypes } from 'node:module';
 const source = new URL('../metamodern-interface-studio/assets/studio-shell/src/studio/', import.meta.url);
 async function load(t) {
   const dir = mkdtempSync(join(tmpdir(), 'studio-controller-')); t.after(() => rmSync(dir, { recursive: true, force: true }));
-  for (const name of ['design-runtime', 'design-ui/types', 'design-ui/controller', 'design-ui/loader']) {
+  for (const name of ['design-runtime', 'design-ui/types', 'design-ui/controller', 'design-ui/loader', 'design-ui/review']) {
     const code = stripTypeScriptTypes(readFileSync(new URL(`${name}.ts`, source), 'utf8'), { mode: 'strip' }).replace(/from "\.\/types"/g, 'from "./types.mjs"').replace(/from "\.\.\/design-runtime"/g, 'from "./design-runtime.mjs"');
     writeFileSync(join(dir, `${name.split('/').at(-1)}.mjs`), code);
   }
-  return { ...await import(pathToFileURL(join(dir, 'controller.mjs')).href), ...await import(pathToFileURL(join(dir, 'loader.mjs')).href) };
+  return { ...await import(pathToFileURL(join(dir, 'controller.mjs')).href), ...await import(pathToFileURL(join(dir, 'loader.mjs')).href), ...await import(pathToFileURL(join(dir, 'review.mjs')).href) };
 }
 const descriptor = { schema: 'studio-design-compiler/1', id: 'fixture', version: '1', inputSchema: 'fixture/1', outputSchema: 'studio-compiled-design/1', sourceLockId: 'fixture-lock' };
 const model = {
@@ -92,4 +92,16 @@ test('data-changing notifications are pending and cannot capture B with older A 
 
 test('failed source A followed by repaired working B cannot seed saved A with B on retry or repeated start', async t => {
   const { createDesignController } = await load(t); let failed=true; const c=createDesignController({compiler:descriptor,themes:['light'],runtime:{model,compile:input=>{if(failed&&input.direction.size===100)throw new Error('Source asset unavailable');return compiled(input)}}}); await c.start(); assert.equal(c.getSnapshot().status,'error'); failed=false; c.edit({controlId:'size',value:110}); await c.settled(); c.retry(); await c.settled(); await c.start(); assert.equal(c.getSnapshot().savedValues.size,100); assert.equal(c.preview('light','saved').output,undefined); assert.equal(c.getSnapshot().compiled.light.fingerprint,JSON.stringify(c.getSnapshot().values)); c.reset({basis:'saved'}); await c.settled(); c.retry(); await c.settled(); assert.equal(c.preview('light','saved').output.fingerprint,JSON.stringify(c.getSnapshot().savedValues));
+});
+
+test('review context navigation is guarded and cannot change canonical values, compiled fingerprints or history', async t => {
+  const { createDesignController, createDesignReviewContext } = await load(t);
+  const c = createDesignController({ compiler: descriptor, runtime: { model, compile: compiled }, themes: ['light'] }); await c.start();
+  const before = c.getSnapshot(); let selected = 'first';
+  const scenarios = [{ id: 'first', label: 'First' }, { id: 'second', label: 'Second' }, { id: 'later', label: 'Later', status: 'later' }];
+  const review = createDesignReviewContext(selected, scenarios, id => { selected = id });
+  review.selectScenario('unknown'); review.selectScenario('later'); review.selectScenario('first'); assert.equal(selected, 'first');
+  review.selectScenario('second'); const next = createDesignReviewContext(selected, scenarios, id => { selected = id });
+  assert.equal(next.scenarioId, 'second'); assert.deepEqual(next.scenarios.map(s => s.id), ['first', 'second']); assert.ok(Object.isFrozen(next.scenarios));
+  assert.deepEqual(c.getSnapshot(), before); assert.equal(c.getSnapshot().canUndo, false); assert.equal(c.getSnapshot().compiled.light.fingerprint, before.compiled.light.fingerprint);
 });

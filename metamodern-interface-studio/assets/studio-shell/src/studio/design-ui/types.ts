@@ -33,7 +33,13 @@ export type DesignModel = {
   readout(values: JsonValue, context: { controlId: string; scope: DesignScope; target?: DesignTarget }): DesignReadout
 }
 export type DesignRuntimeModule = DesignCompilerModule & { model: DesignModel }
-export type DesignPanelProps = { controller: DesignController; component?: string }
+/** Review navigation is UI context only, never direction data or controller history. */
+export type DesignReviewContext = {
+  readonly scenarioId: string
+  readonly scenarios: readonly { readonly id: string; readonly label: string }[]
+  selectScenario(id: string): void
+}
+export type DesignPanelProps = { controller: DesignController; component?: string; review: DesignReviewContext }
 export type DesignEditorModule = {
   capabilities: DesignEditorDeclaration["capabilities"]
   schema: typeof DESIGN_EDITOR_VERSION; id: string; version: string

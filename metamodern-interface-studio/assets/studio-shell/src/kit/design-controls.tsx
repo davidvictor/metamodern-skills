@@ -43,6 +43,6 @@ export function NumberField(p: NumberFieldProps) {
 export function SegmentedControl({ label, value, options, onChange, disabled }: { label: string; value: string; options: readonly { id: string; label: string }[]; onChange(value: string): void; disabled?: boolean }) {
   return <FieldRoot><FieldLabel>{label}</FieldLabel><ToggleGroup aria-label={label} value={[value]} onValueChange={v => v[0] && onChange(v[0])} disabled={disabled} className="flex flex-wrap">{options.map(o => <ToggleGroupItem key={o.id} value={o.id} className={TARGET}>{o.label}</ToggleGroupItem>)}</ToggleGroup></FieldRoot>
 }
-export function EditorPopover({ label, trigger, children }: { label: string; trigger: React.ReactElement; children: React.ReactNode }) {
-  return <Popover modal><PopoverTrigger render={trigger} /><PopoverContent data-kit role="dialog" aria-label={label} className="max-h-[min(70dvh,28rem)] w-64 overflow-y-auto">{children}</PopoverContent></Popover>
+export function EditorPopover({ label, trigger, children, open, onOpenChange }: { label: string; trigger: React.ReactElement; children: React.ReactNode; open?: boolean; onOpenChange?: (open: boolean) => void }) {
+  return <Popover modal open={open} onOpenChange={onOpenChange}><PopoverTrigger render={trigger} /><PopoverContent data-kit role="dialog" aria-label={label} className="max-h-[min(70dvh,28rem)] w-64 overflow-y-auto">{children}</PopoverContent></Popover>
 }

@@ -1,3 +1,7 @@
+## 0.17.1
+
+DesignPanelProps now supplies review context (scenarioId, readonly scenario options and selectScenario) to Foundation and Component panels. Use it for a Review fixture selector and contextual reach readouts; navigation never edits direction payloads or undo history. Private panels still import only the public kit/design-ui APIs and their own files. Product-owned modules remain protected by managed updates. EditorPopover adds optional open/onOpenChange for controlled Close picker and choice dismissal; existing uncontrolled callers retain their behavior.
+
 ## 0.17.0
 
 An optional studio-design-editor/1 declaration loads product-owned panels from protected src/design-ui/. Its registered compiler supplies the authoritative pure model; private panels use @studio/kit and @studio/design-ui. Opted-in previews use the source/confirmed saved basis plus labeled working overlays, and Tokens is readonly. The optional compiled-data frame capability forwards the same JSON snapshot without another resolver. Registered local stylesheets are validated and failures preserve the last valid result. Read references/design-ui.md before opting in. Non-opted consumers retain their legacy behavior. New frame capabilities require the updated frame-client/protocol in product receivers; copied clients must be refreshed to consume compiled data. Canonical saved-direction persistence is not supplied by this editor interface.
