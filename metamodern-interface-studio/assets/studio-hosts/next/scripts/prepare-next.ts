@@ -1,5 +1,5 @@
 /** Explicit build-time resolution. Generated files are shell-owned; product maps stay under src/. */
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { execFileSync } from "node:child_process"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
@@ -7,15 +7,15 @@ import { parseAst } from "vite"
 import { astLang, definedModules, undeclaredDefinitions, workspaceProblems } from "../src/studio/workspace/declaration"
 import { definedDocs, libraryProblems, undeclaredDocs } from "../src/studio/library/model"
 const variant = process.env.STUDIO_ADAPTER ?? process.env.VITE_STUDIO_ADAPTER
-const library = ["library", "sections", "static"].includes(variant ?? "")
+const library = ["editor", "library", "sections", "static"].includes(variant ?? "")
 const workspace = variant === "workspace" || library
-const adapter = variant === "static" ? "example/static-adapter.ts" : variant === "sections" ? "example/library/sections.ts" : library ? "example/library/adapter.ts" : workspace ? "example/workspace/adapter.ts" : variant === "example" ? "src/adapters/example.ts" : variant ? "src/adapters/synthetic.ts" : "src/adapter.ts"
+const adapter = variant === "editor" ? "example/design-adapter.ts" : variant === "static" ? "example/static-adapter.ts" : variant === "sections" ? "example/library/sections.ts" : library ? "example/library/adapter.ts" : workspace ? "example/workspace/adapter.ts" : variant === "example" ? "src/adapters/example.ts" : variant ? "src/adapters/synthetic.ts" : "src/adapter.ts"
 const workspaceMap = workspace ? variant === "static" ? "example/workspace/static.ts" : "example/workspace/index.ts" : "src/workspace/index.ts"
 const libraryMap = library ? variant === "static" ? "example/library/static.ts" : "example/library/index.ts" : "src/library/index.ts"
 mkdirSync(".studio-generated", { recursive: true })
 const bundled = (name: string) => existsSync(`${name}.json`) ? JSON.parse(readFileSync(`${name}.json`, "utf8")) as unknown : undefined
 writeFileSync(".studio-generated/runtime.ts", `export const bundled = ${JSON.stringify({ variant, workspace: true, library: true, scenarios: bundled("scenarios"), layouts: bundled("layouts") })}\n`)
-writeFileSync(".studio-generated/selection.json", JSON.stringify({ "@/adapter": `./${adapter}`, "@/workspace": `./${workspaceMap}`, "@/library": `./${libraryMap}` }))
+writeFileSync(".studio-generated/selection.json", JSON.stringify({ "@/adapter": `./${adapter}`, "@/workspace": `./${workspaceMap}`, "@/library": `./${libraryMap}`, ...(variant === "editor" ? { "@/design-ui": "./example/design-ui/loaders.ts", "@/design-runtime": "./example/design-runtime/loaders.ts" } : {}) }))
 const { adapter: declaration } = await import(pathToFileURL(path.resolve(adapter)).href)
 const problems = [...workspaceProblems(declaration.workspace), ...libraryProblems(declaration.library)]
 if (existsSync(workspaceMap)) {
@@ -38,5 +38,6 @@ else {
   mkdirSync(path.dirname(route), { recursive: true })
   writeFileSync(route, routeSource)
 }
+if (variant === "editor") { mkdirSync("public/example/design-runtime", { recursive: true }); cpSync("example/design-runtime/assets.css", "public/example/design-runtime/assets.css") }
 const { default: config } = await import(pathToFileURL(path.resolve("studio.config.ts")).href)
 if (Object.keys(config.inputs ?? {}).length) execFileSync(process.execPath, ["node_modules/vite/bin/vite.js", "build", "--config", "scripts/preview.vite.ts"], { stdio: "inherit" })

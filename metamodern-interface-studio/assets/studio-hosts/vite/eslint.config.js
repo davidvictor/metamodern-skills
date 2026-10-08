@@ -1,3 +1,4 @@
+import { designUiBoundary } from './scripts/design-ui-boundary.mjs'
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -8,6 +9,7 @@ import { workspaceBoundary } from './scripts/workspace-boundary.mjs'
 import { libraryBoundary } from './scripts/library-boundary.mjs'
 
 export default defineConfig([
+  { files: ['src/design-ui/**/*.{ts,tsx,js,jsx,mjs}', 'example/design-ui/**/*.{ts,tsx}'], plugins: { 'design-ui': designUiBoundary }, rules: { 'design-ui/imports': 'error', 'react-refresh/only-export-components': 'off' } },
   globalIgnores(['dist']),
   {
     files: ['**/*.{ts,tsx}'],
@@ -28,7 +30,7 @@ export default defineConfig([
   },
   {
     // The kit and the workspace layer co-locate small helpers with components.
-    files: ['src/kit/**/*.{ts,tsx}', 'src/studio/workspace/**/*.{ts,tsx}', 'example/workspace/**/*.{ts,tsx}'],
+    files: ['src/kit/**/*.{ts,tsx}', 'src/studio/workspace/**/*.{ts,tsx}', 'src/studio/design-ui/**/*.{ts,tsx}', 'src/design-ui/**/*.{ts,tsx}', 'example/design-ui/**/*.{ts,tsx}', 'example/workspace/**/*.{ts,tsx}'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
   {

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "fs"
+import { cpSync, existsSync, mkdirSync, readFileSync } from "fs"
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
@@ -60,14 +60,14 @@ const scenarios = () => savedFile({ file: "scenarios.json", route: "/__studio/sc
 const variant = process.env.VITE_STUDIO_ADAPTER
 // The static build (VITE_STUDIO_ADAPTER=static) is the example as published to a static host: opaque frames, a
 // workspace without operations, module groups and a wide library component (example/static-adapter.ts).
-const withLibrary = variant === "library" || variant === "sections" || variant === "static"
+const withLibrary = variant === "editor" || variant === "library" || variant === "sections" || variant === "static"
 const acceptance = variant && variant !== "workspace" && !withLibrary ? [{ find: /^@\/adapter$/, replacement: path.resolve(root, variant === "example" ? "src/adapters/example.ts" : "src/adapters/synthetic.ts") }] : []
 // The starter's example workspace (VITE_STUDIO_ADAPTER=workspace): its adapter and module map, or with
 // VITE_STUDIO_WORKSPACE=orphan a map that defines an undeclared module, which must fail the build. The example
 // library (VITE_STUDIO_ADAPTER=library) carries the same workspace and adds its documentation map; the same library
 // declared with sections (VITE_STUDIO_ADAPTER=sections) does too, or with VITE_STUDIO_LIBRARY=invalid a declaration
 // that must fail the build.
-const libraryAdapterFile = variant === "static" ? "example/static-adapter.ts" : variant === "sections" ? (process.env.VITE_STUDIO_LIBRARY === "invalid" ? "example/library/invalid.ts" : "example/library/sections.ts") : "example/library/adapter.ts"
+const libraryAdapterFile = variant === "editor" ? "example/design-adapter.ts" : variant === "static" ? "example/static-adapter.ts" : variant === "sections" ? (process.env.VITE_STUDIO_LIBRARY === "invalid" ? "example/library/invalid.ts" : "example/library/sections.ts") : "example/library/adapter.ts"
 const workspaceFile = variant === "static" ? "example/workspace/static.ts" : process.env.VITE_STUDIO_WORKSPACE === "orphan" ? "example/workspace/orphan.ts" : "example/workspace/index.ts"
 const exampleWorkspace =
   variant === "workspace" || withLibrary
@@ -81,6 +81,8 @@ const exampleWorkspace =
 // The surfaces workspace modules and library documentation import (references/workspace.md, references/library.md);
 // everything else under src/ is shell internals.
 const studioAliases = [
+  ...(variant === "editor" ? [{ find: /^@\/design-ui$/, replacement: path.resolve(root, "example/design-ui/loaders.ts") }, { find: /^@\/design-runtime$/, replacement: path.resolve(root, "example/design-runtime/loaders.ts") }] : []),
+  { find: /^@studio\/design-ui$/, replacement: path.resolve(root, "src/studio/design-ui/api.ts") },
   { find: /^@studio\/kit$/, replacement: path.resolve(root, "src/kit/index.ts") },
   { find: /^@studio\/workspace$/, replacement: path.resolve(root, "src/studio/workspace/api.ts") },
   { find: /^@studio\/library$/, replacement: path.resolve(root, "src/studio/library/api.ts") },
@@ -180,9 +182,18 @@ const workspaceMock = (): Plugin => ({
   },
 })
 
+const editorFixtureAssets = (): Plugin => ({
+  name: "studio-editor-fixture-assets", apply: "build",
+  writeBundle(output) {
+    if (variant !== "editor") return
+    const target = path.resolve(output.dir ?? path.resolve(root, studio.outDir ?? "dist"), "example/design-runtime")
+    mkdirSync(target, { recursive: true })
+    cpSync(path.resolve(root, "example/design-runtime/assets.css"), path.join(target, "assets.css"))
+  },
+})
 export default defineConfig({
   base: "./",
-  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock()],
+  plugins: [react(), tailwindcss(), title(), layouts(), scenarios(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock(), editorFixtureAssets()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
     emptyOutDir: true,

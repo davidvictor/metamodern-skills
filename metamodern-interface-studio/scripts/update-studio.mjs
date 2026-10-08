@@ -29,9 +29,9 @@ const LOCK = 'studio-shell.lock.json';
 const LOCK_SCHEMA = 'studio-shell-lock/2';
 
 /** Created once and then owned by the product. */
-const SEEDS = new Set(['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'src/library/index.ts', 'src/design-runtime/index.ts']);
+const SEEDS = new Set(['src/adapter.ts', 'studio.config.ts', 'src/workspace/index.ts', 'src/library/index.ts', 'src/design-runtime/index.ts', 'src/design-ui/index.ts']);
 /** Folders that belong to the product: never compared, added to or removed from (a seed inside is created when missing). */
-const PRODUCT_DIRS = ['src/workspace/', 'src/library/', 'src/design-runtime/'];
+const PRODUCT_DIRS = ['src/workspace/', 'src/library/', 'src/design-runtime/', 'src/design-ui/'];
 /** Replaced from the shell every time, then refreshed by npm install. */
 const REGENERATED = new Set(['package-lock.json', 'next-env.d.ts']);
 /** Shell files a Studio may delete on purpose; recorded under `removed`. */

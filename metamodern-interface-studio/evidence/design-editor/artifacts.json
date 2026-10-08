@@ -1,0 +1,250 @@
+[
+  {
+    "path": "screenshots/chromium-NoCompiled.png",
+    "sha256": "0063572d3948085562bee275ca484e132a1fc3c327e5cfb7c44b77d93bcba6ed"
+  },
+  {
+    "path": "screenshots/chromium-RollbackReject.png",
+    "sha256": "d7a95ea1a6fdfcedd3a6cd76a23d8b613e0e44422168263e74b177146bba6dc6"
+  },
+  {
+    "path": "screenshots/chromium-component-only-design.png",
+    "sha256": "5c268e2cc30a7ee02f184d7074b16b381be1f91617b54c30c351b5b3935c95dc"
+  },
+  {
+    "path": "screenshots/chromium-component-only-treatment.png",
+    "sha256": "1e0943ee4dfb1b8cc0c6c1d2272491ccf602e60799a5d3db0ca7d18593b9ea8c"
+  },
+  {
+    "path": "screenshots/chromium-next-1440-foundation.png",
+    "sha256": "e734e50b720fab7ae6a521b462762495bc60448dea1bb594efaee1d2deef55cb"
+  },
+  {
+    "path": "screenshots/chromium-next-1440-palette.png",
+    "sha256": "11fd72c7bb1f2a9287e2df895b4447ee5b5d799f97afb1c476ccafbf480111bb"
+  },
+  {
+    "path": "screenshots/chromium-next-390-foundation.png",
+    "sha256": "47a8cdff6beaff8c7bf8f6d61f0d2cbc327ae4f2d63e9530f4076a1470afdcc8"
+  },
+  {
+    "path": "screenshots/chromium-next-390-palette.png",
+    "sha256": "c83783931fa4a26223f3665b53c54225cfea3793bc2b144c5cad3a4ecc0efb52"
+  },
+  {
+    "path": "screenshots/chromium-next-768-foundation.png",
+    "sha256": "a441457e0e1182ebfe45577b8730c229d10e9c4302dc800e90ef851a95e7f6a1"
+  },
+  {
+    "path": "screenshots/chromium-next-768-palette.png",
+    "sha256": "9ec3d6f4a973024906cf0b89d8d55ab98897c02cbfcf25266965070b377eed72"
+  },
+  {
+    "path": "screenshots/chromium-next-asset-error.png",
+    "sha256": "efaf835d58e1c54a326c37521316c4e6c5fd70829cfa5e69a410009ebacd2e46"
+  },
+  {
+    "path": "screenshots/chromium-next-delta-foundation.png",
+    "sha256": "10d34eb4befd06322778e967e09c915ecd8f70c392455e50a9a5240bc214e147"
+  },
+  {
+    "path": "screenshots/chromium-next-delta-radius-after-undo.png",
+    "sha256": "dc053d156ae22bc512b7510570c0f253793d64c28e2c089658e961dca88b17b4"
+  },
+  {
+    "path": "screenshots/chromium-next-raw-radius-reopened.png",
+    "sha256": "5769ebe2d842323477c150233c849593af7a543ea9f95f559707e3a65aa1683b"
+  },
+  {
+    "path": "screenshots/chromium-next-raw-radius-reset.png",
+    "sha256": "9add9a828c8dae4d4cc2a19049d97bd7544451700e0c61bf00c78836aa2ac5fc"
+  },
+  {
+    "path": "screenshots/chromium-next-raw-scale-cleared.png",
+    "sha256": "72eb9b9ed2dfd558b6f1008c43b20f2d1b16a5639d4e5534e18524cfc4373193"
+  },
+  {
+    "path": "screenshots/chromium-next-raw-scale-invalid.png",
+    "sha256": "ef67b8f75114a40129c4b6ff68af25ccff99ceff91674abdd38f1ab23a2abd2d"
+  },
+  {
+    "path": "screenshots/chromium-vite-1440-foundation.png",
+    "sha256": "e734e50b720fab7ae6a521b462762495bc60448dea1bb594efaee1d2deef55cb"
+  },
+  {
+    "path": "screenshots/chromium-vite-1440-palette.png",
+    "sha256": "11fd72c7bb1f2a9287e2df895b4447ee5b5d799f97afb1c476ccafbf480111bb"
+  },
+  {
+    "path": "screenshots/chromium-vite-390-foundation.png",
+    "sha256": "47a8cdff6beaff8c7bf8f6d61f0d2cbc327ae4f2d63e9530f4076a1470afdcc8"
+  },
+  {
+    "path": "screenshots/chromium-vite-390-palette.png",
+    "sha256": "b1be1306b1d7bfb0bd449d2196eda5f6624e7d64becec2930c63739a5f9e4fa7"
+  },
+  {
+    "path": "screenshots/chromium-vite-768-foundation.png",
+    "sha256": "28eaab2a31c63e71c25927a845145738394fd0b71c4291ae2cd7a57257b18b5f"
+  },
+  {
+    "path": "screenshots/chromium-vite-768-palette.png",
+    "sha256": "232aedd298f11f43785d569428e351fe93579ca15ff6a893c7ddb3d2f107b13a"
+  },
+  {
+    "path": "screenshots/chromium-vite-asset-error.png",
+    "sha256": "36503107821cb396ed5570be77cd0ef20555eea025d5935389ca20c27580b0e5"
+  },
+  {
+    "path": "screenshots/chromium-vite-delta-foundation.png",
+    "sha256": "28e6412c6c3fad3bbb019b6b46d755d92ded585d8a5ed18a42f36a975e39b61e"
+  },
+  {
+    "path": "screenshots/chromium-vite-delta-radius-after-undo.png",
+    "sha256": "75633807fd5f8ef55a02fe3e42dc745925bbd2fd2e5d558b9f4a2762f03b83dd"
+  },
+  {
+    "path": "screenshots/chromium-vite-raw-radius-reopened.png",
+    "sha256": "62b13575c173d85b655af2e93545cfe051f37ccf8b9e94027f37b7b14e3eb63e"
+  },
+  {
+    "path": "screenshots/chromium-vite-raw-radius-reset.png",
+    "sha256": "9add9a828c8dae4d4cc2a19049d97bd7544451700e0c61bf00c78836aa2ac5fc"
+  },
+  {
+    "path": "screenshots/chromium-vite-raw-scale-cleared.png",
+    "sha256": "72eb9b9ed2dfd558b6f1008c43b20f2d1b16a5639d4e5534e18524cfc4373193"
+  },
+  {
+    "path": "screenshots/chromium-vite-raw-scale-invalid.png",
+    "sha256": "ef67b8f75114a40129c4b6ff68af25ccff99ceff91674abdd38f1ab23a2abd2d"
+  },
+  {
+    "path": "screenshots/selected-basis-compare.png",
+    "sha256": "453d1f86466cf6aa42da4108e720ac01d36d74de927a9c6ea31d23a469a8a5b0"
+  },
+  {
+    "path": "screenshots/selected-basis-present.png",
+    "sha256": "556694813dc40344840a6131ad8d3449b10d033179ceadd47c0a320c5118b5b7"
+  },
+  {
+    "path": "screenshots/webkit-NoCompiled.png",
+    "sha256": "06e4e4e3519085bb40f5e939c26afee511b90876d56c298eeb79fe5589cc22a0"
+  },
+  {
+    "path": "screenshots/webkit-RollbackReject.png",
+    "sha256": "5896bc160a4d890f9d8b43bc778699924ab4e63b53c6fd82e3f8d8eae190a885"
+  },
+  {
+    "path": "screenshots/webkit-component-only-design.png",
+    "sha256": "edf33095d2f41c061683b9ac5d4314f92143130fd4c5e7f86f3ac1d34ad58325"
+  },
+  {
+    "path": "screenshots/webkit-component-only-treatment.png",
+    "sha256": "d4d941949ab1d0f73fad9f558e1d9c0466e21cf4afad208a486e4ae2c7f20638"
+  },
+  {
+    "path": "screenshots/webkit-next-1440-foundation.png",
+    "sha256": "1b2ee1706fabc7e64ecdc088848627b88e45755d576786e92f20ecd1de294635"
+  },
+  {
+    "path": "screenshots/webkit-next-1440-palette.png",
+    "sha256": "063acf365c5b187054c366e5e09133adf0fc14b48032aa830008bc1075e6ae21"
+  },
+  {
+    "path": "screenshots/webkit-next-390-foundation.png",
+    "sha256": "4ef8908c980bc738164f2b73f4661f9d63996f7b35cd5be7be46b418e51004c6"
+  },
+  {
+    "path": "screenshots/webkit-next-390-palette.png",
+    "sha256": "e3b4fcabd510240af6ea67ff604fa3909a8b23a1bdea8e8ad5e188b6b9e66a6a"
+  },
+  {
+    "path": "screenshots/webkit-next-768-foundation.png",
+    "sha256": "9c9ee7e85857a67a5909ee24373f6d09a2a631c767c79a709821c3fb3150cac6"
+  },
+  {
+    "path": "screenshots/webkit-next-768-palette.png",
+    "sha256": "b3b4342af24bd43569aafbf0be2f52e7ebdce5ef1e4a1674dbcbff21064c8c18"
+  },
+  {
+    "path": "screenshots/webkit-next-asset-error.png",
+    "sha256": "9df3ea134b2df637d1a7e9b08ea7e5eea9bd1397ce7d2b84f8e1a52dbd191bc7"
+  },
+  {
+    "path": "screenshots/webkit-next-delta-foundation.png",
+    "sha256": "0029bdde08e6ad46520eb6a349fab7d7a7ba823d4ecbb2b62020866de2b4f485"
+  },
+  {
+    "path": "screenshots/webkit-next-delta-radius-after-undo.png",
+    "sha256": "a65a500b920200aa8a29680eb16cadec19b7176058c1c8a38734233ec28c598d"
+  },
+  {
+    "path": "screenshots/webkit-next-raw-radius-reopened.png",
+    "sha256": "436a31a21e84e92caa2a1816110e2cb1dc98dd52dde194f7d74a95dcdfb82321"
+  },
+  {
+    "path": "screenshots/webkit-next-raw-radius-reset.png",
+    "sha256": "946912470c4989092f2cd6110176f0b3314a96e8378eead4252ee078e13c866a"
+  },
+  {
+    "path": "screenshots/webkit-next-raw-scale-cleared.png",
+    "sha256": "9427c3bc100850aa429f8a0edbcab470d36e5e074a0fc4ae77ce89a2a58f57cb"
+  },
+  {
+    "path": "screenshots/webkit-next-raw-scale-invalid.png",
+    "sha256": "afad4bc2b4907955b52506c806f5ef9b75b7135add52ab2c89f673b69c100ec1"
+  },
+  {
+    "path": "screenshots/webkit-vite-1440-foundation.png",
+    "sha256": "1b2ee1706fabc7e64ecdc088848627b88e45755d576786e92f20ecd1de294635"
+  },
+  {
+    "path": "screenshots/webkit-vite-1440-palette.png",
+    "sha256": "063acf365c5b187054c366e5e09133adf0fc14b48032aa830008bc1075e6ae21"
+  },
+  {
+    "path": "screenshots/webkit-vite-390-foundation.png",
+    "sha256": "4ef8908c980bc738164f2b73f4661f9d63996f7b35cd5be7be46b418e51004c6"
+  },
+  {
+    "path": "screenshots/webkit-vite-390-palette.png",
+    "sha256": "91074e56ec5c505bcce2521f425a03a38cfaee43e79af5698dac867c15943c15"
+  },
+  {
+    "path": "screenshots/webkit-vite-768-foundation.png",
+    "sha256": "9c9ee7e85857a67a5909ee24373f6d09a2a631c767c79a709821c3fb3150cac6"
+  },
+  {
+    "path": "screenshots/webkit-vite-768-palette.png",
+    "sha256": "b3b4342af24bd43569aafbf0be2f52e7ebdce5ef1e4a1674dbcbff21064c8c18"
+  },
+  {
+    "path": "screenshots/webkit-vite-asset-error.png",
+    "sha256": "623e5ee996f08951c0b669341848e59c4d5da840f9c6aa628a6c2fc0405790b2"
+  },
+  {
+    "path": "screenshots/webkit-vite-delta-foundation.png",
+    "sha256": "0029bdde08e6ad46520eb6a349fab7d7a7ba823d4ecbb2b62020866de2b4f485"
+  },
+  {
+    "path": "screenshots/webkit-vite-delta-radius-after-undo.png",
+    "sha256": "a65a500b920200aa8a29680eb16cadec19b7176058c1c8a38734233ec28c598d"
+  },
+  {
+    "path": "screenshots/webkit-vite-raw-radius-reopened.png",
+    "sha256": "436a31a21e84e92caa2a1816110e2cb1dc98dd52dde194f7d74a95dcdfb82321"
+  },
+  {
+    "path": "screenshots/webkit-vite-raw-radius-reset.png",
+    "sha256": "946912470c4989092f2cd6110176f0b3314a96e8378eead4252ee078e13c866a"
+  },
+  {
+    "path": "screenshots/webkit-vite-raw-scale-cleared.png",
+    "sha256": "9427c3bc100850aa429f8a0edbcab470d36e5e074a0fc4ae77ce89a2a58f57cb"
+  },
+  {
+    "path": "screenshots/webkit-vite-raw-scale-invalid.png",
+    "sha256": "afad4bc2b4907955b52506c806f5ef9b75b7135add52ab2c89f673b69c100ec1"
+  }
+]

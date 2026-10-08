@@ -1,3 +1,4 @@
+import type { DesignEditorDeclaration } from "./design-ui/types"
 /*
  * The adapter declaration: everything the shell knows about one product.
  * The shell is product-neutral; a Studio differs only by the adapter it loads
@@ -472,7 +473,7 @@ export type StudioAdapter = {
   comparisons?: Comparison[]
   tokens?: TokenSet
   /** Parameters for the Design view's Adjust tab. Without them (and without tokens) there is no Design view. */
-  design?: { parameters: DesignParameter[]; compiler?: DesignCompilerDescriptor }
+  design?: { parameters: DesignParameter[]; compiler?: DesignCompilerDescriptor; editor?: DesignEditorDeclaration }
   /** Anything the Studio changes about product rendering, disclosed on every preview. */
   presentationOverrides?: { id: string; label: string }[]
   /** Product workspace tools beside the views, declared as data (references/workspace.md). Without it the Studio has no workspace. */

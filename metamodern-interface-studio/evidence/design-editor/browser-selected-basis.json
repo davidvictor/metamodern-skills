@@ -1,0 +1,11 @@
+{
+  "scope": "Failed source A \u2192 repaired working B: Present explicitly unavailable; Compare source unavailable with structured error and only working B frame.",
+  "workingFrameCount": 1,
+  "presentFrameCount": 0,
+  "compareFrameCount": 1,
+  "body": "Ex\nLibrary\nInspect\nCompare\nResponsive\nGallery\nPresent\nDesign\nSite\nAudit\nCatalog\n13\n/\nAll\nStale\n1\nUnresolved\n1\n\nSaved comparisons\n\nToday in Light and Dark\nTASKS\n5\nToday\nFirst use\nLoading\nFailed to load\nNew task\nTASK DETAIL\n1\nTask\nACCOUNT\n2\nSettings\nSign in\nREPORTS\n1\nOverview\nHELP\n2\nGetting started\nWelcome\nCOMPONENTS\n2\nTask card\nDone\nExample Tasks\nCompare\nTasks: Today\nGo to scenario\u2026\n\u2318\nK\n\nDraft \u00b7 revision 1 \u00b7 ready\n\nDesign\nA\nAs built\nB\nDraft\nSide by side\nSplit\nFlip\n2-up\n3-up\n4-up\nA\nAs built\nDid not start\nSource or saved direction is unavailable\nThis basis has no valid compiled output. A working draft cannot substitute for the source or confirmed saved direction.\nB\nDraft\nReady\n1280 \u00d7 800 \u00b7 26%\n100%\n1 of 13\n\u00b7\nTasks\nTasks: Today\n\nToday's tasks, open first. New task is the page's one primary action.\n\nIllustrative example\nDid not start\nScenario\nFidelity\nEvidence\nSurface\nTask list\nFixture\nexample-tasks v1\nSynthetic, written for the starter\nClock\nFixed: Tuesday, 10:00\nSource\nexample/main.ts\nGo to\n\nSearch scenarios, views and actions",
+  "pageErrors": [],
+  "pass": true,
+  "sharedPreviewSha256": "1360d6bd501c303e8d4c7663e292f1e19db806449253d5ebb874a883aa3a1c79",
+  "servedPreviewSha256": "f511e1a87482215001b58ae7f258a722df641dd06875e21bf31fd81e7efa1f53"
+}

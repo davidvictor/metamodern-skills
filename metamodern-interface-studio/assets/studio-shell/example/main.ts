@@ -307,6 +307,10 @@ const testing = window as unknown as {
   /** How many times this document mounted a scenario, and the values a live update last applied. */
   __studioMounts?: number
   __studioUpdated?: MountInputs["values"]
+  __fixtureNoCompiled?: boolean
+  __fixtureApplyReject?: boolean
+  __fixtureSettleReject?: boolean
+  __fixtureRollbackReject?: boolean
 }
 function rejectTitle(values: MountInputs["values"]) {
   if (testing.__studioStrictTitle && values.title === "Reject this title") throw new Error("The Task card cannot show this title")
@@ -319,6 +323,16 @@ function rejectTitle(values: MountInputs["values"]) {
 const allowedOrigins = document.querySelector<HTMLMetaElement>('meta[name="studio-allowed-origins"]')?.content.split(/\s+/).filter(Boolean)
 const frame = connectStudioFrame(
   {
+    applyCompiled: testing.__fixtureNoCompiled ? undefined : (data, direction) => {
+      if (testing.__fixtureApplyReject) { testing.__fixtureApplyReject = false; throw new Error("Fixture opaque apply rejected") }
+      if (testing.__fixtureRollbackReject) throw new Error("Fixture rollback rejected")
+      Object.assign(globalThis, { __fixtureCompiled: data, __fixtureDirection: direction })
+    },
+    settle: async () => {
+      if (testing.__fixtureSettleReject) { testing.__fixtureSettleReject = false; throw new Error("Fixture settle rejected") }
+      await document.fonts.ready
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+    },
     mount,
     command: (id) => {
       const run = actions[id]
@@ -351,7 +365,7 @@ const frame = connectStudioFrame(
     canGoBack: () => s.location.length > 1 || !!s.dialog,
     location: () => here() + (s.dialog ? " (New task)" : ""),
   },
-  { sync: !testing.__studioLegacy, ...(allowedOrigins?.length ? { allowedOrigins } : {}) }
+  { registeredStylesheets: ["/example/design-runtime/assets.css", "/example/design-runtime/missing.css"], sync: !testing.__studioLegacy, ...(allowedOrigins?.length ? { allowedOrigins } : {}) }
 )
 
 // Opened directly, outside the Studio: show the default scenario.

@@ -1,3 +1,7 @@
+## 0.17.0
+
+An optional studio-design-editor/1 declaration loads product-owned panels from protected src/design-ui/. Its registered compiler supplies the authoritative pure model; private panels use @studio/kit and @studio/design-ui. Opted-in previews use the source/confirmed saved basis plus labeled working overlays, and Tokens is readonly. The optional compiled-data frame capability forwards the same JSON snapshot without another resolver. Registered local stylesheets are validated and failures preserve the last valid result. Read references/design-ui.md before opting in. Non-opted consumers retain their legacy behavior. New frame capabilities require the updated frame-client/protocol in product receivers; copied clients must be refreshed to consume compiled data. Canonical saved-direction persistence is not supplied by this editor interface.
+
 ## 0.16.1
 
 Next uses its official ESLint plugin and recommended rules, with mixed provider/hook/helper exports allowed. Vite keeps its existing refresh rules. The managed updater adds the Next plugin dependency and preserves product files. Run npm install after a skipped-check update. Nothing else to do by hand.

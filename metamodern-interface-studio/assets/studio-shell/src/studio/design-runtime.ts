@@ -1,3 +1,4 @@
+import type { DesignModel } from "./design-ui/types"
 /** Generic opt-in compiler contract; private implementation and rich Design panels belong to the product. */
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue }
 export type DesignCompilerDescriptor = {
@@ -8,7 +9,10 @@ export type DesignCompilerDescriptor = {
   inputSchema: string
   outputSchema: "studio-compiled-design/1"
 }
+export const COMPILED_DATA_MAX_BYTES = 256 * 1024
 export type CompiledDesign = {
+  /** Opaque product snapshot. Shell transport and generic exporters never interpret it. */
+  data?: JsonValue
   schema: "studio-compiled-design/1"
   compiler: { id: string; version: string }
   fingerprint: string
@@ -20,7 +24,7 @@ export type CompiledDesign = {
   diagnostics?: { id: string; label: string; status: "ok" | "warning" | "error"; message: string }[]
 }
 export type CompileDesignInput = { direction: JsonValue; theme: string; sourceLockId?: string }
-export type DesignCompilerModule = { compile(input: CompileDesignInput): CompiledDesign | Promise<CompiledDesign> }
+export type DesignCompilerModule = { model?: DesignModel; compile(input: CompileDesignInput): CompiledDesign | Promise<CompiledDesign> }
 const record = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value)
 const strings = (value: unknown) => record(value) && Object.values(value).every(v => typeof v === "string")
 function dataOnly(value: unknown, seen = new WeakSet<object>()): boolean {
@@ -35,6 +39,7 @@ function dataOnly(value: unknown, seen = new WeakSet<object>()): boolean {
 export function validateCompiledDesign(descriptor: DesignCompilerDescriptor, value: unknown): string[] {
   if (!dataOnly(value) || !record(value)) return ["Compiled design must contain JSON data only"]
   const problems: string[] = []
+  if (value.data !== undefined && new TextEncoder().encode(JSON.stringify(value.data)).byteLength > COMPILED_DATA_MAX_BYTES) problems.push("Compiled data exceeds 256 KB")
   if (value.schema !== descriptor.outputSchema) problems.push("Compiled design schema does not match the descriptor")
   if (!record(value.compiler) || value.compiler.id !== descriptor.id || value.compiler.version !== descriptor.version) problems.push("Compiler identity does not match the descriptor")
   if (descriptor.sourceLockId && value.sourceLockId !== descriptor.sourceLockId) problems.push("Source lock does not match the descriptor")
@@ -60,3 +65,5 @@ export async function compileDesign(descriptor: DesignCompilerDescriptor, loader
   if (problems.length) throw new Error(problems.join("; "))
   return compiled
 }
+
+export const isJsonValue = dataOnly

@@ -1,3 +1,4 @@
+import { CompiledInspector } from "@/studio/design-ui/slots"
 import * as React from "react"
 import {
   ChevronDownIcon,
@@ -1151,7 +1152,8 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
   )
 }
 
-function TokenEditor() {
+function TokenEditor() { return adapter.design?.editor ? <CompiledInspector sourceOnly /> : <LegacyTokenEditor /> }
+function LegacyTokenEditor() {
   const s = useStudio()
   const t = adapter.tokens!
   const tok = t.tokens.find((x) => x.name === s.tokens.selected) ?? t.tokens[0]

@@ -64,6 +64,7 @@ const render = (values: Values) => {
  */
 const allowedOrigins = document.querySelector<HTMLMetaElement>('meta[name="studio-allowed-origins"]')?.content.split(/\s+/).filter(Boolean)
 connectStudioFrame({
+  applyCompiled(data, direction) { Object.assign(globalThis, { __fixtureCompiled: data, __fixtureDirection: direction }) },
   mount: (inputs) => {
     if (!SCENES[inputs.scenario]) throw new Error(`${inputs.scenario} has no preview in the example library`)
     document.documentElement.dataset.theme = inputs.theme
@@ -79,7 +80,7 @@ connectStudioFrame({
     testing.__libValues = inputs.values
   },
   code: (inputs) => ({ language: "tsx", text: buttonCode(fromValues(inputs.values)) }),
-}, allowedOrigins?.length ? { allowedOrigins } : {})
+}, { registeredStylesheets: ["/example/design-runtime/assets.css", "/example/design-runtime/missing.css"], ...(allowedOrigins?.length ? { allowedOrigins } : {}) })
 
 // Opened directly, outside the Studio: show the button styles.
 if (window.parent === window) render({})

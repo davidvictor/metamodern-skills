@@ -1,3 +1,5 @@
+import type { JsonValue } from "./design-runtime"
+import type { DesignPreviewIdentity } from "./design-ui/types"
 /*
  * The product side of studio-preview/1. A product's preview entry (a route,
  * page or recreation document that renders one scenario in isolation) calls
@@ -12,6 +14,8 @@ import { createFrameSync } from "./frame-sync"
 import { createFrameGestures, keepFieldKeys } from "./frame-gestures"
 
 export type FrameHandlers = {
+  /** Product consumes the same opaque compiled snapshot as exports; validate before mutating, reject atomically. */
+  applyCompiled?: (data: JsonValue | undefined, direction: DesignPreviewIdentity | undefined) => void | Promise<void>
   /** Materialize the scenario from scratch: state, navigation, theme, profile and inputs. */
   mount: (inputs: MountInputs) => Promise<{ appearance: "light" | "dark"; location: string }> | { appearance: "light" | "dark"; location: string }
   /** Run one product command through the application's own path. Throw for an unsupported command. */
@@ -23,7 +27,7 @@ export type FrameHandlers = {
   /** Apply draft token overrides. Defaults to custom properties on the root element. */
   applyTokens?: (tokens: Record<string, string>) => void
   /** Apply draft CSS rules and font stylesheets. Defaults to one style element and allowlisted links in the head. */
-  applyCss?: (css: string, stylesheets: string[]) => void
+  applyCss?: (css: string, stylesheets: string[]) => void | Promise<void>
   /** Resolve when the rendering is settled: fonts, required assets, controlled async work. */
   settle?: () => Promise<void>
   /** Go to a product location, for navigation sync between frames. Without it navigation follows only through synced clicks. */
@@ -47,6 +51,8 @@ export type FrameHandlers = {
  */
 export type FrameOptions = {
   allowedOrigins?: string[]
+  /** Exact same-origin stylesheet roster owned by the product frame; remote module/style discovery is forbidden. */
+  registeredStylesheets?: readonly string[]
   sync?: boolean
   gestures?: boolean
 }
@@ -73,7 +79,40 @@ export function readAnchors(): AnchorRect[] {
 
 /** Draft fonts load only from Google Fonts' stylesheet API; its CSS then loads files from fonts.gstatic.com. */
 const FONT_STYLESHEET = "https://fonts.googleapis.com/css2?"
-function defaultApplyCss(css: string, stylesheets: string[]) {
+export function allowedFrameStylesheet(value: string, page: string, registered: readonly string[] = []): string | null {
+  if (value.startsWith(FONT_STYLESHEET)) return value
+  try {
+    const url = new URL(value, page)
+    if (url.origin !== new URL(page).origin || !/^(https?|file):$/.test(url.protocol)) return null
+    return registered.some(entry => new URL(entry, page).href === url.href) ? url.href : null
+  } catch { return null }
+}
+/** Load registered assets before any opt-in compiled state is changed. Legacy stylesheet filtering stays intact. */
+async function ensureStylesheets(stylesheets: string[], registered: readonly string[]) {
+  const staged: HTMLLinkElement[] = []
+  try { await Promise.all(stylesheets.map(async value => {
+    const url = allowedFrameStylesheet(value, location.href, registered)
+    if (!url) throw new Error(`Stylesheet is not registered for this frame: ${value}`)
+    let link = [...document.querySelectorAll<HTMLLinkElement>("link[data-studio-draft]")].find(l => l.href === url)
+    if (!link?.dataset.studioLoaded) {
+      const response = await fetch(url, { headers: { accept: "text/css" }, cache: "no-store" })
+      const content = await response.text()
+      if (!response.ok || !/^text\/css(?:;|$)/i.test(response.headers.get("content-type") ?? "") || /^\s*(?:<!doctype|<html)/i.test(content)) throw new Error(`Registered stylesheet is missing or is not CSS: ${value}`)
+    }
+    if (link?.dataset.studioLoaded === "true") return Promise.resolve()
+    return new Promise<void>((resolve, reject) => {
+      if (!link) { link = document.createElement("link"); link.rel = "stylesheet"; link.href = url; link.dataset.studioDraft = ""; link.media = "not all"; staged.push(link) }
+      const loaded = link
+      const timer = setTimeout(() => failed(), 15000)
+      const cleanup = () => { clearTimeout(timer); loaded.removeEventListener("load", success); loaded.removeEventListener("error", failed) }
+      const success = () => { cleanup(); loaded.dataset.studioLoaded = "true"; resolve() }
+      const failed = () => { cleanup(); loaded.remove(); reject(new Error(`Registered stylesheet failed to load: ${value}`)) }
+      loaded.addEventListener("load", success, { once: true }); loaded.addEventListener("error", failed, { once: true })
+      if (!loaded.isConnected) document.head.append(loaded)
+    })
+  })) } catch (error) { for (const link of staged) link.remove(); throw error }
+}
+function defaultApplyCss(css: string, stylesheets: string[], registered: readonly string[] = []) {
   let style = document.getElementById("studio-draft-css") as HTMLStyleElement | null
   if (!style) {
     style = document.createElement("style")
@@ -81,10 +120,11 @@ function defaultApplyCss(css: string, stylesheets: string[]) {
     document.head.append(style)
   }
   style.textContent = css
-  const wanted = stylesheets.filter((url) => url.startsWith(FONT_STYLESHEET))
+  const wanted = stylesheets.flatMap(url => { const allowed = allowedFrameStylesheet(url, location.href, registered); return allowed ? [allowed] : [] })
   for (const link of document.querySelectorAll<HTMLLinkElement>("link[data-studio-draft]")) if (!wanted.includes(link.href)) link.remove()
   for (const url of wanted) {
-    if (document.querySelector(`link[data-studio-draft][href="${CSS.escape(url)}"]`)) continue
+    const existing = document.querySelector<HTMLLinkElement>(`link[data-studio-draft][href="${CSS.escape(url)}"]`)
+    if (existing) { existing.media = "all"; continue }
     document.head.append(
       Object.assign(document.createElement("link"), {
         rel: "stylesheet",
@@ -126,7 +166,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
   const parentOrigin = document.referrer ? new URL(document.referrer).origin : allowed[0]
   const post = (message: FrameBody) => window.parent.postMessage({ protocol: PROTOCOL, instance, ...message }, allowed.includes(parentOrigin) ? parentOrigin : allowed[0])
   const applyTokens = handlers.applyTokens ?? defaultApplyTokens
-  const applyCss = handlers.applyCss ?? defaultApplyCss
+  const applyCss = handlers.applyCss ?? ((css: string, stylesheets: string[]) => defaultApplyCss(css, stylesheets, options.registeredStylesheets))
   const settle =
     handlers.settle ??
     (async () => {
@@ -168,6 +208,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
   window.addEventListener("keydown", onUser, true)
 
   // The inputs this runtime was mounted with, and any property values applied since.
+  let draftWork: Promise<void> = Promise.resolve()
   let current: MountInputs | null = null
   // Values updates run one at a time, in arrival order, and only the newest is applied: an update that a newer
   // values message superseded is skipped, or its result ignored, so a slow handler never leaves stale props.
@@ -179,8 +220,10 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
     try {
       if (m.type === "mount") {
         current = m.inputs
+        if (m.inputs.direction && !handlers.applyCss) await ensureStylesheets(m.inputs.stylesheets ?? [], options.registeredStylesheets ?? [])
+        await handlers.applyCompiled?.(m.inputs.compiledData, m.inputs.direction)
         applyTokens(m.inputs.tokens)
-        applyCss(m.inputs.css ?? "", m.inputs.stylesheets ?? [])
+        await applyCss(m.inputs.css ?? "", m.inputs.stylesheets ?? [])
         const { appearance } = await handlers.mount(m.inputs)
         for (const id of m.inputs.commands) {
           if (!handlers.command) throw new Error(`This preview has no commands; cannot run "${id}"`)
@@ -190,6 +233,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
         post({
           type: "ready",
           requestId: m.requestId,
+          direction: m.inputs.direction,
           fingerprint: handlers.fingerprint ? await handlers.fingerprint(m.inputs) : fingerprint(m.inputs),
           diagnostics: await readDiagnostics(handlers, m.inputs),
           appearance,
@@ -256,17 +300,41 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
         const { language, text } = await handlers.code(current)
         post({ type: "code", requestId: m.requestId, language: String(language), text: String(text) })
       } else if (m.type === "draft-overrides") {
-        applyTokens(m.tokens)
-        applyCss(m.css ?? "", m.stylesheets ?? [])
-        await nextFrame()
-        post({ type: "reply", requestId: m.requestId, ok: true })
+        const apply = async () => {
+          const previous = current
+          try {
+            if (m.direction && !handlers.applyCss) await ensureStylesheets(m.stylesheets ?? [], options.registeredStylesheets ?? [])
+            await handlers.applyCompiled?.(m.compiledData, m.direction)
+            await applyCss(m.css ?? "", m.stylesheets ?? [])
+            applyTokens(m.tokens)
+            current = previous ? { ...previous, tokens: m.tokens, css: m.css, stylesheets: m.stylesheets, direction: m.direction, compiledData: m.compiledData } : null
+            await settle()
+            post({ type: "reply", requestId: m.requestId, ok: true })
+            if (m.direction && current) post({ type: "direction-state", requestId: m.requestId, direction: m.direction, fingerprint: handlers.fingerprint ? await handlers.fingerprint(current) : fingerprint(current) })
+          } catch (error) {
+            let restored = true
+            if (previous) {
+              try { await handlers.applyCompiled?.(previous.compiledData, previous.direction) } catch { restored = false }
+              try { await applyCss(previous.css ?? "", previous.stylesheets ?? []) } catch { restored = false }
+              try { applyTokens(previous.tokens) } catch { restored = false }
+              current = restored ? previous : null
+            }
+            if (!restored) throw Object.assign(new Error("Frame could not restore its previous compiled snapshot; Retry rematerializes it"), { frameUnavailable: true })
+            throw error
+          }
+
+        }
+        const work = draftWork.then(apply)
+        draftWork = work.catch(() => undefined)
+        await work
+
       }
     } catch (err) {
       post({
         type: "error",
         requestId: m.requestId,
         operation: m.type,
-        recoverable: true,
+        recoverable: !(err && typeof err === "object" && "frameUnavailable" in err),
         reason: err instanceof Error ? err.message : String(err),
       })
     }
@@ -311,7 +379,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
 
   post({
     type: "hello",
-    capabilities: ["draft-css", "content-size", ...syncCaps, ...(gestures ? (["stage-gestures"] as const) : []), ...(handlers.update ? (["live-values"] as const) : []), ...(handlers.code ? (["code"] as const) : [])],
+    capabilities: [...(handlers.applyCompiled ? ["compiled-data" as const] : []), ...(options.registeredStylesheets?.length ? ["registered-stylesheets" as const] : []), "direction-identity", "draft-css", "content-size", ...syncCaps, ...(gestures ? (["stage-gestures"] as const) : []), ...(handlers.update ? (["live-values"] as const) : []), ...(handlers.code ? (["code"] as const) : [])],
   })
 
   return {

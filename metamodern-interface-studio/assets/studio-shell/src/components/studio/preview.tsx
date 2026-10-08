@@ -88,9 +88,6 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   React.useLayoutEffect(() => {
     onStatusRef.current = onStatus
   })
-  React.useEffect(() => {
-    if (!live) onStatusRef.current?.(null)
-  }, [live])
 
   let empty: EmptyState | undefined
   if (!sc)
@@ -137,6 +134,17 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   // are part of the materialized product state and deliberately rebuild the isolated frame.
   // Present and every “as built” pane pass the shared NO_DRAFT sentinel. Input-backed
   // design experiments then stay out of those product states just like token drafts.
+  const shownDraft = adapter.design?.editor && draft === NO_DRAFT ? studio.savedDesignFor(theme) : draft
+  const unavailableDirection = !!adapter.design?.editor && live && !shownDraft.direction
+  React.useEffect(() => {
+    if (unavailableDirection) onStatusRef.current?.({ status: "error", modified: false, canGoBack: false, capabilities: [], anchors: [], reason: "This direction basis has no valid compiled output." })
+    else if (!live) onStatusRef.current?.(null)
+  }, [live, unavailableDirection])
+  if (unavailableDirection) empty = {
+    title: draft === NO_DRAFT ? "Source or saved direction is unavailable" : "Compiled direction is unavailable",
+    description: draft === NO_DRAFT ? "This basis has no valid compiled output. A working draft cannot substitute for the source or confirmed saved direction." : "No valid compiled output is available for this preview.",
+    tone: "danger",
+  }
   const design = draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)
   const mountKey = JSON.stringify([scenario, theme, profile, fixed, design, commands, resetNonce, retry])
   const frameKey = JSON.stringify([scenario, theme, profile, fixed, design, commands, resetNonce])
@@ -148,7 +156,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   }
 
   return (
-    <PreviewFrame w={w} h={h} scale={scale} profile={pr} appearance={status?.appearance ?? th.appearance} anchor={rect} empty={empty} loading={live && (!status || status.status === "loading")} label={label} className={className}>
+    <PreviewFrame w={w} h={h} scale={scale} profile={pr} appearance={status?.appearance ?? th.appearance} anchor={rect} empty={empty} loading={live && !unavailableDirection && (!status || status.status === "loading")} label={label} className={className}>
       {live ? (
         <LivePreview
           ref={ref}
@@ -165,7 +173,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
             commands,
           }}
           mountKey={mountKey}
-          draft={draft}
+          draft={shownDraft}
           sync={sync}
           w={w}
           h={h}
@@ -180,7 +188,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
       ) : capture ? (
         <CaptureImage capture={capture} />
       ) : null}
-      {live && status?.status === "ready" && (draft.css || draft.stylesheets.length > 0) && !status.capabilities.includes("draft-css") && (
+      {live && !unavailableDirection && status?.status === "ready" && (draft.css || draft.stylesheets.length > 0) && !status.capabilities.includes("draft-css") && (
         <Tooltip>
           <TooltipTrigger render={<Badge variant="secondary" className="absolute bottom-3 left-3 gap-1.5 text-warning shadow-sm" />}>
             <TriangleAlertIcon /> Fonts did not apply
@@ -188,7 +196,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
           <TooltipContent>This preview's frame client predates draft CSS. Update the Studio so its preview entry picks up the new frame client.</TooltipContent>
         </Tooltip>
       )}
-      {live && status?.previous && (
+      {live && !unavailableDirection && status?.previous && (
         <Tooltip>
           <TooltipTrigger render={<Badge variant="secondary" className="absolute top-3 left-3 gap-1.5 text-warning shadow-sm" />}>
             <TriangleAlertIcon /> Showing previous settings

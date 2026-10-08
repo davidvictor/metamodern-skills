@@ -1,0 +1,232 @@
+{
+  "schema": "independent-editor-browser-raw-input/1",
+  "freeze": {
+    "vite": {
+      "digest": "51ac30449095ddb602b5d4c803280930402f00294417619fde363b1704964d16",
+      "count": 153,
+      "mismatches": []
+    },
+    "next": {
+      "digest": "f7145e2417ec6974d7f4046742f85eb467eba4e8149cc07048c7a4d8ad61608d",
+      "count": 161,
+      "mismatches": []
+    }
+  },
+  "scope": "Two raw-input case families in Vite/Next and Chromium/WebKit at1440x1000; no prior matrix or journey replay",
+  "results": [
+    {
+      "engine": "chromium",
+      "host": "vite",
+      "pass": true,
+      "pageErrors": [],
+      "actions": [
+        "Scale999 Enter",
+        "Scale Escape",
+        "radius999 Enter",
+        "radius reopen",
+        "radius Escape",
+        "radius explicit inherited reset"
+      ],
+      "observedFields": [
+        {
+          "action": "Scale999 Enter",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "Scale Escape",
+          "value": "1",
+          "ariaInvalid": "false"
+        },
+        {
+          "action": "radius999 Enter",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "radius reopen",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "radius Escape",
+          "value": "8",
+          "ariaInvalid": "false"
+        },
+        {
+          "action": "radius explicit inherited reset",
+          "value": "8",
+          "ariaInvalid": "false"
+        }
+      ],
+      "servedCount": 345
+    },
+    {
+      "engine": "chromium",
+      "host": "next",
+      "pass": true,
+      "pageErrors": [],
+      "actions": [
+        "Scale999 Enter",
+        "Scale Escape",
+        "radius999 Enter",
+        "radius reopen",
+        "radius Escape",
+        "radius explicit inherited reset"
+      ],
+      "observedFields": [
+        {
+          "action": "Scale999 Enter",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "Scale Escape",
+          "value": "1",
+          "ariaInvalid": "false"
+        },
+        {
+          "action": "radius999 Enter",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "radius reopen",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "radius Escape",
+          "value": "8",
+          "ariaInvalid": "false"
+        },
+        {
+          "action": "radius explicit inherited reset",
+          "value": "8",
+          "ariaInvalid": "false"
+        }
+      ],
+      "servedCount": 145
+    },
+    {
+      "engine": "webkit",
+      "host": "vite",
+      "pass": true,
+      "pageErrors": [],
+      "actions": [
+        "Scale999 Enter",
+        "Scale Escape",
+        "radius999 Enter",
+        "radius reopen",
+        "radius Escape",
+        "radius explicit inherited reset"
+      ],
+      "observedFields": [
+        {
+          "action": "Scale999 Enter",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "Scale Escape",
+          "value": "1",
+          "ariaInvalid": "false"
+        },
+        {
+          "action": "radius999 Enter",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "radius reopen",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "radius Escape",
+          "value": "8",
+          "ariaInvalid": "false"
+        },
+        {
+          "action": "radius explicit inherited reset",
+          "value": "8",
+          "ariaInvalid": "false"
+        }
+      ],
+      "servedCount": 289
+    },
+    {
+      "engine": "webkit",
+      "host": "next",
+      "pass": true,
+      "pageErrors": [],
+      "actions": [
+        "Scale999 Enter",
+        "Scale Escape",
+        "radius999 Enter",
+        "radius reopen",
+        "radius Escape",
+        "radius explicit inherited reset"
+      ],
+      "observedFields": [
+        {
+          "action": "Scale999 Enter",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "Scale Escape",
+          "value": "1",
+          "ariaInvalid": "false"
+        },
+        {
+          "action": "radius999 Enter",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "radius reopen",
+          "value": "999",
+          "ariaInvalid": "true"
+        },
+        {
+          "action": "radius Escape",
+          "value": "8",
+          "ariaInvalid": "false"
+        },
+        {
+          "action": "radius explicit inherited reset",
+          "value": "8",
+          "ariaInvalid": "false"
+        }
+      ],
+      "servedCount": 130
+    }
+  ],
+  "screenshots": {
+    "chromium-next-raw-radius-reset.png": "9add9a828c8dae4d4cc2a19049d97bd7544451700e0c61bf00c78836aa2ac5fc",
+    "chromium-vite-raw-scale-invalid.png": "ef67b8f75114a40129c4b6ff68af25ccff99ceff91674abdd38f1ab23a2abd2d",
+    "chromium-vite-raw-scale-cleared.png": "72eb9b9ed2dfd558b6f1008c43b20f2d1b16a5639d4e5534e18524cfc4373193",
+    "chromium-next-raw-scale-invalid.png": "ef67b8f75114a40129c4b6ff68af25ccff99ceff91674abdd38f1ab23a2abd2d",
+    "webkit-vite-raw-radius-reset.png": "946912470c4989092f2cd6110176f0b3314a96e8378eead4252ee078e13c866a",
+    "chromium-next-raw-scale-cleared.png": "72eb9b9ed2dfd558b6f1008c43b20f2d1b16a5639d4e5534e18524cfc4373193",
+    "webkit-next-raw-scale-invalid.png": "afad4bc2b4907955b52506c806f5ef9b75b7135add52ab2c89f673b69c100ec1",
+    "chromium-vite-raw-radius-reopened.png": "62b13575c173d85b655af2e93545cfe051f37ccf8b9e94027f37b7b14e3eb63e",
+    "webkit-next-raw-scale-cleared.png": "9427c3bc100850aa429f8a0edbcab470d36e5e074a0fc4ae77ce89a2a58f57cb",
+    "webkit-next-raw-radius-reset.png": "946912470c4989092f2cd6110176f0b3314a96e8378eead4252ee078e13c866a",
+    "chromium-next-raw-radius-reopened.png": "5769ebe2d842323477c150233c849593af7a543ea9f95f559707e3a65aa1683b",
+    "webkit-vite-raw-scale-invalid.png": "afad4bc2b4907955b52506c806f5ef9b75b7135add52ab2c89f673b69c100ec1",
+    "webkit-vite-raw-scale-cleared.png": "9427c3bc100850aa429f8a0edbcab470d36e5e074a0fc4ae77ce89a2a58f57cb",
+    "webkit-next-raw-radius-reopened.png": "436a31a21e84e92caa2a1816110e2cb1dc98dd52dde194f7d74a95dcdfb82321",
+    "chromium-vite-raw-radius-reset.png": "9add9a828c8dae4d4cc2a19049d97bd7544451700e0c61bf00c78836aa2ac5fc",
+    "webkit-vite-raw-radius-reopened.png": "436a31a21e84e92caa2a1816110e2cb1dc98dd52dde194f7d74a95dcdfb82321"
+  },
+  "proxy": {
+    "owned": "4192 forwarding4190",
+    "preserves": "bytes/status/MIME/headers",
+    "cleanup": "Closed own PID35721; task-owned exec session exited143"
+  },
+  "implementation": "No repository source edits",
+  "delivery": "No commit/publication/deployment",
+  "acceptance": "Scoped raw-input correction browser proof passed; integrated source review and root acceptance separate"
+}

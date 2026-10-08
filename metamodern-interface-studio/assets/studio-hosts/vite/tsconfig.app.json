@@ -24,6 +24,7 @@
     "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@studio/design-ui": ["./src/studio/design-ui/api.ts"],
       "@studio/kit": ["./src/kit/index.ts"],
       "@studio/workspace": ["./src/studio/workspace/api.ts"],
       "@studio/library": ["./src/studio/library/api.ts"]

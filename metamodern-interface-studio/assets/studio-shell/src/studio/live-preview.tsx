@@ -1,3 +1,6 @@
+import { useOptionalDesignEditor } from "./design-ui/react"
+import type { JsonValue } from "./design-runtime"
+import type { DesignPreviewIdentity } from "./design-ui/types"
 /*
  * The preview host: one isolated frame per runtime, driven only through
  * studio-preview/1. Changing inputs mounts a new frame behind the current one
@@ -13,6 +16,7 @@ import { PROTOCOL, isFrameMessage, type AnchorRect, type FrameCapability, type F
 export const READY_TIMEOUT_MS = 20000
 
 export type LiveStatus = {
+  direction?: DesignPreviewIdentity
   status: "loading" | "ready" | "error"
   /** A person changed product state in this runtime. Clicks that change nothing do not count. */
   modified: boolean
@@ -59,15 +63,19 @@ type Runtime = {
 }
 /** The draft a preview shows: token values, CSS rules and font stylesheets. */
 export type PreviewDraft = {
+  compiledData?: JsonValue
+  direction?: DesignPreviewIdentity
   tokens: Record<string, string>
   css: string
   stylesheets: string[]
 }
-const draftKey = (d: { tokens: Record<string, string>; css?: string; stylesheets?: string[] }) =>
+const draftKey = (d: { tokens: Record<string, string>; css?: string; stylesheets?: string[]; compiledData?: JsonValue; direction?: DesignPreviewIdentity }) =>
   JSON.stringify({
     tokens: d.tokens,
     css: d.css ?? "",
     stylesheets: d.stylesheets ?? [],
+    ...(d.compiledData !== undefined ? { compiledData: d.compiledData } : {}),
+    ...(d.direction ? { direction: d.direction } : {}),
   })
 
 let seq = 0
@@ -95,6 +103,18 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   const [runtimes, setRuntimes] = React.useState<Runtime[]>([])
   const frames = React.useRef(new Map<string, HTMLIFrameElement>())
   const gesture = React.useContext(StageGestureContext)
+  const editor = useOptionalDesignEditor()
+  const previewOwner = React.useId()
+  const previewChannel = draft.direction?.channel
+  React.useEffect(() => {
+    if (!previewChannel) return
+    const controller = editor?.controller
+    controller?.registerPreview(previewOwner, inputs.theme, previewChannel)
+    return () => controller?.unregisterPreview(previewOwner)
+  }, [editor?.controller, previewOwner, inputs.theme, previewChannel])
+  const draftRequests = React.useRef(new Map<string, { instance: string; direction?: DesignPreviewIdentity }>())
+  const latestDraft = React.useRef(new Map<string, string>())
+  const draftError = React.useRef<string | undefined>(undefined)
   const latest = React.useRef({ draft, onStatus, inputs, sync, gesture })
   latest.current = { draft, onStatus, inputs, sync, gesture }
   const replies = React.useRef(new Map<string, (r: { ok: boolean; reason?: string }) => void>())
@@ -153,6 +173,12 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       const rt = runtimesRef.current.find((r) => r.instance === m.instance)
       if (!rt) return
       if (m.type === "hello") {
+        if (rt.inputs.compiledData !== undefined && !m.capabilities?.includes("compiled-data")) {
+          const reason = "This frame does not support the compiled-data capability"
+          failure.current = { instance: rt.instance, reason }
+          if (rt.inputs.direction) editor?.controller?.reportPreviewFailure(rt.inputs.direction, reason)
+          update(rt.instance, () => ({ phase: "error" })); return
+        }
         update(rt.instance, () => ({ capabilities: m.capabilities ?? [] }))
         post(rt.instance, {
           type: "mount",
@@ -161,6 +187,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
         })
       } else if (m.type === "ready") {
         if (m.requestId !== rt.requestId) return // a late answer to an older request
+        if (m.direction && JSON.stringify(m.direction) === JSON.stringify(rt.inputs.direction)) editor?.controller?.confirmPreview(previewOwner, m.direction)
         // Product code that focuses a field during mount must not take the keyboard from the Studio.
         if (document.activeElement === el) el.blur()
         // The new runtime is on screen: dispose every older one.
@@ -168,7 +195,24 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
           const at = list.findIndex((r) => r.instance === rt.instance)
           return list.slice(at).map((r) => (r.instance === rt.instance ? { ...r, phase: "ready", ready: m } : r))
         })
+      } else if (m.type === "direction-state") {
+        const expected = latest.current.draft.direction
+        if (latestDraft.current.get(rt.instance) !== m.requestId || !expected || JSON.stringify(m.direction) !== JSON.stringify(expected) || !rt.ready) return
+        editor?.controller?.confirmPreview(previewOwner, m.direction)
+        update(rt.instance, () => ({ ready: { ...rt.ready!, direction: m.direction, fingerprint: m.fingerprint } }))
       } else if (m.type === "code") answers.current.get(m.requestId)?.(m)
+      else if ((m.type === "error" || m.type === "reply") && m.requestId && draftRequests.current.has(m.requestId)) {
+        const request = draftRequests.current.get(m.requestId)!
+        draftRequests.current.delete(m.requestId)
+        if (latestDraft.current.get(rt.instance) !== m.requestId) return
+        if (m.type === "error" || !m.ok) {
+          const reason = m.type === "error" ? m.reason : m.reason ?? "Compiled draft was rejected"
+          draftError.current = reason
+          if (request.direction) editor?.controller?.reportPreviewFailure(request.direction, reason)
+          if (m.type === "error" && !m.recoverable) { failure.current = { instance: rt.instance, reason }; update(rt.instance, () => ({ phase: "error", ready: undefined })) }
+          else update(rt.instance, () => ({}))
+        } else { draftError.current = undefined; update(rt.instance, () => ({})) }
+      }
       else if (m.type === "error" && m.requestId && (answers.current.has(m.requestId) || valueRequests.current.has(m.requestId))) {
         answers.current.get(m.requestId)?.(null)
         // Values the runtime on screen could not apply in place are mounted instead; an older runtime's answer changes nothing.
@@ -176,6 +220,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
         if (valueRequests.current.delete(m.requestId) && rt === onScreen) setRemount((n) => n + 1)
       } else if (m.type === "error" && (!m.requestId || m.requestId === rt.requestId) && rt.phase === "loading") {
         failure.current = { instance: rt.instance, reason: m.reason }
+        if (rt.inputs.direction) editor?.controller?.reportPreviewFailure(rt.inputs.direction, m.reason)
         update(rt.instance, () => ({ phase: "error" }))
       } else if (m.type === "modified") update(rt.instance, () => ({ modified: true }))
       else if (m.type === "content-size") update(rt.instance, () => ({ contentHeight: m.height }))
@@ -225,7 +270,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
     }
     window.addEventListener("message", onMessage)
     return () => window.removeEventListener("message", onMessage)
-  }, [expectedOrigin, post])
+  }, [expectedOrigin, post, editor?.controller, previewOwner])
 
   const current = [...runtimes].reverse().find((r) => r.phase === "ready")
   const newest = runtimes[runtimes.length - 1]
@@ -240,9 +285,13 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
     const last = sent.current.get(current.instance) ?? draftKey(current.inputs)
     if (last === key) return
     sent.current.set(current.instance, key)
+    const requestId = uid("draft")
+    draftRequests.current.set(requestId, { instance: current.instance, direction: latest.current.draft.direction })
+    latestDraft.current.set(current.instance, requestId)
+    draftError.current = undefined
     post(current.instance, {
       type: "draft-overrides",
-      requestId: uid("draft"),
+      requestId,
       ...(JSON.parse(key) as PreviewDraft),
     })
   }, [key, current, post])
@@ -325,24 +374,27 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
     [current, post]
   )
 
+  const directionKey = draft.direction ? JSON.stringify(draft.direction) : ""
   const status: LiveStatus = React.useMemo(() => {
+    const applying = !!directionKey && directionKey !== JSON.stringify(current?.ready?.direction)
     const failed = newest?.phase === "error"
-    const reason = failed && failure.current?.instance === newest.instance ? failure.current.reason : undefined
+    const reason = draftError.current ?? (failed && failure.current?.instance === newest.instance ? failure.current.reason : undefined)
     return {
-      status: newest?.phase ?? "loading",
+      status: draftError.current ? "error" : applying && current ? "loading" : newest?.phase ?? "loading",
       modified: current?.modified ?? false,
       canGoBack: current?.ready?.canGoBack ?? false,
       location: current?.ready?.location,
       fingerprint: current?.ready?.fingerprint,
+      direction: current?.ready?.direction,
       appearance: current?.ready?.appearance,
       reason,
-      previous: failed && !!current,
+      previous: (failed || applying || !!draftError.current) && !!current,
       anchors: current?.ready?.anchors ?? [],
       diagnostics: current?.ready?.diagnostics,
       capabilities: current?.capabilities ?? newest?.capabilities ?? [],
       contentHeight: current?.contentHeight,
     }
-  }, [newest, current])
+  }, [newest, current, directionKey])
   const statusKey = JSON.stringify(status)
   React.useEffect(() => latest.current.onStatus?.(JSON.parse(statusKey)), [statusKey])
 

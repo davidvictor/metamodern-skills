@@ -1,3 +1,5 @@
+import { DesignEditorProvider, useOptionalDesignEditor, useDesignSnapshot } from "@/studio/design-ui/react"
+import { EditorReason, DesignEditorStatus } from "@/studio/design-ui/slots"
 import * as React from "react"
 import { ListTreeIcon, InfoIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -87,6 +89,10 @@ function usePresentFocus() {
 
 function StageForView({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
+  const editor = useOptionalDesignEditor()
+  const direction = useDesignSnapshot()
+  if (editor && (!direction || !Object.keys(direction.compiled).length)) return <EditorReason />
+  if (editor && s.view === "present" && !Object.keys(direction?.savedCompiled ?? {}).length) return <p role="alert" className="p-4 text-sm text-muted-foreground">No validated source or confirmed saved basis is available for Present.</p>
   return (
     <div key={s.library ? "library" : s.module ? "module" : s.view} className="flex min-h-0 min-w-0 flex-1 animate-in fade-in-0 duration-200">
       {s.library ? (
@@ -168,7 +174,7 @@ function DesktopShell() {
         <SidebarRail aria-label={s.panelOpen ? "Hide panel" : "Show panel"} title={s.panelOpen ? "Hide panel (⌘B)" : "Show panel (⌘B)"} className="after:transition-colors hover:after:bg-sidebar-primary/60" />
       </Sidebar>
       <SidebarInset className="min-w-0 overflow-hidden">
-        <TopBar />
+        <TopBar /><DesignEditorStatus compact />
         <div className="relative flex min-h-0 flex-1">
           <StageForView />
           <Details />
@@ -194,7 +200,7 @@ function MobileShell() {
   const tabs = VIEWS
   return (
     <SidebarProvider className="h-svh flex-col" open={false}>
-      <TopBar mobile />
+      <TopBar mobile /><DesignEditorStatus compact />
       <div className="relative flex min-h-0 flex-1 flex-col">
         <StageForView narrow />
       </div>
@@ -272,9 +278,9 @@ function Shell() {
 
 export function App() {
   return (
-    <StudioProvider>
+    <DesignEditorProvider><StudioProvider>
       <Shell />
-    </StudioProvider>
+    </StudioProvider></DesignEditorProvider>
   )
 }
 

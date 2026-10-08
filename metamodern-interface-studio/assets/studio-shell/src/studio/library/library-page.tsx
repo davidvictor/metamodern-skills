@@ -1,3 +1,4 @@
+import { ComponentSlot } from "@/studio/design-ui/slots"
 /*
  * The component library's pages, loaded only when the library opens: one documentation column on the Studio surface,
  * the components grouped with search in the context panel, and On this page, the playground and the preview theme in
@@ -521,6 +522,7 @@ function LibraryDetails({ onClose }: { onClose?: () => void }) {
         )}
       </div>
       <div data-kit className="grid min-h-0 flex-1 content-start gap-8 overflow-y-auto p-4">
+        <ComponentSlot component={c.id} />
         <PartBoundary key={`outline/${c.id}`} name="outline">
           <nav aria-label="On this page">
             <ul className="grid">

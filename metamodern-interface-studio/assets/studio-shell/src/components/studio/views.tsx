@@ -1,3 +1,4 @@
+import { CompiledInspector } from "@/studio/design-ui/slots"
 import * as React from "react"
 import {
   ArrowLeftRightIcon,
@@ -873,7 +874,8 @@ const TOKEN_ROW = 56
 /** Families larger than this start folded, so a huge token set opens as a short list of families. */
 const FOLD_OVER = 60
 
-export function TokensStage() {
+export function TokensStage() { return adapter.design?.editor ? <CompiledInspector /> : <LegacyTokensStage /> }
+function LegacyTokensStage() {
   const s = useStudio()
   const t = adapter.tokens!
   const q = s.tokens.query.toLowerCase()

@@ -1,3 +1,5 @@
+import { useOptionalDesignEditor, useDesignSnapshot } from "@/studio/design-ui/react"
+import type { DesignPreviewIdentity } from "@/studio/design-ui/types"
 import { host } from "@/studio-host"
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
@@ -17,7 +19,7 @@ import { moduleHash, parseModuleLink } from "@/studio/workspace/link"
 import { parseLibraryLink } from "@/studio/library/link"
 
 /** One draft layer, as a preview receives it. */
-export type Draft = { tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>> }
+export type Draft = { compiledData?: import("@/studio/design-runtime").JsonValue; direction?: DesignPreviewIdentity; tokens: Record<string, string>; css: string; stylesheets: string[]; scoped?: Record<string, Record<string, string>> }
 export const NO_DRAFT: Draft = { tokens: {}, css: "", stylesheets: [] }
 
 export type View = "inspect" | "compare" | "responsive" | "gallery" | "present" | "design"
@@ -120,10 +122,10 @@ const bundledScenarios = host.scenarios as ScenariosFile | undefined
 const bundledSaved = hasProperties ? joinSaved(bundledScenarios?.scenarios) : []
 export const canSaveScenarios = host.canSave
 /** Design shows the Adjust tab when the adapter declares parameters and the Tokens tab when it has a token source. */
-export const hasAdjust = !!A.design?.parameters.length
-export const hasDesign = hasAdjust || !!A.tokens
+export const hasAdjust = !!A.design?.parameters.length || !!A.design?.editor?.slots?.includes("foundation")
+export const hasDesign = hasAdjust || !!A.tokens || !!A.design?.editor
 /** The Design tab that shows: the chosen one when both exist, else the only one. */
-export const designTab = (tab: "adjust" | "tokens") => (!A.tokens ? "adjust" : !hasAdjust ? "tokens" : tab)
+export const designTab = (tab: "adjust" | "tokens") => (!A.tokens && !A.design?.editor ? "adjust" : !hasAdjust ? "tokens" : tab)
 const firstScenario = A.scenarios.find((x) => x.status !== "later") ?? A.scenarios[0]
 const hasCaptures = A.scenarios.some((x) => Object.keys(x.captures ?? {}).length > 0)
 
@@ -174,7 +176,7 @@ function readHash(stored: Record<string, Edits>): Partial<State> {
   const view = q.get("view")
   if (view && VIEWS.includes(view as View)) out.view = view as View
   // The Design view grew out of Tokens; old links land on its Tokens tab.
-  if (view === "tokens" && A.tokens) out.view = "design"
+  if (view === "tokens" && (A.tokens || A.design?.editor)) out.view = "design"
   const tab = view === "tokens" ? "tokens" : q.get("tab")
   const values = decodeDesign(A, q.get("design"))
   if (tab === "adjust" || tab === "tokens" || Object.keys(values).length) {
@@ -378,6 +380,7 @@ type Ctx = State & {
   designFor: (theme: string) => DesignDraft
   /** The one draft layer sent to a preview: Adjust's values with hand-edited tokens winning, plus draft CSS and font stylesheets. */
   draftFor: (theme: string) => Draft
+  savedDesignFor: (theme: string) => Draft
   /** Whether any draft exists, from Adjust or from Tokens. */
   hasDraft: boolean
   /** The draft for Inspect, Gallery and Compare: only when the viewer turned on draft everywhere. */
@@ -418,6 +421,12 @@ function handDrafts(drafts: Record<string, Record<string, string>>, theme: strin
 }
 
 export function StudioProvider({ children }: { children: React.ReactNode }) {
+  const editor = useOptionalDesignEditor()
+  useDesignSnapshot()
+  const projection = (theme: string, basis: "saved" | "draft"): Draft => {
+    const projected = editor?.controller?.preview(theme, basis)
+    return projected?.output ? { tokens: projected.output.tokens, css: projected.output.css, stylesheets: projected.output.stylesheets, scoped: projected.output.scoped, compiledData: projected.output.data, direction: projected.identity } : NO_DRAFT
+  }
   const [state, setState] = React.useState<State>(() => {
     const options = readJSON<Partial<Options>>(OPTIONS_KEY)
     const drafts = readJSON<State["tokens"]["drafts"]>(DRAFTS_KEY)
@@ -511,7 +520,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       for (const [k, v] of params) q.set(k, v)
       if (local) q.set("edited", "local")
     }
-    if (state.view === "design" && hasAdjust && A.tokens) q.set("tab", state.design.tab)
+    if (state.view === "design" && hasAdjust && (A.tokens || A.design?.editor)) q.set("tab", state.design.tab)
     if (state.view === "responsive") {
       const r = state.responsive
       q.set("layout", r.layout)
@@ -612,12 +621,15 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     updatePresenter: (tourId, patch) => set((s) => ({ presenter: updateOverlay(s.presenter, tourId, patch) })),
     draftsFor: (theme) => handDrafts(state.tokens.drafts, theme),
     designFor: (theme) => designDraft(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme), theme),
+    savedDesignFor: (theme) => editor ? projection(theme, "saved") : NO_DRAFT,
     draftFor: (theme) => {
+      if (editor) return projection(theme, "draft")
       const d = designDraft(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme), theme)
       return { tokens: { ...d.tokens, ...handDrafts(state.tokens.drafts, theme) }, css: d.css, stylesheets: d.stylesheets, scoped: d.scoped }
     },
-    hasDraft: Object.keys(state.tokens.drafts).length > 0 || A.axes.themes.some((theme) => !!encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme.id), theme.id)),
+    hasDraft: editor ? !!editor.controller?.getSnapshot().dirty : Object.keys(state.tokens.drafts).length > 0 || A.axes.themes.some((theme) => !!encodeDesign(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme.id), theme.id)),
     viewDraft: (theme) => {
+      if (editor) return projection(theme, state.view === "present" ? "saved" : "draft")
       if (!state.options.draftEverywhere) return NO_DRAFT
       // A shared value can be a change in another theme yet as built in this one; only this theme's changes count here.
       const d = designDraft(A, valuesForTheme(A, state.design.values, state.design.valuesByTheme, theme), theme)

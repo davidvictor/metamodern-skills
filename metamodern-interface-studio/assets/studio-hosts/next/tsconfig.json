@@ -36,6 +36,7 @@
       "@/adapter": [
         "./src/adapter.ts"
       ],
+      "@studio/design-ui": ["./src/studio/design-ui/api.ts"],
       "@studio/kit": [
         "./src/kit/index.ts"
       ],

@@ -1,3 +1,5 @@
+import { useDesignSnapshot } from "@/studio/design-ui/react"
+import { FoundationSlot } from "@/studio/design-ui/slots"
 /*
  * The Design view's Adjust tab: parameters in the context panel, and a stage
  * that shows the product as built, the draft, or both. The draft is
@@ -235,7 +237,8 @@ function ShareDraft() {
 }
 
 /** Adjust: the parameters, then what the current values change and what to watch. */
-export function AdjustPanel() {
+export function AdjustPanel() { return adapter.design?.editor ? <FoundationSlot /> : <LegacyAdjustPanel /> }
+function LegacyAdjustPanel() {
   const s = useStudio()
   const d = s.designFor(s.theme)
   const changed = params(s.theme).some((p) => !isDefault(p, currentDesignValues(s)[p.id], parameterDefault(adapter, p, s.theme)))
@@ -401,6 +404,8 @@ function Specimen() {
 /** Adjust's stage: the product as built, the draft, or both side by side, at one scale. */
 export function DesignStage({ narrow }: { narrow?: boolean }) {
   const s = useStudio()
+  const direction = useDesignSnapshot()
+  const basisLabel = adapter.design?.editor ? direction?.savedRevision ? "Saved basis" : "Source baseline" : "As built"
   const [peek, setPeek] = React.useState(false)
   const report = useReportStatus()
   const show = narrow && s.design.show === "split" ? "draft" : s.design.show
@@ -420,9 +425,9 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
     onKeyUp: () => setPeek(false),
     onBlur: () => setPeek(false),
   }
-  const one = (kind: "draft" | "built") => (
+  const one = (kind: "draft" | "built") => adapter.design?.editor && (kind === "built" || peek) && !s.savedDesignFor(s.theme).direction ? <p role="alert" className="text-sm text-stage-muted">No validated source or confirmed saved basis is available.</p> : (
     <div className="relative flex flex-col items-center gap-2">
-      {kind === "draft" && s.hasDraft && !peek ? <StatusBadge kind="draft">Draft design</StatusBadge> : <span className="text-xs font-medium text-stage-muted">As built</span>}
+      {kind === "draft" && s.hasDraft && !peek ? <StatusBadge kind="draft">Draft design</StatusBadge> : <span className="text-xs font-medium text-stage-muted">{basisLabel}</span>}
       <ScenarioPreview
         scenario={s.scenario}
         theme={s.theme}
@@ -430,7 +435,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
         values={s.values}
         draft={kind === "draft" && !peek ? draft : NO_DRAFT}
         scale={scale}
-        label={kind === "draft" ? "Draft design preview" : "As built preview"}
+        label={adapter.design?.editor ? kind === "draft" && s.hasDraft && !peek ? "Draft design preview" : `${basisLabel} preview` : kind === "draft" ? "Draft design preview" : "As built preview"}
         onStatus={kind === show || (show === "split" && kind === "draft") ? report : undefined}
       />
     </div>
@@ -441,7 +446,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
         <div className="flex flex-wrap items-center justify-center gap-1.5 p-3">
           <ToggleGroup value={[show]} onValueChange={(v) => v[0] && s.setDesign({ show: v[0] as typeof s.design.show })} size="sm" spacing={0} variant="outline" className="bg-background" aria-label="Show">
             <ToggleGroupItem value="built" className="h-7 px-2.5 text-xs">
-              As built
+              {basisLabel}
             </ToggleGroupItem>
             <ToggleGroupItem value="draft" className="h-7 px-2.5 text-xs">
               Draft
@@ -472,7 +477,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
               {!narrow && <Specimen />}
             </div>
             <ScaleChip w={pr.w} h={pr.h} scale={scale} />
-            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">A draft is exploration. It shows here only, travels in the link, and never changes the product or a walkthrough.</p>
+            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">{adapter.design?.editor ? "Working changes preview in the review views. Present uses the confirmed saved or source basis. Direction payloads stay out of links; this editor does not implement persistence." : "A draft is exploration. It shows here only, travels in the link, and never changes the product or a walkthrough."}</p>
           </div>
         </div>
       </StageNav>
