@@ -1,3 +1,4 @@
+import { liveAppearanceIds, staleDesignEnums } from "./studio/appearance"
 import { validDirectionId, validDirectionPin, validDirectionRevision } from "@/studio/directions"
 import { useOptionalDesignEditor, useDesignSnapshot, useDirectionSnapshot } from "@/studio/design-ui/react"
 import type { DesignPreviewIdentity } from "@/studio/design-ui/types"
@@ -43,6 +44,7 @@ export type State = {
   props: Record<string, Edits>
   /** The scenario whose link said the sender had local text edits this browser does not hold. */
   propsNote: string | null
+  designNotice: string | null
   /** The scenario a link set edits for, with what this browser had stored for it: kept in storage until the person edits it here. */
   propsHold: LinkHold | null
   /** Saved states from scenarios.json (studio-scenarios/1). */
@@ -183,6 +185,9 @@ function readHash(stored: Record<string, Edits>): Partial<State> {
   // The Design view grew out of Tokens; old links land on its Tokens tab.
   if (view === "tokens" && (A.tokens || A.design?.editor)) out.view = "design"
   const tab = view === "tokens" ? "tokens" : q.get("tab")
+  const rawDesign = Object.fromEntries((q.get("design") ?? "").split(";").filter(part => part.includes(":")).map(part => [part.slice(0, part.indexOf(":")), part.slice(part.indexOf(":") + 1)]))
+  const stale = staleDesignEnums(A, rawDesign)
+  if (stale.length) out.designNotice = `${stale.join(", ")}: unavailable saved appearance; restored the product default.`
   const values = decodeDesign(A, q.get("design"))
   if (tab === "adjust" || tab === "tokens" || Object.keys(values).length) {
     const linkedTheme = q.get("theme") ?? A.axes.themes[0]?.id ?? ""
@@ -286,7 +291,7 @@ export function resolveValues(sc: Scenario | undefined, values: Record<string, I
   return out
 }
 /** The same values with the viewer's dock choices removed, for playing a walkthrough exactly as designed. */
-export const withoutLenses = (values: Record<string, InputValue>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock"))
+export const withoutLenses = (values: Record<string, InputValue>) => Object.fromEntries(Object.entries(values).filter(([k]) => A.axes.inputs.find((i) => i.id === k)?.placement !== "dock" || liveAppearanceIds(A).includes(k)))
 /**
  * The axes Compare can change for a scenario: theme, profile, every input it uses with named values, then its
  * properties with named values (a switch, options, or a number with presets; text never).
@@ -326,6 +331,7 @@ const initial: State = {
   values: defaultValues(),
   props: {},
   propsNote: null,
+  designNotice: null,
   propsHold: null,
   savedStates: bundledSaved,
   zoom: "fit",
@@ -457,6 +463,8 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
     // Saved values pass the same validation as a link, but every value is kept: shared values serve
     // every theme, so one that equals a parameter's plain default can still differ from a theme's.
     const cleanDesign = (raw: unknown) => raw && typeof raw === "object" && !Array.isArray(raw) ? decodeDesign(A, Object.entries(raw).map(([id, v]) => `${id}:${v}`).join(";")) : {}
+    const stale = savedDesign?.version === 1 ? [...new Set([...staleDesignEnums(A, savedDesign.values), ...Object.values(savedDesign.valuesByTheme ?? {}).flatMap(value => staleDesignEnums(A, value))])] : []
+    const designNotice = fromLink.designNotice ?? (stale.length ? `${stale.join(", ")}: unavailable saved appearance; restored the product default.` : null)
     const valuesByTheme = savedDesign?.version === 1 && savedDesign.valuesByTheme && typeof savedDesign.valuesByTheme === "object" && !Array.isArray(savedDesign.valuesByTheme)
       ? Object.fromEntries(Object.entries(savedDesign.valuesByTheme).map(([id, values]) => [id, cleanDesign(values)])) : {}
     const design = { ...initial.design, ...(fromLink.design ?? {}),
@@ -467,7 +475,7 @@ export function StudioProvider({ children }: { children: React.ReactNode }) {
       speed: presentationPrefs?.speed && [0.75, 1, 1.4].includes(presentationPrefs.speed) ? presentationPrefs.speed : initial.present.speed,
       focus: presentationPrefs?.focus === true,
     }
-    return { ...initial, ...fromLink, props: fromLink.props ?? storedProps, present, design, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} }, presenter: isPresenterOverlay(presenter) ? presenter : initial.presenter }
+    return { ...initial, ...fromLink, props: fromLink.props ?? storedProps, present, design, designNotice, responsive, options: { ...initial.options, ...options, railLabels: railLabels ?? initial.options.railLabels }, tokens: { ...initial.tokens, drafts: drafts ?? {} }, presenter: isPresenterOverlay(presenter) ? presenter : initial.presenter }
   })
   // The state as last rendered, to tell whether a change leaves an open workspace module.
   const current = React.useRef(state)

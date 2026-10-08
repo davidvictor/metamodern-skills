@@ -1,10 +1,11 @@
 import * as React from "react"
-import { TriangleAlertIcon } from "lucide-react"
+import { TriangleAlertIcon } from "@/icons"
 
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { adapter } from "@/adapter"
 import { captureFor, NO_DRAFT, propertyIds, resolveValues, useStudio, type Draft } from "@/store"
+import { appearanceKey, liveAppearanceIds, withoutAppearance } from "@/studio/appearance"
 import { frameDesignValues, valuesForTheme } from "@/studio/design"
 import { LivePreview, type LivePreviewHandle, type LiveStatus, type PreviewSync } from "@/studio/live-preview"
 import type { Edits } from "@/studio/properties"
@@ -129,7 +130,9 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
   // The frame receives resolved values: the viewer's choice, else what the scenario was designed with, else the default.
   const resolved = sc ? resolveValues(sc, values, props) : values
   // Properties change the runtime on screen; every other input mounts a new one.
-  const fixed = Object.fromEntries(Object.entries(resolved).filter(([id]) => !propertyIds.has(id)))
+  const appearanceIds = liveAppearanceIds(adapter)
+  // LivePreview negotiates support: older clients still remount on declared appearance changes.
+  const fixed = withoutAppearance(Object.fromEntries(Object.entries(resolved).filter(([id]) => !propertyIds.has(id))), appearanceIds)
   // Token-only design adjustments use the draft channel. Controls declared with `apply.input`
   // are part of the materialized product state and deliberately rebuild the isolated frame.
   // Present and every “as built” pane pass the shared NO_DRAFT sentinel. Input-backed
@@ -147,8 +150,8 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
     tone: "danger",
   }
   const design = draft === NO_DRAFT ? {} : frameDesignValues(adapter, valuesForTheme(adapter, studio.design.values, studio.design.valuesByTheme, theme), theme)
-  const mountKey = JSON.stringify([scenario, theme, profile, fixed, design, commands, resetNonce, retry])
-  const frameKey = JSON.stringify([scenario, theme, profile, fixed, design, commands, resetNonce])
+  const mountKey = JSON.stringify([scenario, theme, profile, fixed, withoutAppearance(design, appearanceIds), commands, resetNonce, retry])
+  const frameKey = JSON.stringify([scenario, theme, profile, fixed, withoutAppearance(design, appearanceIds), appearanceKey({ values: resolved, design }, appearanceIds), commands, resetNonce])
   // A failure belongs to the frame that reported it: another scenario, theme, profile or input mounts afresh.
   const [shownKey, setShownKey] = React.useState(frameKey)
   if (shownKey !== frameKey) {
@@ -174,6 +177,7 @@ export const ScenarioPreview = React.forwardRef<LivePreviewHandle, Props>(functi
             commands,
           }}
           mountKey={mountKey}
+          appearanceIds={appearanceIds}
           draft={shownDraft}
           sync={sync}
           w={w}

@@ -1,8 +1,8 @@
 import * as React from "react"
 import {
   MonitorSmartphoneIcon,
-  ChevronRightIcon,
-  Columns2Icon,
+  NextIcon,
+  ColumnsIcon,
   KeyboardIcon,
   LayoutGridIcon,
   PresentationIcon,
@@ -14,7 +14,7 @@ import {
   CircleAlertIcon,
   BookmarkIcon,
   LockIcon,
-} from "lucide-react"
+} from "@/icons"
 import { cn } from "@/lib/utils"
 import { useCoarse } from "@/hooks/use-mobile"
 
@@ -60,7 +60,7 @@ const SEG = "h-7 min-w-0 gap-1 px-1.5 text-xs"
 /** The five views. Design appears only when the adapter declares design parameters or a token source. */
 export const VIEWS: { id: View; label: string; icon: React.ElementType; key: string }[] = [
   { id: "inspect" as View, label: "Inspect", icon: ScanEyeIcon, key: "1" },
-  { id: "compare" as View, label: "Compare", icon: Columns2Icon, key: "2" },
+  { id: "compare" as View, label: "Compare", icon: ColumnsIcon, key: "2" },
   { id: "responsive" as View, label: "Responsive", icon: MonitorSmartphoneIcon, key: "6" },
   { id: "gallery" as View, label: "Gallery", icon: LayoutGridIcon, key: "3" },
   { id: "present" as View, label: "Present", icon: PresentationIcon, key: "4" },
@@ -313,7 +313,7 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
             if (r.kind === "area")
               return (
                 <>
-                  <ChevronRightIcon className={cn("size-3.5 shrink-0 transition-transform duration-200", r.open && "rotate-90")} />
+                  <NextIcon className={cn("size-3.5 shrink-0 transition-transform duration-200", r.open && "rotate-90")} />
                   <span className="truncate">{r.label}</span>
                   <span className="ml-auto font-normal tracking-normal tabular-nums normal-case">{r.count}</span>
                 </>
@@ -504,7 +504,7 @@ function TokensPanel({ tabs }: { tabs?: React.ReactNode }) {
           <SidebarGroup>
             <SidebarGroupLabel render={<CollapsibleTrigger />} className="w-full hover:bg-sidebar-accent">
               <LockIcon className="mr-1" /> This Studio’s own tokens
-              <ChevronRightIcon className="ml-auto transition-transform group-data-[open]/shell:rotate-90" />
+              <NextIcon className="ml-auto transition-transform group-data-[open]/shell:rotate-90" />
             </SidebarGroupLabel>
             <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 data-[ending-style]:h-0 data-[starting-style]:h-0">
               <p className="px-2 pb-2 text-xs leading-relaxed text-muted-foreground">Read only. The shell’s tokens never reach a preview, and product tokens never style the shell, even where the names match.</p>

@@ -3,7 +3,7 @@ import { useDirectionSnapshot } from "@/studio/design-ui/react"
 import { DesignEditorProvider, useOptionalDesignEditor, useDesignSnapshot } from "@/studio/design-ui/react"
 import { EditorReason, DesignEditorStatus } from "@/studio/design-ui/slots"
 import * as React from "react"
-import { ListTreeIcon, InfoIcon } from "lucide-react"
+import { ListTreeIcon, InfoIcon } from "@/icons"
 import { cn } from "@/lib/utils"
 
 import { Sidebar, SidebarInset, SidebarProvider, SidebarRail } from "@/components/ui/sidebar"
@@ -267,12 +267,14 @@ function MobileShell() {
 }
 
 function Shell() {
+  const s = useStudio()
   const mobile = useIsMobile()
   useGlobalKeys()
   usePresentFocus()
   return (
     <TooltipProvider delay={350}>
       {mobile ? <MobileShell /> : <DesktopShell />}
+      {s.designNotice && <div role="status" className="fixed bottom-4 left-4 z-50 max-w-sm rounded-lg border bg-background p-3 text-sm shadow-sm">{s.designNotice}<button type="button" className="ml-3 underline" onClick={() => s.set({ designNotice: null })}>Dismiss</button></div>}
       <CommandMenu />
       <ShortcutsDialog />
       <Slot>

@@ -3,7 +3,7 @@
  * "Adjusted for <product>" marks. Never HTML: every string is rendered as text.
  */
 import * as React from "react"
-import { InfoIcon, TriangleAlertIcon } from "lucide-react"
+import { InfoIcon, TriangleAlertIcon } from "@/icons"
 import { adapter } from "@/adapter"
 import { cn } from "@/lib/utils"
 import { CodeBlock } from "./code-block"

@@ -83,6 +83,7 @@ export const exampleAdapter: StudioAdapter = {
       devices: [{ w: 1180, h: 820, kind: "tablet", label: "Tablet, landscape" }],
     },
     inputs: [
+      { id: "iconStyle", label: "Icon style", control: "select", options: [{ id: "stroke-rounded", label: "Stroke Rounded (Free)" }], default: "stroke-rounded", scoped: false, placement: "dock", group: "design", note: "One installed appearance; no entitlement or paid styles implied." },
       { id: "density", label: "Density", control: "presets", options: [{ id: "comfortable", label: "Comfortable" }, { id: "compact", label: "Compact" }], default: "comfortable", placement: "dock", group: "design", icon: "density", note: "The densities the product ships. Sign in has only Comfortable." },
       { id: "role", label: "Role", control: "select", options: [{ id: "owner", label: "Owner" }, { id: "viewer", label: "Viewer" }], placement: "dock", scoped: true, icon: "person", note: "Viewers see tasks without New task." },
       ...cardProperties,
@@ -130,6 +131,7 @@ export const exampleAdapter: StudioAdapter = {
   // Design parameters for the Adjust tab. The stops are the densities the example ships.
   design: {
     parameters: [
+      { id: "iconStyle", label: "Icon style", kind: "enum", default: "stroke-rounded", choices: [{ id: "stroke-rounded", label: "Stroke Rounded (Free)" }], apply: { input: "iconStyle", live: true } },
       {
         id: "density",
         label: "Density",

@@ -8,6 +8,7 @@ import type { DesignPreviewIdentity } from "./design-ui/types"
  * previous preview and says so. Disposal is removal from the document.
  */
 import * as React from "react"
+import { appearanceKey, withoutAppearance } from "./appearance"
 import { cn } from "@/lib/utils"
 import { StageGestureContext } from "./stage-gestures"
 import type { StudioAdapter } from "./types"
@@ -60,6 +61,7 @@ type Runtime = {
   modified: boolean
   capabilities?: FrameCapability[]
   contentHeight?: number
+  appearanceError?: string
 }
 /** The draft a preview shows: token values, CSS rules and font stylesheets. */
 export type PreviewDraft = {
@@ -89,6 +91,8 @@ type Props = {
   inputs: Omit<MountInputs, "tokens" | "css" | "stylesheets">
   /** Changing the key mounts a fresh runtime (Reset bumps it). Drafts never remount, nor do property values in a frame with live-values. */
   mountKey: string
+  /** Declared live appearance input IDs. Unsupported clients remount; live-values alone never qualifies. */
+  appearanceIds?: string[]
   draft: PreviewDraft
   w: number
   h: number
@@ -99,7 +103,7 @@ type Props = {
   sync?: PreviewSync
 }
 
-export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, isolation, inputs, mountKey, draft, w, h, scale, label, interactive = true, onStatus, sync }, ref) {
+export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function LivePreview({ src, origin, isolation, inputs, mountKey, appearanceIds = [], draft, w, h, scale, label, interactive = true, onStatus, sync }, ref) {
   const [runtimes, setRuntimes] = React.useState<Runtime[]>([])
   const frames = React.useRef(new Map<string, HTMLIFrameElement>())
   const gesture = React.useContext(StageGestureContext)
@@ -137,7 +141,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   const runtimeKey = `${mountKey}|${remount}`
   const answers = React.useRef(new Map<string, (m: FrameMessage | null) => void>())
   // Value requests awaiting the frame's answer; a reply or an error removes each one.
-  const valueRequests = React.useRef(new Set<string>())
+  const valueRequests = React.useRef(new Map<string, { appearance: boolean; instance: string; key: string }>())
   const runtimesRef = React.useRef<Runtime[]>([])
   runtimesRef.current = runtimes
 
@@ -217,7 +221,13 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
         answers.current.get(m.requestId)?.(null)
         // Values the runtime on screen could not apply in place are mounted instead; an older runtime's answer changes nothing.
         const onScreen = [...runtimesRef.current].reverse().find((r) => r.phase === "ready")
-        if (valueRequests.current.delete(m.requestId) && rt === onScreen) setRemount((n) => n + 1)
+        const request = valueRequests.current.get(m.requestId)
+        valueRequests.current.delete(m.requestId)
+        if (request && rt === onScreen) {
+          if (request.appearance) {
+            if (latestAppearance.current.get(rt.instance) === request.key) update(rt.instance, () => ({ appearanceError: m.reason }))
+          } else setRemount((n) => n + 1)
+        }
       } else if (m.type === "error" && (!m.requestId || m.requestId === rt.requestId) && rt.phase === "loading") {
         failure.current = { instance: rt.instance, reason: m.reason }
         if (rt.inputs.direction) editor?.controller?.reportPreviewFailure(rt.inputs.direction, m.reason)
@@ -248,7 +258,9 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
           })
         }
       } else if (m.type === "reply") {
+        const request = valueRequests.current.get(m.requestId)
         valueRequests.current.delete(m.requestId)
+        if (request?.appearance && latestAppearance.current.get(rt.instance) === request.key) update(rt.instance, (r) => ({ appearanceError: undefined, ready: r.ready && m.fingerprint ? { ...r.ready, fingerprint: m.fingerprint } : r.ready }))
         const done = replies.current.get(m.requestId)
         if (done) {
           replies.current.delete(m.requestId)
@@ -299,22 +311,37 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   // Property values go to the runtime on screen without a remount when its client announced live-values;
   // otherwise a runtime is mounted with them. Nothing is sent while a newer runtime is staged: it mounts with them.
   // A frame's fingerprint and diagnostics keep describing the state it mounted; a values update does not recompute them.
-  const valuesKey = JSON.stringify(inputs.values)
+  const valuesKey = JSON.stringify(withoutAppearance(inputs.values, appearanceIds))
+  const appearance = appearanceKey(inputs, appearanceIds)
+  const latestAppearance = React.useRef(new Map<string, string>())
+  React.useEffect(() => {
+    if (newest?.phase === "error" && newest.key === runtimeKey) {
+      if (appearanceKey(newest.inputs, appearanceIds) !== appearance) setRemount((n) => n + 1)
+      return
+    }
+    if (!current || current !== newest || current.key !== runtimeKey) return
+    if ((latestAppearance.current.get(current.instance) ?? appearanceKey(current.inputs, appearanceIds)) === appearance) return
+    latestAppearance.current.set(current.instance, appearance)
+    if (!current.capabilities?.includes("live-appearance")) return setRemount((n) => n + 1)
+    const requestId = uid("appearance")
+    valueRequests.current.set(requestId, { appearance: true, instance: current.instance, key: appearance })
+    post(current.instance, { type: "values", channel: "appearance", requestId, values: inputs.values, design: inputs.design, appearanceIds })
+  }, [appearance, current, newest, runtimeKey, post, inputs.values, inputs.design, appearanceIds])
   const sentValues = React.useRef(new Map<string, string>())
   React.useEffect(() => {
     // A runtime staged with values that failed: stage another when the values change, never again for the same values.
     if (newest?.phase === "error" && newest.key === runtimeKey) {
-      if (JSON.stringify(newest.inputs.values) !== valuesKey) setRemount((n) => n + 1)
+      if (JSON.stringify(withoutAppearance(newest.inputs.values, appearanceIds)) !== valuesKey) setRemount((n) => n + 1)
       return
     }
     if (!current || current !== newest || current.key !== runtimeKey) return
-    if ((sentValues.current.get(current.instance) ?? JSON.stringify(current.inputs.values)) === valuesKey) return
+    if ((sentValues.current.get(current.instance) ?? JSON.stringify(withoutAppearance(current.inputs.values, appearanceIds))) === valuesKey) return
     sentValues.current.set(current.instance, valuesKey)
     if (!current.capabilities?.includes("live-values")) return setRemount((n) => n + 1)
     const requestId = uid("values")
-    valueRequests.current.add(requestId)
-    post(current.instance, { type: "values", requestId, values: JSON.parse(valuesKey) })
-  }, [valuesKey, current, newest, runtimeKey, post])
+    valueRequests.current.set(requestId, { appearance: false, instance: current.instance, key: valuesKey })
+    post(current.instance, { type: "values", requestId, values: inputs.values, appearanceIds })
+  }, [valuesKey, current, newest, runtimeKey, post, appearanceIds, inputs.values])
 
   // The runtime on screen reports only the channels asked for; a new runtime is told again.
   const channelKey = sync ? JSON.stringify(sync.channels) : ""
@@ -378,9 +405,9 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   const status: LiveStatus = React.useMemo(() => {
     const applying = !!directionKey && directionKey !== JSON.stringify(current?.ready?.direction)
     const failed = newest?.phase === "error"
-    const reason = draftError.current ?? (failed && failure.current?.instance === newest.instance ? failure.current.reason : undefined)
+    const reason = current?.appearanceError ?? draftError.current ?? (failed && failure.current?.instance === newest.instance ? failure.current.reason : undefined)
     return {
-      status: draftError.current ? "error" : applying && current ? "loading" : newest?.phase ?? "loading",
+      status: current?.appearanceError || draftError.current ? "error" : applying && current ? "loading" : newest?.phase ?? "loading",
       modified: current?.modified ?? false,
       canGoBack: current?.ready?.canGoBack ?? false,
       location: current?.ready?.location,
@@ -388,7 +415,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       direction: current?.ready?.direction,
       appearance: current?.ready?.appearance,
       reason,
-      previous: (failed || applying || !!draftError.current) && !!current,
+      previous: (failed || applying || !!current?.appearanceError || !!draftError.current) && !!current,
       anchors: current?.ready?.anchors ?? [],
       diagnostics: current?.ready?.diagnostics,
       capabilities: current?.capabilities ?? newest?.capabilities ?? [],

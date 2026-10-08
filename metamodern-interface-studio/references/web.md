@@ -30,3 +30,5 @@ Test relevant narrow and wide viewports, overflow, keyboard traversal, visible f
 ## Build result
 
 Deliver a working target with Inspect, Gallery, useful capability-derived controls, and an initial walkthrough from [presentation.md](presentation.md). Record source mappings, fixture provenance, dependencies, and limitations in the manifest. Verify production-facing routes still work without the Studio when changes touched their shared boundary. Build success and local browser evidence do not establish hosted operation; Publish separately verifies the specified hosted destination.
+
+For mapped Free icons and state-preserving appearance updates, use the explicit [live appearance contract](frame-protocol.md#declared-live-appearance-0190). Verify a negotiated `live-appearance` client, refused/invalid and stale updates, state preservation and an older client's remount fallback. A single installed `stroke-rounded` style does not imply alternate style availability or entitlement.

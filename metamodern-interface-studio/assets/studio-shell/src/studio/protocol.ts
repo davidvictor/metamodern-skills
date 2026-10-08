@@ -32,7 +32,7 @@ export type MountInputs = {
 }
 
 /** What a frame client can do beyond the base protocol, announced in `hello`. */
-export type FrameCapability = "compiled-data" | "registered-stylesheets" | "direction-identity" | "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation" | "stage-gestures" | "live-values" | "code"
+export type FrameCapability = "compiled-data" | "registered-stylesheets" | "direction-identity" | "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation" | "stage-gestures" | "live-values" | "live-appearance" | "code"
 
 /**
  * Stage navigation that starts over a frame, for the Studio to apply to its stage. Wheel positions are in the
@@ -126,7 +126,7 @@ export type ShellBody =
   /** Repeat another frame's interaction here. The reply says when the target could not be found. */
   | { type: "replay"; requestId: string; event: SyncEvent }
   /** Every resolved value, after a property changed (capability live-values). The frame applies them without rebuilding. */
-  | { type: "values"; requestId: string; values: Record<string, InputValue> }
+  | { type: "values"; requestId: string; values: Record<string, InputValue>; channel?: "appearance"; design?: MountInputs["design"]; appearanceIds?: string[] }
   /** Ask for the code that renders the current state (capability code). */
   | { type: "code-request"; requestId: string }
 
@@ -150,7 +150,7 @@ export type FrameBody =
       canGoBack: boolean
       anchors: AnchorRect[]
     }
-  | { type: "reply"; requestId: string; ok: boolean; reason?: string }
+  | { type: "reply"; requestId: string; ok: boolean; reason?: string; fingerprint?: string }
   /** The document's content height in CSS pixels, after ready and whenever it settles at a new value. */
   | { type: "content-size"; height: number }
   /** A person's interaction here, for the Studio to replay in other frames (only for channels the Studio asked for). */

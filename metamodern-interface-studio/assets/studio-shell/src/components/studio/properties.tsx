@@ -7,7 +7,7 @@ import { host } from "@/studio-host"
  * values when the frame offers it. Built from the shell's own components.
  */
 import * as React from "react"
-import { ChevronDownIcon, CopyIcon, EllipsisIcon, RotateCcwIcon, SaveIcon } from "lucide-react"
+import { DisclosureDownIcon, CopyIcon, EllipsisIcon, ResetIcon, SaveIcon } from "@/icons"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -120,7 +120,7 @@ function PropertiesSection({ inputs }: { inputs: ScenarioInput[] }) {
               else focusAfter()
             }}
           >
-            <RotateCcwIcon /> Reset ({n})
+            <ResetIcon /> Reset ({n})
           </Button>
         )}
       </div>
@@ -141,7 +141,7 @@ function PropertiesSection({ inputs }: { inputs: ScenarioInput[] }) {
         <Collapsible>
           <CollapsibleTrigger render={<Button variant="ghost" size="sm" className={`group w-full justify-between px-2 ${TOUCH}`} />}>
             All properties ({rest.length})
-            <ChevronDownIcon className="transition-transform group-data-[panel-open]:rotate-180" />
+            <DisclosureDownIcon className="transition-transform group-data-[panel-open]:rotate-180" />
           </CollapsibleTrigger>
           <CollapsibleContent>
             <FieldGroup className="gap-4 pt-3">

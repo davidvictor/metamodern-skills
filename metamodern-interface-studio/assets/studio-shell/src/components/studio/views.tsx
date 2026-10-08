@@ -4,20 +4,20 @@ import { useDesignDirections, useDirectionSnapshot } from "@/studio/design-ui/re
 import {
   ArrowLeftRightIcon,
   CheckIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  Columns2Icon,
+  PreviousIcon,
+  NextIcon,
+  ColumnsIcon,
   GripVerticalIcon,
   PauseIcon,
   PlayIcon,
-  RotateCcwIcon,
+  ResetIcon,
   SplitIcon,
   TriangleAlertIcon,
   XIcon,
   ListIcon,
   ImagesIcon,
   PencilIcon,
-} from "lucide-react"
+} from "@/icons"
 import { cn } from "@/lib/utils"
 import { useCoarse, useMedia } from "@/hooks/use-mobile"
 import { toast } from "sonner"
@@ -148,7 +148,7 @@ function SideCaption({ side, label, status, onReset }: { side: string; label: st
         </span>
         <span className="flex flex-wrap items-center justify-center gap-1.5">
           {status}
-          <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${side}`} onClick={onReset}><RotateCcwIcon /></Button>
+          <Button variant="ghost" size="icon-xs" aria-label={`Reset side ${side}`} onClick={onReset}><ResetIcon /></Button>
         </span>
       </span>
     </figcaption>
@@ -326,7 +326,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
           </Tooltip>
           <Separator orientation="vertical" className="h-5! self-center!" />
           <ToggleGroup value={[effectiveMode]} onValueChange={(v) => v[0] && setC({ mode: v[0] as typeof mode })} size="sm" spacing={0} aria-label="Comparison mode">
-            {!narrow && <ToggleGroupItem value="side" aria-label="Side by side"><Columns2Icon /><span className="hidden xl:inline">Side by side</span></ToggleGroupItem>}
+            {!narrow && <ToggleGroupItem value="side" aria-label="Side by side"><ColumnsIcon /><span className="hidden xl:inline">Side by side</span></ToggleGroupItem>}
             <Tooltip>
               <TooltipTrigger render={<span className="inline-flex" />}>
                 <ToggleGroupItem value="split" aria-label="Split" disabled={!splitOk}><SplitIcon /><span className="hidden xl:inline">Split</span></ToggleGroupItem>
@@ -344,7 +344,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
         {diverged && (
           <Badge variant="outline" className="gap-1.5 bg-background/90 pr-0.5 text-warning backdrop-blur">
             <TriangleAlertIcon /> Sides diverged: reset to compare
-            <Button variant="ghost" size="xs" onClick={() => { A.reset(); B.reset(); if (count > 2) C.reset(); if (count > 3) D.reset() }}><RotateCcwIcon /> {count > 2 ? "Reset all" : "Reset both"}</Button>
+            <Button variant="ghost" size="xs" onClick={() => { A.reset(); B.reset(); if (count > 2) C.reset(); if (count > 3) D.reset() }}><ResetIcon /> {count > 2 ? "Reset all" : "Reset both"}</Button>
           </Badge>
         )}
       </div>
@@ -722,7 +722,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
             {step.hidden && <p className="text-xs text-muted-foreground">This step is hidden from autoplay. It remains available here for review.</p>}
           </div>
           <div role="group" aria-label="Walkthrough controls" className={cn("flex flex-wrap items-center gap-1", !narrow && "@xl:col-span-2 @4xl:col-span-1")}>
-            <Button variant="outline" size="icon" aria-label="Previous step" disabled={i === 0} onClick={() => go(-1)}><ChevronLeftIcon /></Button>
+            <Button variant="outline" size="icon" aria-label="Previous step" disabled={i === 0} onClick={() => go(-1)}><PreviousIcon /></Button>
             <Button size="icon" aria-label={s.present.playing ? "Pause" : "Play"} onClick={() => s.set({ present: { ...s.present, playing: !s.present.playing } })} disabled={!!problem}>
               {s.present.playing ? <PauseIcon /> : <PlayIcon />}
             </Button>
@@ -730,7 +730,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
               const first = s.walkthroughs.find((candidate) => firstVisibleIndex(candidate) >= 0)
               if (first) s.set({ present: { ...s.present, tour: first.id, step: firstVisibleIndex(first), elapsed: 0, playing: true, playlist: true } })
             }}>Play all</Button>
-            <Button variant="outline" size="icon" aria-label="Next step" disabled={i === tour.steps.length - 1} onClick={() => go(1)}><ChevronRightIcon /></Button>
+            <Button variant="outline" size="icon" aria-label="Next step" disabled={i === tour.steps.length - 1} onClick={() => go(1)}><NextIcon /></Button>
             <StepsPopover tour={tour} current={i} onPick={(j) => s.set({ present: { ...s.present, step: j, elapsed: 0 } })} />
             <PresenterEditor key={`${tour.id}:${stepId(tour, step, i)}`} tour={tour} step={step} index={i} />
             <PresenterTransfer />
@@ -1005,7 +1005,7 @@ function LegacyTokensStage() {
                 if (r.kind === "family")
                   return (
                     <div role="gridcell" className="flex min-w-0 flex-1 items-center gap-1.5">
-                      <ChevronRightIcon className={cn("size-3.5 transition-transform duration-200", r.open && "rotate-90")} />
+                      <NextIcon className={cn("size-3.5 transition-transform duration-200", r.open && "rotate-90")} />
                       {r.name}
                       <span className="font-normal text-muted-foreground tabular-nums">{r.count}</span>
                       {!r.open && <span className="ml-auto font-normal text-muted-foreground">Folded</span>}

@@ -16,3 +16,5 @@ export { PreviewFrame, type PreviewFrameProps } from "./preview-frame"
 export { Icon, type KitIconName } from "./icons"
 export { tokens } from "./tokens"
 export { NumberField, SegmentedControl, EditorPopover, type NumberFieldProps } from "./design-controls"
+
+export type { IconComponent, IconProps } from "../icons"

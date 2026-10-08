@@ -6,13 +6,14 @@
  * as every view; the documentation supplies scenario strings and validated values, nothing else (references/library.md).
  */
 import * as React from "react"
-import { ExpandIcon, SmartphoneIcon } from "lucide-react"
+import { ExpandIcon, SmartphoneIcon } from "@/icons"
 import { adapter } from "@/adapter"
 import { useStudio } from "@/store"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FidelityBadge, PreviewFrame as Boundary, useFit, type EmptyState } from "@/components/studio/bits"
+import { liveAppearanceIds } from "../appearance"
 import { LivePreview, type LivePreviewHandle, type LiveStatus } from "@/studio/live-preview"
 import { TARGET } from "@/kit/layout"
 import type { InputValue } from "@/studio/types"
@@ -237,9 +238,10 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode, wide }
                   src={frame.src}
                   origin={frame.origin}
                   isolation={adapter.frameIsolation}
-                  inputs={{ scenario: frame.scenario, theme: s.theme, profile: PROFILE, values: values ?? {}, commands: [] }}
+                  inputs={{ scenario: frame.scenario, theme: s.theme, profile: PROFILE, values: { ...Object.fromEntries(liveAppearanceIds(adapter).map(id => [id, s.values[id] ?? adapter.axes.inputs.find(input => input.id === id)?.default ?? ""])), ...values }, commands: [] }}
                   // Values and width never remount: values go in place to a frame with live-values, and the width is the frame element's.
                   mountKey={JSON.stringify([frame.scenario, s.theme, retry])}
+                  appearanceIds={liveAppearanceIds(adapter)}
                   draft={s.viewDraft(s.theme)}
                   w={w}
                   h={h}
@@ -291,7 +293,7 @@ function Expanded({ spec, capture, values, phone, label }: { spec: BlockSpec; ca
         {capture ? (
           <img src={capture} alt={spec.capture?.alt ?? ""} className="absolute inset-0 size-full object-contain" />
         ) : source && spec.scenario ? (
-          <LivePreview src={source.src} origin={source.origin} isolation={adapter.frameIsolation} inputs={{ scenario: spec.scenario, theme: s.theme, profile: PROFILE, values: values ?? {}, commands: [] }} mountKey={JSON.stringify([spec.scenario, s.theme])} draft={s.viewDraft(s.theme)} w={w} h={h} scale={scale} label={label} onStatus={setStatus} />
+          <LivePreview src={source.src} origin={source.origin} isolation={adapter.frameIsolation} inputs={{ scenario: spec.scenario, theme: s.theme, profile: PROFILE, values: { ...Object.fromEntries(liveAppearanceIds(adapter).map(id => [id, s.values[id] ?? adapter.axes.inputs.find(input => input.id === id)?.default ?? ""])), ...values }, commands: [] }} appearanceIds={liveAppearanceIds(adapter)} mountKey={JSON.stringify([spec.scenario, s.theme])} draft={s.viewDraft(s.theme)} w={w} h={h} scale={scale} label={label} onStatus={setStatus} />
         ) : null}
       </Boundary>
     </div>

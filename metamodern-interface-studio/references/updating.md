@@ -88,3 +88,5 @@ The Vite acceptance suite remains `npm run acceptance`. Both hosts also offer `n
 Next linting uses the official `@next/eslint-plugin-next` recommended rules alongside the shared TypeScript/hooks and product import-boundary checks. Mixed provider/hook/helper exports are supported. The Vite refresh export rule stays in the Vite overlay. `npm run acceptance:lint` exercises synthetic exports, official inline directives and the invalid async-client rule without copying product source.
 
 The optional rich Design interface is described in [design-ui.md](design-ui.md). Its entire src/design-ui/ tree is product-owned; host updates preserve it and its explicit module map.
+
+For mapped Free icons and state-preserving appearance updates, use the explicit [live appearance contract](frame-protocol.md#declared-live-appearance-0190). Verify a negotiated `live-appearance` client, refused/invalid and stale updates, state preservation and an older client's remount fallback. A single installed `stroke-rounded` style does not imply alternate style availability or entitlement.

@@ -1,0 +1,19 @@
+# Mapped Free icons and declared live appearance candidate
+
+Tracks public issue [#16](https://github.com/davidvictor/metamodern-skills/issues/16). Version 0.19.0 is a source candidate, not a published or installed release. Its dependency is the existing Next/Vite host candidate [#15](https://github.com/davidvictor/metamodern-skills/pull/15), revision `874d5077ba0204cf77947e21509901003017d40e`; the refreshed main baseline was `f9bbafc286333b211ff6baedc02a5560be3f457a`.
+
+Checks run against the candidate source:
+
+- Collection `npm test`: 237 passed, none failed or skipped. `npm run validate`: both collection and all 20 packages passed.
+- Fresh updater-created Vite and Next receivers: install, typecheck, lint and build passed. Vite lint retains one existing hook warning; Next retains six existing warnings. No new lint errors or warnings remain.
+- Both hosts' shared browser acceptance: Inspect, Compare, Responsive, Design, interaction/reset/keyboard, layout save/reload/new-browser link, scenario save/reload/link and Library all passed (8 checks each).
+- Genuine released 0.15.0 source from the main baseline created the prior receiver. Candidate report then apply completed with no blocked files; install/typecheck/lint/build passed. A modified product-owned adapter and presenter scenarios file survived byte-for-byte. The updater explicitly skipped optional browser acceptance because that receiver had no Playwright install; separate browser checks ran with a task-local Playwright module.
+- Actual Chromium appearance proof: one mounted document retains unsaved form text and an open dialog across a synthetic alternate map; an old client without appearance capability retains the prior preview on unsupported-style mount refusal and recovers through a valid remount. Saved and shared stale enum values restore `stroke-rounded` with a visible notice.
+- The selective `CheckIcon` production bundle is 2,128 bytes with unrelated mapped exports eliminated. Only named Free imports are used.
+- Focused actual-client tests cover invalid payloads/styles, channel ownership, rejected appearance followed by ordinary values, and concurrent draft/appearance success and rollback in both directions. They add under one second to collection CI; no new browser matrix is added to CI.
+
+Local browser execution required permission outside the filesystem sandbox. A dev server with stale watcher caches was restarted before recording current-source results. Next dev and build share an output directory and were run sequentially for final acceptance. Initial diagnostics from stale/concurrent runs are not counted as passing evidence.
+
+The icon mapping and all example fixtures are generic. `stroke-rounded` describes the installed Free appearance; the alternate square is explicitly test-only synthetic geometry. No paid geometry, credentials or product source is included. Public publication, downstream pin changes, global installation and deployment remain separate operations.
+
+Harness: Codex. Assigned reviewer role: GPT-6.1 Sol/high. Native runtime model/effort metadata was not exposed by the available agent receipt; actual identity is not asserted from inheritance.

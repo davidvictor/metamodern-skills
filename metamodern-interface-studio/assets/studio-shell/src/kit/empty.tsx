@@ -1,4 +1,4 @@
-import { InboxIcon, TriangleAlertIcon } from "lucide-react"
+import { InboxIcon, TriangleAlertIcon } from "@/icons"
 import { cn } from "@/lib/utils"
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { Icon, type KitIconName } from "./icons"

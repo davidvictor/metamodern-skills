@@ -260,6 +260,8 @@ export type DesignParameter = {
   apply: {
     /** Send this parameter's raw value to a live frame; useful when changing product markup, not just tokens. */
     input?: string
+    /** In-place appearance update, only when the frame explicitly announces live-appearance. */
+    live?: boolean
     /** scale: token names or globs (`--space-*`) whose lengths follow the value. */
     scale?: string[]
     /** ratio: type tokens and their step on the scale (0 for the base size, 1 for one step up, -1 for one down). */

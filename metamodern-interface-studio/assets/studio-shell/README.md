@@ -99,4 +99,4 @@ These files differ from `shadcn add` output. Reapply the edits after regeneratin
 | `src/components/ui/scroll-area.tsx` | Unused React import removed. |
 | `src/components/ui/slider.tsx` | `aria-label` on the Slider is passed to the thumb input, which is what a screen reader reads. |
 
-The stack is shadcn 4.21 (`base-rhea`, Lucide icons), Base UI 1.8, Tailwind CSS 4, React 19 and Vite 8. The shell uses Geist through `@fontsource-variable/geist`.
+The stack is shadcn 4.21 (`base-rhea`, mapped Hugeicons Free Stroke Rounded icons), Base UI 1.8, Tailwind CSS 4, React 19 and Vite 8. The shell uses Geist through `@fontsource-variable/geist`.

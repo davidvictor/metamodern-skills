@@ -6,7 +6,7 @@ import { FoundationSlot } from "@/studio/design-ui/slots"
  * exploration; it is always labeled and never reaches Present.
  */
 import * as React from "react"
-import { DownloadIcon, EyeIcon, RotateCcwIcon, TriangleAlertIcon } from "lucide-react"
+import { DownloadIcon, EyeIcon, ResetIcon, TriangleAlertIcon } from "@/icons"
 import { cn } from "@/lib/utils"
 
 import { Button } from "@/components/ui/button"
@@ -168,7 +168,7 @@ function EnumControl({ p }: { p: DesignParameter }) {
   return (
     <Field>
       <FieldLabel htmlFor={`design-${p.id}`}>{p.label}</FieldLabel>
-      <Select value={value} items={Object.fromEntries(choices.map((c) => [c.id, c.label]))} onValueChange={(v) => v && s.setDesign({ values: { ...currentDesignValues(s), [p.id]: String(v) } })}>
+      {choices.length <= 1 ? <p id={`design-${p.id}`} className="text-sm text-muted-foreground">{choices[0]?.label ?? value}</p> : <Select value={value} items={Object.fromEntries(choices.map((c) => [c.id, c.label]))} onValueChange={(v) => v && s.setDesign({ values: { ...currentDesignValues(s), [p.id]: String(v) } })}>
         <SelectTrigger id={`design-${p.id}`} className="w-full">
           <SelectValue />
         </SelectTrigger>
@@ -179,7 +179,7 @@ function EnumControl({ p }: { p: DesignParameter }) {
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </Select>}
       {p.note && <FieldDescription className="text-xs">{p.note}</FieldDescription>}
     </Field>
   )
@@ -249,10 +249,10 @@ function LegacyAdjustPanel() {
         {params(s.theme).map((p) => (p.kind === "font" ? <FontControl key={p.id} p={p} /> : p.kind === "color" ? <ColorControl key={p.id} p={p} /> : p.kind === "enum" ? <EnumControl key={p.id} p={p} /> : <ScaleControl key={p.id} p={p} />))}
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" size="sm" disabled={!changed} onClick={() => s.resetDesign("direction")}>
-            <RotateCcwIcon /> Reset Direction
+            <ResetIcon /> Reset Direction
           </Button>
           <Button variant="outline" size="sm" disabled={!s.hasDraft} onClick={() => s.resetDesign("all")}>
-            <RotateCcwIcon /> Reset All
+            <ResetIcon /> Reset All
           </Button>
         </div>
         <Button

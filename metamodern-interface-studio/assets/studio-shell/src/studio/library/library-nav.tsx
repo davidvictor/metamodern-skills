@@ -5,7 +5,7 @@
  * when the library opens (library-page.tsx).
  */
 import * as React from "react"
-import { InfoIcon } from "lucide-react"
+import { InfoIcon } from "@/icons"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { adapter } from "@/adapter"

@@ -1,4 +1,6 @@
 import * as React from "react"
+import { useStudio } from "@/store"
+import { liveAppearanceIds } from "@/studio/appearance"
 import { adapter } from "@/adapter"
 import { FidelityBadge, lookOf, PreviewFrame as Boundary, useFit } from "@/components/studio/bits"
 import { LivePreview, type LiveStatus } from "@/studio/live-preview"
@@ -31,6 +33,7 @@ const PAD = 48
  * an email, in a sandbox with no scripts, no forms and no access to the Studio.
  */
 export function PreviewFrame(props: PreviewFrameProps) {
+  const studio = useStudio()
   const box = React.useRef<HTMLDivElement>(null)
   const scale = useFit(box, props.w, props.h, "fit", PAD, true)
   const live = "src" in props ? props : null
@@ -69,9 +72,10 @@ export function PreviewFrame(props: PreviewFrameProps) {
               src={live.src}
               origin={live.origin}
               isolation={adapter.frameIsolation}
-              inputs={{ scenario: live.scenario, theme: live.theme, profile: live.profile, values: live.values ?? {}, commands: [] }}
+              inputs={{ scenario: live.scenario, theme: live.theme, profile: live.profile, values: { ...Object.fromEntries(liveAppearanceIds(adapter).map(id => [id, studio.values[id] ?? adapter.axes.inputs.find(input => input.id === id)?.default ?? ""])), ...live.values }, commands: [] }}
               // Values travel in inputs: a frame with live-values takes them in place, as in every preview. Retry mounts a fresh runtime.
               mountKey={JSON.stringify([live.scenario, live.theme, live.profile, retry])}
+              appearanceIds={liveAppearanceIds(adapter)}
               draft={NO_DRAFT}
               w={props.w}
               h={props.h}

@@ -6,7 +6,7 @@ import { ComponentSlot } from "@/studio/design-ui/slots"
  * opens and checked before it renders.
  */
 import * as React from "react"
-import { ChevronRightIcon, PanelRightIcon, RotateCcwIcon, SearchIcon } from "lucide-react"
+import { NextIcon, PanelRightIcon, ResetIcon, SearchIcon } from "@/icons"
 import { toast } from "sonner"
 import library from "@/library"
 import { adapter } from "@/adapter"
@@ -470,7 +470,7 @@ function Disclosure({ level, id, label, count, open, onToggle, children }: { lev
           onClick={onToggle}
           className={cn(DISCLOSURE, level === "section" ? "min-h-8 text-sm font-medium text-sidebar-foreground" : "min-h-7 text-xs font-medium text-muted-foreground hover:text-foreground")}
         >
-          <ChevronRightIcon aria-hidden className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none", open && "rotate-90")} />
+          <NextIcon aria-hidden className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none", open && "rotate-90")} />
           <span className="min-w-0 flex-1 truncate">{label}</span>
           <span data-library-count className="shrink-0 text-xs font-normal text-muted-foreground tabular-nums">
             {count}
@@ -569,7 +569,7 @@ function Playground({ id }: { id: string }) {
           Playground
         </h2>
         <Button variant="ghost" size="sm" className={cn("ml-auto", TARGET)} disabled={!Object.keys(mine).length} onClick={() => edits.set({ ...all, [id]: {} })}>
-          <RotateCcwIcon />
+          <ResetIcon />
           Reset
         </Button>
       </div>

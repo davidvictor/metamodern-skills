@@ -16,7 +16,7 @@ import {
   PaletteIcon,
   ImageOffIcon,
   TriangleAlertIcon,
-} from "lucide-react"
+} from "@/icons"
 import { cn } from "@/lib/utils"
 
 import { Badge } from "@/components/ui/badge"

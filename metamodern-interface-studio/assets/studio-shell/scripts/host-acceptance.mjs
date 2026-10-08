@@ -13,7 +13,7 @@ if (!url) {
   const listener = createServer(); await new Promise(r => listener.listen(0, '127.0.0.1', r));
   const port = listener.address().port; await new Promise(r => listener.close(r));
   url = `http://127.0.0.1:${port}`;
-  child = spawn('npm', ['run', 'dev', '--', '--port', String(port)], { env: { ...process.env, VITE_STUDIO_ADAPTER: 'library', STUDIO_ADAPTER: 'library' }, stdio: 'inherit', detached: true });
+  child = spawn('npm', ['run', 'dev', '--', '--port', String(port), host === 'next' ? '--hostname' : '--host', '127.0.0.1'], { env: { ...process.env, VITE_STUDIO_ADAPTER: 'library', STUDIO_ADAPTER: 'library' }, stdio: 'inherit', detached: true });
 }
 const results = [], errors = [];
 let browser;

@@ -2,6 +2,14 @@
 
 Opted-in studio-direction-lifecycle/1 consumers gain named immutable local directions, captured saves, browser draft recovery and independently pinned source/saved/draft comparisons. Product codecs and readiness checks remain in protected src/design-runtime/. Read references/directions.md before opting in; legacy consumers retain their existing behavior. directions.json is product-owned and never replaced by managed updates. studio.config.ts may configure savedFiles.directions as a relative JSON path within the Studio. Generated saved-source exclusions prevent canonical journals and atomic temporary files from causing preview reloads while preserving normal source HMR. Next typecheck/build regenerate official route types and exclude obsolete dev validators when changing between development and static modes.
 
+## 0.19.0
+
+The shell and both framework hosts use semantic icon components backed by `@hugeicons/react` and `@hugeicons/core-free-icons`. No Pro key or alternate paid geometry is required. Workspace icon slots use the provider-neutral `IconComponent`/`IconProps` types; product rendering stays independent. Existing module icon names and `@studio/kit` imports are preserved.
+
+Input-backed Design parameters may declare `apply: { input: "iconStyle", live: true }`. A frame opts in separately with `updateAppearance(inputs)`, announcing `live-appearance`. Only explicitly declared appearance inputs bypass the mount boundary, and only a supporting frame updates in place. `live-values` alone does not qualify; older clients remount honestly. Refused appearance updates keep the last valid preview and show the reason; handlers must validate before mutating product UI. Refresh copied frame clients to use this capability. `stroke-rounded` names an appearance, not an entitlement. Alternate maps used in tests must be synthetic and labeled test-only.
+
+Nothing else to do by hand. Product adapters, saved directions and presenter files remain product owned.
+
 ## 0.17.1
 
 DesignPanelProps now supplies review context (scenarioId, readonly scenario options and selectScenario) to Foundation and Component panels. Use it for a Review fixture selector and contextual reach readouts; navigation never edits direction payloads or undo history. Private panels still import only the public kit/design-ui APIs and their own files. Product-owned modules remain protected by managed updates. EditorPopover adds optional open/onOpenChange for controlled Close picker and choice dismissal; existing uncontrolled callers retain their behavior.

@@ -10,6 +10,7 @@ import type { DesignPreviewIdentity } from "./design-ui/types"
  * parent window, only from an allowed origin, and only for its own instance.
  */
 import { PROTOCOL, fingerprint, isShellMessage, type AnchorRect, type FrameBody, type FrameCapability, type FrameDiagnostic, type MountInputs } from "./protocol"
+import { appearanceFields, withoutAppearance, validAppearanceIds, validInputRecord } from "./appearance"
 import { createFrameSync } from "./frame-sync"
 import { createFrameGestures, keepFieldKeys } from "./frame-gestures"
 
@@ -41,6 +42,8 @@ export type FrameHandlers = {
    * mounted inputs with the new values; product state and navigation stay. Without it every change mounts a new runtime.
    */
   update?: (inputs: MountInputs) => Promise<void> | void
+  /** Explicit appearance opt-in. Validate before changing the mounted UI; reject to preserve its last valid state. */
+  updateAppearance?: (inputs: MountInputs) => Promise<void> | void
   /** The code that renders the current values, listing only props that differ from their defaults (capability code). */
   code?: (inputs: MountInputs) => Promise<{ language: string; text: string }> | { language: string; text: string }
 }
@@ -212,7 +215,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
   let current: MountInputs | null = null
   // Values updates run one at a time, in arrival order, and only the newest is applied: an update that a newer
   // values message superseded is skipped, or its result ignored, so a slow handler never leaves stale props.
-  let valuesSeq = 0
+  const valuesSeq = { values: 0, appearance: 0 }
   let updating: Promise<unknown> = Promise.resolve()
   const onMessage = async (e: MessageEvent) => {
     if (e.source !== window.parent || !allowed.includes(e.origin) || !isShellMessage(e.data) || e.data.instance !== instance) return
@@ -271,27 +274,35 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
         await nextFrame()
         post({ type: "reply", requestId: m.requestId, ...result })
       } else if (m.type === "values") {
-        const update = handlers.update
+        if (m.channel !== undefined && m.channel !== "appearance" || !validInputRecord(m.values) || m.design !== undefined && !validInputRecord(m.design, true) || m.appearanceIds !== undefined && !validAppearanceIds(m.appearanceIds) || m.channel === "appearance" && !m.appearanceIds?.length) throw new Error("Invalid live input payload")
+        const update = m.channel === "appearance" ? handlers.updateAppearance : handlers.update
         if (!update || !current) throw new Error("This preview cannot change values in place")
-        const seq = ++valuesSeq
+        const channel = m.channel === "appearance" ? "appearance" : "values"
+        const seq = ++valuesSeq[channel]
         const run = updating.then(async () => {
-          if (seq !== valuesSeq || !current) return false
-          current = { ...current, values: m.values }
+          if (seq !== valuesSeq[channel] || !current) return false
+          const ids = m.appearanceIds ?? []
+          const next = { ...current,
+            values: channel === "appearance" ? { ...current.values, ...appearanceFields(m.values, ids) } : { ...m.values, ...appearanceFields(current.values, ids) },
+            design: channel === "appearance" ? { ...withoutAppearance(current.design ?? {}, ids), ...appearanceFields(m.design ?? {}, ids) } : current.design,
+          }
           // A Studio change, not a person's: it must not mark the runtime modified.
           armedAt = 0
           try {
-            await update(current)
+            await update(next)
+            // Draft work can finish while a handler awaits. Commit only this channel's owned fields.
+            current = { ...current, values: next.values, ...(channel === "appearance" ? { design: next.design } : {}) }
           } catch (err) {
             // A superseded update's failure does not matter: the newest values are applied next.
-            if (seq === valuesSeq) throw err
+            if (seq === valuesSeq[channel]) throw err
           }
           await settle()
-          return seq === valuesSeq
+          return seq === valuesSeq[channel]
         })
         updating = run.catch(() => undefined)
         // The reply only settles this request; a superseded one reports nothing about the runtime.
         const newest = await run
-        post({ type: "reply", requestId: m.requestId, ok: true })
+        post({ type: "reply", requestId: m.requestId, ok: true, ...(newest && m.channel === "appearance" && current ? { fingerprint: await (handlers.fingerprint?.(current) ?? fingerprint(current)) } : {}) })
         if (newest) post({ type: "navigated", ...state() })
       } else if (m.type === "code-request") {
         // After any values update in flight, so the code describes the newest values.
@@ -307,7 +318,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
             await handlers.applyCompiled?.(m.compiledData, m.direction)
             await applyCss(m.css ?? "", m.stylesheets ?? [])
             applyTokens(m.tokens)
-            current = previous ? { ...previous, tokens: m.tokens, css: m.css, stylesheets: m.stylesheets, direction: m.direction, compiledData: m.compiledData } : null
+            current = current ? { ...current, tokens: m.tokens, css: m.css, stylesheets: m.stylesheets, direction: m.direction, compiledData: m.compiledData } : null
             await settle()
             post({ type: "reply", requestId: m.requestId, ok: true })
             if (m.direction && current) post({ type: "direction-state", requestId: m.requestId, direction: m.direction, fingerprint: handlers.fingerprint ? await handlers.fingerprint(current) : fingerprint(current) })
@@ -317,7 +328,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
               try { await handlers.applyCompiled?.(previous.compiledData, previous.direction) } catch { restored = false }
               try { await applyCss(previous.css ?? "", previous.stylesheets ?? []) } catch { restored = false }
               try { applyTokens(previous.tokens) } catch { restored = false }
-              current = restored ? previous : null
+              current = restored && current ? { ...current, tokens: previous.tokens, css: previous.css, stylesheets: previous.stylesheets, direction: previous.direction, compiledData: previous.compiledData } : null
             }
             if (!restored) throw Object.assign(new Error("Frame could not restore its previous compiled snapshot; Retry rematerializes it"), { frameUnavailable: true })
             throw error
@@ -379,7 +390,7 @@ export function connectStudioFrame(handlers: FrameHandlers, options: FrameOption
 
   post({
     type: "hello",
-    capabilities: [...(handlers.applyCompiled ? ["compiled-data" as const] : []), ...(options.registeredStylesheets?.length ? ["registered-stylesheets" as const] : []), "direction-identity", "draft-css", "content-size", ...syncCaps, ...(gestures ? (["stage-gestures"] as const) : []), ...(handlers.update ? (["live-values"] as const) : []), ...(handlers.code ? (["code"] as const) : [])],
+    capabilities: [...(handlers.applyCompiled ? ["compiled-data" as const] : []), ...(options.registeredStylesheets?.length ? ["registered-stylesheets" as const] : []), "direction-identity", "draft-css", "content-size", ...syncCaps, ...(gestures ? (["stage-gestures"] as const) : []), ...(handlers.update ? (["live-values"] as const) : []), ...(handlers.updateAppearance ? (["live-appearance"] as const) : []), ...(handlers.code ? (["code"] as const) : [])],
   })
 
   return {

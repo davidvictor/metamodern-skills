@@ -1,0 +1,12 @@
+[
+  {
+    "check": "stale shared enum",
+    "default": "stroke-rounded",
+    "notice": true
+  },
+  {
+    "check": "stale saved enum",
+    "default": "stroke-rounded",
+    "notice": true
+  }
+]

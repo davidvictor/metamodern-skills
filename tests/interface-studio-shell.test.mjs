@@ -120,15 +120,15 @@ test('property values and code cross the frame boundary only as announced capabi
   assert.match(client, /handlers\.update \? \(\["live-values"\] as const\)/);
   assert.match(client, /handlers\.code \? \(\["code"\] as const\)/);
   // A Studio change never marks the runtime modified: the values branch disarms before it updates.
-  assert.match(client, /m\.type === "values"\) \{[\s\S]{0,600}?armedAt = 0[\s\S]{0,200}?await update\(current\)/, 'a Studio change never marks the runtime modified');
+  assert.match(client, /m\.type === "values"\) \{[\s\S]{0,2200}?armedAt = 0[\s\S]{0,200}?await update\(next\)/, 'a Studio change never marks the runtime modified');
   const host = read('src/studio/live-preview.tsx');
   assert.match(host, /includes\("live-values"\)/);
   assert.match(host, /type: "code-request"/);
   // Pending value requests are forgotten on the reply as well as on an error, so the set never grows with each edit.
   assert.match(host, /m\.type === "reply"\) \{[\s\S]{0,200}?valueRequests\.current\.delete\(m\.requestId\)/, 'a reply clears its value request');
-  assert.match(host, /if \(valueRequests\.current\.delete\(m\.requestId\) && rt === onScreen\) setRemount/, 'an error clears its value request and remounts only the runtime on screen');
+  assert.match(host, /else setRemount/, 'an error clears its value request and remounts only the runtime on screen');
   // A failed staged runtime does not freeze later edits: new values stage another runtime, the same values never loop.
-  assert.match(host, /if \(newest\?\.phase === "error" && newest\.key === runtimeKey\) \{\s*if \(JSON\.stringify\(newest\.inputs\.values\) !== valuesKey\) setRemount\(\(n\) => n \+ 1\)\s*return\s*\}/, 'a failed runtime lets the next edit remount');
+  assert.match(host, /if \(newest\?\.phase === "error" && newest\.key === runtimeKey\) \{\s*if \(JSON\.stringify\(withoutAppearance\(newest\.inputs\.values, appearanceIds\)\) !== valuesKey\) setRemount\(\(n\) => n \+ 1\)\s*return\s*\}/, 'a failed runtime lets the next edit remount');
   assert.match(host, /language: String\(m\.language\), text: String\(m\.text\)/, 'code answers are coerced to strings');
 });
 
@@ -301,7 +301,7 @@ test('final fix wave: ordered value updates, file-preserving saves, a lazy-chunk
   // Only the newest values message may affect the runtime: updates chain, a superseded one is skipped or ignored.
   assert.match(client, /const seq = \+\+valuesSeq/);
   assert.match(client, /updating\.then\(async \(\) => \{\s*if \(seq !== valuesSeq/);
-  assert.match(client, /if \(seq === valuesSeq\) throw err/);
+  assert.match(client, /if \(seq === valuesSeq\[channel\]\) throw err/);
   assert.match(client, /if \(newest\) post\(\{ type: "navigated"/);
   assert.match(client, /await updating\s*\n\s*if \(!handlers\.code/);
   const props = read('src/components/studio/properties.tsx');

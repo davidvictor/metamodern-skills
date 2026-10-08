@@ -1,5 +1,5 @@
 import * as React from "react"
-import { EyeIcon, EyeOffIcon } from "lucide-react"
+import { EyeIcon, EyeOffIcon } from "@/icons"
 import { cn } from "@/lib/utils"
 import { Field as UIField, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"

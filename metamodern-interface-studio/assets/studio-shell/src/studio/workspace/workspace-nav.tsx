@@ -4,7 +4,7 @@
  * the breadcrumb, and history for Back. Module code loads separately, when a module opens (workspace-page.tsx).
  */
 import * as React from "react"
-import { BoxesIcon, InfoIcon } from "lucide-react"
+import { BoxesIcon, InfoIcon } from "@/icons"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { adapter } from "@/adapter"
