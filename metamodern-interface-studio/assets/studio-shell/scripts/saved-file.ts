@@ -17,6 +17,7 @@ import { createHash, randomUUID } from "node:crypto"
 import { readFileSync, renameSync, rmSync, writeFileSync, mkdirSync } from "node:fs"
 import type { IncomingMessage, ServerResponse } from "node:http"
 import path from "node:path"
+import { Readable } from "node:stream"
 
 export type SavedFileOptions = { file: string; schema: string; list: string; maxBytes: number; validate: (data: unknown) => string[]; forbidden: string; tooBig: string; route?: string; empty?: () => unknown; requireRevision?: boolean; validateTransition?: (previous: unknown, next: unknown) => string[] }
 
@@ -179,7 +180,6 @@ export async function savedFileRequest(o: SavedFileOptions, request: Request): P
       body.push(Buffer.from(part.value))
     }
   }
-  const { Readable } = await import("node:stream")
   const req = Readable.from(body) as IncomingMessage
   req.method = request.method
   req.headers = Object.fromEntries(request.headers)
