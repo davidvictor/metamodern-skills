@@ -1,12 +1,12 @@
+import { committedStudioLocation, subscribeStudioLocation } from "../location"
 import { createPortal } from "react-dom"
 import * as React from "react"
 import { adapter } from "@/adapter"
-import { useStudio } from "@/store"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { fingerprint } from "../protocol"
 import { annotationBridge } from "./bridge"
-import { eligibleAnnotationPage, feedbackMarkdown, annotationHydration, validEvent, validRecord } from "./model"
+import { feedbackMarkdown, annotationHydration, validEvent, validRecord } from "./model"
 import { createAnnotationClient } from "./client"
 import type { AnnotationContext, AnnotationEvent, AnnotationScope, AnnotationSession, FeedbackRecord } from "./types"
 const declaration = adapter.annotations!
@@ -15,8 +15,8 @@ const preferenceKey = `${storageKey}:enabled`
 let memory: FeedbackRecord[] | undefined
 function initialNotes() { if (memory) return memory; try { const value: unknown = JSON.parse(localStorage.getItem(storageKey) ?? "[]"); return Array.isArray(value) ? value.filter(validRecord) : [] } catch { return [] } }
 function initialEnabled() { try { const saved = localStorage.getItem(preferenceKey); return saved === null ? declaration.defaultEnabled === true : saved === "true" } catch { return declaration.defaultEnabled === true } }
-export function Annotations() {
-  const studio = useStudio()
+const noSubscription = () => () => undefined
+export function Annotations({ page }: { page: "library" | "inspect" }) {
   const [enabled, setEnabled] = React.useState(initialEnabled)
   const [notes, setNotes] = React.useState<FeedbackRecord[]>(initialNotes)
   const notesRef = React.useRef(notes)
@@ -26,11 +26,15 @@ export function Annotations() {
   const [active, setActive] = React.useState("")
   const [viewport, setViewport] = React.useState(() => ({ width: innerWidth, height: innerHeight, scale: 1 }))
   React.useEffect(() => { const resized = () => setViewport({ width: innerWidth, height: innerHeight, scale: 1 }); addEventListener("resize", resized); return () => removeEventListener("resize", resized) }, [])
-  React.useSyncExternalStore(annotationBridge.subscribe, annotationBridge.snapshot)
+  const observedTarget = enabled ? selected : null
+  const subscribe = React.useCallback((listener: () => void) => annotationBridge.subscribeFor(observedTarget, listener), [observedTarget])
+  const snapshot = React.useCallback(() => annotationBridge.snapshotFor(observedTarget), [observedTarget])
+  React.useSyncExternalStore(subscribe, snapshot)
+  const studioLocation = React.useSyncExternalStore(enabled && selected === "studio" ? subscribeStudioLocation : noSubscription, committedStudioLocation)
   const portalContainer = annotationBridge.portal()
   const targets = annotationBridge.targets()
   const target = targets.find(value => value.id === selected)
-  const context: AnnotationContext = selected === "studio" ? { layer: "studio", page: eligibleAnnotationPage(studio)!, viewport, location: location.hash, revision: adapter.product.revision, shellVersion: "0.19.1" } : target?.context ?? { layer: "preview", page: eligibleAnnotationPage(studio)!, viewport: { width: 1, height: 1, scale: 1 }, shellVersion: "0.19.1" }
+  const context: AnnotationContext = selected === "studio" ? { layer: "studio", page, viewport, location: studioLocation, revision: adapter.product.revision, shellVersion: "0.19.1" } : target?.context ?? { layer: "preview", page, viewport: { width: 1, height: 1, scale: 1 }, shellVersion: "0.19.1" }
   const contextKey = fingerprint(context)
   const sessionRef = React.useRef<AnnotationSession | null>(null)
   const selectedRef = React.useRef(selected)

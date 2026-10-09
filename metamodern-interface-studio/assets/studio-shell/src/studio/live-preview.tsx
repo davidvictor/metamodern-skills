@@ -358,26 +358,37 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
   }, [valuesKey, current, newest, runtimeKey, post, appearanceIds, inputs.values])
 
   const annotationPage = eligibleAnnotationPage(studio)
-  const annotationContext = {
-    layer: "preview" as const, page: annotationPage ?? "inspect", scenario: inputs.scenario, theme: inputs.theme,
-    profile: inputs.profile, values: inputs.values, design: { values: safeAnnotationDesign(inputs.design, adapter.design?.parameters), fingerprint: fingerprint(inputs.design) }, draft: { tokens: safeAnnotationTokens(draft.tokens), fingerprint: fingerprint(draft) },
-    viewport: { width: w, height: h, scale }, location: current?.ready?.location,
-    revision: adapter.product.revision, shellVersion: "0.19.1", ...annotationTarget,
-  }
-  const safeContext = { ...annotationContext, ...captureAnnotationValues(inputs.values, adapter.annotations?.safeValues?.(annotationContext)), omittedContext: ["Unregistered/free-text design values: fingerprint only", "Unsafe/custom token values, CSS and compiled snapshot: fingerprint only"] }
-  const annotationContextKey = JSON.stringify(safeContext)
-  const annotationSettled = annotationPreviewSettled({ current: current?.instance, newest: newest?.instance, currentKey: current?.key, requestedKey: runtimeKey, error: !!current?.appearanceError || !!draftError.current,
-    values: valuesKey, acknowledgedValues: current?.annotationValuesKey ?? JSON.stringify(withoutAppearance(current?.inputs.values ?? {}, appearanceIds)),
-    appearance, acknowledgedAppearance: current?.annotationAppearanceKey ?? (current ? appearanceKey(current.inputs, appearanceIds) : ""),
-    draft: key, acknowledgedDraft: current?.annotationDraftKey ?? (current ? draftKey(current.inputs) : ""),
-  })
-  const annotationAvailable = annotationSettled && (current?.capabilities?.includes("annotations") ?? false)
   const annotationInstance = current?.instance
   const annotationOptIn = !!annotationTarget
+  const annotationEligible = LOCAL_ANNOTATIONS && !!adapter.annotations && !!annotationPage && (annotationPage !== "library" || annotationOptIn)
+  let annotationContextKey = ""
+  let annotationAvailable = false
+  if (annotationEligible) {
+    const annotationContext = {
+      layer: "preview" as const, page: annotationPage!, scenario: inputs.scenario, theme: inputs.theme,
+      profile: inputs.profile, values: inputs.values, design: { values: safeAnnotationDesign(inputs.design, adapter.design?.parameters), fingerprint: fingerprint(inputs.design) }, draft: { tokens: safeAnnotationTokens(draft.tokens), fingerprint: fingerprint(draft) },
+      viewport: { width: w, height: h, scale }, location: current?.ready?.location,
+      revision: adapter.product.revision, shellVersion: "0.19.1", ...annotationTarget,
+    }
+    const safeContext = { ...annotationContext, ...captureAnnotationValues(inputs.values, adapter.annotations?.safeValues?.(annotationContext)), omittedContext: ["Unregistered/free-text design values: fingerprint only", "Unsafe/custom token values, CSS and compiled snapshot: fingerprint only"] }
+    annotationContextKey = JSON.stringify(safeContext)
+    const settled = annotationPreviewSettled({ current: current?.instance, newest: newest?.instance, currentKey: current?.key, requestedKey: runtimeKey, error: !!current?.appearanceError || !!draftError.current,
+      values: valuesKey, acknowledgedValues: current?.annotationValuesKey ?? JSON.stringify(withoutAppearance(current?.inputs.values ?? {}, appearanceIds)),
+      appearance, acknowledgedAppearance: current?.annotationAppearanceKey ?? (current ? appearanceKey(current.inputs, appearanceIds) : ""),
+      draft: key, acknowledgedDraft: current?.annotationDraftKey ?? (current ? draftKey(current.inputs) : ""),
+    })
+    annotationAvailable = settled && (current?.capabilities?.includes("annotations") ?? false)
+  }
   React.useEffect(() => {
-    if (!LOCAL_ANNOTATIONS || !adapter.annotations || !annotationInstance || !annotationPage || (annotationPage === "library" && !annotationOptIn)) return
+    if (!annotationEligible || !annotationInstance) return
     return annotationBridge.register({ id: annotationInstance, label: label + (annotationPage === "library" ? " (expanded preview)" : " (preview)"), context: JSON.parse(annotationContextKey), available: annotationAvailable, send: command => post(annotationInstance, { type: "annotations", command }) })
-  }, [annotationContextKey, annotationAvailable, annotationInstance, annotationPage, label, post, annotationOptIn])
+    // Membership belongs to this instance; the separate update effect keeps its context/availability current.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [annotationInstance, annotationEligible, post])
+  React.useEffect(() => {
+    if (!annotationEligible || !annotationInstance) return
+    annotationBridge.update({ id: annotationInstance, label: label + (annotationPage === "library" ? " (expanded preview)" : " (preview)"), context: JSON.parse(annotationContextKey), available: annotationAvailable, send: command => post(annotationInstance, { type: "annotations", command }) })
+  }, [annotationContextKey, annotationAvailable, annotationInstance, annotationEligible, annotationPage, label, post])
 
   // The runtime on screen reports only the channels asked for; a new runtime is told again.
   const channelKey = sync ? JSON.stringify(sync.channels) : ""

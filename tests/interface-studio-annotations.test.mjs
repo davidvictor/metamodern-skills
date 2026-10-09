@@ -7,10 +7,12 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 const source = new URL('../metamodern-interface-studio/assets/studio-shell/src/studio/annotations/', import.meta.url);
 const dir = mkdtempSync(join(tmpdir(), 'studio-annotations-test-'));
+writeFileSync(join(dir, 'location.mjs'), stripTypeScriptTypes(readFileSync(new URL('../location.ts', source), 'utf8'), {mode:'strip'}));
 writeFileSync(join(dir, 'protocol.mjs'), stripTypeScriptTypes(readFileSync(new URL('../protocol.ts', source), 'utf8'), {mode:'strip'}));
 for (const name of ['model', 'client', 'bridge', 'schedule']) writeFileSync(join(dir, `${name}.mjs`), stripTypeScriptTypes(readFileSync(new URL(`${name}.ts`, source), 'utf8'), {mode:'strip'}).replace(/from "\.\/model"/g, 'from "./model.mjs"').replace(/from "\.\/schedule"/g, 'from "./schedule.mjs"').replace(/from "\.\.\/protocol"/g, 'from "./protocol.mjs"'));
 const {validCommand, validEvent, validAnnotation, eligibleAnnotationPage, feedbackMarkdown, validRecord, captureAnnotationValues, annotationPreviewSettled, annotationHydration, safeAnnotationDesign, safeAnnotationTokens} = await import(pathToFileURL(join(dir,'model.mjs')));
 const {scheduleAnnotationWork, ANNOTATION_IDLE_TIMEOUT_MS} = await import(pathToFileURL(join(dir,'schedule.mjs')));
+const {committedStudioLocation,subscribeStudioLocation,replaceStudioLocation} = await import(pathToFileURL(join(dir,'location.mjs')));
 const {annotationBridge} = await import(pathToFileURL(join(dir,'bridge.mjs')));
 const {createAnnotationClient} = await import(pathToFileURL(join(dir,'client.mjs')));
 const annotation = {id:'note1', comment:'Do exactly this.\nKeep this second line.', element:'Button', elementPath:'[data-kit-component="Button"]', timestamp:Date.now(), x:10, y:20};
@@ -156,4 +158,39 @@ test('a starved background task makes bounded progress once and cancels the losi
  const host={requestAnimationFrame:scheduler.host.requestAnimationFrame,cancelAnimationFrame:scheduler.host.cancelAnimationFrame,setTimeout(callback,delay){const id=++next;timers.set(id,{callback,delay});return id},clearTimeout(id){timers.delete(id)},scheduler:{postTask(callback,provided){task=callback;options=provided;return new Promise(()=>{})}}};
  const work=scheduleAnnotationWork(()=>{calls++;return 'runtime'},controller.signal,host);scheduler.paint();scheduler.paint();
  const timeout=[...timers.values()][0];assert.equal(timeout.delay,ANNOTATION_IDLE_TIMEOUT_MS);timeout.callback();assert.equal(await work,'runtime');assert.equal(calls,1);assert.equal(options.signal.aborted,true);assert.equal(timers.size,0);task();assert.equal(calls,1);
+});
+
+test('context-only updates notify selected preview without flushing Studio/off/availability consumers',()=>{
+ const target={id:'selective-preview',label:'Preview',available:true,context:session.context,send(){}};
+ const remove=annotationBridge.register(target);
+ const counts={studio:0,off:0,selected:0,availability:0};
+ const releases=[annotationBridge.subscribeFor('studio',()=>counts.studio++),annotationBridge.subscribeFor(null,()=>counts.off++),annotationBridge.subscribeFor(target.id,()=>counts.selected++),annotationBridge.subscribe(()=>counts.availability++)];
+ const before=annotationBridge.snapshotFor(target.id),studioBefore=annotationBridge.snapshotFor('studio');
+ annotationBridge.update({...target,context:{...target.context,viewport:{width:361,height:480,scale:1}}});
+ assert.deepEqual(counts,{studio:0,off:0,selected:1,availability:0});
+ assert.notEqual(annotationBridge.snapshotFor(target.id),before);assert.equal(annotationBridge.snapshotFor('studio'),studioBefore);
+ assert.equal(annotationBridge.targets().filter(value=>value.id===target.id).length,1);
+ annotationBridge.update({...target,available:false,context:{...target.context,viewport:{width:362,height:480,scale:1}}});
+ assert.deepEqual(counts,{studio:1,off:1,selected:2,availability:1});
+ remove();assert.ok(!annotationBridge.targets().some(value=>value.id===target.id));
+ assert.deepEqual(counts,{studio:2,off:2,selected:3,availability:2});releases.forEach(release=>release());
+});
+test('updated membership keeps its owner and an older cleanup cannot remove its replacement',()=>{
+ const target={id:'owner-preview',label:'Preview',available:true,context:session.context,send(){}};
+ const first=annotationBridge.register(target);annotationBridge.update({...target,context:{...target.context,theme:'dark'}});
+ const second=annotationBridge.register(target);first();assert.ok(annotationBridge.targets().some(value=>value.id===target.id));second();assert.ok(!annotationBridge.targets().some(value=>value.id===target.id));
+});
+test('Studio location publishes actual canonical URL after replacement, without duplicate notifications',()=>{
+ const previousLocation=Object.getOwnPropertyDescriptor(globalThis,'location'),previousHistory=Object.getOwnPropertyDescriptor(globalThis,'history');
+ const order=[],observed=[];const location={hash:'#before'};
+ Object.defineProperty(globalThis,'location',{configurable:true,value:location});Object.defineProperty(globalThis,'history',{configurable:true,value:{replaceState(_state,_title,url){order.push(url);location.hash='#committed-normalized'}}});
+ const unsubscribe=subscribeStudioLocation(()=>{order.push('notified');observed.push([committedStudioLocation(),location.hash])});
+ try{replaceStudioLocation('#requested');assert.deepEqual(order,['#requested','notified']);assert.deepEqual(observed,[['#committed-normalized','#committed-normalized']]);replaceStudioLocation('#requested');assert.equal(observed.length,1)}finally{unsubscribe();if(previousLocation)Object.defineProperty(globalThis,'location',previousLocation);else delete globalThis.location;if(previousHistory)Object.defineProperty(globalThis,'history',previousHistory);else delete globalThis.history}
+ const store=readFileSync(new URL('../store.tsx',new URL('../',source)),'utf8');assert.equal((store.match(/replaceStudioLocation\(`#\$\{q\}`\)/g)??[]).length,3);assert.ok(!store.includes('history.replaceState'));
+});
+test('annotation-only hashes are guarded and Host observes page/committed URL rather than full Studio Context',()=>{
+ const live=readFileSync(new URL('../live-preview.tsx',source),'utf8');assert.ok(live.indexOf('if (annotationEligible)')<live.indexOf('const annotationContext ='));
+ assert.ok(live.includes('annotationPage !== "library" || annotationOptIn'));
+ const host=readFileSync(new URL('host.tsx',source),'utf8');assert.ok(!host.includes('useStudio'));assert.ok(host.includes('subscribeStudioLocation'));assert.ok(host.includes('annotationBridge.subscribeFor(observedTarget'));
+ const slot=readFileSync(new URL('slot.tsx',source),'utf8');assert.ok(slot.includes('React.memo(module.Annotations)'));assert.ok(slot.includes('<Annotations page={page}'));
 });
