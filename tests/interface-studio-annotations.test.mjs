@@ -10,7 +10,7 @@ const dir = mkdtempSync(join(tmpdir(), 'studio-annotations-test-'));
 writeFileSync(join(dir, 'location.mjs'), stripTypeScriptTypes(readFileSync(new URL('../location.ts', source), 'utf8'), {mode:'strip'}));
 writeFileSync(join(dir, 'protocol.mjs'), stripTypeScriptTypes(readFileSync(new URL('../protocol.ts', source), 'utf8'), {mode:'strip'}));
 for (const name of ['model', 'client', 'bridge', 'schedule']) writeFileSync(join(dir, `${name}.mjs`), stripTypeScriptTypes(readFileSync(new URL(`${name}.ts`, source), 'utf8'), {mode:'strip'}).replace(/from "\.\/model"/g, 'from "./model.mjs"').replace(/from "\.\/schedule"/g, 'from "./schedule.mjs"').replace(/from "\.\.\/protocol"/g, 'from "./protocol.mjs"'));
-const {validCommand, validEvent, validAnnotation, eligibleAnnotationPage, feedbackMarkdown, validRecord, captureAnnotationValues, annotationPreviewSettled, annotationHydration, safeAnnotationDesign, safeAnnotationTokens} = await import(pathToFileURL(join(dir,'model.mjs')));
+const {validCommand, validEvent, validAnnotation, eligibleAnnotationPage, feedbackMarkdown, validRecord, captureAnnotationValues, annotationPreviewSettled, annotationHydration, safeAnnotationDesign, safeAnnotationTokens, annotationHostBottom} = await import(pathToFileURL(join(dir,'model.mjs')));
 const {scheduleAnnotationWork, ANNOTATION_IDLE_TIMEOUT_MS} = await import(pathToFileURL(join(dir,'schedule.mjs')));
 const {committedStudioLocation,subscribeStudioLocation,replaceStudioLocation} = await import(pathToFileURL(join(dir,'location.mjs')));
 const {annotationBridge} = await import(pathToFileURL(join(dir,'bridge.mjs')));
@@ -193,4 +193,42 @@ test('annotation-only hashes are guarded and Host observes page/committed URL ra
  assert.ok(live.includes('annotationPage !== "library" || annotationOptIn'));
  const host=readFileSync(new URL('host.tsx',source),'utf8');assert.ok(!host.includes('useStudio'));assert.ok(host.includes('subscribeStudioLocation'));assert.ok(host.includes('annotationBridge.subscribeFor(observedTarget'));
  const slot=readFileSync(new URL('slot.tsx',source),'utf8');assert.ok(slot.includes('React.memo(module.Annotations)'));assert.ok(slot.includes('<Annotations page={page}'));
+});
+
+test('host annotation placement clears wrapped docks without moving child toolbars', () => {
+  assert.equal(annotationHostBottom(844, 716), 140);
+  assert.equal(annotationHostBottom(768, 650), 130);
+  assert.equal(annotationHostBottom(1024, 950), 86);
+  assert.equal(annotationHostBottom(844, null), 24);
+  assert.equal(annotationHostBottom(844, 900), 24);
+  const runtime = readFileSync(new URL('runtime.tsx', source), 'utf8');
+  assert.match(runtime, /context.layer === "studio" \? "studio-host-annotation-toolbar" : undefined/);
+  assert.match(runtime, /:host\(\.studio-host-annotation-toolbar\).*:not\(\[style\]\)/);
+});
+
+test('layout membership notification is inert when compiled off and coalesces local mount changes', async () => {
+  const text = stripTypeScriptTypes(readFileSync(new URL('capability.ts', source), 'utf8'), { mode: 'strip' });
+  const originalWindow = globalThis.window;
+  const events = [];
+  globalThis.window = { dispatchEvent: event => events.push(event.type) };
+  try {
+    for (const enabled of [false, true]) {
+      const file = join(dir, `capability-${enabled}.mjs`);
+      writeFileSync(file, text.replaceAll('__STUDIO_LOCAL_ANNOTATIONS__', String(enabled)));
+      const module = await import(pathToFileURL(file));
+      module.notifyAnnotationLayout();
+      module.notifyAnnotationLayout();
+      await Promise.resolve();
+      assert.equal(events.length, enabled ? 1 : 0);
+      if (enabled) {
+        assert.equal(events[0], module.ANNOTATION_LAYOUT_EVENT);
+        module.notifyAnnotationLayout();
+        await Promise.resolve();
+        assert.equal(events.length, 2);
+      }
+    }
+  } finally {
+    if (originalWindow === undefined) delete globalThis.window;
+    else globalThis.window = originalWindow;
+  }
 });

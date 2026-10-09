@@ -36,6 +36,70 @@ try {
   assert.equal(await countRuntimes(), 0)
   assert.equal(requests.filter(value => /annotations\/runtime|\/agentation(?:[./?]|$)/.test(value)).length, 0)
   passed("Cold excluded page fetches no Agentation and mounts no runtime")
+  for (const appearance of ["light", "dark"]) for (const [width, height] of [[768, 1024], [1024, 768], [390, 844]]) {
+    const touch = await browser.newContext({ viewport: { width, height }, hasTouch: true, isMobile: true, colorScheme: appearance })
+    await touch.addInitScript(value => localStorage.setItem("studio.appearance", value), appearance)
+    const screen = await touch.newPage()
+    screen.on("request", request => requests.push(request.url()))
+    screen.on("pageerror", error => errors.push(error.message))
+    screen.on("console", message => { if (message.type() === "error") errors.push(message.text()) })
+    await screen.goto(`${url}#view=inspect&scenario=tasks.list`)
+    await screen.locator('agentation-toolbar').waitFor({ state: 'attached' })
+    await screen.locator('[data-studio-preview-controls="dock"], [data-studio-bottom-controls]').waitFor()
+    await screen.waitForFunction(() => {
+      const dock = document.querySelector('[data-studio-preview-controls="dock"], [data-studio-bottom-controls]')?.getBoundingClientRect()
+      const sdk = document.querySelector('agentation-toolbar')?.shadowRoot?.querySelector('[data-agentation-toolbar]')?.getBoundingClientRect()
+      const panel = document.querySelector('[data-studio-annotations]')?.getBoundingClientRect()
+      return dock && sdk && panel && sdk.bottom <= dock.top && panel.bottom <= sdk.top && panel.left >= 0 && panel.right <= innerWidth
+    })
+    const reached = await screen.evaluate(() => [...document.querySelectorAll('[data-studio-preview-controls="dock"] button, [data-studio-bottom-controls] button')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.height && !e.disabled }).every(e => { const r = e.getBoundingClientRect(); return e.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)) }))
+    assert.ok(reached, `Studio dock buttons remain on top at ${width}x${height}`)
+    if (width === 768) {
+      if (await screen.getByRole("button", { name: "More actions", exact: true }).count()) await screen.getByRole("button", { name: "More actions", exact: true }).click()
+      const generation = await screen.locator('[data-studio-annotation-runtime]').getAttribute('data-studio-annotation-runtime')
+      await screen.getByRole("button", { name: "Studio settings", exact: true }).click()
+      await screen.getByText("Stage toolbar", { exact: true }).click()
+      await screen.locator('[data-studio-preview-controls="dock"]').waitFor({ state: "detached" })
+      await screen.keyboard.press("Escape")
+      await screen.getByRole("button", { name: "Studio settings", exact: true }).click()
+      await screen.getByText("Floating dock", { exact: true }).click()
+      await screen.locator('[data-studio-preview-controls="dock"]').waitFor()
+      await screen.keyboard.press("Escape")
+      await screen.waitForFunction(() => {
+        const dock = document.querySelector('[data-studio-preview-controls="dock"]')?.getBoundingClientRect()
+        const sdk = document.querySelector('agentation-toolbar')?.shadowRoot?.querySelector('[data-agentation-toolbar]')?.getBoundingClientRect()
+        return dock && sdk && sdk.bottom <= dock.top
+      })
+      assert.equal(await screen.locator('[data-studio-annotation-runtime]').getAttribute('data-studio-annotation-runtime'), generation, "Controls placement changes preserve the host capture session")
+    }
+    if (width === 390) {
+      await screen.getByRole("button", { name: "Panel", exact: true }).click()
+      await screen.locator('[role="dialog"]').waitFor()
+      await screen.waitForFunction(() => {
+        const dialog = document.querySelector('[role="dialog"]')?.getBoundingClientRect()
+        const sdk = document.querySelector('agentation-toolbar')?.shadowRoot?.querySelector('[data-agentation-toolbar]')?.getBoundingClientRect()
+        return dialog && sdk && sdk.bottom <= dialog.top
+      })
+      await note(screen, screen.getByRole("dialog").getByRole("button", { name: "All", exact: true }), "Drawer wrapper recreation preserves this accepted note.")
+      await screen.getByRole("button", { name: "Exit", exact: true }).click()
+      await screen.keyboard.press("Escape")
+      await screen.locator('[role="dialog"]').waitFor({ state: "detached" })
+      await screen.getByRole("button", { name: "Feedback (1)", exact: true }).waitFor()
+      await screen.getByRole("button", { name: "Start feedback mode", exact: true }).waitFor()
+      await screen.waitForFunction(() => Object.keys(localStorage).filter(key => key.startsWith("feedback-annotations-")).some(key => localStorage.getItem(key)?.includes("Drawer wrapper recreation preserves this accepted note.")))
+      await screen.goto(`${url}#library=button`)
+      await screen.getByRole("heading", { name: "Button", exact: true }).waitFor()
+      await screen.locator('[data-studio-bottom-navigation]').waitFor()
+      await screen.locator('agentation-toolbar').waitFor({ state: 'attached' })
+      await screen.waitForFunction(() => {
+        const nav = document.querySelector('[data-studio-bottom-navigation]')?.getBoundingClientRect()
+        const sdk = document.querySelector('agentation-toolbar')?.shadowRoot?.querySelector('[data-agentation-toolbar]')?.getBoundingClientRect()
+        return nav && sdk && sdk.bottom <= nav.top
+      })
+    }
+    await touch.close()
+  }
+  passed("Host SDK and target controls clear the wrapped dock at tablet, landscape and phone widths")
   await page.goto(url)
   await page.locator("agentation-toolbar").waitFor({ state: "attached" })
   await page.evaluate(() => {

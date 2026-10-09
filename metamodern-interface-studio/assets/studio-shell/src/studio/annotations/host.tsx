@@ -1,3 +1,4 @@
+import { ANNOTATION_LAYOUT_EVENT } from "./capability"
 import { committedStudioLocation, subscribeStudioLocation } from "../location"
 import { createPortal } from "react-dom"
 import * as React from "react"
@@ -6,7 +7,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Button } from "@/components/ui/button"
 import { fingerprint } from "../protocol"
 import { annotationBridge } from "./bridge"
-import { feedbackMarkdown, annotationHydration, validEvent, validRecord } from "./model"
+import { feedbackMarkdown, annotationHydration, annotationHostBottom, validEvent, validRecord } from "./model"
 import { createAnnotationClient } from "./client"
 import type { AnnotationContext, AnnotationEvent, AnnotationScope, AnnotationSession, FeedbackRecord } from "./types"
 const declaration = adapter.annotations!
@@ -32,6 +33,25 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
   React.useSyncExternalStore(subscribe, snapshot)
   const studioLocation = React.useSyncExternalStore(enabled && selected === "studio" ? subscribeStudioLocation : noSubscription, committedStudioLocation)
   const portalContainer = annotationBridge.portal()
+  // Dock wrapping changes its occupied height without changing the annotation session. Positioning is DOM-only.
+  React.useLayoutEffect(() => {
+    const observer = new ResizeObserver(() => place())
+    let occupied: HTMLElement[] = []
+    const place = () => {
+      const boxes = occupied.map(element => element.getBoundingClientRect()).filter(box => box.width > 0 && box.height > 0)
+      const top = boxes.length ? Math.min(...boxes.map(box => box.top)) : null
+      document.documentElement.style.setProperty("--studio-annotation-sdk-bottom", `${annotationHostBottom(innerHeight, top)}px`)
+    }
+    const rebind = () => {
+      observer.disconnect()
+      occupied = portalContainer ? [] : [...document.querySelectorAll<HTMLElement>('[data-studio-preview-controls="dock"], [data-studio-bottom-controls], [data-studio-bottom-navigation]')]
+      occupied.forEach(element => observer.observe(element))
+      place()
+    }
+    addEventListener(ANNOTATION_LAYOUT_EVENT, rebind)
+    rebind()
+    return () => { observer.disconnect(); removeEventListener(ANNOTATION_LAYOUT_EVENT, rebind); document.documentElement.style.removeProperty("--studio-annotation-sdk-bottom") }
+  }, [page, viewport.width, viewport.height, portalContainer])
   const targets = annotationBridge.targets()
   const target = targets.find(value => value.id === selected)
   const context: AnnotationContext = selected === "studio" ? { layer: "studio", page, viewport, location: studioLocation, revision: adapter.product.revision, shellVersion: "0.19.1" } : target?.context ?? { layer: "preview", page, viewport: { width: 1, height: 1, scale: 1 }, shellVersion: "0.19.1" }
@@ -110,11 +130,11 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
   React.useEffect(() => () => { void hostClient.dispose() }, [hostClient])
   const markdown = feedbackMarkdown(notes)
   const changeScope = (key: string, scope: AnnotationScope) => persist(notesRef.current.map(note => { if (note.key !== key) return note; const source = declaration.resolveSource(note.session.context, note.annotation, scope); return { ...note, scope, source, repository: source.repository ?? declaration.repository } }))
-  const recoveryNotice = notice && <p role="status" className={review ? "rounded border bg-muted p-3 text-sm" : "fixed bottom-32 left-4 z-50 max-w-sm rounded border bg-background p-3 text-sm"}>{notice}<button onClick={() => setNotice("")} className="ml-2 underline">Dismiss</button></p>
+  const recoveryNotice = notice && <p role="status" className={review ? "rounded border bg-muted p-3 text-sm" : "fixed left-4 z-50 max-w-sm rounded border bg-background p-3 text-sm"} style={review ? undefined : { bottom: "calc(var(--studio-annotation-sdk-bottom, 24px) + 160px)" }}>{notice}<button onClick={() => setNotice("")} className="ml-2 underline">Dismiss</button></p>
   return <>
-    {createPortal(<div data-studio-annotations data-annotation-active={active} className="fixed right-4 bottom-16 z-50 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 rounded-lg border bg-background p-2 text-xs shadow-sm">
+    {createPortal(<div data-studio-annotations data-annotation-active={active} style={{ bottom: "calc(var(--studio-annotation-sdk-bottom, 24px) + 72px)" }} className="fixed right-4 z-50 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 rounded-lg border bg-background p-2 text-xs shadow-sm">
       <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={enabled} onChange={event => { setEnabled(event.target.checked); try { localStorage.setItem(preferenceKey, String(event.target.checked)) } catch { setNotice("The annotation preference cannot be saved in this browser.") } }} />Annotations</label>
-      {enabled && <label>Target <select aria-label="Annotation target" className="min-h-11 rounded border bg-background px-2 text-base" value={selected} onChange={event => setSelected(event.target.value)}><option value="studio">Studio</option>{selected !== "studio" && !target && <option value={selected} disabled>Selected preview unavailable — choose a target</option>}{targets.map(value => <option key={value.id} value={value.id} disabled={!value.available}>{value.label}{!value.available ? " — waiting for a settled supported preview" : ""}</option>)}</select></label>}
+      {enabled && <label className="flex min-w-0 items-center gap-2">Target <select aria-label="Annotation target" className="min-h-11 min-w-0 max-w-48 rounded border bg-background px-2 text-base" value={selected} onChange={event => setSelected(event.target.value)}><option value="studio">Studio</option>{selected !== "studio" && !target && <option value={selected} disabled>Selected preview unavailable — choose a target</option>}{targets.map(value => <option key={value.id} value={value.id} disabled={!value.available}>{value.label}{!value.available ? " — waiting for a settled supported preview" : ""}</option>)}</select></label>}
       <Button variant="outline" onClick={() => setReview(true)}>Feedback ({notes.length})</Button>
       {selected !== "studio" && !target && <span role="status">Choose an available preview. Library previews must be expanded.</span>}
     </div>, portalContainer ?? document.body)}

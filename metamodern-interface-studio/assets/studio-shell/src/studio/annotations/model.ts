@@ -79,3 +79,8 @@ export function safeAnnotationDesign(values: Record<string, unknown> | undefined
 export function safeAnnotationTokens(tokens: Record<string, string>) {
   return Object.fromEntries(Object.entries(tokens).filter(([name, value]) => /^--[a-z0-9-]+$/i.test(name) && value.length <= 200 && /^(?:#[0-9a-f]{3,8}|[+-]?[\d.]+(?:px|rem|em|%|s|ms)?|(?:oklch|oklab|rgb|rgba|hsl|hsla)\([\d.%+\s/,()-]+\)|var\(--[a-z0-9-]+\))$/i.test(value)))
 }
+
+/** Host controls sit above the wrapped Studio dock; child runtimes keep vendor positioning. */
+export function annotationHostBottom(height: number, dockTop: number | null) {
+  return dockTop === null ? 24 : Math.max(24, height - dockTop + 12)
+}

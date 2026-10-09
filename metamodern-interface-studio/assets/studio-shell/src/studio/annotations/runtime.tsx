@@ -80,12 +80,34 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
     accepted.set(raw.id, raw)
     options.onMutation({ action: "upsert", annotation: raw })
   }
+  const portalKeys = new WeakMap<HTMLElement, string>()
   let portal: HTMLElement | null = null
+  const placeToolbar = () => {
+    if (!live || options.session.context.layer !== "studio") return
+    const host = document.querySelector<HTMLElement>("agentation-toolbar.studio-host-annotation-toolbar")
+    const top = portal?.getBoundingClientRect().top
+    // Bottom sheets leave a clear strip above them; keep the host toolbar out of their filter controls.
+    if (host && top !== undefined && top >= 84 && top < innerHeight) host.style.setProperty("--studio-annotation-sdk-bottom", `${innerHeight - top + 12}px`)
+    else host?.style.removeProperty("--studio-annotation-sdk-bottom")
+  }
+  const portalResize = options.session.context.layer === "studio" ? new ResizeObserver(placeToolbar) : null
   const render = () => {
     if (!live) return
     const overlays = [...document.querySelectorAll<HTMLElement>('[role="dialog"]:not([data-closed]):not([aria-hidden="true"]), [data-studio-annotation-portal]')].filter(el => !el.closest("[data-studio-feedback-review]"))
     portal = overlays.at(-1) ?? null
-    root.render(<Agentation enableKeyboardShortcuts={false} copyToClipboard={false} portalContainer={portal} identifyingAttributes={ATTRIBUTES} onAnnotationAdd={emit} onAnnotationUpdate={emit} onAnnotationDelete={annotation => { accepted.delete(annotation.id); options.onMutation({ action: "delete", id: annotation.id }) }} onAnnotationsClear={() => { accepted.clear(); options.onMutation({ action: "clear" }) }} onCopy={() => options.onMutation({ action: "review" })} onSubmit={() => options.onMutation({ action: "review" })} />)
+    portalResize?.disconnect()
+    if (portal) {
+      portalResize?.observe(portal)
+      const current = portal
+      void Promise.all(portal.getAnimations().filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime)).map(animation => animation.finished.catch(() => undefined))).then(() => { if (live && portal === current) placeToolbar() })
+    }
+    // Recreate the host-owned vendor wrapper inside a new focus boundary; moving an inert outside wrapper retains Base UI's marks.
+    let portalKey = "body"
+    if (portal && options.session.context.layer === "studio") {
+      portalKey = portalKeys.get(portal) ?? crypto.randomUUID()
+      portalKeys.set(portal, portalKey)
+    }
+    root.render(<Agentation key={portalKey} className={options.session.context.layer === "studio" ? "studio-host-annotation-toolbar" : undefined} enableKeyboardShortcuts={false} copyToClipboard={false} portalContainer={portal} identifyingAttributes={ATTRIBUTES} onAnnotationAdd={emit} onAnnotationUpdate={emit} onAnnotationDelete={annotation => { accepted.delete(annotation.id); options.onMutation({ action: "delete", id: annotation.id }) }} onAnnotationsClear={() => { accepted.clear(); options.onMutation({ action: "clear" }) }} onCopy={() => options.onMutation({ action: "review" })} onSubmit={() => options.onMutation({ action: "review" })} />)
   }
   const framePointers = new Map<HTMLIFrameElement, string>()
   const isolateFrames = () => {
@@ -104,12 +126,13 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
       if (shadow && !shadow.querySelector("[data-studio-restrictions]")) {
         const style = document.createElement("style")
         style.dataset.studioRestrictions = ""
-        style.textContent = 'button[aria-label="Settings"], [data-agentation-settings-panel] { display: none !important; }'
+        style.textContent = 'button[aria-label="Settings"], [data-agentation-settings-panel] { display: none !important; } :host(.studio-host-annotation-toolbar) [data-agentation-toolbar]:not([style]) { bottom: var(--studio-annotation-sdk-bottom, 24px) !important; }'
         shadow.append(style)
       }
     }
     const overlays = [...document.querySelectorAll<HTMLElement>('[role="dialog"]:not([data-closed]):not([aria-hidden="true"]), [data-studio-annotation-portal]')].filter(el => !el.closest("[data-studio-feedback-review]"))
     if ((overlays.at(-1) ?? null) !== portal) render()
+    placeToolbar()
     isolateFrames()
   })
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-closed", "aria-hidden", "role"] })
@@ -117,6 +140,7 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
   return () => {
     live = false
     observer.disconnect()
+    portalResize?.disconnect()
     for (const name of guardedEvents) window.removeEventListener(name, guardPrivate, true)
     for (const [frame, pointerEvents] of framePointers) frame.style.pointerEvents = pointerEvents
     document.removeEventListener("pointerdown", target, true)
