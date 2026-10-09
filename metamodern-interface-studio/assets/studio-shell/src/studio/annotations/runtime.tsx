@@ -91,15 +91,21 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
     else host?.style.removeProperty("--studio-annotation-sdk-bottom")
   }
   const portalResize = options.session.context.layer === "studio" ? new ResizeObserver(placeToolbar) : null
+  let clearPortalTransitions = () => {}
   const render = () => {
     if (!live) return
     const overlays = [...document.querySelectorAll<HTMLElement>('[role="dialog"]:not([data-closed]):not([aria-hidden="true"]), [data-studio-annotation-portal]')].filter(el => !el.closest("[data-studio-feedback-review]"))
     portal = overlays.at(-1) ?? null
     portalResize?.disconnect()
-    if (portal) {
+    clearPortalTransitions()
+    if (portal && options.session.context.layer === "studio") {
       portalResize?.observe(portal)
       const current = portal
-      void Promise.all(portal.getAnimations().filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime)).map(animation => animation.finished.catch(() => undefined))).then(() => { if (live && portal === current) placeToolbar() })
+      // A transform can start after mount and does not resize the sheet. Remeasure its final position, not an initial animation snapshot.
+      const finished = (event: Event) => { if (live && portal === current && event.target === current) placeToolbar() }
+      const events = ["transitionend", "transitioncancel", "animationend", "animationcancel"]
+      events.forEach(name => current.addEventListener(name, finished))
+      clearPortalTransitions = () => events.forEach(name => current.removeEventListener(name, finished))
     }
     // Recreate the host-owned vendor wrapper inside a new focus boundary; moving an inert outside wrapper retains Base UI's marks.
     let portalKey = "body"
@@ -141,6 +147,7 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
     live = false
     observer.disconnect()
     portalResize?.disconnect()
+    clearPortalTransitions()
     for (const name of guardedEvents) window.removeEventListener(name, guardPrivate, true)
     for (const [frame, pointerEvents] of framePointers) frame.style.pointerEvents = pointerEvents
     document.removeEventListener("pointerdown", target, true)

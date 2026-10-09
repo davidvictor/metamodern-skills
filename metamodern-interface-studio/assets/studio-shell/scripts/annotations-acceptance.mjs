@@ -36,6 +36,12 @@ try {
   assert.equal(await countRuntimes(), 0)
   assert.equal(requests.filter(value => /annotations\/runtime|\/agentation(?:[./?]|$)/.test(value)).length, 0)
   passed("Cold excluded page fetches no Agentation and mounts no runtime")
+  const settleDrawer = screen => screen.evaluate(async () => {
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    const drawer = document.querySelector('[role="dialog"]')
+    await Promise.all((drawer?.getAnimations({ subtree: true }) ?? []).filter(animation => Number.isFinite(animation.effect?.getComputedTiming().endTime)).map(animation => animation.finished.catch(() => undefined)))
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  })
   for (const appearance of ["light", "dark"]) for (const [width, height] of [[768, 1024], [1024, 768], [390, 844]]) {
     const touch = await browser.newContext({ viewport: { width, height }, hasTouch: true, isMobile: true, colorScheme: appearance })
     await touch.addInitScript(value => localStorage.setItem("studio.appearance", value), appearance)
@@ -75,6 +81,7 @@ try {
     if (width === 390) {
       await screen.getByRole("button", { name: "Panel", exact: true }).click()
       await screen.locator('[role="dialog"]').waitFor()
+      await settleDrawer(screen)
       await screen.waitForFunction(() => {
         const dialog = document.querySelector('[role="dialog"]')?.getBoundingClientRect()
         const sdk = document.querySelector('agentation-toolbar')?.shadowRoot?.querySelector('[data-agentation-toolbar]')?.getBoundingClientRect()
@@ -87,6 +94,13 @@ try {
       await screen.getByRole("button", { name: "Feedback (1)", exact: true }).waitFor()
       await screen.getByRole("button", { name: "Start feedback mode", exact: true }).waitFor()
       await screen.waitForFunction(() => Object.keys(localStorage).filter(key => key.startsWith("feedback-annotations-")).some(key => localStorage.getItem(key)?.includes("Drawer wrapper recreation preserves this accepted note.")))
+      await screen.getByRole("button", { name: "Details", exact: true }).click()
+      await screen.getByRole("dialog").waitFor()
+      await settleDrawer(screen)
+      const next = screen.getByRole("dialog").getByRole("button", { name: "Next scenario", exact: true })
+      assert.ok(await next.evaluate(element => { const box = element.getBoundingClientRect(); for (let y = box.top + 0.25; y < box.bottom; y += 0.25) if (!element.contains(document.elementFromPoint(box.x + box.width / 2, y))) return false; return true }), "Details Next scenario retains its full vertical touch target after the sheet transform settles")
+      await screen.keyboard.press("Escape")
+      await screen.getByRole("dialog").waitFor({ state: "detached" })
       await screen.goto(`${url}#library=button`)
       await screen.getByRole("heading", { name: "Button", exact: true }).waitFor()
       await screen.locator('[data-studio-bottom-navigation]').waitFor()
