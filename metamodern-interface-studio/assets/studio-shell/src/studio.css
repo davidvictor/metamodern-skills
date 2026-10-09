@@ -159,6 +159,10 @@
 :where(button, a[href], summary, [tabindex="0"], [role="tab"], [role="switch"], [role="checkbox"], [role="radio"], [role="treeitem"], [role="row"], [role="option"], [role^="menuitem"]):focus-visible:not(input, textarea, select, iframe) { outline: 2px solid var(--ring); outline-offset: 0; --tw-ring-shadow: 0 0 #0000; }
 /* The breadcrumb clips to the top bar's height and a tab panel is taller than its scroller, so they draw it inside too. */
 :is([role="row"], [role="treeitem"], [role="option"], [role^="menuitem"], [role="tab"], [role="tabpanel"], [aria-label="Studio"] button, [data-slot="breadcrumb"] :is(button, a[href])):focus-visible { outline-offset: -2px; --tw-shadow: 0 0 #0000; }
+/* Native focus scrolls the hidden range input, not its 16 px painted thumb. Leave room for the thumb and its outset indicator at either scrollport edge. */
+[data-slot="sidebar-content"] { scroll-padding-block: 8px; }
+/* Fractional scrolling can rasterize both edges of a 2 px outline; a 3 px stroke keeps a full-contrast center pixel. */
+[data-slot="sidebar-content"] button:focus-visible { outline-width: 3px; }
 /* A slider takes focus on the hidden range input inside its thumb, so the thumb draws the outline, just outside its edge. */
 [data-slot="slider-thumb"]:has(input:focus-visible) { outline: 2px solid var(--ring); outline-offset: 2px; }
 @media (forced-colors: active) {
