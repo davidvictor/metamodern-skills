@@ -1,3 +1,4 @@
+import { scheduleAnnotationWork } from "./schedule"
 import { validCommand, validMutation } from "./model"
 import type { AnnotationClient, AnnotationRuntime, AnnotationRuntimeOptions } from "./types"
 export type AnnotationClientOptions = { load: () => Promise<AnnotationRuntime>; resolveOwner?: AnnotationRuntimeOptions["resolveOwner"] }
@@ -7,7 +8,8 @@ export function createAnnotationClient(options: AnnotationClientOptions): Annota
   let generation: string | null = null
   let dispose: (() => void | Promise<void>) | undefined
   let cleaning: Promise<void> = Promise.resolve()
-  const stop = () => { sequence++; generation = null; const cleanup = dispose?.(); dispose = undefined; cleaning = Promise.all([cleaning, cleanup]).then(() => undefined); return cleaning }
+  let initialization: AbortController | undefined
+  const stop = () => { sequence++; generation = null; initialization?.abort(); initialization = undefined; const cleanup = dispose?.(); dispose = undefined; cleaning = Promise.all([cleaning, cleanup]).then(() => undefined); return cleaning }
   return {
     receive(command, emit) {
       if (!validCommand(command)) {
@@ -19,7 +21,9 @@ export function createAnnotationClient(options: AnnotationClientOptions): Annota
       const version = sequence
       const session = structuredClone(command.session)
       generation = session.generation
-      void Promise.all([options.load(), stopped]).then(([runtime]) => {
+      const controller = new AbortController()
+      initialization = controller
+      void Promise.all([scheduleAnnotationWork(options.load, controller.signal), stopped]).then(([runtime]) => scheduleAnnotationWork(() => {
         if (sequence !== version) return
         dispose = runtime.mountAnnotations({ session, notes: command.notes, resolveOwner: options.resolveOwner, onMutation(mutation) {
           if (sequence !== version) return
@@ -27,7 +31,7 @@ export function createAnnotationClient(options: AnnotationClientOptions): Annota
           emit({ ...safe, generation: session.generation, fingerprint: session.fingerprint })
         } })
         emit({ action: "ready", generation: session.generation, fingerprint: session.fingerprint })
-      }).catch(error => { if (sequence === version) emit({ action: "error", generation: session.generation, fingerprint: session.fingerprint, reason: String(error).slice(0, 2048) }) })
+      }, controller.signal)).catch(error => { if (sequence === version) emit({ action: "error", generation: session.generation, fingerprint: session.fingerprint, reason: String(error).slice(0, 2048) }) })
     },
     dispose: stop,
   }

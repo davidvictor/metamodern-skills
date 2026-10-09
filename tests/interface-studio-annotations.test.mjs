@@ -8,8 +8,9 @@ import { pathToFileURL } from 'node:url';
 const source = new URL('../metamodern-interface-studio/assets/studio-shell/src/studio/annotations/', import.meta.url);
 const dir = mkdtempSync(join(tmpdir(), 'studio-annotations-test-'));
 writeFileSync(join(dir, 'protocol.mjs'), stripTypeScriptTypes(readFileSync(new URL('../protocol.ts', source), 'utf8'), {mode:'strip'}));
-for (const name of ['model', 'client', 'bridge']) writeFileSync(join(dir, `${name}.mjs`), stripTypeScriptTypes(readFileSync(new URL(`${name}.ts`, source), 'utf8'), {mode:'strip'}).replace(/from "\.\/model"/g, 'from "./model.mjs"').replace(/from "\.\.\/protocol"/g, 'from "./protocol.mjs"'));
+for (const name of ['model', 'client', 'bridge', 'schedule']) writeFileSync(join(dir, `${name}.mjs`), stripTypeScriptTypes(readFileSync(new URL(`${name}.ts`, source), 'utf8'), {mode:'strip'}).replace(/from "\.\/model"/g, 'from "./model.mjs"').replace(/from "\.\/schedule"/g, 'from "./schedule.mjs"').replace(/from "\.\.\/protocol"/g, 'from "./protocol.mjs"'));
 const {validCommand, validEvent, validAnnotation, eligibleAnnotationPage, feedbackMarkdown, validRecord, captureAnnotationValues, annotationPreviewSettled, annotationHydration, safeAnnotationDesign, safeAnnotationTokens} = await import(pathToFileURL(join(dir,'model.mjs')));
+const {scheduleAnnotationWork, ANNOTATION_IDLE_TIMEOUT_MS} = await import(pathToFileURL(join(dir,'schedule.mjs')));
 const {annotationBridge} = await import(pathToFileURL(join(dir,'bridge.mjs')));
 const {createAnnotationClient} = await import(pathToFileURL(join(dir,'client.mjs')));
 const annotation = {id:'note1', comment:'Do exactly this.\nKeep this second line.', element:'Button', elementPath:'[data-kit-component="Button"]', timestamp:Date.now(), x:10, y:20};
@@ -125,4 +126,34 @@ test('expanded portal ownership notifies close/unmount and preserves another own
  assert.ok(host.includes('portalContainer ?? document.body'));
  assert.ok(host.includes('value={selected} disabled>Selected preview unavailable'));
  assert.ok(!host.includes('document.querySelector("[data-studio-annotation-portal]")'));
+});
+
+function paintScheduler() {
+ let sequence=0;const frames=new Map(),idle=new Map(),idleOptions=[];
+ return {frames,idle,idleOptions,host:{requestAnimationFrame(callback){const id=++sequence;frames.set(id,callback);return id},cancelAnimationFrame(id){frames.delete(id)},requestIdleCallback(callback,options){idleOptions.push(options);const id=++sequence;idle.set(id,callback);return id},cancelIdleCallback(id){idle.delete(id)}},paint(){const work=[...frames.values()];frames.clear();work.forEach(callback=>callback())},flushIdle(){const work=[...idle.values()];idle.clear();work.forEach(callback=>callback())}};
+}
+test('optional SDK initialization yields two paints and an idle task, without polling',async()=>{
+ const scheduler=paintScheduler(),controller=new AbortController();let calls=0;
+ const work=scheduleAnnotationWork(()=>{calls++;return 'runtime'},controller.signal,scheduler.host);
+ assert.equal(calls,0);scheduler.paint();assert.equal(calls,0);scheduler.paint();assert.equal(calls,0);assert.equal(scheduler.idle.size,1);assert.equal(scheduler.idleOptions[0].timeout,ANNOTATION_IDLE_TIMEOUT_MS);scheduler.flushIdle();assert.equal(await work,'runtime');assert.equal(calls,1);assert.equal(scheduler.frames.size,0);assert.equal(scheduler.idle.size,0);
+});
+test('revocation cancels pending frame/idle work before import or mount can run',async()=>{
+ for(const phase of ['before-paint','after-paint']){
+  const scheduler=paintScheduler(),controller=new AbortController();let calls=0;
+  const work=scheduleAnnotationWork(()=>{calls++},controller.signal,scheduler.host);const rejected=assert.rejects(work,{name:'AbortError'});
+  if(phase==='after-paint'){scheduler.paint();scheduler.paint()}
+  controller.abort();await rejected;scheduler.paint();scheduler.flushIdle();assert.equal(calls,0);assert.equal(scheduler.frames.size,0);assert.equal(scheduler.idle.size,0);
+ }
+});
+test('background scheduler fallback carries cancellation and explicit background priority',async()=>{
+ const scheduler=paintScheduler(),controller=new AbortController();let task,options,calls=0;
+ const host={requestAnimationFrame:scheduler.host.requestAnimationFrame,cancelAnimationFrame:scheduler.host.cancelAnimationFrame,scheduler:{postTask(callback,provided){task=callback;options=provided;return Promise.resolve()}}};
+ const work=scheduleAnnotationWork(()=>{calls++},controller.signal,host);scheduler.paint();scheduler.paint();assert.equal(options.priority,'background');assert.equal(options.signal.aborted,false);assert.equal(calls,0);task();await work;assert.equal(calls,1);
+});
+
+test('a starved background task makes bounded progress once and cancels the losing task',async()=>{
+ const scheduler=paintScheduler(),controller=new AbortController(),timers=new Map();let task,options,calls=0,next=0;
+ const host={requestAnimationFrame:scheduler.host.requestAnimationFrame,cancelAnimationFrame:scheduler.host.cancelAnimationFrame,setTimeout(callback,delay){const id=++next;timers.set(id,{callback,delay});return id},clearTimeout(id){timers.delete(id)},scheduler:{postTask(callback,provided){task=callback;options=provided;return new Promise(()=>{})}}};
+ const work=scheduleAnnotationWork(()=>{calls++;return 'runtime'},controller.signal,host);scheduler.paint();scheduler.paint();
+ const timeout=[...timers.values()][0];assert.equal(timeout.delay,ANNOTATION_IDLE_TIMEOUT_MS);timeout.callback();assert.equal(await work,'runtime');assert.equal(calls,1);assert.equal(options.signal.aborted,true);assert.equal(timers.size,0);task();assert.equal(calls,1);
 });
