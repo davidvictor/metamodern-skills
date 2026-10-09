@@ -232,3 +232,32 @@ test('layout membership notification is inert when compiled off and coalesces lo
     else globalThis.window = originalWindow;
   }
 });
+
+test('identical browser hashes skip history writes while committed location notifications follow navigation', async () => {
+ const previousLocation = globalThis.location, previousHistory = globalThis.history;
+ const browser = { hash: '#initial' }, writes = [], notices = [];
+ Object.defineProperty(globalThis, 'location', { configurable: true, value: browser });
+ Object.defineProperty(globalThis, 'history', { configurable: true, value: { replaceState(_state, _title, hash) { writes.push(hash); browser.hash = hash }, pushState(_state, _title, hash) { browser.hash = hash } } });
+ const file = join(dir, 'idempotent-location.mjs');
+ writeFileSync(file, stripTypeScriptTypes(readFileSync(new URL('../location.ts', source), 'utf8'), { mode: 'strip' }));
+ const live = await import(pathToFileURL(file));
+ const unsubscribe = live.subscribeStudioLocation(() => notices.push(live.committedStudioLocation()));
+ try {
+  for (let n = 0; n < 500; n++) live.replaceStudioLocation('#initial');
+  assert.equal(writes.length, 0); assert.deepEqual(notices, []);
+  live.replaceStudioLocation('#changed');
+  assert.deepEqual(writes, ['#changed']); assert.deepEqual(notices, ['#changed']);
+  browser.hash = '#initial'; // Browser Back changed the visible hash before the serializer reruns.
+  live.replaceStudioLocation('#initial');
+  assert.deepEqual(writes, ['#changed']); assert.deepEqual(notices, ['#changed', '#initial']);
+  history.pushState(null, '', '#changed'); // Deliberate navigation stays authoritative.
+  live.replaceStudioLocation('#changed');
+  assert.deepEqual(writes, ['#changed']); assert.deepEqual(notices, ['#changed', '#initial', '#changed']);
+  live.replaceStudioLocation('#another');
+  assert.deepEqual(writes, ['#changed', '#another']); assert.equal(live.committedStudioLocation(), '#another');
+ } finally {
+  unsubscribe();
+  if (previousLocation) Object.defineProperty(globalThis, 'location', { configurable: true, value: previousLocation }); else delete globalThis.location;
+  if (previousHistory) Object.defineProperty(globalThis, 'history', { configurable: true, value: previousHistory }); else delete globalThis.history;
+ }
+});
