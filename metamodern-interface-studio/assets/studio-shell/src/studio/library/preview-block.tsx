@@ -193,7 +193,12 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode, wide }
     setExpanded(true)
     page?.budget.expand(key)
   }
+  const annotationPortalOwner = React.useId()
+  const annotationPortal = React.useCallback((element: HTMLElement | null) => {
+    if (LOCAL_ANNOTATIONS && adapter.annotations) annotationBridge.setPortal(annotationPortalOwner, expanded ? element : null)
+  }, [annotationPortalOwner, expanded])
   const collapse = () => {
+    annotationBridge.setPortal(annotationPortalOwner, null)
     setExpanded(false)
     page?.budget.expand(null)
   }
@@ -271,7 +276,7 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode, wide }
       {status?.previous && <p role="status" className="text-xs text-warning">Showing previous settings: {status.reason}</p>}
       <AdjustedNote reason={spec.adjusted} />
       <Dialog open={expanded} onOpenChange={(open) => !open && collapse()}>
-        <DialogContent data-kit data-studio-annotation-portal className="flex h-[min(90svh,56rem)] w-[min(96vw,88rem)] max-w-none flex-col gap-3 sm:max-w-none">
+        <DialogContent ref={annotationPortal} data-kit data-studio-annotation-portal className="flex h-[min(90svh,56rem)] w-[min(96vw,88rem)] max-w-none flex-col gap-3 sm:max-w-none">
           <DialogTitle>{label}</DialogTitle>
           <DialogDescription className="sr-only">The preview at its natural size.</DialogDescription>
           {expanded && <Expanded spec={spec} capture={capture} values={values} phone={phone} label={label} />}

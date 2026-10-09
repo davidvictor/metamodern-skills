@@ -27,6 +27,7 @@ export function Annotations() {
   const [viewport, setViewport] = React.useState(() => ({ width: innerWidth, height: innerHeight, scale: 1 }))
   React.useEffect(() => { const resized = () => setViewport({ width: innerWidth, height: innerHeight, scale: 1 }); addEventListener("resize", resized); return () => removeEventListener("resize", resized) }, [])
   React.useSyncExternalStore(annotationBridge.subscribe, annotationBridge.snapshot)
+  const portalContainer = annotationBridge.portal()
   const targets = annotationBridge.targets()
   const target = targets.find(value => value.id === selected)
   const context: AnnotationContext = selected === "studio" ? { layer: "studio", page: eligibleAnnotationPage(studio)!, viewport, location: location.hash, revision: adapter.product.revision, shellVersion: "0.19.1" } : target?.context ?? { layer: "preview", page: eligibleAnnotationPage(studio)!, viewport: { width: 1, height: 1, scale: 1 }, shellVersion: "0.19.1" }
@@ -109,10 +110,10 @@ export function Annotations() {
   return <>
     {createPortal(<div data-studio-annotations data-annotation-active={active} className="fixed right-4 bottom-16 z-50 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 rounded-lg border bg-background p-2 text-xs shadow-sm">
       <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={enabled} onChange={event => { setEnabled(event.target.checked); try { localStorage.setItem(preferenceKey, String(event.target.checked)) } catch { setNotice("The annotation preference cannot be saved in this browser.") } }} />Annotations</label>
-      {enabled && <label>Target <select aria-label="Annotation target" className="min-h-11 rounded border bg-background px-2 text-base" value={selected} onChange={event => setSelected(event.target.value)}><option value="studio">Studio</option>{targets.map(value => <option key={value.id} value={value.id} disabled={!value.available}>{value.label}{!value.available ? " — waiting for a settled supported preview" : ""}</option>)}</select></label>}
+      {enabled && <label>Target <select aria-label="Annotation target" className="min-h-11 rounded border bg-background px-2 text-base" value={selected} onChange={event => setSelected(event.target.value)}><option value="studio">Studio</option>{selected !== "studio" && !target && <option value={selected} disabled>Selected preview unavailable — choose a target</option>}{targets.map(value => <option key={value.id} value={value.id} disabled={!value.available}>{value.label}{!value.available ? " — waiting for a settled supported preview" : ""}</option>)}</select></label>}
       <Button variant="outline" onClick={() => setReview(true)}>Feedback ({notes.length})</Button>
       {selected !== "studio" && !target && <span role="status">Choose an available preview. Library previews must be expanded.</span>}
-    </div>, document.querySelector("[data-studio-annotation-portal]") ?? document.body)}
+    </div>, portalContainer ?? document.body)}
     {!review && recoveryNotice}
     <Dialog open={review} onOpenChange={setReview}><DialogContent data-studio-feedback-review className="max-h-[90svh] overflow-auto sm:max-w-3xl"><DialogTitle>Local Studio feedback</DialogTitle><DialogDescription>Check the target, requested scope and source confidence before copying. Captured context stays unchanged.</DialogDescription>
       {review && recoveryNotice}

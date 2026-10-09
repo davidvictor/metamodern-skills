@@ -8,8 +8,9 @@ import { pathToFileURL } from 'node:url';
 const source = new URL('../metamodern-interface-studio/assets/studio-shell/src/studio/annotations/', import.meta.url);
 const dir = mkdtempSync(join(tmpdir(), 'studio-annotations-test-'));
 writeFileSync(join(dir, 'protocol.mjs'), stripTypeScriptTypes(readFileSync(new URL('../protocol.ts', source), 'utf8'), {mode:'strip'}));
-for (const name of ['model', 'client']) writeFileSync(join(dir, `${name}.mjs`), stripTypeScriptTypes(readFileSync(new URL(`${name}.ts`, source), 'utf8'), {mode:'strip'}).replace(/from "\.\/model"/g, 'from "./model.mjs"').replace(/from "\.\.\/protocol"/g, 'from "./protocol.mjs"'));
+for (const name of ['model', 'client', 'bridge']) writeFileSync(join(dir, `${name}.mjs`), stripTypeScriptTypes(readFileSync(new URL(`${name}.ts`, source), 'utf8'), {mode:'strip'}).replace(/from "\.\/model"/g, 'from "./model.mjs"').replace(/from "\.\.\/protocol"/g, 'from "./protocol.mjs"'));
 const {validCommand, validEvent, validAnnotation, eligibleAnnotationPage, feedbackMarkdown, validRecord, captureAnnotationValues, annotationPreviewSettled, annotationHydration, safeAnnotationDesign, safeAnnotationTokens} = await import(pathToFileURL(join(dir,'model.mjs')));
+const {annotationBridge} = await import(pathToFileURL(join(dir,'bridge.mjs')));
 const {createAnnotationClient} = await import(pathToFileURL(join(dir,'client.mjs')));
 const annotation = {id:'note1', comment:'Do exactly this.\nKeep this second line.', element:'Button', elementPath:'[data-kit-component="Button"]', timestamp:Date.now(), x:10, y:20};
 const session = {generation:'g1', fingerprint:'f1', context:{layer:'preview', page:'library', scenario:'button', viewport:{width:360,height:480,scale:1},shellVersion:'0.19.1'}};
@@ -109,4 +110,19 @@ test('new activation and revoked acknowledgement await actual asynchronous root 
  await tick();assert.equal(mounts,1);assert.ok(!events.some(event=>event.action==='stopped'));
  release();await tick();assert.equal(mounts,2);assert.ok(events.some(event=>event.action==='stopped'));
  const disposed=client.dispose();release();await disposed;
+});
+
+test('expanded portal ownership notifies close/unmount and preserves another owner',()=>{
+ const first={id:'first'}, second={id:'second'};let updates=0;
+ const release=annotationBridge.subscribe(()=>updates++);
+ annotationBridge.setPortal('first',first);assert.equal(annotationBridge.portal(),first);
+ const changed=updates;annotationBridge.setPortal('first',first);assert.equal(updates,changed);
+ annotationBridge.setPortal('second',second);assert.equal(annotationBridge.portal(),second);
+ annotationBridge.setPortal('first',null);assert.equal(annotationBridge.portal(),second);
+ annotationBridge.setPortal('second',null);assert.equal(annotationBridge.portal(),null);
+ assert.equal(updates,4);release();
+ const host=readFileSync(new URL('host.tsx',source),'utf8');
+ assert.ok(host.includes('portalContainer ?? document.body'));
+ assert.ok(host.includes('value={selected} disabled>Selected preview unavailable'));
+ assert.ok(!host.includes('document.querySelector("[data-studio-annotation-portal]")'));
 });
