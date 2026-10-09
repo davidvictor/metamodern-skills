@@ -1,3 +1,4 @@
+import { AnnotationSlot } from "./studio/annotations/slot"
 import { DirectionManager } from "@/studio/design-ui/direction-manager"
 import { useDirectionSnapshot } from "@/studio/design-ui/react"
 import { DesignEditorProvider, useOptionalDesignEditor, useDesignSnapshot } from "@/studio/design-ui/react"
@@ -218,12 +219,12 @@ function MobileShell() {
         <StageForView narrow />
       </div>
       {!s.module && !s.library && (s.view === "inspect" || s.view === "responsive") && (
-        <div className="flex justify-center border-t bg-background px-2 py-1.5">
+        <div data-studio-bottom-controls className="flex justify-center border-t bg-background px-2 py-1.5">
           <StageControls variant="toolbar" compact lookOnly={s.view === "responsive"} />
         </div>
       )}
       {/* Each entry is at least 44 px and grows from its label's width, so a long label (Responsive, Workspace) keeps its room. */}
-      <nav aria-label="Views" className="flex border-t bg-background pb-[env(safe-area-inset-bottom)]">
+      <nav aria-label="Views" data-studio-bottom-navigation className="flex border-t bg-background pb-[env(safe-area-inset-bottom)]">
         <button className={TAB} onClick={() => s.set({ mobilePanel: "panel" })}>
           <ListTreeIcon className="size-5" />
           <span className="max-w-full truncate">Panel</span>
@@ -287,6 +288,7 @@ function Shell() {
       <LibrarySlot>
         <LibraryNav part="runtime" />
       </LibrarySlot>
+      <AnnotationSlot />
       <Toaster position="bottom-right" />
     </TooltipProvider>
   )

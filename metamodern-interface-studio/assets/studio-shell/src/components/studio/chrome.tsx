@@ -1,3 +1,4 @@
+import { notifyAnnotationLayout } from "@/studio/annotations/capability"
 import { CompiledInspector } from "@/studio/design-ui/slots"
 import * as React from "react"
 import {
@@ -852,6 +853,7 @@ function ZoomMenu({ variant, canvasZoom }: { variant: "dock" | "toolbar"; canvas
  * `canvasZoom` puts the zoom control on the Responsive canvas; `noZoom` leaves it out.
  */
 export function StageControls({ variant, compact, lookOnly, noZoom, canvasZoom }: { variant: "dock" | "toolbar"; compact?: boolean; lookOnly?: boolean; noZoom?: boolean; canvasZoom?: number }) {
+  const placementRef = React.useCallback(() => notifyAnnotationLayout(), [])
   const s = useStudio()
   const ax = adapter.axes
   const live = !!adapter.frameEntry
@@ -871,6 +873,8 @@ export function StageControls({ variant, compact, lookOnly, noZoom, canvasZoom }
     <div
       role="toolbar"
       aria-label="Preview controls"
+      data-studio-preview-controls={variant}
+      ref={placementRef}
       className={cn(
         // Controls that do not fit wrap onto another row, so every one stays on screen and reachable.
         "flex flex-wrap items-center gap-1",

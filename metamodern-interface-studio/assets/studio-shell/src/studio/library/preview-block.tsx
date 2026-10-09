@@ -1,3 +1,5 @@
+import { LOCAL_ANNOTATIONS } from "../annotations/capability"
+import { annotationBridge } from "../annotations/bridge"
 /*
  * One preview on a library page: the playground, a preview group or an example, each one live frame for the whole
  * group (never one per variant), with Preview and Code tabs, Phone width and an expanded view. A page's frames mount
@@ -191,7 +193,12 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode, wide }
     setExpanded(true)
     page?.budget.expand(key)
   }
+  const annotationPortalOwner = React.useId()
+  const annotationPortal = React.useCallback((element: HTMLElement | null) => {
+    if (LOCAL_ANNOTATIONS && adapter.annotations) annotationBridge.setPortal(annotationPortalOwner, expanded ? element : null)
+  }, [annotationPortalOwner, expanded])
   const collapse = () => {
+    annotationBridge.setPortal(annotationPortalOwner, null)
     setExpanded(false)
     page?.budget.expand(null)
   }
@@ -269,7 +276,7 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode, wide }
       {status?.previous && <p role="status" className="text-xs text-warning">Showing previous settings: {status.reason}</p>}
       <AdjustedNote reason={spec.adjusted} />
       <Dialog open={expanded} onOpenChange={(open) => !open && collapse()}>
-        <DialogContent data-kit className="flex h-[min(90svh,56rem)] w-[min(96vw,88rem)] max-w-none flex-col gap-3 sm:max-w-none">
+        <DialogContent ref={annotationPortal} data-kit data-studio-annotation-portal className="flex h-[min(90svh,56rem)] w-[min(96vw,88rem)] max-w-none flex-col gap-3 sm:max-w-none">
           <DialogTitle>{label}</DialogTitle>
           <DialogDescription className="sr-only">The preview at its natural size.</DialogDescription>
           {expanded && <Expanded spec={spec} capture={capture} values={values} phone={phone} label={label} />}
@@ -283,21 +290,25 @@ export function PreviewBlock({ component, spec, values, pinned, liveCode, wide }
 function Expanded({ spec, capture, values, phone, label }: { spec: BlockSpec; capture: string | null; values?: Record<string, InputValue>; phone: boolean; label: string }) {
   const s = useStudio()
   const box = React.useRef<HTMLDivElement>(null)
-  const { w, h } = sizeOf(spec, phone)
+  const annotationEnabled = React.useSyncExternalStore(annotationBridge.subscribe, annotationBridge.enabled)
+  const editing = LOCAL_ANNOTATIONS && !!adapter.annotations && annotationEnabled
+  const original = sizeOf(spec, phone)
+  const w = editing ? Math.max(360, original.w) : original.w
+  const h = editing ? Math.max(480, original.h) : original.h
   const scale = useFit(box, w, h, "fit", PAD)
   const [status, setStatus] = React.useState<LiveStatus | null>(null)
   const source = !capture && spec.scenario && "src" in SOURCE ? SOURCE : null
   const empty: EmptyState | undefined = capture || source ? undefined : { title: "No live preview", description: "unavailable" in SOURCE ? SOURCE.unavailable : "This preview has no scenario." }
   return (
-    <div ref={box} className="stage-surface flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl p-6">
+    <>{editing && <p className="text-xs text-muted-foreground">Expanded preview recreates state. Original example {original.w} × {original.h}; editing viewport {w} × {h}. Responsive layout may differ.</p>}<div ref={box} className="stage-surface flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-xl p-6">
       <Boundary w={w} h={h} scale={scale} profile={{ kind: phone ? "phone" : "desktop" }} appearance={status?.appearance} empty={empty} loading={!!source && (!status || status.status === "loading")} label={label}>
         {capture ? (
           <img src={capture} alt={spec.capture?.alt ?? ""} className="absolute inset-0 size-full object-contain" />
         ) : source && spec.scenario ? (
-          <LivePreview src={source.src} origin={source.origin} isolation={adapter.frameIsolation} inputs={{ scenario: spec.scenario, theme: s.theme, profile: PROFILE, values: values ?? {}, design: appearanceFields(s.designFor(s.theme).inputs, liveAppearanceIds(adapter)), commands: [] }} appearanceIds={liveAppearanceIds(adapter)} mountKey={JSON.stringify([spec.scenario, s.theme])} draft={s.viewDraft(s.theme)} w={w} h={h} scale={scale} label={label} onStatus={setStatus} />
+          <LivePreview src={source.src} origin={source.origin} isolation={adapter.frameIsolation} inputs={{ scenario: spec.scenario, theme: s.theme, profile: PROFILE, values: values ?? {}, design: appearanceFields(s.designFor(s.theme).inputs, liveAppearanceIds(adapter)), commands: [] }} appearanceIds={liveAppearanceIds(adapter)} mountKey={JSON.stringify([spec.scenario, s.theme])} draft={s.viewDraft(s.theme)} w={w} h={h} scale={scale} label={label} onStatus={setStatus} annotationTarget={{ component: s.library ?? undefined, block: spec.id, example: spec.id, originalViewport: { width: original.w, height: original.h } }} />
         ) : null}
       </Boundary>
       {status?.previous && <p role="status" className="text-xs text-warning">Showing previous settings: {status.reason}</p>}
-    </div>
+    </div></>
   )
 }

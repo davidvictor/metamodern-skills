@@ -205,9 +205,9 @@ const editorFixtureAssets = (): Plugin => ({
     cpSync(path.resolve(root, "example/design-runtime/assets.css"), path.join(target, "assets.css"))
   },
 })
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   base: "./",
-  define: hostDefines,
+  define: { ...hostDefines, __STUDIO_LOCAL_ANNOTATIONS__: JSON.stringify(command === "serve" && process.env.STUDIO_LOCAL_ANNOTATIONS === "1") },
   plugins: [react(), tailwindcss(), { name: "studio-icon-profile", generateBundle() { this.emitFile({ type: "asset", fileName: "studio-icon-profile.json", source: JSON.stringify(iconProfile.profile, null, 2) + "\n" }) } }, title(), layouts(), scenarios(), directions(), workspaceFlag(), workspaceCheck(), libraryFlag(), libraryCheck(), workspaceMock(), editorFixtureAssets()],
   build: {
     outDir: path.resolve(root, studio.outDir ?? "dist"),
@@ -226,4 +226,4 @@ export default defineConfig({
   resolve: {
     alias: aliases,
   },
-})
+}))

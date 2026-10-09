@@ -1,3 +1,4 @@
+import type { AnnotationCommand, AnnotationEvent } from "./annotations/types"
 import type { JsonValue } from "./design-runtime"
 import type { DesignPreviewIdentity } from "./design-ui/types"
 /*
@@ -32,7 +33,7 @@ export type MountInputs = {
 }
 
 /** What a frame client can do beyond the base protocol, announced in `hello`. */
-export type FrameCapability = "compiled-data" | "registered-stylesheets" | "direction-identity" | "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation" | "stage-gestures" | "live-values" | "live-appearance" | "code"
+export type FrameCapability = "compiled-data" | "registered-stylesheets" | "direction-identity" | "draft-css" | "content-size" | "sync-scroll" | "sync-interaction" | "sync-navigation" | "stage-gestures" | "live-values" | "live-appearance" | "code" | "annotations"
 
 /**
  * Stage navigation that starts over a frame, for the Studio to apply to its stage. Wheel positions are in the
@@ -109,6 +110,7 @@ type Envelope = { protocol: typeof PROTOCOL; instance: string }
 
 /** shell to frame */
 export type ShellBody =
+  | { type: "annotations"; requestId?: string; command: AnnotationCommand }
   | { type: "mount"; requestId: string; inputs: MountInputs }
   | { type: "command"; requestId: string; command: string }
   | { type: "product-back"; requestId: string }
@@ -132,6 +134,7 @@ export type ShellBody =
 
 /** frame to shell */
 export type FrameBody =
+  | { type: "annotations"; event: AnnotationEvent }
   | { type: "direction-state"; requestId: string; direction: DesignPreviewIdentity; fingerprint: string }
   | { type: "hello"; capabilities?: FrameCapability[] }
   | ({ type: "ready"; requestId: string } & ReadyPayload)

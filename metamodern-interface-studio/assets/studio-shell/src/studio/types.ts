@@ -1,3 +1,4 @@
+import type { AnnotationDeclaration } from "./annotations/types"
 import type { DesignDirectionsDeclaration } from "./directions"
 import type { DesignEditorDeclaration } from "./design-ui/types"
 /*
@@ -420,6 +421,8 @@ export type LibraryDeclaration = {
 }
 
 export type StudioAdapter = {
+  /** Explicit local-only annotation capability; omitted adapters stay inert. */
+  annotations?: AnnotationDeclaration
   id: string
   version: string
   protocol: "studio-preview/1"
