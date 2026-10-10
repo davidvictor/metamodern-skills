@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { SHELL_VERSION } from "../build-info"
 import { fingerprint } from "../protocol"
 import { annotationBridge } from "./bridge"
-import { feedbackMarkdown, annotationHydration, annotationHostBottom, annotationHostRight, invalidCommandReason, measurableViewport, validCommand, validEvent, validRecord } from "./model"
+import { feedbackMarkdown, annotationHydration, annotationHostBottom, annotationStripPlacement, invalidCommandReason, measurableViewport, validCommand, validEvent, validRecord } from "./model"
 import { createAnnotationClient } from "./client"
 import type { AnnotationContext, AnnotationEvent, AnnotationScope, AnnotationSession, FeedbackRecord } from "./types"
 const declaration = adapter.annotations!
@@ -37,32 +37,36 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
   React.useSyncExternalStore(subscribe, snapshot)
   const studioLocation = React.useSyncExternalStore(enabled && selected === "studio" ? subscribeStudioLocation : noSubscription, committedStudioLocation)
   const portalContainer = annotationBridge.portal()
-  // Dock wrapping changes its occupied height without changing the annotation session. Positioning is DOM-only.
+  // The vendor control sits inside the reserved strip, so it never floats over previews or inspector controls at any
+  // width. Without the strip (an expanded preview dialog owns the controls) it keeps clear of the wrapped Studio dock.
+  // Positioning is DOM-only: strip or dock wrapping changes geometry, never the annotation session.
   React.useLayoutEffect(() => {
     const observer = new ResizeObserver(() => place())
     let occupied: HTMLElement[] = []
-    let inspectors: HTMLElement[] = []
+    let strip: HTMLElement | null = null
     const place = () => {
-      const boxes = occupied.map(element => element.getBoundingClientRect()).filter(box => box.width > 0 && box.height > 0)
-      const top = boxes.length ? Math.min(...boxes.map(box => box.top)) : null
-      // The vendor control stays left of an open inspector, so it never covers inspector controls.
-      const lefts = inspectors.filter(element => element.getAttribute("aria-hidden") !== "true").map(element => element.getBoundingClientRect()).filter(box => box.width > 0 && box.height > 0).map(box => box.left)
+      const box = strip?.getBoundingClientRect()
+      const placement = box && box.width > 0 && box.height > 0 ? annotationStripPlacement(innerWidth, innerHeight, box) : null
+      if (placement) {
+        document.documentElement.style.setProperty("--studio-annotation-sdk-bottom", `${placement.bottom}px`)
+        document.documentElement.style.setProperty("--studio-annotation-sdk-right", `${placement.right}px`)
+        return
+      }
+      const boxes = occupied.map(element => element.getBoundingClientRect()).filter(value => value.width > 0 && value.height > 0)
+      const top = boxes.length ? Math.min(...boxes.map(value => value.top)) : null
       document.documentElement.style.setProperty("--studio-annotation-sdk-bottom", `${annotationHostBottom(innerHeight, top)}px`)
-      document.documentElement.style.setProperty("--studio-annotation-sdk-right", `${annotationHostRight(innerWidth, lefts.length ? Math.min(...lefts) : null)}px`)
+      document.documentElement.style.removeProperty("--studio-annotation-sdk-right")
     }
     const rebind = () => {
       observer.disconnect()
-      occupied = portalContainer ? [] : [...document.querySelectorAll<HTMLElement>('[data-studio-preview-controls="dock"], [data-studio-bottom-controls], [data-studio-bottom-navigation]')]
-      inspectors = portalContainer ? [] : [...document.querySelectorAll<HTMLElement>("[data-studio-inspector]")]
-      ;[...occupied, ...inspectors].forEach(element => observer.observe(element))
+      strip = portalContainer ? null : document.querySelector<HTMLElement>("[data-studio-annotation-dock]")
+      occupied = portalContainer || strip ? [] : [...document.querySelectorAll<HTMLElement>('[data-studio-preview-controls="dock"], [data-studio-bottom-controls], [data-studio-bottom-navigation]')]
+      ;[...occupied, ...(strip ? [strip] : [])].forEach(element => observer.observe(element))
       place()
     }
-    // The docked inspector animates its width; a finished transition settles the final position.
-    const settled = (event: Event) => { if (event.target instanceof Element && event.target.matches("[data-studio-inspector]")) place() }
-    addEventListener("transitionend", settled, true)
     addEventListener(ANNOTATION_LAYOUT_EVENT, rebind)
     rebind()
-    return () => { observer.disconnect(); removeEventListener(ANNOTATION_LAYOUT_EVENT, rebind); removeEventListener("transitionend", settled, true); document.documentElement.style.removeProperty("--studio-annotation-sdk-bottom"); document.documentElement.style.removeProperty("--studio-annotation-sdk-right") }
+    return () => { observer.disconnect(); removeEventListener(ANNOTATION_LAYOUT_EVENT, rebind); document.documentElement.style.removeProperty("--studio-annotation-sdk-bottom"); document.documentElement.style.removeProperty("--studio-annotation-sdk-right") }
   }, [page, viewport.width, viewport.height, portalContainer])
   const targets = annotationBridge.targets()
   const target = targets.find(value => value.id === selected)
