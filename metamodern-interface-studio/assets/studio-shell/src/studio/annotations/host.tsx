@@ -48,11 +48,17 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
     let strip: HTMLElement | null = null
     let control: { width: number; height: number } | undefined
     const place = () => {
-      const box = strip?.getBoundingClientRect()
-      const placement = strip && box && box.width > 0 && box.height > 0 ? annotationStripPlacement(innerWidth, innerHeight, box, control) : null
+      let box = strip?.getBoundingClientRect()
+      let placement = strip && box && box.width > 0 && box.height > 0 ? annotationStripPlacement(innerWidth, innerHeight, box, control) : null
       if (strip && placement) {
-        strip.style.paddingRight = `${placement.reserveRight}px`
-        strip.style.paddingBottom = `${placement.reserveBottom}px`
+        const reserve = [`${placement.reserveRight}px`, `${placement.reserveBottom}px`]
+        if (strip.style.paddingRight !== reserve[0] || strip.style.paddingBottom !== reserve[1]) {
+          // Reserve first, then place against the strip as it now is, in the same frame: a new row never waits a frame.
+          strip.style.paddingRight = reserve[0]
+          strip.style.paddingBottom = reserve[1]
+          box = strip.getBoundingClientRect()
+          placement = annotationStripPlacement(innerWidth, innerHeight, box, control)
+        }
         strip.dataset.annotationControl = placement.mode
         document.documentElement.style.setProperty("--studio-annotation-sdk-bottom", `${placement.bottom}px`)
         document.documentElement.style.setProperty("--studio-annotation-sdk-right", `${placement.right}px`)
