@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { SHELL_VERSION } from "../build-info"
 import { fingerprint } from "../protocol"
 import { annotationBridge } from "./bridge"
-import { feedbackMarkdown, annotationHydration, annotationHostBottom, annotationStripPlacement, invalidCommandReason, measurableViewport, validCommand, validEvent, validRecord } from "./model"
+import { feedbackMarkdown, annotationHydration, annotationHostBottom, annotationStripPlacement, ANNOTATION_SDK_SIZE_EVENT, invalidCommandReason, measurableViewport, validCommand, validEvent, validRecord } from "./model"
 import { createAnnotationClient } from "./client"
 import type { AnnotationContext, AnnotationEvent, AnnotationScope, AnnotationSession, FeedbackRecord } from "./types"
 const declaration = adapter.annotations!
@@ -37,17 +37,23 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
   React.useSyncExternalStore(subscribe, snapshot)
   const studioLocation = React.useSyncExternalStore(enabled && selected === "studio" ? subscribeStudioLocation : noSubscription, committedStudioLocation)
   const portalContainer = annotationBridge.portal()
-  // The vendor control sits inside the reserved strip, so it never floats over previews or inspector controls at any
-  // width. Without the strip (an expanded preview dialog owns the controls) it keeps clear of the wrapped Studio dock.
-  // Positioning is DOM-only: strip or dock wrapping changes geometry, never the annotation session.
+  // The vendor control sits inside the reserved strip, which reserves what it draws (its end, or a row of its own on
+  // phones while feedback mode is open), so it never covers previews, the inspector or the strip's own controls.
+  // Without the strip (an expanded preview dialog owns the controls) it keeps clear of the wrapped Studio dock.
+  // Positioning is DOM-only: strip, sibling or dock geometry changes never touch the annotation session.
   React.useLayoutEffect(() => {
     const observer = new ResizeObserver(() => place())
+    const siblings = new MutationObserver(() => rebind())
     let occupied: HTMLElement[] = []
     let strip: HTMLElement | null = null
+    let control: { width: number; height: number } | undefined
     const place = () => {
       const box = strip?.getBoundingClientRect()
-      const placement = box && box.width > 0 && box.height > 0 ? annotationStripPlacement(innerWidth, innerHeight, box) : null
-      if (placement) {
+      const placement = strip && box && box.width > 0 && box.height > 0 ? annotationStripPlacement(innerWidth, innerHeight, box, control) : null
+      if (strip && placement) {
+        strip.style.paddingRight = `${placement.reserveRight}px`
+        strip.style.paddingBottom = `${placement.reserveBottom}px`
+        strip.dataset.annotationControl = placement.mode
         document.documentElement.style.setProperty("--studio-annotation-sdk-bottom", `${placement.bottom}px`)
         document.documentElement.style.setProperty("--studio-annotation-sdk-right", `${placement.right}px`)
         return
@@ -59,14 +65,24 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
     }
     const rebind = () => {
       observer.disconnect()
+      siblings.disconnect()
       strip = portalContainer ? null : document.querySelector<HTMLElement>("[data-studio-annotation-dock]")
       occupied = portalContainer || strip ? [] : [...document.querySelectorAll<HTMLElement>('[data-studio-preview-controls="dock"], [data-studio-bottom-controls], [data-studio-bottom-navigation]')]
-      ;[...occupied, ...(strip ? [strip] : [])].forEach(element => observer.observe(element))
+      // Bars above the strip (direction manager, editor status) move it without resizing it: watch them, and their arrival.
+      const above = strip?.parentElement ? [...strip.parentElement.children].filter((element): element is HTMLElement => element instanceof HTMLElement && element !== strip && !!(element.compareDocumentPosition(strip!) & Node.DOCUMENT_POSITION_FOLLOWING)) : []
+      if (strip?.parentElement) siblings.observe(strip.parentElement, { childList: true })
+      ;[...occupied, ...above, ...(strip ? [strip] : [])].forEach(element => observer.observe(element))
       place()
     }
+    const sized = (event: Event) => { control = (event as CustomEvent<{ width: number; height: number } | null>).detail ?? undefined; place() }
     addEventListener(ANNOTATION_LAYOUT_EVENT, rebind)
+    addEventListener(ANNOTATION_SDK_SIZE_EVENT, sized)
     rebind()
-    return () => { observer.disconnect(); removeEventListener(ANNOTATION_LAYOUT_EVENT, rebind); document.documentElement.style.removeProperty("--studio-annotation-sdk-bottom"); document.documentElement.style.removeProperty("--studio-annotation-sdk-right") }
+    return () => {
+      observer.disconnect(); siblings.disconnect(); removeEventListener(ANNOTATION_LAYOUT_EVENT, rebind); removeEventListener(ANNOTATION_SDK_SIZE_EVENT, sized)
+      if (strip) { strip.style.removeProperty("padding-right"); strip.style.removeProperty("padding-bottom"); delete strip.dataset.annotationControl }
+      document.documentElement.style.removeProperty("--studio-annotation-sdk-bottom"); document.documentElement.style.removeProperty("--studio-annotation-sdk-right")
+    }
   }, [page, viewport.width, viewport.height, portalContainer])
   const targets = annotationBridge.targets()
   const target = targets.find(value => value.id === selected)
@@ -152,14 +168,14 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
   const recoveryNotice = notice && <p role="status" className={review ? "rounded-md border bg-muted p-3 text-sm" : "flex min-w-0 basis-full items-baseline gap-2 text-sm text-muted-foreground"}><span className={review ? undefined : "min-w-0"}>{notice}</span><button type="button" onClick={() => setNotice("")} className="ml-2 shrink-0 rounded-sm text-foreground underline underline-offset-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Dismiss</button></p>
   const toggle = (value: boolean) => { setEnabled(value); try { localStorage.setItem(preferenceKey, String(value)) } catch { setNotice("The annotation preference cannot be saved in this browser.") } }
   const controls = <>
-    <label className="flex items-center gap-2 text-sm pointer-coarse:min-h-11"><Checkbox checked={enabled} onCheckedChange={value => toggle(value === true)} />Annotations</label>
-    {enabled && <label className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">Target <select aria-label="Annotation target" className="h-8 min-w-0 max-w-64 truncate rounded-2xl border border-transparent bg-input/50 px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 pointer-coarse:min-h-11 pointer-coarse:text-base" value={selected} onChange={event => setSelected(event.target.value)}><option value="studio">Studio</option>{selected !== "studio" && !target && <option value={selected} disabled>Selected preview unavailable — choose a target</option>}{targets.map(value => <option key={value.id} value={value.id} disabled={!value.available}>{value.label}{!value.available ? " — waiting for a settled supported preview" : ""}</option>)}</select></label>}
-    <Button variant="ghost" size="sm" className="ml-auto pointer-coarse:min-h-11" onClick={() => setReview(true)}>Feedback ({notes.length})</Button>
+    <label className="flex shrink-0 items-center gap-2 text-sm pointer-coarse:min-h-11"><Checkbox checked={enabled} onCheckedChange={value => toggle(value === true)} />Annotations</label>
+    {enabled && <label className="flex min-w-16 flex-1 basis-0 items-center gap-2 text-sm text-muted-foreground sm:flex-none sm:basis-auto"><span className="max-sm:sr-only">Target</span> <select aria-label="Annotation target" className="h-8 w-full min-w-0 max-w-64 truncate sm:w-auto rounded-2xl border border-transparent bg-input/50 px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 pointer-coarse:min-h-11 pointer-coarse:text-base" value={selected} onChange={event => setSelected(event.target.value)}><option value="studio">Studio</option>{selected !== "studio" && !target && <option value={selected} disabled>Selected preview unavailable — choose a target</option>}{targets.map(value => <option key={value.id} value={value.id} disabled={!value.available}>{value.label}{!value.available ? " — waiting for a settled supported preview" : ""}</option>)}</select></label>}
+    <Button variant="ghost" size="sm" className="ml-auto shrink-0 pointer-coarse:min-h-11" onClick={() => setReview(true)}>Feedback ({notes.length})</Button>
     {selected !== "studio" && !target && <span role="status" className="basis-full text-sm text-muted-foreground">Choose an available preview. Library previews must be expanded.</span>}
     {!review && recoveryNotice}
   </>
   // Docked in the reserved Studio strip; an expanded preview dialog takes the controls inside its own focus boundary.
-  const bar = <div data-studio-annotations data-annotation-active={active} style={portalContainer ? { bottom: "calc(var(--studio-annotation-sdk-bottom, 24px) + 72px)" } : undefined} className={cn("flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1", portalContainer ? "fixed right-4 z-50 max-w-[calc(100vw-2rem)] rounded-xl border bg-background p-2 shadow-sm" : "flex-1")}>{controls}</div>
+  const bar = <div data-studio-annotations data-annotation-active={active} style={portalContainer ? { bottom: "calc(var(--studio-annotation-sdk-bottom, 24px) + 72px)" } : undefined} className={cn("flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:gap-x-3", portalContainer ? "fixed right-4 z-50 max-w-[calc(100vw-2rem)] rounded-xl border bg-background p-2 shadow-sm" : "flex-1")}>{controls}</div>
   return <>
     {portalContainer ? createPortal(bar, portalContainer) : bar}
     <Dialog open={review} onOpenChange={setReview}><DialogContent data-studio-feedback-review className="max-h-[90svh] overflow-auto sm:max-w-3xl"><DialogTitle>Local Studio feedback</DialogTitle><DialogDescription>Check the target, requested scope and source confidence before copying. Captured context stays unchanged.</DialogDescription>
