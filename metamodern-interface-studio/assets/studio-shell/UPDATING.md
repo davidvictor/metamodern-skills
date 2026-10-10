@@ -36,6 +36,12 @@ Host preflight now evaluates adapter imports with the same saved-direction snaps
 
 Nothing else to do by hand. Product adapters, saved directions and presenter files remain product owned.
 
+## 0.19.2
+
+Saved-file requests in the Next host import `Readable` statically, so saved directions and layouts write through the same transport in development and static builds. Replacing the Studio location with the hash the browser already shows no longer writes history, while committed-location subscribers are still notified when the visible hash changes (including Browser Back). Inspect shows Code whenever the preview frame declares the `code` capability, including scenarios without editable properties.
+
+Nothing else to do by hand.
+
 ## 0.20.0
 
 Build provenance: an adapter may declare `provenance: { revision, modified?, note? }`, the source revision its build came from. The shell shows `Source <revision> · Shell <version>` in one quiet 12 px line at the foot of the context panel and the phone's Panel drawer (a commit shortened to seven characters, the full value in its title), and says the source is not recorded without it. The shell version comes from `src/studio/build-info.ts` and also stamps annotation capture context, with the source revision when declared. Products that build Studios more than one way (local, offline export, public) should supply the revision to each build; nothing else changes without it.
