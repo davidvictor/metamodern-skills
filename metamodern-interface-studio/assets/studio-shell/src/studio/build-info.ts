@@ -16,6 +16,6 @@ export function provenanceSummary(provenance: StudioProvenance | undefined) {
     commit: !!revision && COMMIT.test(revision),
     shell: SHELL_VERSION,
     text: `Source ${source} · Shell ${SHELL_VERSION}`,
-    description: `Built from source ${full}; Interface Studio shell ${SHELL_VERSION}`,
+    description: `Built from source ${full}; Interface Studio shell ${SHELL_VERSION}${provenance?.note ? ` (${provenance.note})` : ""}`,
   }
 }
