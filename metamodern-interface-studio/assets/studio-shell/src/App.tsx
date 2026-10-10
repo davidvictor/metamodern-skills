@@ -198,7 +198,7 @@ function DesktopShell() {
   )
 }
 
-const TAB = "flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-xs font-medium text-muted-foreground"
+const TAB = "flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-xs font-medium tracking-tight text-muted-foreground"
 
 function MobileShell() {
   const s = useStudio()
