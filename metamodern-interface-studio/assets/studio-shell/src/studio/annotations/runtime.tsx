@@ -132,7 +132,7 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
       if (shadow && !shadow.querySelector("[data-studio-restrictions]")) {
         const style = document.createElement("style")
         style.dataset.studioRestrictions = ""
-        style.textContent = 'button[aria-label="Settings"], [data-agentation-settings-panel] { display: none !important; } :host(.studio-host-annotation-toolbar) [data-agentation-toolbar]:not([style]) { bottom: var(--studio-annotation-sdk-bottom, 24px) !important; }'
+        style.textContent = 'button[aria-label="Settings"], [data-agentation-settings-panel] { display: none !important; } :host(.studio-host-annotation-toolbar) [data-agentation-toolbar]:not([style]) { bottom: var(--studio-annotation-sdk-bottom, 24px) !important; right: var(--studio-annotation-sdk-right, 20px) !important; }'
         shadow.append(style)
       }
     }

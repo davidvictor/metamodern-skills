@@ -18,12 +18,23 @@ export function validMutation(value: unknown): value is AnnotationMutation {
 export function validEvent(value: unknown): value is AnnotationEvent {
   return record(value) && text(value.generation) && text(value.fingerprint) && validMutation(value)
 }
+/** A document or preview with no measured size (a restored or background tab at 0 x 0) cannot hold a capture session yet. */
+export function measurableViewport(viewport: unknown) {
+  return record(viewport) && [viewport.width, viewport.height, viewport.scale].every(v => typeof v === "number" && Number.isFinite(v) && v > 0)
+}
+/** Why a command is refused, naming the actual problem: only an oversized command is about saved marker data. */
+export function invalidCommandReason(value: unknown) {
+  if (bytes(value) > EVENT_BYTES) return "Saved marker data exceed the session limit. Feedback remains available in host review."
+  const session = record(value) && record(value.session) ? value.session : undefined
+  if (session && record(session.context) && !measurableViewport(session.context.viewport)) return "Annotations wait until this view has a measurable size. Feedback remains available in host review."
+  return "This annotation session has invalid capture context. Feedback remains available in host review."
+}
 export function validCommand(value: unknown): value is AnnotationCommand {
   if (!record(value) || bytes(value) > EVENT_BYTES) return false
   if (value.action === "deactivate") return text(value.generation)
   if (value.action !== "activate" || !record(value.session) || !record(value.session.context) || !text(value.session.generation) || !text(value.session.fingerprint)) return false
   const context = value.session.context
-  return (context.layer === "preview" || context.layer === "studio") && (context.page === "library" || context.page === "inspect") && record(context.viewport) && [context.viewport.width, context.viewport.height, context.viewport.scale].every(v => typeof v === "number" && Number.isFinite(v) && v > 0) && Array.isArray(value.notes) && value.notes.every(validAnnotation)
+  return (context.layer === "preview" || context.layer === "studio") && (context.page === "library" || context.page === "inspect") && measurableViewport(context.viewport) && Array.isArray(value.notes) && value.notes.every(validAnnotation)
 }
 export function eligibleAnnotationPage(state: { library?: unknown; module?: unknown; view: string }): "library" | "inspect" | null {
   return state.library ? "library" : state.module ? null : state.view === "inspect" ? "inspect" : null
@@ -80,6 +91,10 @@ export function safeAnnotationTokens(tokens: Record<string, string>) {
   return Object.fromEntries(Object.entries(tokens).filter(([name, value]) => /^--[a-z0-9-]+$/i.test(name) && value.length <= 200 && /^(?:#[0-9a-f]{3,8}|[+-]?[\d.]+(?:px|rem|em|%|s|ms)?|(?:oklch|oklab|rgb|rgba|hsl|hsla)\([\d.%+\s/,()-]+\)|var\(--[a-z0-9-]+\))$/i.test(value)))
 }
 
+/** The host's vendor control keeps its 20px edge inset, moving left of an open inspector so it never covers its controls. */
+export function annotationHostRight(width: number, inspectorLeft: number | null) {
+  return inspectorLeft === null || inspectorLeft >= width ? 20 : Math.max(20, Math.round(width - inspectorLeft + 16))
+}
 /** Host controls sit above the wrapped Studio dock; child runtimes keep vendor positioning. */
 export function annotationHostBottom(height: number, dockTop: number | null) {
   return dockTop === null ? 24 : Math.max(24, height - dockTop + 12)

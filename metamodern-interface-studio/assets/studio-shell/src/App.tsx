@@ -138,13 +138,13 @@ function Details() {
   if (s.options.details === "floating")
     return (
       <div className={cn("pointer-events-none absolute top-3 right-3 bottom-20 z-20 w-80 transition-all duration-300 ease-out-quint", open ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0")}>
-        <aside aria-label="Details" aria-hidden={!open} className={cn("h-full overflow-hidden rounded-xl border bg-popover shadow-[var(--dock-shadow)]", open && "pointer-events-auto")}>
+        <aside data-studio-inspector aria-label="Details" aria-hidden={!open} className={cn("h-full overflow-hidden rounded-xl border bg-popover shadow-[var(--dock-shadow)]", open && "pointer-events-auto")}>
           {open && <DetailsContent onClose={() => s.set({ detailsOpen: false })} />}
         </aside>
       </div>
     )
   return (
-    <aside aria-label="Details" aria-hidden={!open} className={cn("panel-slide shrink-0 overflow-hidden border-l bg-background", open ? "w-80 opacity-100" : "w-0 border-l-0 opacity-0")}>
+    <aside data-studio-inspector aria-label="Details" aria-hidden={!open} className={cn("panel-slide shrink-0 overflow-hidden border-l bg-background", open ? "w-80 opacity-100" : "w-0 border-l-0 opacity-0")}>
       <div className="h-full w-80">{open && <DetailsContent />}</div>
     </aside>
   )
@@ -188,7 +188,7 @@ function DesktopShell() {
         <SidebarRail aria-label={s.panelOpen ? "Hide panel" : "Show panel"} title={s.panelOpen ? "Hide panel (⌘B)" : "Show panel (⌘B)"} className="after:transition-colors hover:after:bg-sidebar-primary/60" />
       </Sidebar>
       <SidebarInset className="min-w-0 overflow-hidden">
-        <TopBar /><DirectionManager /><DesignEditorStatus compact />
+        <TopBar /><DirectionManager /><DesignEditorStatus compact /><AnnotationSlot />
         <div className="relative flex min-h-0 flex-1">
           <StageForView />
           <Details />
@@ -198,7 +198,7 @@ function DesktopShell() {
   )
 }
 
-const TAB = "flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground"
+const TAB = "flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-xs font-medium text-muted-foreground"
 
 function MobileShell() {
   const s = useStudio()
@@ -214,7 +214,7 @@ function MobileShell() {
   const tabs = VIEWS
   return (
     <SidebarProvider className="h-svh flex-col" open={false}>
-      <TopBar mobile /><DirectionManager /><DesignEditorStatus compact />
+      <TopBar mobile /><DirectionManager /><DesignEditorStatus compact /><AnnotationSlot />
       <div className="relative flex min-h-0 flex-1 flex-col">
         <StageForView narrow />
       </div>
@@ -288,7 +288,6 @@ function Shell() {
       <LibrarySlot>
         <LibraryNav part="runtime" />
       </LibrarySlot>
-      <AnnotationSlot />
       <Toaster position="bottom-right" />
     </TooltipProvider>
   )

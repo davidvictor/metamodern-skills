@@ -39,6 +39,9 @@ for (const commit of git('log', '--first-parent', '--format=%H', 'main', '--', s
   rebuilt.add(version);
   const paths = git('ls-tree', '-r', '--name-only', commit, '--', starter).toString().trim().split('\n').filter(Boolean);
   if (!paths.length) continue;
+  // Composed releases (0.16.0 and later) keep package.json in the host overlays, not the starter. Their entries,
+  // with both host compositions, were recorded from the working tree when they were released; keep them as recorded.
+  if (!paths.includes(`${starter}/package.json`)) continue;
   const files = {};
   for (const path of paths) {
     const rel = path.slice(starter.length + 1);

@@ -114,6 +114,37 @@ try {
     await touch.close()
   }
   passed("Host SDK and target controls clear the wrapped dock at tablet, landscape and phone widths")
+  for (const width of [1280, 1440]) {
+    const desk = await browser.newContext({ viewport: { width, height: 900 } })
+    const screen = await desk.newPage()
+    screen.on("pageerror", error => errors.push(error.message))
+    await screen.goto(`${url}#view=inspect&scenario=tasks.list`)
+    await screen.locator("agentation-toolbar").waitFor({ state: "attached" })
+    if (await screen.locator('[data-studio-inspector][aria-hidden="true"]').count()) await screen.keyboard.press("Meta+Period")
+    // The docked inspector animates its width; positions are read once it and the vendor control have settled.
+    await screen.waitForFunction(() => {
+      const inspector = document.querySelector('[data-studio-inspector]:not([aria-hidden="true"])')?.getBoundingClientRect()
+      const sdk = document.querySelector("agentation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar]")?.getBoundingClientRect()
+      return inspector && inspector.width >= 300 && sdk && sdk.right <= inspector.left
+    })
+    const geometry = await screen.evaluate(() => {
+      const box = element => { const r = element.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom } }
+      const inspector = box(document.querySelector('[data-studio-inspector]:not([aria-hidden="true"])'))
+      const bar = box(document.querySelector("[data-studio-annotations]"))
+      const dock = document.querySelector("[data-studio-annotation-dock]")
+      const sdk = box(document.querySelector("agentation-toolbar").shadowRoot.querySelector("[data-agentation-toolbar]"))
+      const meets = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+      const controls = [...document.querySelectorAll('[data-studio-inspector] button, [data-studio-inspector] [role="combobox"], [data-studio-inspector] input, [data-studio-inspector] select')].map(box).filter(r => r.right > r.left && r.bottom > r.top)
+      const position = getComputedStyle(document.querySelector("[data-studio-annotations]")).position
+      return { inspector, bar, position, docked: !!dock?.contains(document.querySelector("[data-studio-annotations]")), barOverInspector: meets(bar, inspector), sdkOverInspector: meets(sdk, inspector), sdkOverControls: controls.filter(c => meets(sdk, c)).length, barOverControls: controls.filter(c => meets(bar, c)).length }
+    })
+    assert.ok(geometry.docked && geometry.position !== "fixed", `Annotation controls are docked in the reserved strip at ${width}`)
+    assert.ok(geometry.bar.bottom <= geometry.inspector.top, `The reserved strip sits above the inspector at ${width}`)
+    assert.equal(geometry.barOverInspector || geometry.sdkOverInspector, false, `No annotation control overlaps the inspector at ${width}: ${JSON.stringify(geometry)}`)
+    assert.equal(geometry.sdkOverControls + geometry.barOverControls, 0, `No inspector control is covered at ${width}`)
+    await desk.close()
+  }
+  passed("Docked annotation controls and the vendor control never overlap inspector controls at 1280 and 1440")
   await page.goto(url)
   await page.locator("agentation-toolbar").waitFor({ state: "attached" })
   await page.evaluate(() => {
@@ -207,7 +238,7 @@ try {
   assert.ok(viewport.width >= 360 && viewport.height >= 480)
   assert.equal(await countRuntimes(), 1)
   assert.ok(await page.getByText(/Expanded preview recreates state/).isVisible())
-  await page.getByLabel("Annotations", { exact: true }).uncheck()
+  await page.getByRole("checkbox", { name: "Annotations", exact: true }).uncheck()
   await expanded.locator("agentation-toolbar").waitFor({ state: "detached" })
   assert.equal(await countRuntimes(), 0)
   assert.equal(await expanded.evaluate(() => window.__libMounts), viewport.mounts)
@@ -215,7 +246,7 @@ try {
   await page.waitForFunction(() => !document.querySelector('[data-studio-annotation-portal]')?.textContent.includes('editing viewport'))
   const natural = await expanded.evaluate(() => ({ width: innerWidth, height: innerHeight, mounts: window.__libMounts }))
   assert.ok(natural.height < viewport.height)
-  await page.getByLabel("Annotations", { exact: true }).check()
+  await page.getByRole("checkbox", { name: "Annotations", exact: true }).check()
   await expanded.locator("agentation-toolbar").waitFor({ state: "attached" })
   assert.equal(await expanded.evaluate(() => window.__libMounts), viewport.mounts)
   assert.ok((await expanded.evaluate(() => innerHeight)) >= 480)
@@ -236,11 +267,11 @@ try {
   await page.locator("agentation-toolbar").waitFor({ state: "attached" })
   assert.equal(await countRuntimes(), 1)
   passed("Expanded off/on resizes without remount; closing restores controls and keyboard Studio recovery")
-  await page.getByLabel("Annotations", { exact: true }).uncheck()
+  await page.getByRole("checkbox", { name: "Annotations", exact: true }).uncheck()
   await page.locator("agentation-toolbar").waitFor({ state: "detached" })
   await page.reload()
   await page.getByRole("button", { name: "Feedback (2)", exact: true }).waitFor()
-  assert.equal(await page.getByLabel("Annotations", { exact: true }).isChecked(), false)
+  assert.equal(await page.getByRole("checkbox", { name: "Annotations", exact: true }).isChecked(), false)
   await page.getByRole("button", { name: "Feedback (2)", exact: true }).click()
   const restored = await page.getByLabel("Combined feedback Markdown").inputValue()
   assert.ok(restored.includes("Studio shell note.\nKeep this line verbatim."))

@@ -77,7 +77,7 @@ function ScaleControl({ p }: { p: DesignParameter }) {
               key={st.label}
               type="button"
               className={cn(
-                "absolute -translate-x-1/2 rounded px-1 text-[11px] whitespace-nowrap text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                "absolute -translate-x-1/2 rounded px-1 text-xs whitespace-nowrap text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                 Math.abs(v - st.at) < step / 2 && "font-medium text-foreground"
               )}
               style={{ left: `${Math.min(92, Math.max(8, pct(st.at)))}%` }}
@@ -230,7 +230,7 @@ function ShareDraft() {
             JSON
           </Button>
         </div>
-        <span className="text-[11px] text-muted-foreground">A token diff for the design system team: a proposal, never a decision.</span>
+        <span className="text-xs text-muted-foreground">A token diff for the design system team: a proposal, never a decision.</span>
       </div>
     </SidebarGroup>
   )
@@ -288,7 +288,7 @@ function LegacyAdjustPanel() {
                 {c.css ? " and adds a CSS rule" : ""}
               </span>
               {!!c.tokens.length && (
-                <code className="truncate font-mono text-[11px] text-muted-foreground" title={c.tokens.join(", ")}>
+                <code className="truncate font-mono text-xs text-muted-foreground" title={c.tokens.join(", ")}>
                   {c.tokens.slice(0, 4).join(", ")}
                   {c.tokens.length > 4 ? `, +${c.tokens.length - 4}` : ""}
                 </code>
@@ -306,7 +306,7 @@ function LegacyAdjustPanel() {
           ))}
           {!!d.literal.length && (
             <li className="text-muted-foreground">
-              Won’t follow: <code className="font-mono text-[11px]">{d.literal.join(", ")}</code>
+              Won’t follow: <code className="font-mono text-xs">{d.literal.join(", ")}</code>
             </li>
           )}
         </ul>
@@ -362,7 +362,7 @@ function Specimen() {
         const name = String(values[p.id] ?? parameterDefault(adapter, p, s.theme))
         return (
           <div key={p.id} className="mb-3 grid gap-1">
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {p.label} · {name}
             </span>
             <p className="text-lg leading-snug" style={{ fontFamily: `${fontFamilyValue(name)}, system-ui` }}>
@@ -378,7 +378,7 @@ function Specimen() {
             const px = v ? toPx(v) : null
             return (
               <li key={name} className="grid gap-0.5">
-                <span className={cn("font-mono text-[11px] text-muted-foreground", d.tokens[name] && "text-info")}>
+                <span className={cn("font-mono text-xs text-muted-foreground", d.tokens[name] && "text-info")}>
                   {name} {v ?? "not in the token source"}
                 </span>
                 {px !== null && (
@@ -477,7 +477,7 @@ export function DesignStage({ narrow }: { narrow?: boolean }) {
               {!narrow && <Specimen />}
             </div>
             <ScaleChip w={pr.w} h={pr.h} scale={scale} />
-            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">{adapter.design?.directions ? "Working changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only." : adapter.design?.editor ? "Working changes preview in the review views. Present uses the confirmed saved or source basis. Direction payloads stay out of links; this editor does not implement persistence." : "A draft is exploration. It shows here only, travels in the link, and never changes the product or a walkthrough."}</p>
+            <p className="w-0 min-w-full text-center text-xs text-stage-muted">{adapter.design?.directions ? "Working changes preview in the review views. Present uses the confirmed saved or source basis. Named directions are saved locally; browser recovery stays unsaved. Links carry IDs only." : adapter.design?.editor ? "Working changes preview in the review views. Present uses the confirmed saved or source basis. Direction payloads stay out of links; this editor does not implement persistence." : "A draft is exploration. It shows here only, travels in the link, and never changes the product or a walkthrough."}</p>
           </div>
         </div>
       </StageNav>

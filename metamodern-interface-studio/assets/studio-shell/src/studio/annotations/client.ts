@@ -1,5 +1,5 @@
 import { scheduleAnnotationWork } from "./schedule"
-import { validCommand, validMutation } from "./model"
+import { invalidCommandReason, validCommand, validMutation } from "./model"
 import type { AnnotationClient, AnnotationRuntime, AnnotationRuntimeOptions } from "./types"
 export type AnnotationClientOptions = { load: () => Promise<AnnotationRuntime>; resolveOwner?: AnnotationRuntimeOptions["resolveOwner"] }
 /** Framework-free, lazy and inert until the guarded frame channel selects this document. */
@@ -13,7 +13,7 @@ export function createAnnotationClient(options: AnnotationClientOptions): Annota
   return {
     receive(command, emit) {
       if (!validCommand(command)) {
-        if (command && typeof command === "object" && "session" in command && command.session && typeof command.session === "object" && "generation" in command.session && "fingerprint" in command.session && typeof command.session.generation === "string" && typeof command.session.fingerprint === "string") emit({ action: "error", generation: command.session.generation, fingerprint: command.session.fingerprint, reason: "Saved marker data exceed the session limit or are invalid. Feedback remains available in host review." })
+        if (command && typeof command === "object" && "session" in command && command.session && typeof command.session === "object" && "generation" in command.session && "fingerprint" in command.session && typeof command.session.generation === "string" && typeof command.session.fingerprint === "string") emit({ action: "error", generation: command.session.generation, fingerprint: command.session.fingerprint, reason: invalidCommandReason(command) })
         return
       }
       if (command.action === "deactivate") { const stopped = command.generation === generation ? stop() : Promise.resolve(); void stopped.then(() => emit({ action: "stopped", generation: command.generation, fingerprint: "revoked" })); return }

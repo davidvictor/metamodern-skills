@@ -31,7 +31,7 @@ const first = groups[0]?.components[0]?.id ?? null
 /** The component viewed last, so the rail returns to it. */
 let last: string | null = null
 const RING = "outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--sidebar-ring)]"
-const TAB = "flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-colors"
+const TAB = "flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-xs font-medium text-muted-foreground transition-colors"
 
 /** Opens a component's page, at a section when one is named. */
 const openPatch = (id: string | null, at: string | null = null): Partial<State> => ({ library: id, libraryAt: at, panelOpen: true, mobilePanel: null })

@@ -212,7 +212,7 @@ export function LayoutActions() {
     <div className="grid gap-2">
       <div className="flex min-w-0 items-center gap-2">
         <span className="min-w-0 truncate text-sm font-medium" title={r.name}>{r.name}</span>
-        {!isSaved && <Badge variant="outline" className="h-5 px-1.5 text-[10px]">Preset</Badge>}
+        {!isSaved && <Badge variant="outline" className="h-5 px-1.5 text-xs">Preset</Badge>}
         {r.dirty && <StatusBadge kind="draft">Unsaved</StatusBadge>}
       </div>
       <div className="flex flex-wrap gap-1.5">
@@ -241,7 +241,7 @@ export function LayoutActions() {
           </DropdownMenu>
         )}
       </div>
-      {why && <p className="text-[11px] text-muted-foreground">{why}</p>}
+      {why && <p className="text-xs text-muted-foreground">{why}</p>}
     </div>
   )
 }
@@ -317,7 +317,7 @@ export function ResponsivePanel() {
             <SidebarMenuItem key={l.id}>
               <SidebarMenuButton size="sm" isActive={r.layout === l.id} onClick={() => open(l)}>
                 <span className="truncate">{l.name}</span>
-                <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">{l.frames.length}</span>
+                <span className="ml-auto text-xs text-muted-foreground tabular-nums">{l.frames.length}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -329,7 +329,7 @@ export function ResponsivePanel() {
             <SidebarMenuItem key={l.id}>
               <SidebarMenuButton size="sm" isActive={r.layout === l.id} onClick={() => open(l)}>
                 <span className="truncate">{l.name}</span>
-                <span className="ml-auto text-[11px] text-muted-foreground tabular-nums">{l.frames.length}</span>
+                <span className="ml-auto text-xs text-muted-foreground tabular-nums">{l.frames.length}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
@@ -351,7 +351,7 @@ function SyncSwitches() {
       </span>
       <div className="grid gap-0.5 pointer-coarse:pt-3.5">
         <FieldLabel htmlFor={`sync-${key}`} className="text-xs font-normal">{label}</FieldLabel>
-        {note && <span className="text-[11px] text-muted-foreground">{note}</span>}
+        {note && <span className="text-xs text-muted-foreground">{note}</span>}
       </div>
     </Field>
   )
@@ -402,7 +402,7 @@ export function CustomSize() {
         <Input aria-label="Custom height" value={h} onChange={(e) => setH(e.target.value)} onKeyDown={(e) => e.key === "Enter" && valid && add(Number(w), Number(h))} className="h-7 w-20 text-xs tabular-nums" inputMode="numeric" />
         <Button size="sm" className="h-7" disabled={!valid || full} onClick={() => add(Number(w), Number(h))}>Add</Button>
       </div>
-      {valid && typed && <span className="text-[11px] text-muted-foreground">{typed}</span>}
+      {valid && typed && <span className="text-xs text-muted-foreground">{typed}</span>}
     </div>
   )
 }
@@ -554,7 +554,7 @@ export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrap
     </Tooltip>
   ) : missing.length ? (
     <Tooltip>
-      <TooltipTrigger render={<span className="inline-flex shrink-0" role="status" aria-label={`Not synced: this preview's ${missing.join(" and ")} ${missing.length > 1 ? "are" : "is"} not followed`} />}><Badge variant="outline" className="h-5 shrink-0 px-1 text-[10px] text-warning">Not synced</Badge></TooltipTrigger>
+      <TooltipTrigger render={<span className="inline-flex shrink-0" role="status" aria-label={`Not synced: this preview's ${missing.join(" and ")} ${missing.length > 1 ? "are" : "is"} not followed`} />}><Badge variant="outline" className="h-5 shrink-0 px-1.5 text-xs text-warning">Not synced</Badge></TooltipTrigger>
       <TooltipContent>This preview does not take part in sync: its frame client predates sync, or the product keeps it out. Its {missing.join(" and ")} {missing.length > 1 ? "are" : "is"} not followed. If it predates sync, update the Studio so the preview entry picks up the new frame client.</TooltipContent>
     </Tooltip>
   ) : null
@@ -596,7 +596,7 @@ export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrap
           <span className="font-medium tabular-nums whitespace-nowrap">{frame.w} × {frame.h}</span>
           <span className="min-w-0 truncate text-muted-foreground">{frame.label ?? (prof.w === frame.w && prof.h === frame.h ? prof.label : `counts as ${prof.label}`)}</span>
         </button>
-        {full && live && !note && <Badge variant="outline" className="h-5 shrink-0 px-1 text-[10px]">Full page</Badge>}
+        {full && live && !note && <Badge variant="outline" className="h-5 shrink-0 px-1.5 text-xs">Full page</Badge>}
         {stateBadge}
         {syncBadge}
         <DropdownMenu>
@@ -637,7 +637,7 @@ export function FrameCard({ frame, index, count, scale, shownScale, canvas, wrap
       ) : (
         preview
       )}
-      {(note || cut) && <p className="text-[11px] leading-snug text-stage-muted" style={{ width: canvas ? frame.w : Math.max(w, MIN_COLUMN), fontSize: canvas ? 11 / (shownScale ?? 1) : undefined }}>{note ?? `Cut at ${FULL_PAGE_MAX.toLocaleString()} px; the page is ${status?.contentHeight?.toLocaleString()} px tall.`}</p>}
+      {(note || cut) && <p className="text-xs leading-snug text-stage-muted" style={{ width: canvas ? frame.w : Math.max(w, MIN_COLUMN), fontSize: canvas ? 12 / (shownScale ?? 1) : undefined }}>{note ?? `Cut at ${FULL_PAGE_MAX.toLocaleString()} px; the page is ${status?.contentHeight?.toLocaleString()} px tall.`}</p>}
     </figure>
   )
 }
