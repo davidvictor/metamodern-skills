@@ -91,12 +91,26 @@ export function safeAnnotationTokens(tokens: Record<string, string>) {
   return Object.fromEntries(Object.entries(tokens).filter(([name, value]) => /^--[a-z0-9-]+$/i.test(name) && value.length <= 200 && /^(?:#[0-9a-f]{3,8}|[+-]?[\d.]+(?:px|rem|em|%|s|ms)?|(?:oklch|oklab|rgb|rgba|hsl|hsla)\([\d.%+\s/,()-]+\)|var\(--[a-z0-9-]+\))$/i.test(value)))
 }
 
-/** The vendor control's collapsed size and its inset at the strip's end. The strip (52px, see slot.tsx) also holds its 48px hover/entry scale. */
+/** The vendor control's collapsed size, its inset at the strip's edge and the gap kept before the strip's own controls. */
 export const ANNOTATION_STRIP_CONTROL = 44
 export const ANNOTATION_STRIP_INSET = 8
-/** Fixed bottom/right that put the host's vendor control in the reserved strip's end, vertically centred, at any width. */
-export function annotationStripPlacement(width: number, height: number, strip: { top: number; right: number; height: number }) {
-  return { bottom: Math.round(height - strip.top - strip.height / 2 - ANNOTATION_STRIP_CONTROL / 2), right: Math.max(0, Math.round(width - strip.right + ANNOTATION_STRIP_INSET)) }
+export const ANNOTATION_STRIP_GAP = 12
+/** The narrowest row the strip's own controls (Annotations, Target, Feedback) keep beside the vendor control. */
+export const ANNOTATION_STRIP_MIN_ROW = 240
+export const ANNOTATION_SDK_SIZE_EVENT = "studio-annotation-sdk-size"
+export type AnnotationStripPlacement = { mode: "end" | "row"; bottom: number; right: number; reserveRight: number; reserveBottom: number }
+/**
+ * Where the host's vendor control sits inside the reserved strip and how much of the strip it reserves, for the
+ * control's drawn size (44px collapsed, about 337px while feedback mode is open). The strip's end reserves the drawn
+ * width, so the control never covers the strip's own controls; when that would leave them less than a usable row
+ * (phones with the toolbar open), the control takes its own row at the strip's foot instead.
+ */
+export function annotationStripPlacement(width: number, height: number, strip: { top: number; right: number; bottom: number; width: number; height: number }, control: { width: number; height: number } = { width: ANNOTATION_STRIP_CONTROL, height: ANNOTATION_STRIP_CONTROL }): AnnotationStripPlacement {
+  const right = Math.max(0, Math.round(width - strip.right + ANNOTATION_STRIP_INSET))
+  const reserveRight = Math.ceil(control.width) + ANNOTATION_STRIP_INSET + ANNOTATION_STRIP_GAP
+  if (strip.width - reserveRight - ANNOTATION_STRIP_GAP < ANNOTATION_STRIP_MIN_ROW)
+    return { mode: "row", bottom: Math.round(height - strip.bottom + ANNOTATION_STRIP_INSET / 2), right, reserveRight: ANNOTATION_STRIP_GAP, reserveBottom: Math.ceil(control.height) + ANNOTATION_STRIP_INSET }
+  return { mode: "end", bottom: Math.round(height - strip.top - strip.height / 2 - control.height / 2), right, reserveRight, reserveBottom: ANNOTATION_STRIP_INSET / 2 }
 }
 /** Host controls sit above the wrapped Studio dock; child runtimes keep vendor positioning. */
 export function annotationHostBottom(height: number, dockTop: number | null) {

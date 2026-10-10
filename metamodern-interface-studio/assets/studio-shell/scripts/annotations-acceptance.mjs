@@ -134,10 +134,8 @@ try {
       const box = element => { const r = element.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom } }
       const meets = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
       const bar = document.querySelector("[data-studio-annotations]")
-      // The collapsed vendor control: the toolbar's own box is wider than what it draws until feedback mode opens.
-      const shadow = document.querySelector("agentation-toolbar").shadowRoot
-      const toolbar = shadow.querySelector("[data-agentation-toolbar]")
-      const sdk = box([...toolbar.querySelectorAll("*")].map(e => ({ e, r: e.getBoundingClientRect() })).filter(x => x.r.width >= 30 && x.r.height >= 30 && Math.abs(x.r.width - x.r.height) < 8 && getComputedStyle(x.e).pointerEvents !== "none").sort((a, b) => b.r.right - a.r.right)[0]?.e ?? toolbar)
+      // What the vendor control draws: its container (44px collapsed); the toolbar element itself is always 337px wide.
+      const sdk = box(document.querySelector("agentation-toolbar").shadowRoot.querySelector("[data-agentation-toolbar] > div"))
       const frames = [...document.querySelectorAll("iframe")].map(box).filter(r => r.right > r.left && r.bottom > r.top)
       const controls = [...document.querySelectorAll('[data-studio-inspector] button, [data-studio-inspector] [role="combobox"], [data-studio-inspector] input, [data-studio-inspector] select')].map(box).filter(r => r.right > r.left && r.bottom > r.top)
       const barControls = [...bar.querySelectorAll("button, select, [role=checkbox]")].map(box)
@@ -151,9 +149,34 @@ try {
     assert.ok(geometry.frames > 0, `A preview frame is on screen for ${where}`)
     assert.equal(geometry.overFrames + geometry.overControls + geometry.overOwnControls, 0, `No annotation control overlaps a preview frame, an inspector control or a strip control for ${where}: ${JSON.stringify(geometry)}`)
     assert.equal(geometry.overInspector, false, `No annotation control overlaps the inspector for ${where}: ${JSON.stringify(geometry)}`)
+    // Feedback mode open: the toolbar draws about 337px; the strip reserves it (its end, or its own row on phones).
+    await screen.getByRole("button", { name: "Start feedback mode", exact: true }).click()
+    await screen.waitForFunction(() => {
+      const drawn = document.querySelector("agentation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar] > div")?.getBoundingClientRect()
+      const strip = document.querySelector("[data-studio-annotation-dock]")
+      const controls = [...(strip?.querySelectorAll("[data-studio-annotations] button, [data-studio-annotations] select, [data-studio-annotations] [role=checkbox]") ?? [])].map(e => e.getBoundingClientRect())
+      const box = strip?.getBoundingClientRect()
+      return drawn && box && drawn.width > 200 && drawn.top >= box.top - 1 && drawn.bottom <= box.bottom + 1 && controls.every(c => !(drawn.left < c.right && drawn.right > c.left && drawn.top < c.bottom && drawn.bottom > c.top))
+    })
+    const open = await screen.evaluate(() => {
+      const box = element => { const r = element.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom } }
+      const meets = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+      const drawn = box(document.querySelector("agentation-toolbar").shadowRoot.querySelector("[data-agentation-toolbar] > div"))
+      const frames = [...document.querySelectorAll("iframe")].map(box).filter(r => r.right > r.left && r.bottom > r.top)
+      const inspector = document.querySelector('[data-studio-inspector]:not([aria-hidden="true"])')
+      const controls = [...document.querySelectorAll('[data-studio-inspector] button, [data-studio-inspector] [role="combobox"], [data-studio-inspector] input, [data-studio-inspector] select')].map(box).filter(r => r.right > r.left && r.bottom > r.top)
+      const own = [...document.querySelectorAll("[data-studio-annotations] button, [data-studio-annotations] select, [data-studio-annotations] [role=checkbox]")]
+      // No strip control shares any pixel with the drawn toolbar, so its keyboard focus is never hidden (feedback mode's
+      // page overlay makes hit-testing meaningless here; geometry is the claim).
+      const covered = own.filter(e => meets(box(e), drawn)).map(e => e.getAttribute("aria-label") || e.textContent)
+      return { mode: document.querySelector("[data-studio-annotation-dock]").dataset.annotationControl, drawn, overFrames: frames.filter(f => meets(f, drawn)).length, overInspector: !!inspector && meets(box(inspector), drawn), overControls: controls.filter(c => meets(c, drawn)).length, covered }
+    })
+    assert.deepEqual([open.overFrames, open.overInspector, open.overControls, open.covered], [0, false, 0, []], `The open toolbar covers nothing for ${where}: ${JSON.stringify(open)}`)
+    if (width < 768) assert.equal(open.mode, "row", `The open toolbar takes its own row on a phone for ${where}`)
+    await screen.getByRole("button", { name: "Exit", exact: true }).click()
     await desk.close()
   }
-  passed("Docked annotation controls and the vendor control never overlap preview frames or inspector controls at 320, 390, 1280 and 1440")
+  passed("Docked annotation controls and the vendor control, collapsed and open, never overlap preview frames, inspector controls or each other at 320, 390, 1280 and 1440")
   await page.goto(url)
   await page.locator("agentation-toolbar").waitFor({ state: "attached" })
   await page.evaluate(() => {

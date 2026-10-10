@@ -249,14 +249,23 @@ test('an unmeasured view waits instead of blaming saved marker data', () => {
  assert.deepEqual(events.map(e => [e.action, /measurable size/.test(e.reason)]), [['error', true]]);
 });
 
-test('the host vendor control is pinned inside the reserved strip at every width', () => {
- // Strip under a 48px top bar, 48px tall, full width: the 44px control centres in it, 8px from its end.
- assert.deepEqual(annotationStripPlacement(1440, 900, {top:48,right:1440,height:48}), {bottom:806,right:8});
- assert.deepEqual(annotationStripPlacement(320, 640, {top:48,right:320,height:96}), {bottom:522,right:8});
- for (const [width,height,strip] of [[390,844,{top:56,right:390,height:48}],[1280,900,{top:48,right:1280,height:48}]]) {
-  const {bottom,right} = annotationStripPlacement(width,height,strip);
-  const top = height-bottom-44, left = width-right-44;
-  assert.ok(top >= strip.top && top+44 <= strip.top+strip.height && left+44 <= strip.right && left >= strip.right-64, `${width}`);
+test('the host vendor control is pinned inside the reserved strip and reserves what it draws', () => {
+ const strip = (width, top, height) => ({top, right:width, bottom:top+height, width:width-340, height});
+ // Collapsed (44px) at 1440 beside a 340px sidebar: the end keeps 64px, the control centres in the 52px strip.
+ assert.deepEqual(annotationStripPlacement(1440, 900, strip(1440,48,52)), {mode:'end', bottom:804, right:8, reserveRight:64, reserveBottom:4});
+ // Feedback mode open (337px) at 1280: the end reserves the drawn width, never the strip's own controls.
+ const open = annotationStripPlacement(1280, 900, strip(1280,48,52), {width:337,height:44});
+ assert.equal(open.mode, 'end'); assert.equal(open.reserveRight, 357);
+ // Phones: collapsed stays at the end; open takes its own row at the strip's foot.
+ const phone = {top:48,right:390,bottom:100,width:390,height:52};
+ assert.equal(annotationStripPlacement(390, 844, phone).mode, 'end');
+ const row = annotationStripPlacement(390, 844, phone, {width:337,height:44});
+ assert.deepEqual(row, {mode:'row', bottom:748, right:8, reserveRight:12, reserveBottom:52});
+ assert.equal(annotationStripPlacement(320, 640, {top:48,right:320,bottom:100,width:320,height:52}, {width:337,height:44}).mode, 'row');
+ for (const [width,height,box,control] of [[390,844,phone,undefined],[1280,900,strip(1280,48,52),{width:337,height:44}]]) {
+  const p = annotationStripPlacement(width,height,box,control), c = control ?? {width:44,height:44};
+  const top = height-p.bottom-c.height, left = width-p.right-c.width;
+  assert.ok(top >= box.top && top+c.height <= box.bottom && left >= box.right-p.reserveRight, `${width}`);
  }
 });
 

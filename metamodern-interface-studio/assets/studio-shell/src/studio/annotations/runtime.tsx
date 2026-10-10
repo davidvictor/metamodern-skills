@@ -2,6 +2,7 @@ import { flushSync } from "react-dom"
 import { createRoot } from "react-dom/client"
 import { Agentation, saveAnnotations, type Annotation } from "agentation"
 import type { AnnotationRuntimeOptions, RawAnnotation } from "./types"
+import { ANNOTATION_SDK_SIZE_EVENT } from "./model"
 
 const ATTRIBUTES = ["data-studio-anchor", "data-studio-component", "data-slot", "data-kit-component", "data-kit-example", "data-test", "data-testid", "data-preview-block"] as const
 function ownerAttributes(element: Element | null) {
@@ -124,6 +125,28 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
       else if (framePointers.has(frame)) { frame.style.pointerEvents = framePointers.get(frame)!; framePointers.delete(frame) }
     }
   }
+  // The host strip reserves what the vendor control draws (44px collapsed, wider while feedback mode is open).
+  let drawn: Element | null = null
+  let reported = ""
+  const reportSize = () => {
+    // Layout size, not the transformed box: the vendor's entry and hover scale must not shrink or grow the reservation.
+    const box = drawn instanceof HTMLElement ? { width: drawn.offsetWidth, height: drawn.offsetHeight } : null
+    const size = box && box.width > 0 && box.height > 0 ? box : null
+    const key = JSON.stringify(size)
+    if (key === reported) return
+    reported = key
+    window.dispatchEvent(new CustomEvent(ANNOTATION_SDK_SIZE_EVENT, { detail: size }))
+  }
+  const sizeObserver = options.session.context.layer === "studio" ? new ResizeObserver(reportSize) : null
+  const trackSize = () => {
+    if (!sizeObserver) return
+    const next = document.querySelector("agentation-toolbar.studio-host-annotation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar] > div") ?? null
+    if (next === drawn) return
+    sizeObserver.disconnect()
+    drawn = next
+    if (next) sizeObserver.observe(next)
+    reportSize()
+  }
   const observedShadows = new WeakSet<ShadowRoot>()
   const observer = new MutationObserver(() => {
     for (const toolbar of document.querySelectorAll("agentation-toolbar")) {
@@ -140,12 +163,15 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
     if ((overlays.at(-1) ?? null) !== portal) render()
     placeToolbar()
     isolateFrames()
+    trackSize()
   })
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-closed", "aria-hidden", "role"] })
   render()
   return () => {
     live = false
     observer.disconnect()
+    sizeObserver?.disconnect()
+    if (sizeObserver) window.dispatchEvent(new CustomEvent(ANNOTATION_SDK_SIZE_EVENT, { detail: null }))
     portalResize?.disconnect()
     clearPortalTransitions()
     for (const name of guardedEvents) window.removeEventListener(name, guardPrivate, true)
