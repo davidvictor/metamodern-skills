@@ -1,7 +1,7 @@
 import type { StudioProvenance } from "./types"
 
 /** The shell release these files came from. Releasing a shell change updates it with PACKAGE_VERSION. */
-export const SHELL_VERSION = "0.20.0"
+export const SHELL_VERSION = "0.20.1"
 
 const COMMIT = /^[0-9a-f]{7,64}$/i
 

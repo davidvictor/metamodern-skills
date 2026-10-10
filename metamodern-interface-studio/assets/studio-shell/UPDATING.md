@@ -52,6 +52,12 @@ Chrome text is never smaller than 12 px: rail labels, phone tab labels, badges, 
 
 Nothing else to do by hand. Product adapters and product files remain product owned.
 
+## 0.20.1
+
+Shell acceptance AC-53 now expects Inspect's tabs to follow the 0.19.2 Code gate: Scenario, Fidelity and Evidence, plus Code exactly when the mounted preview frame announces the `code` capability in its hello, whether or not the scenario has properties. It also measures the same Studio with a frame that does not announce code and expects the three tabs. Its other no-property obligations (no Properties section, state picker, property edits, property chunks, stored edits or isolated frames, and the startup budget) are unchanged. A Studio whose frames announce `code` no longer fails AC-53, and WS-01 no longer reports that failure. No runtime behavior changes.
+
+Nothing else to do by hand.
+
 ## 0.17.1
 
 DesignPanelProps now supplies review context (scenarioId, readonly scenario options and selectScenario) to Foundation and Component panels. Use it for a Review fixture selector and contextual reach readouts; navigation never edits direction payloads or undo history. Private panels still import only the public kit/design-ui APIs and their own files. Product-owned modules remain protected by managed updates. EditorPopover adds optional open/onOpenChange for controlled Close picker and choice dismissal; existing uncontrolled callers retain their behavior.
