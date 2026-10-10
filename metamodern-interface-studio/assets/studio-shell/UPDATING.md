@@ -58,6 +58,12 @@ Shell acceptance AC-53 now expects Inspect's tabs to follow the 0.19.2 Code gate
 
 Nothing else to do by hand.
 
+## 0.20.2
+
+Shell acceptance LB-13 no longer fails intermittently with an empty outline after Go to Switch and after the reload there. Go to shows its input a moment before it moves focus into it, and the sections checks' Go to helper typed as soon as the input was visible. When the keys arrived first they reached the page, the query stayed empty, and Enter opened the first scenario, which left the library. The helper now types only once the input holds focus. It presses Enter only once the input holds the query and the matching item is selected, and otherwise fails with what Go to selected. LB-11 and LB-15 open Go to through the same helper. The criteria and their expectations are unchanged, and there are no runtime behavior changes.
+
+Nothing else to do by hand. Product checks that copied this helper should wait for focus the same way.
+
 ## 0.17.1
 
 DesignPanelProps now supplies review context (scenarioId, readonly scenario options and selectScenario) to Foundation and Component panels. Use it for a Review fixture selector and contextual reach readouts; navigation never edits direction payloads or undo history. Private panels still import only the public kit/design-ui APIs and their own files. Product-owned modules remain protected by managed updates. EditorPopover adds optional open/onOpenChange for controlled Close picker and choice dismissal; existing uncontrolled callers retain their behavior.

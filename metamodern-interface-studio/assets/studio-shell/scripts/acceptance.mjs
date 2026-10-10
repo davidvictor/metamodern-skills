@@ -4849,19 +4849,24 @@ const disclosureOf = (p, label) => p.locator('nav[aria-label="Components"] [data
 const crumbs = (p) => p.evaluate(() => [...document.querySelectorAll('[data-slot="breadcrumb-item"]')].map((e) => e.textContent.trim()).filter(Boolean).join(" › "))
 /** The panel's shape once it reads `expected` (or the last reading when it never does). */
 const shapeWhen = (p, expected, ms = 5000) => poll(async () => shape(await outline(p)), (v) => v === expected, ms)
+/** Opens Go to and returns once its input holds focus: the dialog shows before it moves focus in, and keys typed earlier reach the page. */
 const openGoTo = async (p) => {
   await p.keyboard.press("ControlOrMeta+k")
   await p.locator("[cmdk-input]").waitFor({ state: "visible", timeout: 5000 })
   await poll(() => p.locator("[cmdk-group-heading]").count(), (n) => n > 0)
+  if (!(await poll(() => p.evaluate(() => !!document.activeElement?.matches("[cmdk-input]")), Boolean))) throw new Error("Go to opened without focus in its input")
 }
 const closeGoTo = async (p) => {
   await p.keyboard.press("Escape")
   await p.locator("[cmdk-input]").waitFor({ state: "detached", timeout: 5000 })
 }
+/** Opens a library page through Go to; Enter is pressed only once the query is in the input and its item is selected. */
 const goTo = async (p, text) => {
   await openGoTo(p)
   await p.keyboard.type(text)
-  await poll(() => p.locator('[cmdk-item][data-selected="true"]').first().textContent({ timeout: 500 }).catch(() => ""), (t) => t.startsWith(text))
+  await poll(() => p.locator("[cmdk-input]").inputValue({ timeout: 500 }).catch(() => ""), (v) => v === text)
+  const selected = await poll(() => p.locator('[cmdk-item][data-selected="true"]').first().textContent({ timeout: 500 }).catch(() => ""), (t) => t.startsWith(text))
+  if (!selected.startsWith(text)) throw new Error(`Go to selected "${selected}" for "${text}"`)
   await p.keyboard.press("Enter")
   await poll(() => libTitle(p), (t) => t === text, 8000)
   await p.locator("[cmdk-input]").waitFor({ state: "detached", timeout: 5000 })
