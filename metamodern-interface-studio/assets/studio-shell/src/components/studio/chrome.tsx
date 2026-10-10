@@ -120,7 +120,8 @@ export function EditedNow({ spaced }: { spaced?: boolean }) {
   ) : null
 }
 
-// The state picker, the Properties section and the Code tab load only when a scenario has properties.
+// The state picker and the Properties section load only when a scenario has properties; the Code tab, offered when the
+// frame announces the code capability, loads its content when opened.
 const Lazy = React.lazy(() => import("./properties"))
 // A chunk that fails to load (a deploy replaced it, the network dropped) leaves the rest of the Studio working.
 class PartBoundary extends React.Component<{ part: string; children: React.ReactNode }, { failed: boolean }> {

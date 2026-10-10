@@ -16,7 +16,7 @@ const {committedStudioLocation,subscribeStudioLocation,replaceStudioLocation} = 
 const {annotationBridge} = await import(pathToFileURL(join(dir,'bridge.mjs')));
 const {createAnnotationClient} = await import(pathToFileURL(join(dir,'client.mjs')));
 const annotation = {id:'note1', comment:'Do exactly this.\nKeep this second line.', element:'Button', elementPath:'[data-kit-component="Button"]', timestamp:Date.now(), x:10, y:20};
-const session = {generation:'g1', fingerprint:'f1', context:{layer:'preview', page:'library', scenario:'button', viewport:{width:360,height:480,scale:1},shellVersion:'0.20.0'}};
+const session = {generation:'g1', fingerprint:'f1', context:{layer:'preview', page:'library', scenario:'button', viewport:{width:360,height:480,scale:1},shellVersion:'0.20.1'}};
 const tick = () => new Promise(resolve => setImmediate(resolve));
 test('actual page eligibility respects Library, module and view precedence', () => {
  assert.equal(eligibleAnnotationPage({library:'button',module:'tools',view:'compare'}),'library');

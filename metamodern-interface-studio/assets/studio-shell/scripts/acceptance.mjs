@@ -76,8 +76,9 @@ const record = (id, status, detail) => {
   console.log(`${status.toUpperCase().padEnd(12)} ${id}  ${detail}`)
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
-async function open(name, { width = 1440, height = 900, touch = false, hash = "", appearance, brand } = {}) {
+async function open(name, { width = 1440, height = 900, touch = false, hash = "", appearance, brand, init } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, hasTouch: touch, isMobile: touch, colorScheme: appearance ?? "light" })
+  if (init) await context.addInitScript(init)
   // Init scripts run in every frame too; a frame sandboxed without allow-same-origin (the static build) has no storage to write.
   if (appearance) await context.addInitScript((a) => { try { localStorage.setItem("studio.appearance", a) } catch { /* an opaque frame */ } }, appearance)
   if (brand) await context.addInitScript((b) => { try { localStorage.setItem("studio.example-tasks.brand", b) } catch { /* an opaque frame */ } }, brand)
@@ -1964,6 +1965,18 @@ const flagged = async (flag, hash) => {
   return page
 }
 
+/** Records each preview frame's hello capabilities in the Studio page, keyed by the frame's window, as the shell receives them. */
+const recordFrameHellos = () => {
+  if (window !== window.top) return
+  const hellos = (window.__studioFrameHellos = new Map())
+  addEventListener("message", (e) => { if (e.data && typeof e.data === "object" && e.data.protocol && e.data.type === "hello") hellos.set(e.source, Array.isArray(e.data.capabilities) ? e.data.capabilities : []) })
+}
+/** Whether the Inspect frame on screen announced a capability in its hello (the preview status chrome.tsx gates on). */
+const liveFrameAnnounces = (p, capability) => p.evaluate((capability) => {
+  const frame = document.querySelector(".preview-frame iframe.opacity-100")
+  return !!window.__studioFrameHellos?.get(frame?.contentWindow)?.includes(capability)
+}, capability)
+
 // AC-53 preserves no-property behavior, initial static resource budget and exclusion of undeclared layers.
 // Chunk filenames are informational: the complete static graph prevents hiding startup bytes through splitting.
 await check("AC-53", async () => {
@@ -1976,10 +1989,13 @@ await check("AC-53", async () => {
   const grew = initialGraph.gzip - STUDIO_INITIAL_BASELINE_GZ
   const optional = scripts.filter(file => /^(?:workspace|library)-/.test(file))
   const eager = initialGraph.scripts.filter(script => /\/(?:properties|design(?:-tokens)?)-/.test(script.file))
-  // The stress Studio declares no properties.
-  const p = await open("stress", { hash: "view=inspect&scenario=syn.tasks.2" })
+  // The stress Studio declares no properties. Since 0.19.2 Inspect offers Code whenever the mounted frame announces the code
+  // capability (chrome.tsx reads it from that frame's hello), properties or not, so the expected tabs follow the same signal.
+  const p = await open("stress", { hash: "view=inspect&scenario=syn.tasks.2", init: recordFrameHellos })
   await wait(800)
   const tabs = await details(p).getByRole("tab").allInnerTexts()
+  const code = await liveFrameAnnounces(p, "code")
+  const expectedTabs = ["Scenario", "Fidelity", "Evidence", ...(code ? ["Code"] : [])].join()
   const section = await p.locator("[data-properties]").count()
   const picker = await details(p).getByRole("combobox", { name: "State" }).count()
   const edited = await p.getByText(/Edited ·/).count()
@@ -1991,9 +2007,20 @@ await check("AC-53", async () => {
   // Without frameIsolation the frames carry no sandbox or credentialless attribute, as in 0.10.x.
   const isolated = await p.locator("iframe[sandbox], iframe[credentialless]").count()
   await p.closeAll()
-  const same = isolated === 0 && tabs.join() === "Scenario,Fidelity,Evidence" && section === 0 && picker === 0 && edited === 0 && keys === "view,scenario,theme,profile" && values === "density" && loaded.length === 0 && stored.length === 0
+  // The same Studio with a frame that does not announce code keeps the three tabs, so both sides of the gate are measured.
+  const q = await open("stress", { hash: "view=inspect&scenario=syn.tasks.2", init: () => {
+    if (window !== window.top) { window.__studioNoCode = true; return }
+    const hellos = (window.__studioFrameHellos = new Map())
+    addEventListener("message", (e) => { if (e.data && typeof e.data === "object" && e.data.protocol && e.data.type === "hello") hellos.set(e.source, Array.isArray(e.data.capabilities) ? e.data.capabilities : []) })
+  } })
+  await wait(800)
+  const plainTabs = (await details(q).getByRole("tab").allInnerTexts()).join()
+  const plainCode = await liveFrameAnnounces(q, "code")
+  await q.closeAll()
+  const gate = !plainCode && plainTabs === "Scenario,Fidelity,Evidence"
+  const same = gate && isolated === 0 && tabs.join() === expectedTabs && section === 0 && picker === 0 && edited === 0 && keys === "view,scenario,theme,profile" && values === "density" && loaded.length === 0 && stored.length === 0
   const ok = same && grew <= 3072 && optional.length === 0 && eager.length === 0
-  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")}, Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial static JS graph ${initialGraph.gzip} bytes (${initialGraph.scripts.map(script => script.file).join(", ")}); ${optional.length} undeclared optional chunks, ${eager.length} eager property/Design chunks; growth ${grew} bytes gzipped against ${STUDIO_INITIAL_BASELINE} (${STUDIO_INITIAL_BASELINE_GZ}; budget checked by WS-01)`]
+  return [ok ? "pass" : "fail", `without properties: tabs ${tabs.join(", ")} (frame ${code ? "announces" : "does not announce"} code; a frame without code shows ${plainTabs.replaceAll(",", ", ")}${plainCode ? " but still announced code" : ""}), Properties ${section}, state picker ${picker}, Edited ${edited}, link keys ${keys}, mounted values ${values}, property chunk or scenarios requests ${loaded.length}, stored edits ${stored.length}, isolated frames ${isolated}; chunks ${layout}; initial static JS graph ${initialGraph.gzip} bytes (${initialGraph.scripts.map(script => script.file).join(", ")}); ${optional.length} undeclared optional chunks, ${eager.length} eager property/Design chunks; growth ${grew} bytes gzipped against ${STUDIO_INITIAL_BASELINE} (${STUDIO_INITIAL_BASELINE_GZ}; budget checked by WS-01)`]
 })
 
 // AC-54 Switch, text, number and choice change the live frame without a remount; booleans arrive as booleans; a choice sends only its ID;
