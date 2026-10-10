@@ -25,6 +25,7 @@ import { ProductMark } from "./bits"
 import { staticProblem } from "./views"
 import { Slot, WorkspaceNav, WorkspacePage } from "@/studio/workspace/slots"
 import { LibraryNav, LibraryPage, LibrarySlot } from "@/studio/library/slots"
+import { provenanceSummary } from "@/studio/build-info"
 
 const TokensPanel = React.lazy(() => import("./design-tokens").then(module => ({ default: module.TokensPanel })))
 const AdjustPanel = React.lazy(() => import("./design").then(module => ({ default: module.AdjustPanel })))
@@ -55,7 +56,7 @@ export function RailButton({ label, keyHint, labels, active, hint, onClick, chil
       onClick={onClick}
       className={cn(
         "relative flex w-full shrink-0 items-center justify-center text-sidebar-foreground/65 outline-none transition-colors duration-150 hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:text-sidebar-foreground focus-visible:shadow-[inset_0_0_0_2px_var(--sidebar-ring)] [&_svg]:size-[18px] [&_svg]:shrink-0",
-        labels ? "h-14 flex-col gap-1 text-[10.5px] font-medium" : "h-10",
+        labels ? "h-14 flex-col gap-1 text-xs font-medium" : "h-10",
         active && "bg-sidebar-accent text-(--rail-active) before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:bg-sidebar-primary hover:text-(--rail-active)"
       )}
     >
@@ -282,7 +283,7 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
                 "aria-level": 1,
                 "aria-expanded": r.open,
                 onClick: () => !filtering && toggle(r.areaId),
-                className: cn("flex items-center gap-1 rounded-md px-2 text-[11px] font-medium tracking-wide text-sidebar-foreground/70 uppercase select-none hover:bg-sidebar-accent", RING),
+                className: cn("flex items-center gap-1 rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 select-none hover:bg-sidebar-accent", RING),
               }
             const selected = s.scenarioObj.id === r.sc.id
             return {
@@ -308,7 +309,7 @@ function CatalogPanel({ compare }: { compare?: boolean }) {
             return (
               <>
                 <span className="truncate">{r.sc.label}</span>
-                {r.sc.savedFrom && <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">Saved</span>}
+                {r.sc.savedFrom && <span className="ml-auto shrink-0 text-xs text-muted-foreground">Saved</span>}
                 <RowMark status={r.sc.status} noCapture={!live && !captureFor(r.sc, s.theme, s.profile)} />
               </>
             )
@@ -402,10 +403,10 @@ function PresentPanel() {
           const current = i === s.present.step
           return (
             <>
-              <span className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums", problem ? "bg-danger-surface text-danger" : current ? "bg-foreground text-background" : i < s.present.step ? "bg-muted-foreground/25" : "bg-muted")}>{problem ? "!" : i + 1}</span>
+              <span className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums", problem ? "bg-danger-surface text-danger" : current ? "bg-foreground text-background" : i < s.present.step ? "bg-muted-foreground/25" : "bg-muted")}>{problem ? "!" : i + 1}</span>
               <span className="grid min-w-0 gap-0.5 self-start">
                 <span className={cn("line-clamp-3 text-xs leading-snug", problem ? "text-danger" : "text-sidebar-foreground/85")}>{st.narration}</span>
-                <span className="truncate text-[11px] text-muted-foreground">{sc ? sc.label : st.scenario}{st.commands?.length ? ` · ${st.commands.length} ${st.commands.length === 1 ? "command" : "commands"}` : ""}</span>
+                <span className="truncate text-xs text-muted-foreground">{sc ? sc.label : st.scenario}{st.commands?.length ? ` · ${st.commands.length} ${st.commands.length === 1 ? "command" : "commands"}` : ""}</span>
               </span>
             </>
           )
@@ -463,6 +464,19 @@ function DesignPanel() {
 
 
 
+/** Where this build came from: the product's source revision and the shell version, quiet at the foot of the panel. */
+export function BuildStamp() {
+  const p = provenanceSummary(adapter.provenance)
+  return (
+    <p data-studio-provenance title={p.description} className="flex min-w-0 shrink-0 items-center border-t px-3 py-2 text-xs leading-4 text-muted-foreground">
+      <span className="truncate">
+        Source <span className={cn(p.commit && "font-mono")}>{p.source}</span> · Shell {p.shell}
+      </span>
+    </p>
+  )
+}
+
+
 export function ContextPanel() {
   const s = useStudio()
   return (
@@ -487,6 +501,7 @@ export function ContextPanel() {
           </>
         )}
       </div>
+      <BuildStamp />
     </Sidebar>
   )
 }
@@ -514,6 +529,7 @@ export function MobilePanel() {
           {s.view === "responsive" && <ResponsiveSide />}
         </>
       )}
+      <BuildStamp />
     </div>
   )
 }

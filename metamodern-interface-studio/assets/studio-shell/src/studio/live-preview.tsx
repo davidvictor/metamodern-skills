@@ -1,7 +1,8 @@
 import { LOCAL_ANNOTATIONS } from "./annotations/capability"
+import { SHELL_VERSION } from "./build-info"
 import { adapter } from "@/adapter"
 import { annotationBridge } from "./annotations/bridge"
-import { eligibleAnnotationPage, captureAnnotationValues, annotationPreviewSettled, safeAnnotationDesign, safeAnnotationTokens } from "./annotations/model"
+import { eligibleAnnotationPage, captureAnnotationValues, annotationPreviewSettled, measurableViewport, safeAnnotationDesign, safeAnnotationTokens } from "./annotations/model"
 import { useStudio } from "@/store"
 import { useOptionalDesignEditor } from "./design-ui/react"
 import type { JsonValue } from "./design-runtime"
@@ -368,7 +369,7 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       layer: "preview" as const, page: annotationPage!, scenario: inputs.scenario, theme: inputs.theme,
       profile: inputs.profile, values: inputs.values, design: { values: safeAnnotationDesign(inputs.design, adapter.design?.parameters), fingerprint: fingerprint(inputs.design) }, draft: { tokens: safeAnnotationTokens(draft.tokens), fingerprint: fingerprint(draft) },
       viewport: { width: w, height: h, scale }, location: current?.ready?.location,
-      revision: adapter.product.revision, shellVersion: "0.19.1", ...annotationTarget,
+      revision: adapter.product.revision, ...(adapter.provenance ? { source: adapter.provenance.revision } : {}), shellVersion: SHELL_VERSION, ...annotationTarget,
     }
     const safeContext = { ...annotationContext, ...captureAnnotationValues(inputs.values, adapter.annotations?.safeValues?.(annotationContext)), omittedContext: ["Unregistered/free-text design values: fingerprint only", "Unsafe/custom token values, CSS and compiled snapshot: fingerprint only"] }
     annotationContextKey = JSON.stringify(safeContext)
@@ -377,7 +378,8 @@ export const LivePreview = React.forwardRef<LivePreviewHandle, Props>(function L
       appearance, acknowledgedAppearance: current?.annotationAppearanceKey ?? (current ? appearanceKey(current.inputs, appearanceIds) : ""),
       draft: key, acknowledgedDraft: current?.annotationDraftKey ?? (current ? draftKey(current.inputs) : ""),
     })
-    annotationAvailable = settled && (current?.capabilities?.includes("annotations") ?? false)
+    // A preview not yet measured (or hidden at 0 x 0) is not offered; selecting it would start an invalid session.
+    annotationAvailable = settled && measurableViewport(annotationContext.viewport) && (current?.capabilities?.includes("annotations") ?? false)
   }
   React.useEffect(() => {
     if (!annotationEligible || !annotationInstance) return

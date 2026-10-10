@@ -20,6 +20,8 @@ export type AnnotationContext = {
   originalViewport?: { width: number; height: number }
   location?: string
   revision?: string
+  /** The build's source revision (adapter provenance), when the product records one. */
+  source?: string
   shellVersion: string
 }
 export type AnnotationSource = { repository?: string; confidence: "verified" | "candidate" | "unresolved"; owner: string; paths: string[]; candidates?: string[] }

@@ -125,7 +125,7 @@ function AnchorLayer({ anchor, w, h, scale }: { anchor: { x: number; y: number; 
     <>
       <div className="anchor-ring" style={ring} />
       <span
-        className="anchor-label pointer-events-none absolute truncate rounded-md bg-anchor px-1.5 py-0.5 text-[11px] leading-4 font-medium whitespace-nowrap text-anchor-foreground shadow-sm"
+        className="anchor-label pointer-events-none absolute truncate rounded-md bg-anchor px-1.5 py-0.5 text-xs leading-4 font-medium whitespace-nowrap text-anchor-foreground shadow-sm"
         data-placement={placement}
         style={{ top, maxWidth: Math.max(0, W - EDGE - (end ? right : left)), ...(end ? { right } : { left }) }}
       >
