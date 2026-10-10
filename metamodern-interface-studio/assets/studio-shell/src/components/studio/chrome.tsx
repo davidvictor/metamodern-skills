@@ -955,8 +955,8 @@ export function DetailsContent({ onClose }: { onClose?: () => void }) {
   const i = list.findIndex((x) => x.id === sc.id)
   const st = sc.statuses ?? {}
   const props = hasProperties ? propertiesFor(adapter.axes.inputs, sc) : []
-  // Code lists the props that differ from their defaults: only where a scenario has properties and the Inspect frame offers code.
-  const showCode = props.length > 0 && s.view === "inspect" && !!s.preview.capabilities?.includes("code")
+  // Code is offered by the Inspect frame capability, including scenarios without editable properties.
+  const showCode = s.view === "inspect" && !!s.preview.capabilities?.includes("code")
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="grid gap-2 border-b p-4">
