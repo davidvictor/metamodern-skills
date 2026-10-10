@@ -125,13 +125,22 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
       else if (framePointers.has(frame)) { frame.style.pointerEvents = framePointers.get(frame)!; framePointers.delete(frame) }
     }
   }
-  // The host strip reserves what the vendor control draws (44px collapsed, wider while feedback mode is open).
+  // The host strip reserves what the vendor control draws: 44px collapsed, the toolbar's settled open width (its own
+  // fixed layout width) from the first frame of opening until closing has settled. The strip changes once each way and
+  // never trails the vendor's width animation, so the strip's own controls are never covered mid-animation.
   let drawn: Element | null = null
   let reported = ""
   const reportSize = () => {
-    // Layout size, not the transformed box: the vendor's entry and hover scale must not shrink or grow the reservation.
-    const box = drawn instanceof HTMLElement ? { width: drawn.offsetWidth, height: drawn.offsetHeight } : null
-    const size = box && box.width > 0 && box.height > 0 ? box : null
+    let size: { width: number; height: number } | null = null
+    if (drawn instanceof HTMLElement && drawn.offsetWidth > 0 && drawn.offsetHeight > 0) {
+      // Layout sizes, not transformed boxes: the vendor's entry and hover scale must not change the reservation.
+      const current = { width: drawn.offsetWidth, height: drawn.offsetHeight }
+      const toolbar = drawn.parentElement
+      const open = !!(drawn.getRootNode() as ParentNode).querySelector('button[aria-label="Exit"]')
+      const collapsed = current.width <= current.height + 4
+      const full = toolbar instanceof HTMLElement ? Math.max(toolbar.offsetWidth, current.width) : current.width
+      size = open || !collapsed ? { width: full, height: current.height } : current
+    }
     const key = JSON.stringify(size)
     if (key === reported) return
     reported = key
@@ -141,7 +150,8 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
   const trackSize = () => {
     if (!sizeObserver) return
     const next = document.querySelector("agentation-toolbar.studio-host-annotation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar] > div") ?? null
-    if (next === drawn) return
+    // Opening and closing flip the vendor's Exit control before any width changes: report on every mutation.
+    if (next === drawn) { reportSize(); return }
     sizeObserver.disconnect()
     drawn = next
     if (next) sizeObserver.observe(next)

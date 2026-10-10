@@ -115,7 +115,7 @@ try {
     await touch.close()
   }
   passed("Host SDK and target controls clear the wrapped dock at tablet, landscape and phone widths")
-  for (const [width, height, touch] of [[320, 640, true], [390, 844, true], [1280, 900, false], [1440, 900, false]]) for (const hash of ["#view=inspect&scenario=tasks.list", "#library=button"]) {
+  for (const [width, height, touch] of [[320, 640, true], [390, 844, true], [1024, 768, false], [1280, 900, false], [1440, 900, false]]) for (const hash of ["#view=inspect&scenario=tasks.list", "#library=button"]) {
     const desk = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch })
     const screen = await desk.newPage()
     screen.on("pageerror", error => errors.push(error.message))
@@ -150,7 +150,30 @@ try {
     assert.equal(geometry.overFrames + geometry.overControls + geometry.overOwnControls, 0, `No annotation control overlaps a preview frame, an inspector control or a strip control for ${where}: ${JSON.stringify(geometry)}`)
     assert.equal(geometry.overInspector, false, `No annotation control overlaps the inspector for ${where}: ${JSON.stringify(geometry)}`)
     // Feedback mode open: the toolbar draws about 337px; the strip reserves it (its end, or its own row on phones).
+    // Every frame of the opening animation: the toolbar never shares a pixel with a strip control, and the strip (so
+    // the stage below it) changes height at most once, never stepwise with the vendor's width animation.
+    await screen.evaluate(() => {
+      const frames = []; window.__annotationFrames = frames
+      const meets = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+      const started = performance.now()
+      const tick = () => {
+        const drawn = document.querySelector("agentation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar] > div")?.getBoundingClientRect()
+        const strip = document.querySelector("[data-studio-annotation-dock]")?.getBoundingClientRect()
+        const own = [...document.querySelectorAll("[data-studio-annotations] button, [data-studio-annotations] select, [data-studio-annotations] [role=checkbox]")].map(e => e.getBoundingClientRect())
+        if (drawn && strip) frames.push({ width: Math.round(drawn.width), top: Math.round(drawn.top), left: Math.round(drawn.left), stripTop: Math.round(strip.top), mode: document.querySelector("[data-studio-annotation-dock]").dataset.annotationControl, covered: own.filter(c => meets(c, drawn)).length, strip: Math.round(strip.height) })
+        if (performance.now() - started < 1200) requestAnimationFrame(tick)
+        else window.__annotationFramesDone = true
+      }
+      requestAnimationFrame(tick)
+    })
     await screen.getByRole("button", { name: "Start feedback mode", exact: true }).click()
+    // The sampler stops itself after the vendor's opening animation (well under 1.2 s) has settled.
+    await screen.waitForFunction(() => window.__annotationFramesDone === true)
+    const frames = await screen.evaluate(() => window.__annotationFrames)
+    const strips = frames.map(f => f.strip).filter((v, i, all) => i === 0 || v !== all[i - 1])
+    assert.ok(frames.length > 10 && frames.some(f => f.width > 44 && f.width < 300), `The opening animation was sampled for ${where}: ${frames.length} frames`)
+    assert.deepEqual(frames.filter(f => f.covered), [], `No opening frame covers a strip control for ${where}: ${JSON.stringify(frames.flatMap((f, i) => f.covered ? [frames[i - 1], f] : []).slice(0, 8))}`)
+    assert.ok(strips.length <= 2, `The strip changes height at most once while opening for ${where}: ${strips.join(" > ")}`)
     await screen.waitForFunction(() => {
       const drawn = document.querySelector("agentation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar] > div")?.getBoundingClientRect()
       const strip = document.querySelector("[data-studio-annotation-dock]")
@@ -176,7 +199,7 @@ try {
     await screen.getByRole("button", { name: "Exit", exact: true }).click()
     await desk.close()
   }
-  passed("Docked annotation controls and the vendor control, collapsed and open, never overlap preview frames, inspector controls or each other at 320, 390, 1280 and 1440")
+  passed("Docked annotation controls and the vendor control, collapsed, opening frame by frame and open, never overlap preview frames, inspector controls or each other at 320, 390, 1024, 1280 and 1440")
   await page.goto(url)
   await page.locator("agentation-toolbar").waitFor({ state: "attached" })
   await page.evaluate(() => {
