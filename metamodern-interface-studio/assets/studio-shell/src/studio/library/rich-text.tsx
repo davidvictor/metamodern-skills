@@ -34,7 +34,7 @@ export function InlineText({ text }: { text: Text }) {
         if ("code" in r) return <code key={i} className="rounded bg-muted px-1 py-px font-mono text-[0.9em]">{r.code}</code>
         if ("strong" in r) return <strong key={i} className="font-semibold">{r.strong}</strong>
         if ("em" in r) return <em key={i}>{r.em}</em>
-        if ("kbd" in r) return <kbd key={i} className="rounded border bg-muted px-1 font-mono text-[0.85em]">{r.kbd}</kbd>
+        if ("kbd" in r) return <kbd key={i} className="rounded border bg-muted px-1 font-mono text-[0.875em]">{r.kbd}</kbd>
         // A reference to a component the library does not declare is plain text, never a button that opens nothing
         // (docsProblems reports it before a page renders).
         const label = labelOf(r.component)

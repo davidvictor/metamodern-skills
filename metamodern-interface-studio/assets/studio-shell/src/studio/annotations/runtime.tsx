@@ -2,6 +2,7 @@ import { flushSync } from "react-dom"
 import { createRoot } from "react-dom/client"
 import { Agentation, saveAnnotations, type Annotation } from "agentation"
 import type { AnnotationRuntimeOptions, RawAnnotation } from "./types"
+import { ANNOTATION_SDK_SIZE_EVENT } from "./model"
 
 const ATTRIBUTES = ["data-studio-anchor", "data-studio-component", "data-slot", "data-kit-component", "data-kit-example", "data-test", "data-testid", "data-preview-block"] as const
 function ownerAttributes(element: Element | null) {
@@ -124,6 +125,38 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
       else if (framePointers.has(frame)) { frame.style.pointerEvents = framePointers.get(frame)!; framePointers.delete(frame) }
     }
   }
+  // The host strip reserves what the vendor control draws: 44px collapsed, the toolbar's settled open width (its own
+  // fixed layout width) from the first frame of opening until closing has settled. The strip changes once each way and
+  // never trails the vendor's width animation, so the strip's own controls are never covered mid-animation.
+  let drawn: Element | null = null
+  let reported = ""
+  const reportSize = () => {
+    let size: { width: number; height: number } | null = null
+    if (drawn instanceof HTMLElement && drawn.offsetWidth > 0 && drawn.offsetHeight > 0) {
+      // Layout sizes, not transformed boxes: the vendor's entry and hover scale must not change the reservation.
+      const current = { width: drawn.offsetWidth, height: drawn.offsetHeight }
+      const toolbar = drawn.parentElement
+      const open = !!(drawn.getRootNode() as ParentNode).querySelector('button[aria-label="Exit"]')
+      const collapsed = current.width <= current.height + 4
+      const full = toolbar instanceof HTMLElement ? Math.max(toolbar.offsetWidth, current.width) : current.width
+      size = open || !collapsed ? { width: full, height: current.height } : current
+    }
+    const key = JSON.stringify(size)
+    if (key === reported) return
+    reported = key
+    window.dispatchEvent(new CustomEvent(ANNOTATION_SDK_SIZE_EVENT, { detail: size }))
+  }
+  const sizeObserver = options.session.context.layer === "studio" ? new ResizeObserver(reportSize) : null
+  const trackSize = () => {
+    if (!sizeObserver) return
+    const next = document.querySelector("agentation-toolbar.studio-host-annotation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar] > div") ?? null
+    // Opening and closing flip the vendor's Exit control before any width changes: report on every mutation.
+    if (next === drawn) { reportSize(); return }
+    sizeObserver.disconnect()
+    drawn = next
+    if (next) sizeObserver.observe(next)
+    reportSize()
+  }
   const observedShadows = new WeakSet<ShadowRoot>()
   const observer = new MutationObserver(() => {
     for (const toolbar of document.querySelectorAll("agentation-toolbar")) {
@@ -132,7 +165,7 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
       if (shadow && !shadow.querySelector("[data-studio-restrictions]")) {
         const style = document.createElement("style")
         style.dataset.studioRestrictions = ""
-        style.textContent = 'button[aria-label="Settings"], [data-agentation-settings-panel] { display: none !important; } :host(.studio-host-annotation-toolbar) [data-agentation-toolbar]:not([style]) { bottom: var(--studio-annotation-sdk-bottom, 24px) !important; }'
+        style.textContent = 'button[aria-label="Settings"], [data-agentation-settings-panel] { display: none !important; } :host(.studio-host-annotation-toolbar) [data-agentation-toolbar]:not([style]) { bottom: var(--studio-annotation-sdk-bottom, 24px) !important; right: var(--studio-annotation-sdk-right, 20px) !important; }'
         shadow.append(style)
       }
     }
@@ -140,12 +173,15 @@ export function mountAnnotations(options: AnnotationRuntimeOptions) {
     if ((overlays.at(-1) ?? null) !== portal) render()
     placeToolbar()
     isolateFrames()
+    trackSize()
   })
   observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-closed", "aria-hidden", "role"] })
   render()
   return () => {
     live = false
     observer.disconnect()
+    sizeObserver?.disconnect()
+    if (sizeObserver) window.dispatchEvent(new CustomEvent(ANNOTATION_SDK_SIZE_EVENT, { detail: null }))
     portalResize?.disconnect()
     clearPortalTransitions()
     for (const name of guardedEvents) window.removeEventListener(name, guardPrivate, true)

@@ -126,7 +126,7 @@ function SideCaption({ side, label, status, onReset }: { side: string; label: st
     <figcaption className="@container flex justify-center self-stretch">
       <span className="flex max-w-full min-w-0 flex-wrap items-center justify-center gap-1.5 rounded-lg bg-background/92 px-2 py-1 text-xs shadow-sm backdrop-blur">
         <span className="flex min-w-0 items-center gap-1.5">
-          <Badge variant="secondary" className="h-4 px-1 text-[10px]">{side}</Badge>
+          <Badge variant="secondary" className="h-5 px-1.5 text-xs">{side}</Badge>
           <b className="min-w-0 truncate font-medium" title={label}>{label}</b>
         </span>
         <span className="flex flex-wrap items-center justify-center gap-1.5">
@@ -287,7 +287,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
               setC({ axis, a: values[0], b: values[1], values })
             }} disabled={!s.compare.editable}>
               <SelectTrigger size="sm" className="gap-1 border-0 shadow-none" aria-label={k === "a" ? "Side A" : "Side B"}>
-                <Badge variant="secondary" className="h-4 px-1 text-[10px]">{k.toUpperCase()}</Badge>
+                <Badge variant="secondary" className="h-5 px-1.5 text-xs">{k.toUpperCase()}</Badge>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>{options.map((o) => <SelectItem key={o.id} value={o.id} className={axis === "direction" ? "pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[1000px]:min-h-11 max-[1000px]:min-w-11" : undefined}>{o.label}</SelectItem>)}</SelectContent>
@@ -301,7 +301,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
                 setC({ a: values[0], b: values[1], values })
               }} disabled={!s.compare.editable}>
                 <SelectTrigger size="sm" className={cn("gap-1 border-0 shadow-none", axis === "direction" && "pointer-coarse:min-h-11 pointer-coarse:min-w-11 max-[1000px]:min-h-11 max-[1000px]:min-w-11")} aria-label={`Side ${String.fromCharCode(65 + slot)}`}>
-                  <Badge variant="secondary" className="h-4 px-1 text-[10px]">{String.fromCharCode(65 + slot)}</Badge>
+                  <Badge variant="secondary" className="h-5 px-1.5 text-xs">{String.fromCharCode(65 + slot)}</Badge>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>{options.map((o) => <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>)}</SelectContent>
@@ -401,7 +401,7 @@ export function CompareStage({ narrow }: { narrow?: boolean }) {
               <div className={cn("absolute top-0 left-0", showB && "invisible")}>{side("a")}</div>
               <div className={cn("absolute top-0 left-0", !showB && "invisible")}>{side("b")}</div>
             </div>
-            <p className="text-[11px] text-stage-muted">Press <Kbd>Space</Kbd> to flip between A and B.</p>
+            <p className="text-xs text-stage-muted">Press <Kbd>Space</Kbd> to flip between A and B.</p>
           </div>
         )}
        </div>
@@ -692,9 +692,9 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
         {/* The bar follows its own width, not the window's: one column, then the controls under the text, then three columns, so text and controls never overlap. */}
         <div className={cn("grid items-start gap-x-6 gap-y-3 px-4 pt-3 pb-4", !narrow && "@xl:grid-cols-[minmax(160px,1fr)_minmax(0,2.4fr)] @4xl:grid-cols-[minmax(160px,1fr)_minmax(0,2.4fr)_auto]")}>
           <div className="grid gap-1">
-            <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{tour.name} · {i + 1} of {tour.steps.length}</p>
+            <p className="text-xs font-medium text-muted-foreground">{tour.name} · {i + 1} of {tour.steps.length}</p>
             {!narrow && <p className="text-xs leading-relaxed text-muted-foreground">{tour.goal}</p>}
-            {tour.illustrative && <Badge variant="outline" className="w-fit border-dashed text-[10px]">Illustrative tour</Badge>}
+            {tour.illustrative && <Badge variant="outline" className="w-fit border-dashed text-xs">Illustrative tour</Badge>}
           </div>
           <div aria-live="polite" className="grid min-w-0 gap-2 break-words">
             {problem ? (
@@ -734,7 +734,7 @@ export function PresentStage({ narrow }: { narrow?: boolean }) {
           </div>
         </div>
         {!narrow && (
-          <p className="px-4 pb-3 text-[11px] text-muted-foreground">
+          <p className="px-4 pb-3 text-xs text-muted-foreground">
             <Kbd>←</Kbd> <Kbd>→</Kbd> step · <Kbd>Space</Kbd> pause · <Kbd>Esc</Kbd> exit · touching the preview pauses and offers Restore this step.
           </p>
         )}
@@ -857,10 +857,10 @@ function StepsPopover({ tour, current, onPick, theme }: { tour: { steps: Step[] 
                       setOpen(false)
                     }}
                   >
-                    <span className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums", problem ? "bg-danger-surface text-danger" : j === current ? "bg-foreground text-background" : j < current ? "bg-muted-foreground/25" : "bg-muted")}>{problem ? "!" : j + 1}</span>
+                    <span className={cn("mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums", problem ? "bg-danger-surface text-danger" : j === current ? "bg-foreground text-background" : j < current ? "bg-muted-foreground/25" : "bg-muted")}>{problem ? "!" : j + 1}</span>
                     <span className="grid min-w-0 gap-0.5">
                       <span className="line-clamp-2 text-xs leading-snug">{st.narration}</span>
-                      <span className="truncate text-[11px] text-muted-foreground">{sc ? sc.label : st.scenario}</span>
+                      <span className="truncate text-xs text-muted-foreground">{sc ? sc.label : st.scenario}</span>
                     </span>
                   </button>
                 </li>

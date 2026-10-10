@@ -56,7 +56,8 @@ try {
       const dock = document.querySelector('[data-studio-preview-controls="dock"], [data-studio-bottom-controls]')?.getBoundingClientRect()
       const sdk = document.querySelector('agentation-toolbar')?.shadowRoot?.querySelector('[data-agentation-toolbar]')?.getBoundingClientRect()
       const panel = document.querySelector('[data-studio-annotations]')?.getBoundingClientRect()
-      return dock && sdk && panel && sdk.bottom <= dock.top && panel.bottom <= sdk.top && panel.left >= 0 && panel.right <= innerWidth
+      const strip = document.querySelector('[data-studio-annotation-dock]')?.getBoundingClientRect()
+      return dock && sdk && panel && strip && sdk.bottom <= dock.top && sdk.top >= strip.top - 1 && sdk.bottom <= strip.bottom + 1 && sdk.right <= innerWidth && panel.left >= 0 && panel.right <= innerWidth
     })
     const reached = await screen.evaluate(() => [...document.querySelectorAll('[data-studio-preview-controls="dock"] button, [data-studio-bottom-controls] button')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.height && !e.disabled }).every(e => { const r = e.getBoundingClientRect(); return e.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)) }))
     assert.ok(reached, `Studio dock buttons remain on top at ${width}x${height}`)
@@ -114,6 +115,91 @@ try {
     await touch.close()
   }
   passed("Host SDK and target controls clear the wrapped dock at tablet, landscape and phone widths")
+  for (const [width, height, touch] of [[320, 640, true], [390, 844, true], [1024, 768, false], [1280, 900, false], [1440, 900, false]]) for (const hash of ["#view=inspect&scenario=tasks.list", "#library=button"]) {
+    const desk = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch })
+    const screen = await desk.newPage()
+    screen.on("pageerror", error => errors.push(error.message))
+    await screen.goto(`${url}${hash}`)
+    await screen.locator("agentation-toolbar").waitFor({ state: "attached" })
+    await screen.locator("iframe").first().waitFor({ state: "attached" })
+    if (!touch && hash.includes("inspect") && await screen.locator('[data-studio-inspector][aria-hidden="true"]').count()) await screen.keyboard.press("Meta+Period")
+    // Inspector width animates and the strip wraps; positions are read once the vendor control sits in the strip.
+    await screen.waitForFunction(({ touch, inspect }) => {
+      const strip = document.querySelector("[data-studio-annotation-dock]")?.getBoundingClientRect()
+      const sdk = document.querySelector("agentation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar]")?.getBoundingClientRect()
+      const inspector = document.querySelector('[data-studio-inspector]:not([aria-hidden="true"])')?.getBoundingClientRect()
+      return strip && sdk && sdk.top >= strip.top - 1 && sdk.bottom <= strip.bottom + 1 && (touch || !inspect || (inspector && inspector.width >= 300))
+    }, { touch, inspect: hash.includes("inspect") })
+    const geometry = await screen.evaluate(() => {
+      const box = element => { const r = element.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom } }
+      const meets = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+      const bar = document.querySelector("[data-studio-annotations]")
+      // What the vendor control draws: its container (44px collapsed); the toolbar element itself is always 337px wide.
+      const sdk = box(document.querySelector("agentation-toolbar").shadowRoot.querySelector("[data-agentation-toolbar] > div"))
+      const frames = [...document.querySelectorAll("iframe")].map(box).filter(r => r.right > r.left && r.bottom > r.top)
+      const controls = [...document.querySelectorAll('[data-studio-inspector] button, [data-studio-inspector] [role="combobox"], [data-studio-inspector] input, [data-studio-inspector] select')].map(box).filter(r => r.right > r.left && r.bottom > r.top)
+      const barControls = [...bar.querySelectorAll("button, select, [role=checkbox]")].map(box)
+      const inspector = document.querySelector('[data-studio-inspector]:not([aria-hidden="true"])')
+      return { docked: !!document.querySelector("[data-studio-annotation-dock]")?.contains(bar) && getComputedStyle(bar).position !== "fixed", sdk, frames: frames.length,
+        overFrames: frames.filter(f => meets(sdk, f) || meets(box(bar), f)).length, overControls: controls.filter(c => meets(sdk, c) || meets(box(bar), c)).length,
+        overInspector: !!inspector && (meets(sdk, box(inspector)) || meets(box(bar), box(inspector))), inspector: inspector && box(inspector), bar: box(bar), strip: box(document.querySelector("[data-studio-annotation-dock]")), overOwnControls: barControls.filter(c => meets(sdk, c)).length }
+    })
+    const where = `${hash} at ${width}`
+    assert.ok(geometry.docked, `Annotation controls are docked in the reserved strip for ${where}`)
+    assert.ok(geometry.frames > 0, `A preview frame is on screen for ${where}`)
+    assert.equal(geometry.overFrames + geometry.overControls + geometry.overOwnControls, 0, `No annotation control overlaps a preview frame, an inspector control or a strip control for ${where}: ${JSON.stringify(geometry)}`)
+    assert.equal(geometry.overInspector, false, `No annotation control overlaps the inspector for ${where}: ${JSON.stringify(geometry)}`)
+    // Feedback mode open: the toolbar draws about 337px; the strip reserves it (its end, or its own row on phones).
+    // Every frame of the opening animation: the toolbar never shares a pixel with a strip control, and the strip (so
+    // the stage below it) changes height at most once, never stepwise with the vendor's width animation.
+    await screen.evaluate(() => {
+      const frames = []; window.__annotationFrames = frames
+      const meets = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+      const started = performance.now()
+      const tick = () => {
+        const drawn = document.querySelector("agentation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar] > div")?.getBoundingClientRect()
+        const strip = document.querySelector("[data-studio-annotation-dock]")?.getBoundingClientRect()
+        const own = [...document.querySelectorAll("[data-studio-annotations] button, [data-studio-annotations] select, [data-studio-annotations] [role=checkbox]")].map(e => e.getBoundingClientRect())
+        if (drawn && strip) frames.push({ width: Math.round(drawn.width), top: Math.round(drawn.top), left: Math.round(drawn.left), stripTop: Math.round(strip.top), mode: document.querySelector("[data-studio-annotation-dock]").dataset.annotationControl, covered: own.filter(c => meets(c, drawn)).length, strip: Math.round(strip.height) })
+        if (performance.now() - started < 1200) requestAnimationFrame(tick)
+        else window.__annotationFramesDone = true
+      }
+      requestAnimationFrame(tick)
+    })
+    await screen.getByRole("button", { name: "Start feedback mode", exact: true }).click()
+    // The sampler stops itself after the vendor's opening animation (well under 1.2 s) has settled.
+    await screen.waitForFunction(() => window.__annotationFramesDone === true)
+    const frames = await screen.evaluate(() => window.__annotationFrames)
+    const strips = frames.map(f => f.strip).filter((v, i, all) => i === 0 || v !== all[i - 1])
+    assert.ok(frames.length > 10 && frames.some(f => f.width > 44 && f.width < 300), `The opening animation was sampled for ${where}: ${frames.length} frames`)
+    assert.deepEqual(frames.filter(f => f.covered), [], `No opening frame covers a strip control for ${where}: ${JSON.stringify(frames.flatMap((f, i) => f.covered ? [frames[i - 1], f] : []).slice(0, 8))}`)
+    assert.ok(strips.length <= 2, `The strip changes height at most once while opening for ${where}: ${strips.join(" > ")}`)
+    await screen.waitForFunction(() => {
+      const drawn = document.querySelector("agentation-toolbar")?.shadowRoot?.querySelector("[data-agentation-toolbar] > div")?.getBoundingClientRect()
+      const strip = document.querySelector("[data-studio-annotation-dock]")
+      const controls = [...(strip?.querySelectorAll("[data-studio-annotations] button, [data-studio-annotations] select, [data-studio-annotations] [role=checkbox]") ?? [])].map(e => e.getBoundingClientRect())
+      const box = strip?.getBoundingClientRect()
+      return drawn && box && drawn.width > 200 && drawn.top >= box.top - 1 && drawn.bottom <= box.bottom + 1 && controls.every(c => !(drawn.left < c.right && drawn.right > c.left && drawn.top < c.bottom && drawn.bottom > c.top))
+    })
+    const open = await screen.evaluate(() => {
+      const box = element => { const r = element.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom } }
+      const meets = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
+      const drawn = box(document.querySelector("agentation-toolbar").shadowRoot.querySelector("[data-agentation-toolbar] > div"))
+      const frames = [...document.querySelectorAll("iframe")].map(box).filter(r => r.right > r.left && r.bottom > r.top)
+      const inspector = document.querySelector('[data-studio-inspector]:not([aria-hidden="true"])')
+      const controls = [...document.querySelectorAll('[data-studio-inspector] button, [data-studio-inspector] [role="combobox"], [data-studio-inspector] input, [data-studio-inspector] select')].map(box).filter(r => r.right > r.left && r.bottom > r.top)
+      const own = [...document.querySelectorAll("[data-studio-annotations] button, [data-studio-annotations] select, [data-studio-annotations] [role=checkbox]")]
+      // No strip control shares any pixel with the drawn toolbar, so its keyboard focus is never hidden (feedback mode's
+      // page overlay makes hit-testing meaningless here; geometry is the claim).
+      const covered = own.filter(e => meets(box(e), drawn)).map(e => e.getAttribute("aria-label") || e.textContent)
+      return { mode: document.querySelector("[data-studio-annotation-dock]").dataset.annotationControl, drawn, overFrames: frames.filter(f => meets(f, drawn)).length, overInspector: !!inspector && meets(box(inspector), drawn), overControls: controls.filter(c => meets(c, drawn)).length, covered }
+    })
+    assert.deepEqual([open.overFrames, open.overInspector, open.overControls, open.covered], [0, false, 0, []], `The open toolbar covers nothing for ${where}: ${JSON.stringify(open)}`)
+    if (width < 768) assert.equal(open.mode, "row", `The open toolbar takes its own row on a phone for ${where}`)
+    await screen.getByRole("button", { name: "Exit", exact: true }).click()
+    await desk.close()
+  }
+  passed("Docked annotation controls and the vendor control, collapsed, opening frame by frame and open, never overlap preview frames, inspector controls or each other at 320, 390, 1024, 1280 and 1440")
   await page.goto(url)
   await page.locator("agentation-toolbar").waitFor({ state: "attached" })
   await page.evaluate(() => {
@@ -207,7 +293,7 @@ try {
   assert.ok(viewport.width >= 360 && viewport.height >= 480)
   assert.equal(await countRuntimes(), 1)
   assert.ok(await page.getByText(/Expanded preview recreates state/).isVisible())
-  await page.getByLabel("Annotations", { exact: true }).uncheck()
+  await page.getByRole("checkbox", { name: "Annotations", exact: true }).uncheck()
   await expanded.locator("agentation-toolbar").waitFor({ state: "detached" })
   assert.equal(await countRuntimes(), 0)
   assert.equal(await expanded.evaluate(() => window.__libMounts), viewport.mounts)
@@ -215,7 +301,7 @@ try {
   await page.waitForFunction(() => !document.querySelector('[data-studio-annotation-portal]')?.textContent.includes('editing viewport'))
   const natural = await expanded.evaluate(() => ({ width: innerWidth, height: innerHeight, mounts: window.__libMounts }))
   assert.ok(natural.height < viewport.height)
-  await page.getByLabel("Annotations", { exact: true }).check()
+  await page.getByRole("checkbox", { name: "Annotations", exact: true }).check()
   await expanded.locator("agentation-toolbar").waitFor({ state: "attached" })
   assert.equal(await expanded.evaluate(() => window.__libMounts), viewport.mounts)
   assert.ok((await expanded.evaluate(() => innerHeight)) >= 480)
@@ -236,11 +322,11 @@ try {
   await page.locator("agentation-toolbar").waitFor({ state: "attached" })
   assert.equal(await countRuntimes(), 1)
   passed("Expanded off/on resizes without remount; closing restores controls and keyboard Studio recovery")
-  await page.getByLabel("Annotations", { exact: true }).uncheck()
+  await page.getByRole("checkbox", { name: "Annotations", exact: true }).uncheck()
   await page.locator("agentation-toolbar").waitFor({ state: "detached" })
   await page.reload()
   await page.getByRole("button", { name: "Feedback (2)", exact: true }).waitFor()
-  assert.equal(await page.getByLabel("Annotations", { exact: true }).isChecked(), false)
+  assert.equal(await page.getByRole("checkbox", { name: "Annotations", exact: true }).isChecked(), false)
   await page.getByRole("button", { name: "Feedback (2)", exact: true }).click()
   const restored = await page.getByLabel("Combined feedback Markdown").inputValue()
   assert.ok(restored.includes("Studio shell note.\nKeep this line verbatim."))

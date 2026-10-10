@@ -10,13 +10,13 @@ const dir = mkdtempSync(join(tmpdir(), 'studio-annotations-test-'));
 writeFileSync(join(dir, 'location.mjs'), stripTypeScriptTypes(readFileSync(new URL('../location.ts', source), 'utf8'), {mode:'strip'}));
 writeFileSync(join(dir, 'protocol.mjs'), stripTypeScriptTypes(readFileSync(new URL('../protocol.ts', source), 'utf8'), {mode:'strip'}));
 for (const name of ['model', 'client', 'bridge', 'schedule']) writeFileSync(join(dir, `${name}.mjs`), stripTypeScriptTypes(readFileSync(new URL(`${name}.ts`, source), 'utf8'), {mode:'strip'}).replace(/from "\.\/model"/g, 'from "./model.mjs"').replace(/from "\.\/schedule"/g, 'from "./schedule.mjs"').replace(/from "\.\.\/protocol"/g, 'from "./protocol.mjs"'));
-const {validCommand, validEvent, validAnnotation, eligibleAnnotationPage, feedbackMarkdown, validRecord, captureAnnotationValues, annotationPreviewSettled, annotationHydration, safeAnnotationDesign, safeAnnotationTokens, annotationHostBottom} = await import(pathToFileURL(join(dir,'model.mjs')));
+const {validCommand, validEvent, validAnnotation, eligibleAnnotationPage, feedbackMarkdown, validRecord, captureAnnotationValues, annotationPreviewSettled, annotationHydration, safeAnnotationDesign, safeAnnotationTokens, annotationHostBottom, annotationStripPlacement, measurableViewport, invalidCommandReason} = await import(pathToFileURL(join(dir,'model.mjs')));
 const {scheduleAnnotationWork, ANNOTATION_IDLE_TIMEOUT_MS} = await import(pathToFileURL(join(dir,'schedule.mjs')));
 const {committedStudioLocation,subscribeStudioLocation,replaceStudioLocation} = await import(pathToFileURL(join(dir,'location.mjs')));
 const {annotationBridge} = await import(pathToFileURL(join(dir,'bridge.mjs')));
 const {createAnnotationClient} = await import(pathToFileURL(join(dir,'client.mjs')));
 const annotation = {id:'note1', comment:'Do exactly this.\nKeep this second line.', element:'Button', elementPath:'[data-kit-component="Button"]', timestamp:Date.now(), x:10, y:20};
-const session = {generation:'g1', fingerprint:'f1', context:{layer:'preview', page:'library', scenario:'button', viewport:{width:360,height:480,scale:1},shellVersion:'0.19.1'}};
+const session = {generation:'g1', fingerprint:'f1', context:{layer:'preview', page:'library', scenario:'button', viewport:{width:360,height:480,scale:1},shellVersion:'0.20.0'}};
 const tick = () => new Promise(resolve => setImmediate(resolve));
 test('actual page eligibility respects Library, module and view precedence', () => {
  assert.equal(eligibleAnnotationPage({library:'button',module:'tools',view:'compare'}),'library');
@@ -125,7 +125,9 @@ test('expanded portal ownership notifies close/unmount and preserves another own
  annotationBridge.setPortal('second',null);assert.equal(annotationBridge.portal(),null);
  assert.equal(updates,4);release();
  const host=readFileSync(new URL('host.tsx',source),'utf8');
- assert.ok(host.includes('portalContainer ?? document.body'));
+ // Docked in the reserved strip under the top bar; only an expanded preview dialog takes the controls into its own boundary.
+ assert.ok(host.includes('portalContainer ? createPortal(bar, portalContainer) : bar'));
+ assert.match(readFileSync(new URL('slot.tsx',source),'utf8'), /data-studio-annotation-dock/);
  assert.ok(host.includes('value={selected} disabled>Selected preview unavailable'));
  assert.ok(!host.includes('document.querySelector("[data-studio-annotation-portal]")'));
 });
@@ -231,4 +233,54 @@ test('layout membership notification is inert when compiled off and coalesces lo
     if (originalWindow === undefined) delete globalThis.window;
     else globalThis.window = originalWindow;
   }
+});
+
+test('an unmeasured view waits instead of blaming saved marker data', () => {
+ const zero = {...session, context:{...session.context, viewport:{width:0,height:0,scale:1}}};
+ assert.equal(measurableViewport({width:1440,height:900,scale:1}), true);
+ for (const viewport of [{width:0,height:0,scale:1},{width:1440,height:0,scale:1},{width:1440,height:900,scale:0},undefined]) assert.equal(measurableViewport(viewport), false);
+ assert.ok(!validCommand({action:'activate',session:zero,notes:[]}));
+ assert.match(invalidCommandReason({action:'activate',session:zero,notes:[]}), /measurable size/);
+ assert.doesNotMatch(invalidCommandReason({action:'activate',session:zero,notes:[]}), /marker/);
+ assert.match(invalidCommandReason({action:'activate',session,notes:Array.from({length:4},(_,i)=>({...annotation,id:`n${i}`,comment:'x'.repeat(20000)}))}), /Saved marker data exceed/);
+ assert.match(invalidCommandReason({action:'activate',session:{...session,context:{...session.context,page:'compare'}},notes:[]}), /invalid capture context/);
+ const events = [];
+ createAnnotationClient({load:()=>Promise.reject(new Error('never loads'))}).receive({action:'activate',session:zero,notes:[]}, e => events.push(e));
+ assert.deepEqual(events.map(e => [e.action, /measurable size/.test(e.reason)]), [['error', true]]);
+});
+
+test('the host vendor control is pinned inside the reserved strip and reserves what it draws', () => {
+ const strip = (width, top, height) => ({top, right:width, bottom:top+height, width:width-340, height});
+ // Collapsed (44px) at 1440 beside a 340px sidebar: the end keeps 64px, the control centres in the 52px strip.
+ assert.deepEqual(annotationStripPlacement(1440, 900, strip(1440,48,52)), {mode:'end', bottom:804, right:8, reserveRight:64, reserveBottom:4});
+ // Feedback mode open (337px) at 1280: the end reserves the drawn width, never the strip's own controls.
+ const open = annotationStripPlacement(1280, 900, strip(1280,48,52), {width:337,height:44});
+ assert.equal(open.mode, 'end'); assert.equal(open.reserveRight, 357);
+ // Phones: collapsed stays at the end; open takes its own row at the strip's foot.
+ const phone = {top:48,right:390,bottom:100,width:390,height:52};
+ assert.equal(annotationStripPlacement(390, 844, phone).mode, 'end');
+ const row = annotationStripPlacement(390, 844, phone, {width:337,height:44});
+ assert.deepEqual(row, {mode:'row', bottom:748, right:8, reserveRight:12, reserveBottom:52});
+ assert.equal(annotationStripPlacement(320, 640, {top:48,right:320,bottom:100,width:320,height:52}, {width:337,height:44}).mode, 'row');
+ for (const [width,height,box,control] of [[390,844,phone,undefined],[1280,900,strip(1280,48,52),{width:337,height:44}]]) {
+  const p = annotationStripPlacement(width,height,box,control), c = control ?? {width:44,height:44};
+  const top = height-p.bottom-c.height, left = width-p.right-c.width;
+  assert.ok(top >= box.top && top+c.height <= box.bottom && left >= box.right-p.reserveRight, `${width}`);
+ }
+});
+
+test('build provenance names the source revision and the shell version that matches the package', async () => {
+ const file = join(dir, 'build-info.mjs');
+ writeFileSync(file, stripTypeScriptTypes(readFileSync(new URL('../build-info.ts', source), 'utf8'), {mode:'strip'}));
+ const {SHELL_VERSION, provenanceSummary} = await import(pathToFileURL(file));
+ assert.equal(`metamodern-interface-studio@${SHELL_VERSION}`, readFileSync(new URL('../../../../../PACKAGE_VERSION', source), 'utf8').trim());
+ assert.equal(provenanceSummary({revision:'a93e38b46c0ffee0000000000000000000000000'}).text, `Source a93e38b · Shell ${SHELL_VERSION}`);
+ assert.equal(provenanceSummary({revision:'a93e38b46c0ffee0000000000000000000000000', modified:true}).text, `Source a93e38b, modified · Shell ${SHELL_VERSION}`);
+ assert.match(provenanceSummary({revision:'a93e38b46c0ffee0000000000000000000000000', modified:true}).description, /a93e38b46c0ffee0{25} plus uncommitted changes; Interface Studio shell/);
+ assert.equal(provenanceSummary({revision:'unversioned local workspace'}).text, `Source unversioned local workspace · Shell ${SHELL_VERSION}`);
+ assert.equal(provenanceSummary(undefined).text, `Source not recorded · Shell ${SHELL_VERSION}`);
+ const noted = provenanceSummary({revision:'a93e38b46c0ffee0000000000000000000000000', note:'read when the dev server started'});
+ assert.equal(noted.text, `Source a93e38b · Shell ${SHELL_VERSION}`);
+ assert.match(noted.description, /\(read when the dev server started\)$/);
+ for (const fileName of ['live-preview.tsx', 'annotations/host.tsx']) assert.doesNotMatch(readFileSync(new URL(`../${fileName}`, source), 'utf8'), /shellVersion: "\d/);
 });
