@@ -57,7 +57,7 @@ export function TokensPanel() {
             </SidebarGroupLabel>
             <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 data-[ending-style]:h-0 data-[starting-style]:h-0">
               <p className="px-2 pb-2 text-xs leading-relaxed text-muted-foreground">Read only. The shell’s tokens never reach a preview, and product tokens never style the shell, even where the names match.</p>
-              <ul className="grid gap-1 px-2 pb-2 font-mono text-[11px]">
+              <ul className="grid gap-1 px-2 pb-2 font-mono text-xs">
                 {["--stage", "--boundary", "--background", "--foreground", "--success", "--warning"].map((n) => (
                   <li key={n} className="flex items-center gap-2"><span className="size-3 rounded-sm ring-1 ring-border" style={{ background: `var(${n})` }} />{n}</li>
                 ))}
@@ -212,12 +212,12 @@ function LegacyTokensStage() {
                   <>
                     <div className={cn("grid min-w-0 gap-0.5", stacked && "col-span-2 flex items-center gap-2")} role="gridcell">
                       <code className="truncate font-mono text-xs font-medium">{x.name}</code>
-                      <span className="flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
+                      <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
                         <span className="shrink-0">{x.reads != null ? `${x.reads} reads` : "reads unknown"}</span>
                         {d && <StatusBadge kind="draft">Draft</StatusBadge>}
-                        {x.flags?.includes("unread") && <Badge variant="outline" className="h-4 px-1 text-[10px] text-warning">Unread</Badge>}
-                        {x.flags?.includes("literal") && <Badge variant="outline" className="h-4 px-1 text-[10px]">Fixed</Badge>}
-                        {x.flags?.includes("coupled") && <Badge variant="outline" className="h-4 px-1 text-[10px] text-info">Coupled</Badge>}
+                        {x.flags?.includes("unread") && <Badge variant="outline" className="h-5 px-1.5 text-xs text-warning">Unread</Badge>}
+                        {x.flags?.includes("literal") && <Badge variant="outline" className="h-5 px-1.5 text-xs">Fixed</Badge>}
+                        {x.flags?.includes("coupled") && <Badge variant="outline" className="h-5 px-1.5 text-xs text-info">Coupled</Badge>}
                       </span>
                     </div>
                     <div role="gridcell" className="min-w-0">{pval(x.values[ca], ca, d?.[ca])}</div>
@@ -246,7 +246,7 @@ function LegacyTokensStage() {
             </div>
             <ScenarioPreview scenario={s.scenario} theme={showTheme} profile={s.profile} values={s.values} draft={showDraft ? s.draftFor(showTheme) : NO_DRAFT} onStatus={report} scale={scale} label="Token preview" />
             <ScaleChip w={pr.w} h={pr.h} scale={scale} />
-            <p className="w-0 min-w-full text-center text-[11px] text-stage-muted">One draft layer: Adjust's values, with tokens edited here winning. It applies in the Design view only and never changes the product.</p>
+            <p className="w-0 min-w-full text-center text-xs text-stage-muted">One draft layer: Adjust's values, with tokens edited here winning. It applies in the Design view only and never changes the product.</p>
            </div>
           </div>
         </div>

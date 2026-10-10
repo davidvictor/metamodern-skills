@@ -8,5 +8,6 @@ const Annotations = typeof __STUDIO_LOCAL_ANNOTATIONS__ !== "undefined" && __STU
 export function AnnotationSlot() {
   const state = useStudio()
   const page = eligibleAnnotationPage(state)
-  return Annotations && adapter.annotations && page ? <React.Suspense fallback={null}><Annotations page={page} /></React.Suspense> : null
+  // A reserved strip under the top bar: the controls take their own row, never a floating layer over the stage or inspector.
+  return Annotations && adapter.annotations && page ? <div data-studio-annotation-dock aria-label="Local annotations" role="region" className="flex min-h-10 shrink-0 items-center gap-3 border-b bg-background px-3 py-1"><React.Suspense fallback={null}><Annotations page={page} /></React.Suspense></div> : null
 }

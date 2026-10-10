@@ -449,9 +449,9 @@ function SaveActions() {
           </DropdownMenu>
         )}
       </div>
-      {!canSaveScenarios && <p className="text-[11px] text-muted-foreground">{WHY}</p>}
+      {!canSaveScenarios && <p className="text-xs text-muted-foreground">{WHY}</p>}
       {shown?.id === sc.id && (
-        <pre data-copy-json tabIndex={0} aria-label="Saved state as JSON" className="max-h-48 overflow-auto rounded-md bg-muted p-2 text-[11px] whitespace-pre-wrap select-all">
+        <pre data-copy-json tabIndex={0} aria-label="Saved state as JSON" className="max-h-48 overflow-auto rounded-md bg-muted p-2 text-xs whitespace-pre-wrap select-all">
           {shown.json}
         </pre>
       )}

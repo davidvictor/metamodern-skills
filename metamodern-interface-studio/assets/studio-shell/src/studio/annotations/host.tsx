@@ -5,9 +5,12 @@ import * as React from "react"
 import { adapter } from "@/adapter"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { cn } from "@/lib/utils"
+import { SHELL_VERSION } from "../build-info"
 import { fingerprint } from "../protocol"
 import { annotationBridge } from "./bridge"
-import { feedbackMarkdown, annotationHydration, annotationHostBottom, validEvent, validRecord } from "./model"
+import { feedbackMarkdown, annotationHydration, annotationHostBottom, annotationHostRight, invalidCommandReason, measurableViewport, validCommand, validEvent, validRecord } from "./model"
 import { createAnnotationClient } from "./client"
 import type { AnnotationContext, AnnotationEvent, AnnotationScope, AnnotationSession, FeedbackRecord } from "./types"
 const declaration = adapter.annotations!
@@ -26,7 +29,8 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
   const [notice, setNotice] = React.useState("")
   const [active, setActive] = React.useState("")
   const [viewport, setViewport] = React.useState(() => ({ width: innerWidth, height: innerHeight, scale: 1 }))
-  React.useEffect(() => { const resized = () => setViewport({ width: innerWidth, height: innerHeight, scale: 1 }); addEventListener("resize", resized); return () => removeEventListener("resize", resized) }, [])
+  // A restored or background tab can start at 0 x 0; resize and visibility changes deliver its real size.
+  React.useEffect(() => { const resized = () => setViewport(previous => previous.width === innerWidth && previous.height === innerHeight ? previous : { width: innerWidth, height: innerHeight, scale: 1 }); addEventListener("resize", resized); document.addEventListener("visibilitychange", resized); resized(); return () => { removeEventListener("resize", resized); document.removeEventListener("visibilitychange", resized) } }, [])
   const observedTarget = enabled ? selected : null
   const subscribe = React.useCallback((listener: () => void) => annotationBridge.subscribeFor(observedTarget, listener), [observedTarget])
   const snapshot = React.useCallback(() => annotationBridge.snapshotFor(observedTarget), [observedTarget])
@@ -37,24 +41,32 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
   React.useLayoutEffect(() => {
     const observer = new ResizeObserver(() => place())
     let occupied: HTMLElement[] = []
+    let inspectors: HTMLElement[] = []
     const place = () => {
       const boxes = occupied.map(element => element.getBoundingClientRect()).filter(box => box.width > 0 && box.height > 0)
       const top = boxes.length ? Math.min(...boxes.map(box => box.top)) : null
+      // The vendor control stays left of an open inspector, so it never covers inspector controls.
+      const lefts = inspectors.filter(element => element.getAttribute("aria-hidden") !== "true").map(element => element.getBoundingClientRect()).filter(box => box.width > 0 && box.height > 0).map(box => box.left)
       document.documentElement.style.setProperty("--studio-annotation-sdk-bottom", `${annotationHostBottom(innerHeight, top)}px`)
+      document.documentElement.style.setProperty("--studio-annotation-sdk-right", `${annotationHostRight(innerWidth, lefts.length ? Math.min(...lefts) : null)}px`)
     }
     const rebind = () => {
       observer.disconnect()
       occupied = portalContainer ? [] : [...document.querySelectorAll<HTMLElement>('[data-studio-preview-controls="dock"], [data-studio-bottom-controls], [data-studio-bottom-navigation]')]
-      occupied.forEach(element => observer.observe(element))
+      inspectors = portalContainer ? [] : [...document.querySelectorAll<HTMLElement>("[data-studio-inspector]")]
+      ;[...occupied, ...inspectors].forEach(element => observer.observe(element))
       place()
     }
+    // The docked inspector animates its width; a finished transition settles the final position.
+    const settled = (event: Event) => { if (event.target instanceof Element && event.target.matches("[data-studio-inspector]")) place() }
+    addEventListener("transitionend", settled, true)
     addEventListener(ANNOTATION_LAYOUT_EVENT, rebind)
     rebind()
-    return () => { observer.disconnect(); removeEventListener(ANNOTATION_LAYOUT_EVENT, rebind); document.documentElement.style.removeProperty("--studio-annotation-sdk-bottom") }
+    return () => { observer.disconnect(); removeEventListener(ANNOTATION_LAYOUT_EVENT, rebind); removeEventListener("transitionend", settled, true); document.documentElement.style.removeProperty("--studio-annotation-sdk-bottom"); document.documentElement.style.removeProperty("--studio-annotation-sdk-right") }
   }, [page, viewport.width, viewport.height, portalContainer])
   const targets = annotationBridge.targets()
   const target = targets.find(value => value.id === selected)
-  const context: AnnotationContext = selected === "studio" ? { layer: "studio", page, viewport, location: studioLocation, revision: adapter.product.revision, shellVersion: "0.19.1" } : target?.context ?? { layer: "preview", page, viewport: { width: 1, height: 1, scale: 1 }, shellVersion: "0.19.1" }
+  const context: AnnotationContext = selected === "studio" ? { layer: "studio", page, viewport, location: studioLocation, revision: adapter.product.revision, ...(adapter.provenance ? { source: adapter.provenance.revision } : {}), shellVersion: SHELL_VERSION } : target?.context ?? { layer: "preview", page, viewport: { width: 1, height: 1, scale: 1 }, shellVersion: SHELL_VERSION }
   const contextKey = fingerprint(context)
   const sessionRef = React.useRef<AnnotationSession | null>(null)
   const selectedRef = React.useRef(selected)
@@ -98,11 +110,14 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
     const oldTarget = selected === "studio" ? undefined : target
     let cancel = false
     chain.current = chain.current.then(async () => {
-      if (cancel || !enabled || review || (selected !== "studio" && !target?.available)) return
+      // An unmeasured document (a restored or background tab at 0 x 0) waits for its real size instead of starting an invalid session.
+      if (cancel || !enabled || review || (selected !== "studio" && !target?.available) || !measurableViewport(snapshot.viewport)) return
       const session = { generation: crypto.randomUUID(), fingerprint: contextKey, context: snapshot }
-      sessionRef.current = session
       const matching = notesRef.current.filter(note => note.session.fingerprint === session.fingerprint && note.session.context.layer === snapshot.layer).map(note => note.annotation)
       const { command, omitted } = annotationHydration(session, matching)
+      // Never send what a client must refuse; say what is wrong instead of blaming saved notes.
+      if (!validCommand(command)) { setNotice(invalidCommandReason(command)); return }
+      sessionRef.current = session
       if (omitted) setNotice(`${omitted} saved notes exceed the marker-session limit. All notes remain available in feedback review and export.`)
       if (selected === "studio") hostClient.receive(command, event => receive("studio", event))
       else target!.send(command)
@@ -130,15 +145,19 @@ export function Annotations({ page }: { page: "library" | "inspect" }) {
   React.useEffect(() => () => { void hostClient.dispose() }, [hostClient])
   const markdown = feedbackMarkdown(notes)
   const changeScope = (key: string, scope: AnnotationScope) => persist(notesRef.current.map(note => { if (note.key !== key) return note; const source = declaration.resolveSource(note.session.context, note.annotation, scope); return { ...note, scope, source, repository: source.repository ?? declaration.repository } }))
-  const recoveryNotice = notice && <p role="status" className={review ? "rounded border bg-muted p-3 text-sm" : "fixed left-4 z-50 max-w-sm rounded border bg-background p-3 text-sm"} style={review ? undefined : { bottom: "calc(var(--studio-annotation-sdk-bottom, 24px) + 160px)" }}>{notice}<button onClick={() => setNotice("")} className="ml-2 underline">Dismiss</button></p>
-  return <>
-    {createPortal(<div data-studio-annotations data-annotation-active={active} style={{ bottom: "calc(var(--studio-annotation-sdk-bottom, 24px) + 72px)" }} className="fixed right-4 z-50 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-2 rounded-lg border bg-background p-2 text-xs shadow-sm">
-      <label className="flex min-h-11 items-center gap-2"><input type="checkbox" checked={enabled} onChange={event => { setEnabled(event.target.checked); try { localStorage.setItem(preferenceKey, String(event.target.checked)) } catch { setNotice("The annotation preference cannot be saved in this browser.") } }} />Annotations</label>
-      {enabled && <label className="flex min-w-0 items-center gap-2">Target <select aria-label="Annotation target" className="min-h-11 min-w-0 max-w-48 rounded border bg-background px-2 text-base" value={selected} onChange={event => setSelected(event.target.value)}><option value="studio">Studio</option>{selected !== "studio" && !target && <option value={selected} disabled>Selected preview unavailable — choose a target</option>}{targets.map(value => <option key={value.id} value={value.id} disabled={!value.available}>{value.label}{!value.available ? " — waiting for a settled supported preview" : ""}</option>)}</select></label>}
-      <Button variant="outline" onClick={() => setReview(true)}>Feedback ({notes.length})</Button>
-      {selected !== "studio" && !target && <span role="status">Choose an available preview. Library previews must be expanded.</span>}
-    </div>, portalContainer ?? document.body)}
+  const recoveryNotice = notice && <p role="status" className={review ? "rounded-md border bg-muted p-3 text-sm" : "flex min-w-0 basis-full items-baseline gap-2 text-sm text-muted-foreground"}><span className={review ? undefined : "min-w-0"}>{notice}</span><button type="button" onClick={() => setNotice("")} className="ml-2 shrink-0 rounded-sm text-foreground underline underline-offset-2 outline-none focus-visible:ring-3 focus-visible:ring-ring/50">Dismiss</button></p>
+  const toggle = (value: boolean) => { setEnabled(value); try { localStorage.setItem(preferenceKey, String(value)) } catch { setNotice("The annotation preference cannot be saved in this browser.") } }
+  const controls = <>
+    <label className="flex items-center gap-2 text-sm pointer-coarse:min-h-11"><Checkbox checked={enabled} onCheckedChange={value => toggle(value === true)} />Annotations</label>
+    {enabled && <label className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">Target <select aria-label="Annotation target" className="h-8 min-w-0 max-w-64 truncate rounded-2xl border border-transparent bg-input/50 px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 pointer-coarse:min-h-11 pointer-coarse:text-base" value={selected} onChange={event => setSelected(event.target.value)}><option value="studio">Studio</option>{selected !== "studio" && !target && <option value={selected} disabled>Selected preview unavailable — choose a target</option>}{targets.map(value => <option key={value.id} value={value.id} disabled={!value.available}>{value.label}{!value.available ? " — waiting for a settled supported preview" : ""}</option>)}</select></label>}
+    <Button variant="ghost" size="sm" className="ml-auto pointer-coarse:min-h-11" onClick={() => setReview(true)}>Feedback ({notes.length})</Button>
+    {selected !== "studio" && !target && <span role="status" className="basis-full text-sm text-muted-foreground">Choose an available preview. Library previews must be expanded.</span>}
     {!review && recoveryNotice}
+  </>
+  // Docked in the reserved Studio strip; an expanded preview dialog takes the controls inside its own focus boundary.
+  const bar = <div data-studio-annotations data-annotation-active={active} style={portalContainer ? { bottom: "calc(var(--studio-annotation-sdk-bottom, 24px) + 72px)" } : undefined} className={cn("flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1", portalContainer ? "fixed right-4 z-50 max-w-[calc(100vw-2rem)] rounded-xl border bg-background p-2 shadow-sm" : "flex-1")}>{controls}</div>
+  return <>
+    {portalContainer ? createPortal(bar, portalContainer) : bar}
     <Dialog open={review} onOpenChange={setReview}><DialogContent data-studio-feedback-review className="max-h-[90svh] overflow-auto sm:max-w-3xl"><DialogTitle>Local Studio feedback</DialogTitle><DialogDescription>Check the target, requested scope and source confidence before copying. Captured context stays unchanged.</DialogDescription>
       {review && recoveryNotice}
       {notes.map(note => <section key={note.key} className="grid gap-2 rounded border p-3"><p className="font-medium">{note.session.context.layer === "studio" ? "Studio" : note.session.context.scenario} · {note.annotation.element}</p><p className="whitespace-pre-wrap">{note.annotation.comment}</p><label>Change scope <select aria-label={`Change scope for ${note.annotation.element}`} className="min-h-11 rounded border bg-background px-2 text-base" value={note.scope} onChange={event => changeScope(note.key, event.target.value as AnnotationScope)}>{note.session.context.layer === "studio" ? <option value="studio">Studio</option> : <><option value="example">This example / composition</option><option value="shared">Shared component</option></>}</select></label><p>{note.source.confidence}: {note.source.paths.join(", ") || "Source unresolved; inspect before editing"}</p><Button variant="ghost" onClick={() => persist(notesRef.current.filter(value => value.key !== note.key))}>Delete note</Button></section>)}

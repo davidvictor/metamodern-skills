@@ -132,7 +132,7 @@ function Commands({ onDone }: { onDone: () => void }) {
 function Tab() {
   const s = useStudio()
   return (
-    <button aria-current={s.module || s.library ? "page" : undefined} className={cn("flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-muted-foreground transition-colors", (s.module || s.library) && "text-foreground")} onClick={() => s.set({ mobilePanel: "workspace" })}>
+    <button aria-current={s.module || s.library ? "page" : undefined} className={cn("flex min-w-11 flex-auto flex-col items-center gap-0.5 py-2 text-xs font-medium text-muted-foreground transition-colors", (s.module || s.library) && "text-foreground")} onClick={() => s.set({ mobilePanel: "workspace" })}>
       <BoxesIcon className="size-5" />
       <span className="max-w-full truncate">Workspace</span>
     </button>

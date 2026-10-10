@@ -420,6 +420,17 @@ export type LibraryDeclaration = {
   components: LibraryComponent[]
 }
 
+/**
+ * Where a Studio build came from. The product decides what its source revision is (normally the commit its checkout
+ * was at) and how each of its builds receives it; the shell only shows it beside its own version.
+ */
+export type StudioProvenance = {
+  /** A commit (shown as its first seven characters) or another short label such as "unversioned local workspace". */
+  revision: string
+  /** The build included uncommitted changes. */
+  modified?: boolean
+}
+
 export type StudioAdapter = {
   /** Explicit local-only annotation capability; omitted adapters stay inert. */
   annotations?: AnnotationDeclaration
@@ -438,6 +449,8 @@ export type StudioAdapter = {
     /** Start on the product brand instead of neutral. A viewer's own choice, including Neutral, still wins. */
     brandDefault?: boolean
   }
+  /** Build provenance shown in the Studio chrome with the shell version. Omitted, the chrome says the source is not recorded. */
+  provenance?: StudioProvenance
   target: {
     platform: "web" | "ios" | "android"
     fidelity: Fidelity

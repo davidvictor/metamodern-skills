@@ -193,7 +193,7 @@ export function TopBar({ mobile }: { mobile?: boolean }) {
         </Tip>
       )}
       {mobile && (
-        <span className="flex aspect-square size-7 shrink-0 items-center justify-center rounded-md bg-(--mark-fill,var(--primary)) text-[11px] font-semibold text-(--mark-ink,var(--primary-foreground))">
+        <span className="flex aspect-square size-7 shrink-0 items-center justify-center rounded-md bg-(--mark-fill,var(--primary)) text-xs font-semibold text-(--mark-ink,var(--primary-foreground))">
           <ProductMark width={17} />
         </span>
       )}
@@ -359,7 +359,7 @@ function BrandColor() {
     <Field data-invalid={!valid || undefined} className="gap-2">
       <div className="flex items-baseline justify-between gap-2">
         <FieldLabel className="text-sm">Brand color</FieldLabel>
-        <span className="text-[11px] text-muted-foreground">Studio accents only</span>
+        <span className="text-xs text-muted-foreground">Studio accents only</span>
       </div>
       <div className="flex items-center gap-1.5">
         <ToggleGroup
@@ -642,7 +642,7 @@ function RangeChoices({ id, note = true }: { id: string; note?: boolean }) {
         {!!inp.presets?.length && (
           <div className="flex flex-wrap gap-1">
             {inp.presets.map((preset) => (
-              <Button key={preset.value} size="sm" variant={Math.abs(value - preset.value) < step / 2 ? "secondary" : "outline"} className="h-6 px-2 text-[11px]" onClick={() => set(preset.value)}>
+              <Button key={preset.value} size="sm" variant={Math.abs(value - preset.value) < step / 2 ? "secondary" : "outline"} className="h-6 px-2 text-xs" onClick={() => set(preset.value)}>
                 {preset.label}
               </Button>
             ))}

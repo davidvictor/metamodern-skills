@@ -36,6 +36,16 @@ Host preflight now evaluates adapter imports with the same saved-direction snaps
 
 Nothing else to do by hand. Product adapters, saved directions and presenter files remain product owned.
 
+## 0.20.0
+
+Build provenance: an adapter may declare `provenance: { revision, modified? }`, the source revision its build came from. The shell shows `Source <revision> · Shell <version>` in one quiet 12 px line at the foot of the context panel and the phone's Panel drawer (a commit shortened to seven characters, the full value in its title), and says the source is not recorded without it. The shell version comes from `src/studio/build-info.ts` and also stamps annotation capture context, with the source revision when declared. Products that build Studios more than one way (local, offline export, public) should supply the revision to each build; nothing else changes without it.
+
+Local annotations: the host controls are docked in a reserved strip under the top bar instead of floating over the stage, using the shell's checkbox, a styled native Target select and a ghost Feedback button (labels and roles unchanged: the `Annotations` checkbox, the `Annotation target` combobox and `Feedback (n)`). Notices show in the strip. The vendor control stays left of an open Details panel (marked `data-studio-inspector`) and above the dock. A document or preview with no measured size starts no session until it has one, and refusal reasons now name the actual problem; "Saved marker data exceed the session limit" appears only for oversized saved markers. Product scripts that located the annotation checkbox by label should use its role (`getByRole("checkbox", { name: "Annotations" })`), since the shell checkbox pairs a visible control with a hidden input.
+
+Chrome text is never smaller than 12 px: rail labels, phone tab labels, badges, counts and hints moved from 10, 10.5 and 11 px to 12 px, small badges grew from 16 to 20 px, and the catalogue's group labels and the Present tour label are sentence case.
+
+Nothing else to do by hand. Product adapters and product files remain product owned.
+
 ## 0.17.1
 
 DesignPanelProps now supplies review context (scenarioId, readonly scenario options and selectScenario) to Foundation and Component panels. Use it for a Review fixture selector and contextual reach readouts; navigation never edits direction payloads or undo history. Private panels still import only the public kit/design-ui APIs and their own files. Product-owned modules remain protected by managed updates. EditorPopover adds optional open/onOpenChange for controlled Close picker and choice dismissal; existing uncontrolled callers retain their behavior.
