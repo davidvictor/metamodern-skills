@@ -279,5 +279,8 @@ test('build provenance names the source revision and the shell version that matc
  assert.match(provenanceSummary({revision:'a93e38b46c0ffee0000000000000000000000000', modified:true}).description, /a93e38b46c0ffee0{25} plus uncommitted changes; Interface Studio shell/);
  assert.equal(provenanceSummary({revision:'unversioned local workspace'}).text, `Source unversioned local workspace · Shell ${SHELL_VERSION}`);
  assert.equal(provenanceSummary(undefined).text, `Source not recorded · Shell ${SHELL_VERSION}`);
+ const noted = provenanceSummary({revision:'a93e38b46c0ffee0000000000000000000000000', note:'read when the dev server started'});
+ assert.equal(noted.text, `Source a93e38b · Shell ${SHELL_VERSION}`);
+ assert.match(noted.description, /\(read when the dev server started\)$/);
  for (const fileName of ['live-preview.tsx', 'annotations/host.tsx']) assert.doesNotMatch(readFileSync(new URL(`../${fileName}`, source), 'utf8'), /shellVersion: "\d/);
 });

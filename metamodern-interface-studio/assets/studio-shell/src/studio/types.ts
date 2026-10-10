@@ -429,6 +429,8 @@ export type StudioProvenance = {
   revision: string
   /** The build included uncommitted changes. */
   modified?: boolean
+  /** A short qualifier for the full statement (the panel line's title), such as when a live dev server read the revision. */
+  note?: string
 }
 
 export type StudioAdapter = {
