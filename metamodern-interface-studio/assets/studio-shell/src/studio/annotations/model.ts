@@ -91,9 +91,12 @@ export function safeAnnotationTokens(tokens: Record<string, string>) {
   return Object.fromEntries(Object.entries(tokens).filter(([name, value]) => /^--[a-z0-9-]+$/i.test(name) && value.length <= 200 && /^(?:#[0-9a-f]{3,8}|[+-]?[\d.]+(?:px|rem|em|%|s|ms)?|(?:oklch|oklab|rgb|rgba|hsl|hsla)\([\d.%+\s/,()-]+\)|var\(--[a-z0-9-]+\))$/i.test(value)))
 }
 
-/** The host's vendor control keeps its 20px edge inset, moving left of an open inspector so it never covers its controls. */
-export function annotationHostRight(width: number, inspectorLeft: number | null) {
-  return inspectorLeft === null || inspectorLeft >= width ? 20 : Math.max(20, Math.round(width - inspectorLeft + 16))
+/** The vendor control's collapsed size and its inset at the strip's end. The strip (52px, see slot.tsx) also holds its 48px hover/entry scale. */
+export const ANNOTATION_STRIP_CONTROL = 44
+export const ANNOTATION_STRIP_INSET = 8
+/** Fixed bottom/right that put the host's vendor control in the reserved strip's end, vertically centred, at any width. */
+export function annotationStripPlacement(width: number, height: number, strip: { top: number; right: number; height: number }) {
+  return { bottom: Math.round(height - strip.top - strip.height / 2 - ANNOTATION_STRIP_CONTROL / 2), right: Math.max(0, Math.round(width - strip.right + ANNOTATION_STRIP_INSET)) }
 }
 /** Host controls sit above the wrapped Studio dock; child runtimes keep vendor positioning. */
 export function annotationHostBottom(height: number, dockTop: number | null) {

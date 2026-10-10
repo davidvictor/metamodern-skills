@@ -10,7 +10,7 @@ const dir = mkdtempSync(join(tmpdir(), 'studio-annotations-test-'));
 writeFileSync(join(dir, 'location.mjs'), stripTypeScriptTypes(readFileSync(new URL('../location.ts', source), 'utf8'), {mode:'strip'}));
 writeFileSync(join(dir, 'protocol.mjs'), stripTypeScriptTypes(readFileSync(new URL('../protocol.ts', source), 'utf8'), {mode:'strip'}));
 for (const name of ['model', 'client', 'bridge', 'schedule']) writeFileSync(join(dir, `${name}.mjs`), stripTypeScriptTypes(readFileSync(new URL(`${name}.ts`, source), 'utf8'), {mode:'strip'}).replace(/from "\.\/model"/g, 'from "./model.mjs"').replace(/from "\.\/schedule"/g, 'from "./schedule.mjs"').replace(/from "\.\.\/protocol"/g, 'from "./protocol.mjs"'));
-const {validCommand, validEvent, validAnnotation, eligibleAnnotationPage, feedbackMarkdown, validRecord, captureAnnotationValues, annotationPreviewSettled, annotationHydration, safeAnnotationDesign, safeAnnotationTokens, annotationHostBottom, annotationHostRight, measurableViewport, invalidCommandReason} = await import(pathToFileURL(join(dir,'model.mjs')));
+const {validCommand, validEvent, validAnnotation, eligibleAnnotationPage, feedbackMarkdown, validRecord, captureAnnotationValues, annotationPreviewSettled, annotationHydration, safeAnnotationDesign, safeAnnotationTokens, annotationHostBottom, annotationStripPlacement, measurableViewport, invalidCommandReason} = await import(pathToFileURL(join(dir,'model.mjs')));
 const {scheduleAnnotationWork, ANNOTATION_IDLE_TIMEOUT_MS} = await import(pathToFileURL(join(dir,'schedule.mjs')));
 const {committedStudioLocation,subscribeStudioLocation,replaceStudioLocation} = await import(pathToFileURL(join(dir,'location.mjs')));
 const {annotationBridge} = await import(pathToFileURL(join(dir,'bridge.mjs')));
@@ -249,12 +249,15 @@ test('an unmeasured view waits instead of blaming saved marker data', () => {
  assert.deepEqual(events.map(e => [e.action, /measurable size/.test(e.reason)]), [['error', true]]);
 });
 
-test('the host vendor control clears an open inspector and keeps its edge inset otherwise', () => {
- assert.equal(annotationHostRight(1440, null), 20);
- assert.equal(annotationHostRight(1440, 1120), 336);
- assert.equal(annotationHostRight(1280, 960), 336);
- assert.equal(annotationHostRight(1280, 1280), 20);
- assert.equal(annotationHostRight(400, 395), 21);
+test('the host vendor control is pinned inside the reserved strip at every width', () => {
+ // Strip under a 48px top bar, 48px tall, full width: the 44px control centres in it, 8px from its end.
+ assert.deepEqual(annotationStripPlacement(1440, 900, {top:48,right:1440,height:48}), {bottom:806,right:8});
+ assert.deepEqual(annotationStripPlacement(320, 640, {top:48,right:320,height:96}), {bottom:522,right:8});
+ for (const [width,height,strip] of [[390,844,{top:56,right:390,height:48}],[1280,900,{top:48,right:1280,height:48}]]) {
+  const {bottom,right} = annotationStripPlacement(width,height,strip);
+  const top = height-bottom-44, left = width-right-44;
+  assert.ok(top >= strip.top && top+44 <= strip.top+strip.height && left+44 <= strip.right && left >= strip.right-64, `${width}`);
+ }
 });
 
 test('build provenance names the source revision and the shell version that matches the package', async () => {
