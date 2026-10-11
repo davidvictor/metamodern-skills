@@ -5,6 +5,14 @@ description: Use when the user asks to establish, resume, or assess proportional
 
 # Metamodern Initiate Engineering
 
+## Bound verification to delivery
+
+The user's outcome and specifically requested coverage set the boundary. Ordinary product work does not authorize a test harness, custom runner, test environment, shadow application, proof route, synthetic acceptance protocol, new testing dependency or permutation campaign. Reuse existing checks; add only a small test for a concrete defect in an existing suite.
+
+Before work, name the deliverable and minimum checks in the existing task. Default to existing required commands once and at most three representative user flows. Budget discretionary verification to 20 minutes total across all agents for the task. Then stop extra checks and deliver or disclose the exact defect/required check that prevents delivery; retain real obligations and do not claim incomplete work is verified. Long required builds may finish without authorizing extra checks. Changed inputs or observed failures justify affected rechecks, not a new full campaign.
+
+After two same-cause failures, change diagnosis. Use one integrated independent review when needed, not review swarms or proof-of-proof validators. Do not modify product semantics to satisfy self-created tests. Progress updates state product behavior finished/remaining and the current necessary check; surface expanding coverage or testing infrastructure before doing it. Resource limits apply across the machine, including other chats; preserve unrelated jobs.
+
 ## Purpose
 
 Turn current project evidence into a named, executable first implementation or discovery task. This skill prepares engineering work; it does not invent product meaning, provision infrastructure, create a generic workflow engine, or impose an application stack on a website or mobile project.

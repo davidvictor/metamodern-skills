@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.19.1",
+  "collectionVersion": "1.19.2",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -19,7 +19,7 @@
     {
       "name": "metamodern-configure-engineering",
       "path": "metamodern-configure-engineering",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "category": "delivery-and-engineering",
       "summary": "Configure portable engineering policy and native Codex and Claude Code routing while preserving project decisions."
     },
@@ -33,7 +33,7 @@
     {
       "name": "metamodern-execute-development",
       "path": "metamodern-execute-development",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "delivery-and-engineering",
       "summary": "Deliver authorized outcomes with focused evidence."
     },
@@ -47,14 +47,14 @@
     {
       "name": "metamodern-fix-development",
       "path": "metamodern-fix-development",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "delivery-and-engineering",
       "summary": "Diagnose failures and repair affected behavior."
     },
     {
       "name": "metamodern-initiate-engineering",
       "path": "metamodern-initiate-engineering",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "category": "delivery-and-engineering",
       "summary": "Establish proportional engineering instructions and a verified first-task handoff for web apps, mobile apps, and websites."
     },
@@ -82,7 +82,7 @@
     {
       "name": "metamodern-plan-development",
       "path": "metamodern-plan-development",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "delivery-and-engineering",
       "summary": "Define outcomes and coherent delivery batches."
     },
@@ -117,7 +117,7 @@
     {
       "name": "metamodern-review-development",
       "path": "metamodern-review-development",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "delivery-and-engineering",
       "summary": "Review integrated outcomes and concrete risks."
     },

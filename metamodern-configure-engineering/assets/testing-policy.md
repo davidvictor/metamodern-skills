@@ -2,6 +2,14 @@
 
 This policy guides proportional verification. Current user intent, project requirements, and real access, privacy, data, money, and destructive-action obligations retain authority. Project decisions and required commands belong in the project's own instructions and README.
 
+## Bound verification to delivery
+
+The user's outcome and specifically requested coverage set the boundary. Ordinary product work does not authorize a test harness, custom runner, test environment, shadow application, proof route, synthetic acceptance protocol, new testing dependency or permutation campaign. Reuse existing checks; add only a small test for a concrete defect in an existing suite.
+
+Before work, name the deliverable and minimum checks in the existing task. Default to existing required commands once and at most three representative user flows. Budget discretionary verification to 20 minutes total across all agents for the task. Then stop extra checks and deliver or disclose the exact defect/required check that prevents delivery; retain real obligations and do not claim incomplete work is verified. Long required builds may finish without authorizing extra checks. Changed inputs or observed failures justify affected rechecks, not a new full campaign.
+
+After two same-cause failures, change diagnosis. Use one integrated independent review when needed, not review swarms or proof-of-proof validators. Do not modify product semantics to satisfy self-created tests. Progress updates state product behavior finished/remaining and the current necessary check; surface expanding coverage or testing infrastructure before doing it. Resource limits apply across the machine, including other chats; preserve unrelated jobs.
+
 ## Choose proof from risk
 
 Test observable behavior, durable state, domain decisions, contracts, and concrete regression risk. Choose checks from failure consequence, uncertainty, reversibility, and the affected consumers. Use the lowest trustworthy proof layer: pure/domain logic before service integration, service integration before browser or device automation when that layer can establish the claim. Browser and native evidence remains necessary for interactions lower layers cannot prove.
@@ -45,7 +53,7 @@ await page.getByRole('option', { name: 'Example project' }).click();
 await expect(page.getByRole('heading', { name: 'Example project' })).toBeVisible();
 ```
 
-Adapt roles, selectors, and persistence checks to the real application; examples are not required test fixtures. Verify keyboard, focus return, responsive behavior, and touch interaction where the changed behavior needs them. Capture screenshot matrices on demand for a named visual question, state, or breakpoint. A screenshot proves visible appearance; it does not prove interaction, access, durable state, or all device behavior.
+Adapt roles, selectors, and persistence checks to the real application; examples are not required test fixtures. Verify keyboard, focus return, responsive behavior, and touch interaction where the changed behavior needs them. Capture screenshot matrices only when explicitly requested for a named visual question, state, or breakpoint. A screenshot proves visible appearance; it does not prove interaction, access, durable state, or all device behavior.
 
 ## Keep the loop focused
 

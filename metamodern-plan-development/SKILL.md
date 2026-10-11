@@ -5,6 +5,14 @@ description: Use when planning or materially reframing software development into
 
 # Metamodern: Plan Development
 
+## Bound verification to delivery
+
+The user's outcome and specifically requested coverage set the boundary. Ordinary product work does not authorize a test harness, custom runner, test environment, shadow application, proof route, synthetic acceptance protocol, new testing dependency or permutation campaign. Reuse existing checks; add only a small test for a concrete defect in an existing suite.
+
+Before work, name the deliverable and minimum checks in the existing task. Default to existing required commands once and at most three representative user flows. Budget discretionary verification to 20 minutes total across all agents for the task. Then stop extra checks and deliver or disclose the exact defect/required check that prevents delivery; retain real obligations and do not claim incomplete work is verified. Long required builds may finish without authorizing extra checks. Changed inputs or observed failures justify affected rechecks, not a new full campaign.
+
+After two same-cause failures, change diagnosis. Use one integrated independent review when needed, not review swarms or proof-of-proof validators. Do not modify product semantics to satisfy self-created tests. Progress updates state product behavior finished/remaining and the current necessary check; surface expanding coverage or testing infrastructure before doing it. Resource limits apply across the machine, including other chats; preserve unrelated jobs.
+
 Translate the user's direction into observable behavior, then choose the smallest useful plan that can deliver it. Read the owning project's instructions and relevant source contracts. Reuse decisions and the existing task record; do not start another requirements inventory.
 
 This skill augments the project's engineering workflow. Keep its orchestration, mandatory tests, independent review and delivery controls. The user describes the result in ordinary language; the agent supplies decomposition and validation cadence without requiring the user to write an engineering specification.
