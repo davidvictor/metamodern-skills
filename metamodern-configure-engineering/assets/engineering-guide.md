@@ -4,7 +4,7 @@ Read the project `AGENTS.md`, `PROJECT.md`, and `REFERENCES.md` first. This dire
 
 ## Product and verification boundary
 
-Use the limits in [testing-policy.md](testing-policy.md): existing required commands once, at most three representative flows, and 20 minutes of discretionary checking across the task. Build-first delivery does not authorize testing infrastructure. State finished and remaining product behavior in progress updates. Respect the host machine's resource limits across all chats.
+Use the limits in [testing-policy.md](testing-policy.md): existing required commands once, at most three representative flows, and 20 minutes of discretionary checking across the task. Build-first delivery does not authorize testing infrastructure. State finished and remaining product behavior in progress updates.
 
 ## Local files
 

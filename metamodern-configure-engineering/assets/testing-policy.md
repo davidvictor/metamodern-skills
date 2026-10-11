@@ -8,7 +8,7 @@ The user's outcome and specifically requested coverage set the boundary. Ordinar
 
 Before work, name the deliverable and minimum checks in the existing task. Default to existing required commands once and at most three representative user flows. Budget discretionary verification to 20 minutes total across all agents for the task. Then stop extra checks and deliver or disclose the exact defect/required check that prevents delivery; retain real obligations and do not claim incomplete work is verified. Long required builds may finish without authorizing extra checks. Changed inputs or observed failures justify affected rechecks, not a new full campaign.
 
-After two same-cause failures, change diagnosis. Use one integrated independent review when needed, not review swarms or proof-of-proof validators. Do not modify product semantics to satisfy self-created tests. Progress updates state product behavior finished/remaining and the current necessary check; surface expanding coverage or testing infrastructure before doing it. Resource limits apply across the machine, including other chats; preserve unrelated jobs.
+After two same-cause failures, change diagnosis. Use one integrated independent review when needed, not review swarms or proof-of-proof validators. Do not modify product semantics to satisfy self-created tests. Progress updates state product behavior finished/remaining and the current necessary check; surface expanding coverage or testing infrastructure before doing it.
 
 ## Choose proof from risk
 
