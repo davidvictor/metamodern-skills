@@ -30,7 +30,7 @@ export function validateCanvas(canvas) {
     pageIds.add(page.id);
     if (typeof page.name !== 'string') issues.push(`canvas.json: pages[${i}].name must be a string`);
   }
-  if (canvas.launch?.page != null && pageIds.size && !pageIds.has(canvas.launch.page)) issues.push(`canvas.json: launch.page ${canvas.launch.page} is not a page`);
+  if (canvas.launch?.page != null && !pageIds.has(canvas.launch.page)) issues.push(`canvas.json: launch.page ${canvas.launch.page} is not a page`);
   if (!isObject(canvas.boards)) issues.push('canvas.json: boards must be an object');
   for (const [file, board] of Object.entries(canvas.boards ?? {})) {
     const at = `canvas.json: boards["${file}"]`;

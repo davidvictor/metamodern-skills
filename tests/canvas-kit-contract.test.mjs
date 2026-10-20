@@ -78,6 +78,8 @@ test('KC-04 a kit folder: required files, and kit.json written last', async () =
     await fs.utimes(path.join(dir, 'components', 'bundle.js'), later, later);
     assert.match((await validateKitFolder(dir)).join('\n'), /components\/bundle\.js: written after kit\.json/);
     await assert.rejects(writeKitManifest(dir, { ...manifest(), react: '18' }), /react must be a 19\.x/);
+    await fs.writeFile(path.join(dir, 'tokens.json'), '{ not json');
+    assert.match((await validateKitFolder(dir)).join('\n'), /tokens\.json: not valid JSON/);
     assert.deepEqual((await fs.readdir(dir)).filter((f) => f.startsWith('.kit.json')), [], 'no temporary file left');
   } finally {
     await fs.rm(dir, { recursive: true, force: true });

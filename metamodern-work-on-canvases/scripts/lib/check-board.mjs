@@ -28,7 +28,11 @@ export async function openBoard(context, url, { timeout = 15000, viewport, scree
     };
     mark();
   });
-  await page.goto(url, { waitUntil: 'load', timeout });
+  try {
+    await page.goto(url, { waitUntil: 'load', timeout });
+  } catch (error) {
+    problems.push(`navigation failed: ${String(error.message).split('\n')[0].slice(0, 300)}`);
+  }
   await settle(page, timeout);
   // Mounted components render on the kit's own schedule (React may spread many roots over several frames):
   // wait until every host holds something, then one more frame pair for effects. A host that stays empty is

@@ -436,7 +436,6 @@
       if (!instance.state) instance.state = {};
       entry = instances[key] = { board: board, instance: instance, fresh: true, prevProps: props, prevState: instance.state };
     } else {
-      entry.prevProps = entry.instance.props;
       entry.instance.props = props;
     }
     seen[key] = true;
@@ -662,14 +661,18 @@
         call(instance, 'componentWillUnmount', []);
         return;
       }
+      // Record what this render committed before the lifecycle runs, so a setState inside it is seen as a
+      // change by the next render's componentDidUpdate.
+      var prevProps = entry.prevProps;
+      var prevState = entry.prevState;
+      entry.prevProps = instance.props;
+      entry.prevState = instance.state;
       if (entry.fresh) {
         entry.fresh = false;
         call(instance, 'componentDidMount', []);
-      } else if (entry.prevProps !== instance.props || entry.prevState !== instance.state) {
-        call(instance, 'componentDidUpdate', [entry.prevProps, entry.prevState]);
+      } else if (prevProps !== instance.props || prevState !== instance.state) {
+        call(instance, 'componentDidUpdate', [prevProps, prevState]);
       }
-      entry.prevProps = instance.props;
-      entry.prevState = instance.state;
     });
   }
 

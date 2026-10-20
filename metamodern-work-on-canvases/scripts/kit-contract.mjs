@@ -128,7 +128,9 @@ export async function validateKitFolder(dir) {
   for (const file of KIT_FILES) {
     try { await fs.stat(path.join(dir, file)); } catch { issues.push(`${file}: missing`); }
   }
-  const tokens = await readJson(path.join(dir, 'tokens.json'), [], 'tokens.json');
+  const tokenRead = [];
+  const tokens = await readJson(path.join(dir, 'tokens.json'), tokenRead, 'tokens.json');
+  issues.push(...tokenRead.filter((issue) => !issue.endsWith(': missing')));
   if (tokens) issues.push(...validateTokens(tokens));
   for (const file of await listFiles(dir)) {
     if (file === 'kit.json') continue;

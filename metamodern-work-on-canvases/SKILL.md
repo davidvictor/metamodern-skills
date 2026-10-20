@@ -19,6 +19,8 @@ Canvases are where interface designs are explored and decided against the real c
 
 ## Checks
 
+Paths below are relative to this skill's folder (`metamodern-work-on-canvases/`); run the commands with that folder's path in front of `scripts/` from anywhere else.
+
 1. Install the tooling once, outside the repository: `node scripts/tooling.mjs install --browser`.
 2. Validate a kit folder with `validateKitFolder(dir)` from `scripts/kit-contract.mjs`.
 3. Run existing boards unchanged on the runtime: `node scripts/compat-check.mjs --canvas <folder with canvas.json> --kit <Namespace>=<kit folder> --out <evidence folder>`. It writes a screenshot per board and a summary, and fails on page errors, console errors, failed requests and empty mounts. Run it locally; it reads boards and kits where they are and writes only to `--out`.

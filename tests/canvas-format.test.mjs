@@ -57,6 +57,7 @@ test('CF-03 canvas.json problems are named', () => {
   c.order.push('ghost.dc.html');
   c.ws = { group: 'misc' };
   const issues = validateCanvas(c).join('\n');
+  assert.match(validateCanvas({ ...canvas(), pages: [], boards: {}, order: [], launch: { view: 'canvas', page: 'gone' } }).join('\n'), /launch\.page gone is not a page/);
   for (const expected of ['v must be 3', '.w must be positive', '.page must name a page', 'must name a <board>.dc.html', '.row must be one of', '.kit must be', 'order names ghost.dc.html', 'ws.group must be one of']) {
     assert.match(issues, new RegExp(expected.replace(/[.*+?^${}()|[\]\\<>]/g, '\\$&')));
   }
