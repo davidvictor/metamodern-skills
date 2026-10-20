@@ -1,45 +1,66 @@
 ---
 name: metamodern-work-on-canvases
-description: Use when working with design canvases that mount a project's real component kit, including viewing canvases in the local viewer, switching a board between the pinned and a live kit, adjusting board values or motion, reading or validating canvas.json and canvas.config.json, writing or running a canvas builder script, render-checking boards, creating, locking or archiving review sets, making an exploration canvas, running existing boards on the package's board runtime, or checking a kit against the kit contract.
+description: Use when designing on canvases that mount a project's real component kit, including the Foundations canvas, component labs and live mode, the app canvas and its review sets, exploration canvases, choosing a lead, locking a set and its build brief, keeping Live rows current after a kit sync, archiving, working through viewer comments, viewing canvases in the local viewer, writing or running a builder script, render-checking boards, checking a kit against the kit contract, or installing, updating or verifying this package in a project.
 ---
 
 # Metamodern Work on Canvases
 
 ## Purpose
 
-Canvases are where interface designs are explored and decided against the real component code. A canvas is a `canvas.json` plus one HTML board per artboard; every board loads this package's runtime as `support.js` and mounts components from the project's kit. Code stays the source of components: a canvas explores and decides, and the decided version is built in the product's code.
+Canvases are where interface designs are explored and decided against the real component code. A canvas is a `canvas.json` plus one HTML board per artboard; every board loads this package's runtime and mounts components from the project's kit. Code stays the source of components: a canvas explores and decides, and the decided version is built in the product's code.
 
-## What the package holds
-
-- [Canvas format and project config](references/canvas-format.md): `canvas.json` v3 with the `ws` additions, `canvas.config.json`, live kits, frozen canvases, viewer links and what a board can load.
-- [Board language and messages](references/board-language.md): the constructs boards use, how each behaves, and the messages between a board and the viewer.
-- [Kit contract](references/kit-contract.md): what a project's kit provides, including legacy kits.
-- [The viewer](references/viewer.md): the home page, links, the kit switch and banner, the properties panel, motion controls, live reload and keys.
-- [Board builder](references/board-builder.md): the one library every project builder script uses, board shells, layout, heights, and exploration canvases.
-- [Render check](references/render-check.md): what it opens, what fails a board, theme variants, screenshots, reports and heights.
-- [Review sets and build briefs](references/review-sets.md): `review.json`, the status-to-row mapping, lock briefs and the archive canvas.
-- The board runtime, `assets/runtime/support.js`, with no framework of its own.
-- The viewer: `scripts/canvas.mjs view`, its server `scripts/lib/viewer-server.mjs` and its browser app in `assets/viewer/`.
-- Node modules with no dependencies: `scripts/canvas-format.mjs`, `scripts/board-resolve.mjs`, `scripts/kit-contract.mjs`, `scripts/board-builder.mjs`, `scripts/render-check.mjs`, `scripts/review-sets.mjs` and `scripts/explore.mjs`, with one command line, `scripts/canvas.mjs` (`view`, `render`, `review`, `explore`).
-
-## Viewing canvases
-
-Run `node scripts/canvas.mjs view` from inside the project (or pass `--project <dir>`). It serves every canvas on `127.0.0.1` at the config's port and prints the address. Send viewer links (`/<canvas>/<page>/<board>`), never file paths. A board link can carry `?canvas-kit=live:<name>` and `?canvas-props=<json>`. Boards that are recorded, rendered for review or used as a lead stay on the pinned kit; a live kit is for boards switched to it during a lab session, and every board's banner names the kit it shows.
-
-## Checks
-
-Paths below are relative to this skill's folder (`metamodern-work-on-canvases/`); run the commands with that folder's path in front of `scripts/` from anywhere else.
-
-1. Install the tooling once, outside the repository: `node scripts/tooling.mjs install --browser`.
-2. Validate a kit folder with `validateKitFolder(dir)` from `scripts/kit-contract.mjs`.
-3. Render-check boards before anyone sees them: `node scripts/canvas.mjs render --project <project> [--canvas <id>]`. It fails on page and console errors, missing files, images with no picture, clipped text, content past the board's size and empty mounts, in each declared theme, saves screenshots and writes heights for the builder.
-4. Build a canvas by running its builder script, then render-check it; a builder change shows after one run.
-5. Work with review sets through `node scripts/canvas.mjs review <validate | list | create | status | lock | archive>`, and make an exploration canvas with `node scripts/canvas.mjs explore create <id> --title <title> --question <question>`.
-6. Run existing boards unchanged on the runtime: `node scripts/compat-check.mjs --canvas <folder with canvas.json> --kit <Namespace>=<kit folder> --out <evidence folder>`. It writes a screenshot per board and a summary, and fails on page errors, console errors, failed requests and empty mounts. Run it locally; it reads boards and kits where they are and writes only to `--out`.
+The package is the runner, the file format and the method. The project owns its kit build, its builder scripts, its canvases and its records.
 
 ## Rules
 
-- Never edit a generated board by hand, and never copy the runtime, the builder or the render check into a canvas: boards load `support.js` from the package, and builder scripts import the package's library.
-- Lock a set only with the decision-maker's words, after its lead boards pass the render check at their current source.
-- Never open or copy a hosted canvas runtime script. The runtime is written from the boards themselves.
-- Copy on boards is plain and final.
+- One lead per set on the app canvas.
+- Options only on exploration canvases, at most two open per area.
+- Components are decided before the flows that use them.
+- Run the builder, then the render check, before showing anything.
+- Boards that are recorded, rendered for the decision-maker, or used as a lead or a Live row use the pinned kit. A live worktree kit is only for boards switched to it during a lab session, and the banner shows it.
+- Lock only with the decision-maker's own words. A lock that needs a database, API or permission change stops and goes back as product work.
+- Generated boards are never edited by hand, and no canvas gets its own copy of the tooling. The installed package is never edited in the project.
+- Never open or copy a hosted canvas runtime script. Copy on boards is plain and final.
+
+## Working loops
+
+Each loop is described in [the method](references/method.md):
+
+1. **Foundations:** tokens and motion drawn from the pinned kit, rebuilt after each kit sync.
+2. **Component lab:** states, playground and in place, plus live mode on a project app worktree (`.canvas/live.json`, boards switched to `live:<name>`).
+3. **App canvas:** a page per area with Live, Deciding, Building, Next and Later rows from `review.json`.
+4. **Exploring:** `canvas explore create`, directions side by side.
+5. **Choosing a lead:** the lead moves to the app canvas, `canvas explore decide` freezes the exploration.
+6. **Locking:** `canvas review lock` with the words, then the build from `builds/<set>.md` in the product's repository.
+7. **Keeping Live current:** run the project's kit sync after a build merges and before rendering for a decision, then rebuild and render-check.
+8. **Archiving:** `canvas review archive` keeps replaced or set-aside boards as pictures.
+9. **Comments:** `canvas comments wait`, `take`, `reply --addressed`, `done`, after the decision-maker presses Send all to agent.
+
+## Commands
+
+In a project where the package is installed, run `npm run canvas -- <command>` from the project root. Here, run `node scripts/canvas.mjs <command>` from this folder with `--project <dir>`.
+
+| Command | Use |
+| --- | --- |
+| `view` | Serve every canvas on `127.0.0.1`. Send viewer links (`/<canvas>/<page>/<board>`), never file paths. |
+| `render [--canvas <id>]` | The render check: every board in each theme, screenshots and heights. |
+| `review validate \| list \| create \| status \| lock \| archive` | Review sets and build briefs. |
+| `explore create \| decide` | Exploration canvases. |
+| `comments list \| wait \| take \| reply \| done` | The comment loop. |
+| `install \| update \| verify` | Install the package at a pinned version, update it, check it is unedited. |
+
+Install the browser tooling once per machine, outside the repository: `node scripts/tooling.mjs install --browser`.
+
+## References
+
+- [The method](references/method.md): the loops and rules in detail.
+- [Installing and updating](references/install.md): pinned install, the lock file, project-owned paths, `--keep` and `--replace`.
+- [Canvas format and project config](references/canvas-format.md): `canvas.json`, `canvas.config.json`, live kits, frozen canvases, viewer links, what a board can load.
+- [Board language and messages](references/board-language.md): the constructs boards use and the messages between a board and the viewer.
+- [Kit contract](references/kit-contract.md): what a project's kit provides, including legacy kits.
+- [The viewer](references/viewer.md): home, links, the kit switch and banner, properties, motion, live reload and keys.
+- [Board builder](references/board-builder.md): the library every builder script uses, and exploration canvases.
+- [Render check](references/render-check.md): what fails a board, theme variants, screenshots and heights.
+- [Review sets and build briefs](references/review-sets.md): `review.json`, rows, lock briefs and the archive canvas.
+
+Existing boards can be run unchanged on the runtime with `node scripts/compat-check.mjs --canvas <folder> --kit <Namespace>=<kit folder> --out <evidence folder>`, and a kit folder checked with `validateKitFolder(dir)` from `scripts/kit-contract.mjs`.
