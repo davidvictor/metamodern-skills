@@ -81,14 +81,16 @@ export function readSource({ from = path.resolve(here, '..'), ref = null } = {})
     const top = git(pkg, ['rev-parse', '--show-toplevel']).toString().trim();
     const prefix = posix(path.relative(fs.realpathSync(top), fs.realpathSync(pkg)));
     commit = git(top, ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`]).toString().trim();
-    const listing = git(top, ['ls-tree', '-r', '-z', '--full-tree', commit, '--', `${prefix}/`]).toString().split('\0').filter(Boolean);
+    // A package that is itself the repository root has an empty prefix: list the whole tree.
+    const operand = prefix ? ['--', `${prefix}/`] : [];
+    const listing = git(top, ['ls-tree', '-r', '-z', '--full-tree', commit, ...operand]).toString().split('\0').filter(Boolean);
     const blobs = listing.map((line) => {
       const [meta, file] = line.split('\t');
       const [mode, type, id] = meta.split(' ');
       if (type !== 'blob' || mode === '120000') throw new InstallError(`${file} at ${ref} is not a plain file`);
-      return { id, file: file.slice(prefix.length + 1) };
+      return { id, file: prefix ? file.slice(prefix.length + 1) : file };
     }).filter((b) => !b.file.split('/').some((part) => IGNORED.has(part)));
-    if (!blobs.length) throw new InstallError(`${ref} has no ${prefix}/`);
+    if (!blobs.length) throw new InstallError(`${ref} has no ${prefix ? `${prefix}/` : 'files'}`);
     const out = git(top, ['cat-file', '--batch'], `${blobs.map((b) => b.id).join('\n')}\n`);
     let at = 0;
     for (const blob of blobs) {
@@ -155,7 +157,9 @@ function checkDir(dir, label = '--dir') {
   const d = posix(path.normalize(String(dir ?? ''))).replace(/\/$/, '');
   if (!d || d === '.' || path.isAbsolute(d) || d.split('/').includes('..') || d.includes('\\')) throw new InstallError(`${label} ${dir} must be a folder inside the project`);
   if (isOwned(d)) throw new InstallError(`${label} ${dir} is a project-owned path`);
-  if (d === CLAUDE_DIR || d.startsWith(`${CLAUDE_DIR}/`) || CLAUDE_DIR.startsWith(`${d}/`)) throw new InstallError(`${label} ${dir} overlaps the Claude Code entry point, ${CLAUDE_DIR}/`);
+  // Compared case-insensitively: on a case-insensitive disk .Claude/skills is the same folder.
+  const lower = d.toLowerCase();
+  if (lower === CLAUDE_DIR || lower.startsWith(`${CLAUDE_DIR}/`) || CLAUDE_DIR.startsWith(`${lower}/`)) throw new InstallError(`${label} ${dir} overlaps the Claude Code entry point, ${CLAUDE_DIR}/`);
   return d;
 }
 
@@ -332,8 +336,12 @@ function scaffold(project, { dir, source, name, namespace }) {
   create('canvas.config.json', `${JSON.stringify(config, null, 2)}\n`);
   const skin = source.files.get('assets/fixture-project/skin/board.css')?.toString() ?? '';
   create('skin/board.css', skin.replace(/^\/\* The fixture project's board skin\. \*\//, "/* The project's board skin. */"));
-  const wroteBuilder = create('canvases/start/tools/build.mjs', builderScript(dir, name));
-  create('canvases/start/README.md', 'Where to begin: the canvas groups this project uses and how each canvas is made.\n');
+  // The start canvas is made only in a project with no start canvas at all; a builder never runs over existing files.
+  guard(project, 'canvases/start');
+  const startDir = path.join(project, 'canvases', 'start');
+  const wroteBuilder = !fs.existsSync(startDir) && create('canvases/start/tools/build.mjs', builderScript(dir, name));
+  if (wroteBuilder) create('canvases/start/README.md', 'Where to begin: the canvas groups this project uses and how each canvas is made.\n');
+  else if (!fs.existsSync(path.join(startDir, 'tools', 'build.mjs'))) notes.push('canvases/start/ exists, so no start canvas was made.');
   if (!fs.existsSync(path.join(project, '.gitignore'))) create('.gitignore', '.canvas/\n');
   else if (!/^\/?\.canvas\/?$/m.test(fs.readFileSync(path.join(project, '.gitignore'), 'utf8'))) notes.push('Add .canvas/ to .gitignore: it holds machine-local live kits and caches.');
   const script = `node ${dir}/scripts/canvas.mjs`;

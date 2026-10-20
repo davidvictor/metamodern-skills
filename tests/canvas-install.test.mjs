@@ -402,3 +402,44 @@ test('an invalid --namespace or --name writes nothing', () => {
     assert.equal(fs.existsSync(project), false, args.join(' '));
   }
 });
+
+// ---------- automated review threads ----------
+
+test('install leaves an existing start canvas alone and never runs a builder over it', () => {
+  const project = emptyProject();
+  const canvasJson = path.join(project, 'canvases', 'start', 'project', 'canvas.json');
+  fs.mkdirSync(path.dirname(canvasJson), { recursive: true });
+  fs.writeFileSync(canvasJson, '{"v": 3, "title": "Ours"}\n');
+  const result = call('install', ['--project', project, '--from', PACKAGE]);
+  assert.equal(result.code, 0, result.err);
+  assert.equal(fs.readFileSync(canvasJson, 'utf8'), '{"v": 3, "title": "Ours"}\n');
+  assert.equal(fs.existsSync(path.join(project, 'canvases', 'start', 'tools')), false);
+  assert.equal(fs.existsSync(path.join(project, 'canvases', 'start', 'README.md')), false);
+  assert.match(result.out, /canvases\/start\/ exists, so no start canvas was made/);
+});
+
+test('install at a ref works from a repository whose root is the package itself', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'canvas-root-package-'));
+  fs.cpSync(PACKAGE, root, { recursive: true });
+  git(root, 'init', '-q', '-b', 'main');
+  git(root, 'add', '-A');
+  git(root, 'commit', '-q', '-m', 'package');
+  git(root, 'tag', 'pinned');
+  const project = emptyProject();
+  const result = call('install', ['--project', project, '--from', root, '--ref', 'pinned']);
+  assert.equal(result.code, 0, result.err);
+  const lock = JSON.parse(fs.readFileSync(path.join(project, LOCK_FILE), 'utf8'));
+  assert.equal(lock.source.commit, git(root, 'rev-parse', 'pinned'));
+  assert.ok(`${DEFAULT_DIR}/SKILL.md` in lock.files);
+  assert.ok(`${DEFAULT_DIR}/scripts/install.mjs` in lock.files);
+  for (const [file, hash] of Object.entries(lock.files)) assert.equal(sha(path.join(project, file)), hash, file);
+});
+
+test('--dir is compared with the Claude Code entry point regardless of case', () => {
+  for (const dir of ['.Claude', '.CLAUDE/skills/Metamodern-Work-On-Canvases']) {
+    const project = emptyProject();
+    const result = call('install', ['--project', project, '--from', PACKAGE, '--dir', dir]);
+    assert.equal(result.code, 1, dir);
+    assert.match(result.err, /overlaps the Claude Code entry point/);
+  }
+});

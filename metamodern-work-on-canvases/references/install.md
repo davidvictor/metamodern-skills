@@ -12,9 +12,9 @@ From a checkout of the skills collection, at a release tag (or any commit):
 node <checkout>/metamodern-work-on-canvases/scripts/canvas.mjs install --project <design repo> --from <checkout> --ref <tag> [--name "<project name>"] [--namespace <kit global>]
 ```
 
-- `--from` is a checkout of the collection or the package folder itself; it defaults to the package the command runs from. With `--ref`, the files come from that tag or commit in Git, whatever the checkout's working tree holds; without it, from the folder as it is (the lock then records no ref or commit).
+- `--from` is a checkout of the collection, a repository whose root is the package, or the package folder itself; it defaults to the package the command runs from. With `--ref`, the files come from that tag or commit in Git, whatever the checkout's working tree holds; without it, from the folder as it is (the lock then records no ref or commit).
 - The project folder may be empty or missing; it is created. Install refuses a project that already has `canvas.lock.json` (use `update`) and a `--from` inside the project.
-- `--dir` changes where the package goes (default `.agents/skills/metamodern-work-on-canvases`); it must not be a project-owned path or overlap `.claude/skills/metamodern-work-on-canvases/`.
+- `--dir` changes where the package goes (default `.agents/skills/metamodern-work-on-canvases`); it must not be a project-owned path or overlap `.claude/skills/metamodern-work-on-canvases/` in any letter case.
 - `--name` and `--namespace` (a JavaScript identifier) are checked before anything is written.
 
 Install writes:
@@ -22,7 +22,7 @@ Install writes:
 - the package's files into `.agents/skills/metamodern-work-on-canvases/`, where Codex finds project skills;
 - the Claude Code entry point, `.claude/skills/metamodern-work-on-canvases/SKILL.md`, a short loader that points at the installed `SKILL.md`;
 - `canvas.lock.json`;
-- the project's starting files, each only when absent: `canvas.config.json` (the name, kit namespace `Kit` unless `--namespace`, the pinned kit at `kit/current`, the skin, port 5410 and the six groups), `skin/board.css` (a plain skin for the builder's board shells), a `start` canvas with its builder script in `canvases/start/tools/build.mjs`, which install runs once, a `.gitignore` holding `.canvas/`, and a `package.json` with a `canvas` script. An existing `package.json` gets the `canvas` script when it has none; an existing `.gitignore` is left alone with a note when it does not ignore `.canvas/`.
+- the project's starting files, each only when absent: `canvas.config.json` (the name, kit namespace `Kit` unless `--namespace`, the pinned kit at `kit/current`, the skin, port 5410 and the six groups), `skin/board.css` (a plain skin for the builder's board shells), a `start` canvas with its builder script in `canvases/start/tools/build.mjs`, which install runs once (only when the project has no `canvases/start/` folder at all, so a builder never runs over existing files), a `.gitignore` holding `.canvas/`, and a `package.json` with a `canvas` script. An existing `package.json` gets the `canvas` script when it has none; an existing `.gitignore` is left alone with a note when it does not ignore `.canvas/`.
 
 The command line is then `npm run canvas -- <view | render | review | explore | comments | update | verify> ...` from the project root.
 
