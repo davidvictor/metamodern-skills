@@ -1,6 +1,7 @@
 // A minimal board server for the package's checks (tests and the compatibility check). It serves
 // /<canvas>/project/<path> through board-resolve.mjs on 127.0.0.1 only, and /_harness, a page that
-// embeds one board in an iframe and records the board's messages. The viewer (MM-02) is separate.
+// embeds one board in an iframe and records the board's messages. The viewer (viewer-server.mjs) shares
+// serveBoardRequest with it.
 //
 // A board's kit choice comes from its own URL (?canvas-kit=pinned|live:<name>); requests the board
 // makes carry it through their Referer. Without one, the board's ws.kit in canvas.json applies.
@@ -37,54 +38,71 @@ function readCanvasJson(dir) {
   try { return JSON.parse(fs.readFileSync(path.join(dir, 'canvas.json'), 'utf8')); } catch { return null; }
 }
 
+/** Only this machine's own names: a page elsewhere that rebinds a host name to 127.0.0.1 is refused. */
+export function localHost(req) {
+  const host = String(req.headers.host ?? '').replace(/:\d+$/, '');
+  return ['127.0.0.1', 'localhost', '[::1]'].includes(host);
+}
+
+export function sendText(res, status, body, type = 'text/plain; charset=utf-8') {
+  res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
+  res.end(body);
+}
+
+/** Streams one file, or answers 404 when it is missing or not a file. */
+export function sendFile(res, file) {
+  fs.stat(file, (error, stat) => {
+    if (error || !stat.isFile()) return sendText(res, 404, 'Not found');
+    res.writeHead(200, { 'content-type': TYPES[path.extname(file).toLowerCase()] ?? 'application/octet-stream', 'cache-control': 'no-store' });
+    fs.createReadStream(file).pipe(res);
+  });
+}
+
+/**
+ * Answers a board request, /<canvas>/project/<path>, through board-resolve.mjs. The viewer and the
+ * check server both use it. `requestPath` is the part after project/; the kit choice comes from the
+ * request's ?canvas-kit, else its referrer's, else the board's ws.kit.
+ */
+export function serveBoardRequest({ req, res, url, projectRoot, config, projectDir, requestPath, liveKits = {} }) {
+  let boardFile;
+  let choice = url.searchParams.get('canvas-kit');
+  try { boardFile = requestPath.endsWith('.dc.html') ? decodeURIComponent(requestPath) : null; } catch { return sendText(res, 400, 'Bad request'); }
+  if (!choice && req.headers.referer) {
+    try {
+      const ref = new URL(req.headers.referer);
+      choice = ref.searchParams.get('canvas-kit');
+      if (!boardFile) boardFile = decodeURIComponent(ref.pathname.split('/').pop() ?? '');
+    } catch { /* no referer kit */ }
+  }
+  const kit = boardKit(readCanvasJson(projectDir), boardFile, choice ?? undefined);
+  let result;
+  try { result = resolveBoardRequest({ projectRoot, config, canvasProjectDir: projectDir, requestPath, kit, liveKits }); }
+  catch { return sendText(res, 400, 'Bad request'); }
+  if (result.kind === 'error') return sendText(res, result.status, result.message);
+  if (result.kind === 'json') return sendText(res, 200, JSON.stringify(result.body), TYPES['.json']);
+  if (result.kind === 'empty') return sendText(res, 204, '');
+  return sendFile(res, result.file);
+}
+
 /**
  * @param {{projectRoot: string, config: object, canvases: Record<string, string>, liveKits?: Record<string, string>}} options
  *   canvases maps a canvas id to its project/ folder.
  */
 export function startBoardServer({ projectRoot, config, canvases, liveKits = {}, port = 0 }) {
   const server = http.createServer((req, res) => {
-    const send = (status, body, type = 'text/plain; charset=utf-8') => {
-      res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
-      res.end(body);
-    };
-    // Only this machine's own names: a page elsewhere that rebinds a host name to 127.0.0.1 is refused.
-    const host = String(req.headers.host ?? '').replace(/:\d+$/, '');
-    if (!['127.0.0.1', 'localhost', '[::1]'].includes(host)) return send(403, 'Forbidden');
+    if (!localHost(req)) return sendText(res, 403, 'Forbidden');
     let url;
     let canvasId;
-    let boardFile;
     try {
       url = new URL(req.url ?? '/', 'http://127.0.0.1');
       canvasId = decodeURIComponent(url.pathname.split('/')[1] ?? '');
     } catch {
-      return send(400, 'Bad request');
+      return sendText(res, 400, 'Bad request');
     }
-    if (url.pathname === '/_harness') return send(200, HARNESS, TYPES['.html']);
+    if (url.pathname === '/_harness') return sendText(res, 200, HARNESS, TYPES['.html']);
     const parts = url.pathname.split('/');
-    if (parts[2] !== 'project' || !Object.hasOwn(canvases, canvasId)) return send(404, 'Not found');
-    const requestPath = parts.slice(3).join('/');
-    const projectDir = canvases[canvasId];
-    let choice = url.searchParams.get('canvas-kit');
-    try { boardFile = requestPath.endsWith('.dc.html') ? decodeURIComponent(requestPath) : null; } catch { return send(400, 'Bad request'); }
-    if (!choice && req.headers.referer) {
-      try {
-        const ref = new URL(req.headers.referer);
-        choice = ref.searchParams.get('canvas-kit');
-        if (!boardFile) boardFile = decodeURIComponent(ref.pathname.split('/').pop() ?? '');
-      } catch { /* no referer kit */ }
-    }
-    const kit = boardKit(readCanvasJson(projectDir), boardFile, choice ?? undefined);
-    let result;
-    try { result = resolveBoardRequest({ projectRoot, config, canvasProjectDir: projectDir, requestPath, kit, liveKits }); }
-    catch { return send(400, 'Bad request'); }
-    if (result.kind === 'error') return send(result.status, result.message);
-    if (result.kind === 'json') return send(200, JSON.stringify(result.body), TYPES['.json']);
-    if (result.kind === 'empty') return send(204, '');
-    fs.stat(result.file, (error, stat) => {
-      if (error || !stat.isFile()) return send(404, 'Not found');
-      res.writeHead(200, { 'content-type': TYPES[path.extname(result.file).toLowerCase()] ?? 'application/octet-stream', 'cache-control': 'no-store' });
-      fs.createReadStream(result.file).pipe(res);
-    });
+    if (parts[2] !== 'project' || !Object.hasOwn(canvases, canvasId)) return sendText(res, 404, 'Not found');
+    return serveBoardRequest({ req, res, url, projectRoot, config, projectDir: canvases[canvasId], requestPath: parts.slice(3).join('/'), liveKits });
   });
   return new Promise((resolve, reject) => {
     server.once('error', reject);
