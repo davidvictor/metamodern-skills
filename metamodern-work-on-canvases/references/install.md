@@ -14,7 +14,8 @@ node <checkout>/metamodern-work-on-canvases/scripts/canvas.mjs install --project
 
 - `--from` is a checkout of the collection or the package folder itself; it defaults to the package the command runs from. With `--ref`, the files come from that tag or commit in Git, whatever the checkout's working tree holds; without it, from the folder as it is (the lock then records no ref or commit).
 - The project folder may be empty or missing; it is created. Install refuses a project that already has `canvas.lock.json` (use `update`) and a `--from` inside the project.
-- `--dir` changes where the package goes (default `.agents/skills/metamodern-work-on-canvases`); it must not be a project-owned path.
+- `--dir` changes where the package goes (default `.agents/skills/metamodern-work-on-canvases`); it must not be a project-owned path or overlap `.claude/skills/metamodern-work-on-canvases/`.
+- `--name` and `--namespace` (a JavaScript identifier) are checked before anything is written.
 
 Install writes:
 
@@ -42,6 +43,13 @@ The command line is then `npm run canvas -- <view | render | review | explore | 
 ```
 
 It sits beside the config rather than in `.canvas/`, because `.canvas/` is machine-local and never committed, and every clone and worktree of the project must pin the same version. `files` lists every installed file, including the Claude Code entry point, with the package's hash. Install and update write it last.
+
+## Safety
+
+- Install and update write only real folders inside the project: a symbolic link anywhere on the way to an installed file, the Claude Code entry point or a starting file is refused, so nothing is written outside the project and no two paths name one file.
+- Update reads the lock's `dir` and every path it lists, and refuses a lock whose folder leaves the project or whose paths are not the Claude Code entry point or files inside the installed folder (a hand-edited lock is restored from version control, never acted on).
+- `--from` must be outside the project: update refuses the installed copy itself as its source.
+- The lock is written last. If an install or update stops part way, the files written so far match the package: run update again with the same `--from` and `--ref` (for an install, delete the lock if it was written and install again).
 
 ## Project-owned paths
 
@@ -74,7 +82,7 @@ Both flags repeat. A kept file that is later restored to the package's version l
 
 ## Verify
 
-`npm run canvas -- verify` checks every installed file against the lock and fails on an edited, missing or added file that is not kept. A project can run it in CI to hold the rule that the installed copy is never edited.
+`npm run canvas -- verify` checks every installed file against the lock and fails on an edited, missing or added file that is not kept. Restore such a file from a checkout outside the project with `update --from <checkout> --ref <the locked ref> --replace <path>`. A project can run it in CI to hold the rule that the installed copy is never edited.
 
 ## The tooling
 

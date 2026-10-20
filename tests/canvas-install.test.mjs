@@ -301,3 +301,104 @@ test('the package holds no home paths, no node_modules and no denied words', () 
   walk(PACKAGE);
   assert.deepEqual(problems, []);
 });
+
+// ---------- refusals found in review: overlapping folders, symbolic links, hand-edited locks, self-updates ----------
+
+/** Every file under a folder, with its hash; follows nothing. */
+function tree(dir) {
+  const out = {};
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true, recursive: true })) {
+    if (entry.isFile()) out[path.relative(dir, path.join(entry.parentPath ?? entry.path, entry.name))] = sha(path.join(entry.parentPath ?? entry.path, entry.name));
+  }
+  return out;
+}
+
+test('install refuses a folder that overlaps the Claude Code entry point', () => {
+  for (const dir of ['.claude/skills/metamodern-work-on-canvases', '.claude/skills/metamodern-work-on-canvases/pkg', '.claude']) {
+    const project = emptyProject();
+    const result = call('install', ['--project', project, '--from', PACKAGE, '--dir', dir]);
+    assert.equal(result.code, 1, dir);
+    assert.match(result.err, /overlaps the Claude Code entry point/);
+    assert.equal(fs.existsSync(path.join(project, LOCK_FILE)), false);
+  }
+});
+
+test('install and update refuse symbolic links on the way to an installed file and write nothing outside the project', () => {
+  const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'canvas-outside-'));
+  // .claude/skills is a link to the package's own folder: the loader would overwrite the package SKILL.md.
+  const linkedClaude = emptyProject();
+  fs.mkdirSync(path.join(linkedClaude, '.agents', 'skills'), { recursive: true });
+  fs.mkdirSync(path.join(linkedClaude, '.claude'), { recursive: true });
+  fs.symlinkSync('../.agents/skills', path.join(linkedClaude, '.claude', 'skills'));
+  const one = call('install', ['--project', linkedClaude, '--from', PACKAGE]);
+  assert.equal(one.code, 1);
+  assert.match(one.err, /\.claude\/skills is a symbolic link/);
+  assert.deepEqual(tree(path.join(linkedClaude, '.agents')), {});
+  // .agents is a link to a folder outside the project.
+  const linkedAgents = emptyProject();
+  fs.mkdirSync(linkedAgents, { recursive: true });
+  fs.symlinkSync(outside, path.join(linkedAgents, '.agents'));
+  const two = call('install', ['--project', linkedAgents, '--from', PACKAGE]);
+  assert.equal(two.code, 1);
+  assert.match(two.err, /\.agents is a symbolic link/);
+  assert.deepEqual(tree(outside), {});
+  assert.equal(fs.existsSync(path.join(linkedAgents, LOCK_FILE)), false);
+  // A link made after install stops the update too.
+  const project = emptyProject();
+  assert.equal(call('install', ['--project', project, '--from', PACKAGE]).code, 0);
+  fs.renameSync(path.join(project, DEFAULT_DIR), path.join(outside, 'moved'));
+  fs.symlinkSync(path.join(outside, 'moved'), path.join(project, DEFAULT_DIR));
+  const before = tree(outside);
+  const three = call('update', ['--project', project, '--from', checkout(), '--ref', 'newer']);
+  assert.equal(three.code, 1);
+  assert.match(three.err, /symbolic link/);
+  assert.deepEqual(tree(outside), before);
+});
+
+test('update refuses a lock whose paths leave the installed folder, and deletes nothing', () => {
+  const source = checkout();
+  const cases = [
+    ['an owned key', (lock) => { lock.files['canvases/start/README.md'] = lock.files[`${DEFAULT_DIR}/SKILL.md`]; }, /canvases\/start\/README\.md, which is not an installed path/],
+    ['a key outside the folder', (lock) => { lock.files['notes.md'] = 'sha256:00'; }, /notes\.md, which is not an installed path/],
+    ['a key with ..', (lock) => { lock.files[`${DEFAULT_DIR}/../../review.json`] = 'sha256:00'; }, /not an installed path/],
+    ['a kept key outside the folder', (lock) => { lock.kept.push({ path: 'review.json', reason: null, since: '0' }); }, /review\.json, which is not an installed path/],
+    ['an escaping dir', (lock) => { lock.dir = '../escaped'; }, /dir \.\.\/escaped must be a folder inside the project/],
+  ];
+  for (const [label, edit, message] of cases) {
+    const project = emptyProject();
+    assert.equal(call('install', ['--project', project, '--from', source, '--ref', 'pinned']).code, 0);
+    if (label === 'an owned key') fs.writeFileSync(path.join(project, 'canvases', 'start', 'README.md'), fs.readFileSync(path.join(project, DEFAULT_DIR, 'SKILL.md')));
+    const lockFile = path.join(project, LOCK_FILE);
+    const lock = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+    edit(lock);
+    fs.writeFileSync(lockFile, JSON.stringify(lock));
+    const before = projectOwned(project);
+    const result = call('update', ['--project', project, '--from', source, '--ref', 'newer']);
+    assert.equal(result.code, 1, label);
+    assert.match(result.err, message, label);
+    assert.deepEqual(projectOwned(project), before, label);
+    assert.equal(fs.existsSync(path.join(path.dirname(project), 'escaped')), false, label);
+  }
+});
+
+test('update refuses the installed copy itself as --from', () => {
+  const project = emptyProject();
+  assert.equal(call('install', ['--project', project, '--from', PACKAGE]).code, 0);
+  fs.appendFileSync(path.join(project, DEFAULT_DIR, 'references', 'method.md'), '\nA local edit.\n');
+  const lock = fs.readFileSync(path.join(project, LOCK_FILE), 'utf8');
+  const result = call('update', ['--project', project, '--from', path.join(project, DEFAULT_DIR)]);
+  assert.equal(result.code, 1);
+  assert.match(result.err, /--from is inside the project/);
+  assert.equal(fs.readFileSync(path.join(project, LOCK_FILE), 'utf8'), lock);
+  assert.match(call('verify', ['--project', project]).err, /from a checkout of the package outside the project/);
+});
+
+test('an invalid --namespace or --name writes nothing', () => {
+  for (const args of [['--namespace', 'foo-bar'], ['--name', ' ']]) {
+    const project = emptyProject();
+    const result = call('install', ['--project', project, '--from', PACKAGE, ...args]);
+    assert.equal(result.code, 1);
+    assert.equal(fs.existsSync(project), false, args.join(' '));
+  }
+});

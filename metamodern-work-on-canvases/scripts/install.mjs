@@ -26,6 +26,7 @@ export const LOCK_FILE = 'canvas.lock.json';
 export const LOCK_SCHEMA = 'canvas-package-lock/1';
 export const DEFAULT_DIR = `.agents/skills/${PACKAGE_NAME}`;
 export const CLAUDE_ENTRY = `.claude/skills/${PACKAGE_NAME}/SKILL.md`;
+const CLAUDE_DIR = path.posix.dirname(CLAUDE_ENTRY);
 /** Paths that belong to the project. Install creates some of them once, when absent; update never writes any. */
 export const PROJECT_OWNED = [
   'canvas.config.json', 'package.json', '.gitignore', 'review.json',
@@ -129,19 +130,53 @@ function targetFiles(source, dir) {
   return target;
 }
 
+/** Whether a project path may be an installed file: the Claude entry, or a plain path inside the install folder. */
+function installedPath(p, dir) {
+  return typeof p === 'string' && (p === CLAUDE_ENTRY || p.startsWith(`${dir}/`))
+    && !p.split('/').some((part) => !part || part === '.' || part === '..') && !p.includes('\\') && !isOwned(p);
+}
+
 export function readLock(project) {
   const file = path.join(project, LOCK_FILE);
   if (!fs.existsSync(file)) return null;
   const lock = JSON.parse(fs.readFileSync(file, 'utf8'));
   if (lock.schema !== LOCK_SCHEMA) throw new InstallError(`${LOCK_FILE} has schema ${lock.schema}; this version reads ${LOCK_SCHEMA}`);
+  const dir = checkDir(lock.dir, `${LOCK_FILE} dir`);
+  if (dir !== lock.dir) throw new InstallError(`${LOCK_FILE} dir ${lock.dir} is not a plain folder path`);
+  const files = lock.files && typeof lock.files === 'object' ? Object.keys(lock.files) : null;
+  if (!files || !Array.isArray(lock.kept)) throw new InstallError(`${LOCK_FILE} needs files and kept`);
+  for (const key of [...files, ...lock.kept.map((k) => k?.path)]) {
+    if (!installedPath(key, dir)) throw new InstallError(`${LOCK_FILE} lists ${key}, which is not an installed path; restore the lock from version control`);
+  }
   return lock;
 }
 
-function checkDir(dir) {
-  const d = posix(path.normalize(dir)).replace(/\/$/, '');
-  if (!d || d === '.' || path.isAbsolute(d) || d.split('/').includes('..')) throw new InstallError(`--dir ${dir} must be a folder inside the project`);
-  if (isOwned(d)) throw new InstallError(`--dir ${dir} is a project-owned path`);
+function checkDir(dir, label = '--dir') {
+  const d = posix(path.normalize(String(dir ?? ''))).replace(/\/$/, '');
+  if (!d || d === '.' || path.isAbsolute(d) || d.split('/').includes('..') || d.includes('\\')) throw new InstallError(`${label} ${dir} must be a folder inside the project`);
+  if (isOwned(d)) throw new InstallError(`${label} ${dir} is a project-owned path`);
+  if (d === CLAUDE_DIR || d.startsWith(`${CLAUDE_DIR}/`) || CLAUDE_DIR.startsWith(`${d}/`)) throw new InstallError(`${label} ${dir} overlaps the Claude Code entry point, ${CLAUDE_DIR}/`);
   return d;
+}
+
+/**
+ * Refuses a project path that would be reached through a symbolic link (any folder on the way, or the file itself),
+ * so nothing is read, written or deleted outside the project, and two paths never name one file.
+ */
+function guard(project, rel) {
+  let at = project;
+  for (const part of rel.split('/')) {
+    at = path.join(at, part);
+    let stat;
+    try { stat = fs.lstatSync(at); } catch (error) { if (error.code === 'ENOENT') return; throw error; }
+    if (stat.isSymbolicLink()) throw new InstallError(`${posix(path.relative(project, at))} is a symbolic link; install and update write only real folders inside the project`);
+  }
+}
+
+/** Refuses a --from package folder inside the project (the installed copy, for one). */
+function refuseInside(project, folder) {
+  const inside = path.relative(fs.realpathSync(project), fs.realpathSync(folder));
+  if (!inside.startsWith('..') && !path.isAbsolute(inside)) throw new InstallError('--from is inside the project; use a checkout of the package outside it');
 }
 
 /**
@@ -156,7 +191,17 @@ export function plan({ project, lock, source, dir, keep = [], replace = [] }) {
     const file = path.join(project, p);
     return fs.existsSync(file) && fs.statSync(file).isFile() ? sha(fs.readFileSync(file)) : undefined;
   };
+  for (const p of upstream.keys()) if (!installedPath(p, dir)) throw new InstallError(`The package file ${p} cannot be installed`);
+  const folded = new Map();
+  for (const p of upstream.keys()) {
+    const key = p.toLowerCase();
+    if (folded.has(key)) throw new InstallError(`${p} and ${folded.get(key)} would be the same file on some systems`);
+    folded.set(key, p);
+  }
+  guard(project, dir);
+  guard(project, CLAUDE_ENTRY);
   const paths = new Set([...Object.keys(base), ...upstream.keys(), ...walk(path.join(project, dir)).map((p) => `${dir}/${p}`)]);
+  for (const p of paths) guard(project, p);
   for (const p of [...keep.map((k) => k.path), ...replace]) {
     if (!paths.has(p)) throw new InstallError(`${p} is not an installed file`);
   }
@@ -214,13 +259,21 @@ function removeEmptyParents(project, file) {
   }
 }
 
-function apply(project, { target, actions, nextLock }) {
-  for (const action of actions) {
-    const file = path.join(project, action.path);
-    if (action.kind === 'add' || action.kind === 'restore' || action.kind === 'replace') writeAtomic(file, target.get(action.path));
-    else if (action.kind === 'delete') { fs.rmSync(file); removeEmptyParents(project, file); }
+function apply(project, { target, actions, nextLock }, again) {
+  try {
+    guard(project, LOCK_FILE);
+    for (const action of actions) {
+      guard(project, action.path);
+      const file = path.join(project, action.path);
+      if (action.kind === 'add' || action.kind === 'restore' || action.kind === 'replace') writeAtomic(file, target.get(action.path));
+      else if (action.kind === 'delete') { fs.rmSync(file); removeEmptyParents(project, file); }
+    }
+    writeAtomic(path.join(project, LOCK_FILE), `${JSON.stringify(nextLock, null, 2)}\n`);
+  } catch (error) {
+    // The lock is written last, so files written so far already match the package and a second run finishes the job.
+    const message = error instanceof InstallError ? error.message : `${error.code ?? 'error'}: ${error.message}`;
+    throw new InstallError(`It stopped part way (${message}). ${again}`);
   }
-  writeAtomic(path.join(project, LOCK_FILE), `${JSON.stringify(nextLock, null, 2)}\n`);
 }
 
 // ---------- the project's starting files (install only, each only when absent) ----------
@@ -265,6 +318,7 @@ function scaffold(project, { dir, source, name, namespace }) {
   const created = [];
   const notes = [];
   const create = (rel, content) => {
+    guard(project, rel);
     const file = path.join(project, rel);
     if (fs.existsSync(file)) return false;
     writeAtomic(file, content);
@@ -283,6 +337,7 @@ function scaffold(project, { dir, source, name, namespace }) {
   if (!fs.existsSync(path.join(project, '.gitignore'))) create('.gitignore', '.canvas/\n');
   else if (!/^\/?\.canvas\/?$/m.test(fs.readFileSync(path.join(project, '.gitignore'), 'utf8'))) notes.push('Add .canvas/ to .gitignore: it holds machine-local live kits and caches.');
   const script = `node ${dir}/scripts/canvas.mjs`;
+  guard(project, 'package.json');
   const pkgFile = path.join(project, 'package.json');
   if (!fs.existsSync(pkgFile)) {
     create('package.json', `${JSON.stringify({ name: path.basename(project).toLowerCase().replace(/[^a-z0-9-]+/g, '-') || 'design', private: true, type: 'module', scripts: { canvas: script } }, null, 2)}\n`);
@@ -330,8 +385,7 @@ export function install(options) {
   if (fs.existsSync(path.join(project, LOCK_FILE))) throw new InstallError(`${LOCK_FILE} exists: the package is installed. Use canvas update.`);
   const dir = checkDir(options.dir ?? DEFAULT_DIR);
   const source = readSource({ from: options.from, ref: options.ref });
-  const inside = path.relative(project, source.folder);
-  if (!inside.startsWith('..') && !path.isAbsolute(inside)) throw new InstallError('--from is inside the project; install from a checkout outside it');
+  refuseInside(project, source.folder);
   const result = plan({ project, lock: null, source, dir, replace: options.replace ?? [], keep: options.keep ?? [] });
   return { project, source, dir, result };
 }
@@ -363,20 +417,21 @@ export function run(command, argv, { log = console.log, err = console.error } = 
       }
       for (const p of walk(path.join(project, lock.dir))) if (!(`${lock.dir}/${p}` in lock.files) && !keptPaths.has(`${lock.dir}/${p}`)) problems.push(`${lock.dir}/${p} is not part of the package`);
       for (const p of problems) err(`  ${p}`);
-      if (problems.length) { err(`The installed ${describe(lock)} differs from ${LOCK_FILE}. Restore it with canvas update --from <the same source> --replace <path>.`); return 1; }
+      if (problems.length) { err(`The installed ${describe(lock)} differs from ${LOCK_FILE}. Restore it from a checkout of the package outside the project: canvas update --from <checkout>${lock.source.ref ? ` --ref ${lock.source.ref}` : ''} --replace <path>.`); return 1; }
       log(`${describe(lock)} in ${lock.dir} matches ${LOCK_FILE}${keptPaths.size ? `, with ${keptPaths.size} kept ${keptPaths.size === 1 ? 'file' : 'files'}` : ''}.`);
       return 0;
     }
     if (command === 'install') {
+      const name = o.name ?? path.basename(project);
+      const namespace = o.namespace ?? 'Kit';
+      if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(namespace)) throw new InstallError('--namespace must be a JavaScript identifier');
+      if (!name.trim()) throw new InstallError('--name must not be empty');
       if (!fs.existsSync(project)) fs.mkdirSync(project, { recursive: true });
       const { source, dir, result } = install({ project, from: o.from, ref: o.ref, dir: o.dir, keep, replace });
       if (result.blocked.length) return refuse(result, err);
       const summary = report(result, log);
       if (o['dry-run']) { log(`Would install ${describe(result.nextLock)} into ${dir}: ${summary}.`); return 0; }
-      apply(project, result);
-      const name = o.name ?? path.basename(project);
-      const namespace = o.namespace ?? 'Kit';
-      if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(namespace)) throw new InstallError('--namespace must be a JavaScript identifier');
+      apply(project, result, `Delete ${LOCK_FILE} if it was written, then run canvas install again.`);
       const { created, notes } = scaffold(project, { dir, source, name, namespace });
       log(`Installed ${describe(result.nextLock)} into ${dir}: ${summary}. Lock: ${LOCK_FILE}.`);
       if (created.length) log(`Created ${created.join(', ')}.`);
@@ -389,13 +444,14 @@ export function run(command, argv, { log = console.log, err = console.error } = 
       if (!lock) { err(`No ${LOCK_FILE} in ${project}: install the package first with canvas install.`); return 1; }
       if (!o.from) { err('canvas update needs --from <checkout or package> (and --ref <tag> for a pinned version).'); return 1; }
       const source = readSource({ from: o.from, ref: o.ref ?? null });
+      refuseInside(project, source.folder);
       const result = plan({ project, lock, source, dir: lock.dir, keep, replace });
       if (result.blocked.length) return refuse(result, err);
       const summary = report(result, log);
       const same = JSON.stringify(result.nextLock) === JSON.stringify(lock);
       if (o['dry-run']) { log(`Would update ${describe(lock)} to ${describe(result.nextLock)}: ${summary}.`); return 0; }
       if (same && !result.actions.some((a) => a.kind !== 'kept' && a.kind !== 'note')) { log(`${describe(lock)} is installed; nothing to change.`); return 0; }
-      apply(project, result);
+      apply(project, result, `Run canvas update again with the same --from${o.ref ? ` and --ref ${o.ref}` : ''}.`);
       log(`Updated ${describe(lock)} to ${describe(result.nextLock)}: ${summary}. Project-owned files were not touched.`);
       return 0;
     }
