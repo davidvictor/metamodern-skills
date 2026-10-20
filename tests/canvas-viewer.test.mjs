@@ -12,6 +12,7 @@ import { chromium, toolingInstalled } from '../metamodern-work-on-canvases/scrip
 import { parseViewerLink, viewerLink } from '../metamodern-work-on-canvases/scripts/canvas-format.mjs';
 import { buildIndex, canvasGroup, findProject, kitInfo, kitsReport, readAbout, startViewer } from '../metamodern-work-on-canvases/scripts/lib/viewer-server.mjs';
 import { parseArgs } from '../metamodern-work-on-canvases/scripts/canvas.mjs';
+import { kitLabel } from '../metamodern-work-on-canvases/assets/viewer/panel.js';
 
 const PACKAGE = path.resolve('metamodern-work-on-canvases');
 const required = process.env.CANVAS_BROWSER_TESTS === 'required';
@@ -216,6 +217,12 @@ test('VW-04 the server routes viewer links, board requests, kits and blobs, and 
   } finally {
     await viewer.close();
   }
+});
+
+test('VW-05b a live kit built in a detached worktree says detached with its short commit, not branch HEAD', () => {
+  const live = { choice: 'live:watch', name: 'watch', exists: true, namespace: 'Fixture', version: 'live-1', commit: 'a'.repeat(40) };
+  assert.equal(kitLabel({ ...live, branch: 'HEAD' }), 'Live watch · Fixture live-1 · detached · aaaaaaa');
+  assert.equal(kitLabel({ ...live, branch: 'feature/pill', dirty: true }), 'Live watch · Fixture live-1 · branch feature/pill · aaaaaaa · uncommitted changes');
 });
 
 test('VW-05 viewer links round-trip through the contract helpers the viewer follows', () => {

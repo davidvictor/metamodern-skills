@@ -12,7 +12,7 @@ Code: [`scripts/render-check.mjs`](../scripts/render-check.mjs) (`renderCheck()`
 
 1. Reads `canvas.config.json`, `.canvas/live.json` and each canvas's `project/canvas.json`.
 2. Serves every canvas on `127.0.0.1` through the board handler the viewer uses (board resolution, contract 1), so each board loads exactly what the viewer gives it, including its own kit choice (`ws.kit`).
-3. Opens every board in headless Chromium at its own size, in each theme variant, several pages at a time (`--jobs`, default half the processors, from 2 to 8).
+3. Opens every board in headless Chromium at its own size, in each theme variant, several pages at a time (`--jobs`, default half the processors, from 2 to 8). Each board and variant opens in its own browser context, so storage a board keeps (`localStorage`, cookies, IndexedDB, such as a kit that remembers its theme) never reaches another page, however many run at once.
 4. Waits for the runtime's `canvas:ready`, every mount, images and fonts. No fixed waits.
 5. Saves a screenshot per board per variant and writes a report.
 6. Writes each board's natural height to `canvases/<id>/tools/heights.json` (unless `--no-heights`).

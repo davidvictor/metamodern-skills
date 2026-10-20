@@ -24,7 +24,7 @@ Links follow contract 1 and never change: `/`, `/<canvas>/`, `/<canvas>/<page>/`
 
 Each board runs in its own frame, so each board can show its own kit. A board's kit is the viewer's choice for it (set in the panel or by a link, kept per browser), else its `ws.kit`, else `pinned`. The frame's link always carries the choice as `?canvas-kit=`, so the board reports its kit mode correctly in `canvas:ready`.
 
-Every board has a banner above it naming its kit: `Pinned` or `Live <name>`, the namespace and version, the branch for a live build, the commit (7 characters) and `uncommitted changes` when the build says so. Live boards are outlined in a second colour. A legacy kit (no `kit.json`), a kit folder not built yet and a live name missing from `.canvas/live.json` are named as such.
+Every board has a banner above it naming its kit: `Pinned` or `Live <name>`, the namespace and version, the branch for a live build (`detached` when the build's worktree has no branch, that is when `kit.json` names the branch `HEAD`), the commit (7 characters) and `uncommitted changes` when the build says so. Live boards are outlined in a second colour. A legacy kit (no `kit.json`), a kit folder not built yet and a live name missing from `.canvas/live.json` are named as such.
 
 The server polls each kit's `kit.json` (written last, contract 3) every 250 ms; for a legacy kit it polls the bundle files instead. When a kit changes it tells the browser, which reloads every live board on that kit and refreshes the banners. Changes to `.canvas/live.json` are picked up the same way.
 
