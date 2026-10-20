@@ -1041,7 +1041,8 @@
 
   var IDENTIFYING_ATTRS = ['src', 'alt', 'aria-label', 'name', 'placeholder', 'href', 'data-test', 'data-testid', 'role', 'title', 'type'];
   var MAX_OWN_TOKENS = 5;
-  var MAX_OTHER_TOKENS = 1000;
+  var MAX_OTHER_TOKENS = 500;
+  var MAX_IDENTITY_CHARS = 96000; // all levels together, well inside the viewer's 256 KB request limit
   var MAX_TOKEN_LENGTH = 80;
   var MAX_LEVELS = 3;
   // Ranks and plain numbers move between rows when they are re-sorted, so they never reject a row.
@@ -1116,13 +1117,15 @@
     if (shapeCache) shapeCache.set(node, shape);
     return shape;
   }
+  // Left out of the shape: presentation, and ids a kit generates afresh on each render (and the attributes naming them).
+  var SHAPE_SKIP = /^(class|style|id|for|aria-(controls|labelledby|describedby|owns|activedescendant))$/;
   function computeShape(node) {
     var parts = [];
     (function walkShape(n) {
       var attrs = [];
       for (var i = 0; i < n.attributes.length; i += 1) {
         var a = n.attributes[i];
-        if (a.name === 'class' || a.name === 'style' || a.name.indexOf('data-') === 0) continue;
+        if (SHAPE_SKIP.test(a.name) || a.name.indexOf('data-') === 0) continue;
         attrs.push(a.name + '=' + a.value);
       }
       attrs.sort();
@@ -1177,6 +1180,53 @@
    * group has, up to five) and the other groups' tokens (texts the group does not have, ranks and numbers left out,
    * up to a thousand, taking each group's first texts first). Null when no group tells the node apart.
    */
+  /** The other groups' texts, round by round so each group's first texts come first, ranks and numbers left out. */
+  function otherTokens(otherLists, mineSet) {
+    var rest = [];
+    var seen = {};
+    for (var round = 0; rest.length < MAX_OTHER_TOKENS; round += 1) {
+      var any = false;
+      for (var g = 0; g < otherLists.length && rest.length < MAX_OTHER_TOKENS; g += 1) {
+        var t = otherLists[g][round];
+        if (t === undefined) continue;
+        any = true;
+        if (!mineSet[t] && !seen[t] && !RANK.test(t)) { seen[t] = true; rest.push(t); }
+      }
+      if (!any) break;
+    }
+    return rest;
+  }
+
+  /** The group's siblings of its own tag: the other rows, cards or items beside it, with or without a look-alike. */
+  function siblingGroups(group) {
+    var out = [];
+    if (!group.parentElement) return out;
+    for (var c = group.parentElement.firstElementChild; c; c = c.nextElementSibling) if (c !== group && c.localName === group.localName) out.push(c);
+    return out;
+  }
+
+  /** A level of evidence for `group`, told apart from `others` (and its siblings): own tokens, other tokens, or null. */
+  function evidenceFor(group, others, depth) {
+    var all = others.slice();
+    siblingGroups(group).forEach(function (g) { if (all.indexOf(g) < 0 && !g.contains(group)) all.push(g); });
+    var mineTexts = innerTexts(group);
+    var mineSet = {};
+    mineTexts.forEach(function (t) { mineSet[t] = true; });
+    var otherLists = all.map(innerTexts);
+    var inOthers = {};
+    otherLists.forEach(function (l) { l.forEach(function (t) { inOthers[t] = true; }); });
+    var own = mineTexts.filter(function (t) { return !inOthers[t]; }).slice(0, MAX_OWN_TOKENS);
+    if (!own.length) return null;
+    return { depth: depth, own: own, others: otherTokens(otherLists, mineSet) };
+  }
+
+  /**
+   * One level of evidence for `node` among `alikes` inside `scope`: the nearest group (an element `depth` levels up,
+   * inside the scope) whose words differ from those of every other look-alike's group, its own tokens (texts no other
+   * group or sibling of it has, up to five) and the other groups' tokens (from the other look-alikes' groups and every
+   * sibling of its tag; texts the group lacks, ranks and numbers left out, up to five hundred, each group's first
+   * texts first). Null when no group tells the node apart.
+   */
   function groupEvidence(node, alikes, scope) {
     for (var d = 1; ; d += 1) {
       var group = up(node, d);
@@ -1186,28 +1236,20 @@
       if (!others.length) continue;
       var mine = ownText(group);
       if (others.some(function (g) { return ownText(g) === mine; })) continue;
-      var mineTexts = innerTexts(group);
-      var mineSet = {};
-      mineTexts.forEach(function (t) { mineSet[t] = true; });
-      var otherLists = others.map(innerTexts);
-      var inOthers = {};
-      otherLists.forEach(function (l) { l.forEach(function (t) { inOthers[t] = true; }); });
-      var own = mineTexts.filter(function (t) { return !inOthers[t]; }).slice(0, MAX_OWN_TOKENS);
-      if (!own.length) continue;
-      var rest = [];
-      var seen = {};
-      for (var round = 0; rest.length < MAX_OTHER_TOKENS; round += 1) {
-        var any = false;
-        for (var g = 0; g < otherLists.length && rest.length < MAX_OTHER_TOKENS; g += 1) {
-          var t = otherLists[g][round];
-          if (t === undefined) continue;
-          any = true;
-          if (!mineSet[t] && !seen[t] && !RANK.test(t)) { seen[t] = true; rest.push(t); }
-        }
-        if (!any) break;
-      }
-      return { depth: d, own: own, others: rest };
+      var level = evidenceFor(group, others, d);
+      if (level) return level;
     }
+  }
+
+  /** Keeps an identity's levels within the size budget by dropping the last other tokens of the largest level. */
+  function withinBudget(levels) {
+    var size = function () { return JSON.stringify(levels).length; };
+    while (size() > MAX_IDENTITY_CHARS) {
+      var largest = levels.reduce(function (a, b) { return b.others.length > a.others.length ? b : a; });
+      if (!largest.others.length) break;
+      largest.others.length = Math.floor(largest.others.length * 0.9);
+    }
+    return levels;
   }
 
   /**
@@ -1229,18 +1271,30 @@
       scope = up(node, level.depth);
     }
     var left = lookAlikes(scope, like);
-    return { mode: 'look-alike', anchor: { kind: anchor.kind, key: anchor.key }, like: like, levels: levels, count: left.length, index: left.indexOf(node) };
+    return { mode: 'look-alike', anchor: { kind: anchor.kind, key: anchor.key }, like: like, levels: withinBudget(levels), count: left.length, index: left.indexOf(node) };
   }
 
-  /** Evidence for an element with words of its own: its group among the elements drawn like it (null when none are). */
+  /** The nearest element above `node` that is one of several of its tag under its parent: its row among rows. */
+  function repeatedAncestor(node) {
+    for (var n = node.parentElement, d = 1; n && n !== document.body && n !== document.documentElement; n = n.parentElement, d += 1) {
+      if (siblingGroups(n).length) return { el: n, depth: d };
+    }
+    return null;
+  }
+
+  /**
+   * Evidence for an element with words of its own that sits in a repeated structure (its row among rows, its card
+   * among cards): that row's own tokens and the other rows' tokens. Null outside any repeated structure (a page
+   * title is found by its words alone).
+   */
   function wordsIdentity(node) {
+    var row = repeatedAncestor(node);
+    if (!row) return null;
+    var level = evidenceFor(row.el, [], row.depth);
+    if (!level) return null;
     var anchor = anchorOf(node);
     var like = { tag: node.localName, attrs: attrsOf(node), text: '', shape: shapeOf(node) };
-    var alikes = lookAlikes(anchor.el, like, true);
-    if (alikes.length < 2) return null;
-    var level = groupEvidence(node, alikes, anchor.el);
-    if (!level) return null;
-    return { mode: 'words', anchor: { kind: anchor.kind, key: anchor.key }, like: like, levels: [level] };
+    return { mode: 'words', anchor: { kind: anchor.kind, key: anchor.key }, like: like, levels: withinBudget([level]) };
   }
 
   /** A level's tokens as lookup sets, made once per level. */
@@ -1300,17 +1354,29 @@
     return shown(node) ? node : null;
   }
 
-  /** Whether an element found by its words passes its group evidence (when any was recorded). */
-  function wordsHold(node, id) {
+  /**
+   * Whether an element found by its words passes its row's evidence (when any was recorded): the row it is in now
+   * holds none of the other rows' tokens, and at least one of its row's own tokens other than these words (when the
+   * row had any).
+   */
+  function wordsHold(node, id, text) {
     if (!id || id.mode !== 'words' || !Array.isArray(id.levels) || !id.levels.length) return true;
     var level = id.levels[0];
     if (!validLevel(level)) return false;
-    var scope = anchorNow(id.anchor);
-    if (!scope || !scope.contains(node)) return false;
     var group = up(node, level.depth);
-    if (!group || group === scope || !scope.contains(group)) return false;
-    var s = score(group, levelSets(level));
-    return s > 0 || (s === 0 && !level.own.length);
+    if (!group || group === document.body || !document.body.contains(group)) return false;
+    var others = {};
+    level.others.forEach(function (t) { others[t] = true; });
+    var own = {};
+    var needed = 0;
+    level.own.forEach(function (t) { if (t !== text) { own[t] = true; needed += 1; } });
+    var texts = innerTexts(group);
+    var held = 0;
+    for (var i = 0; i < texts.length; i += 1) {
+      if (others[texts[i]]) return false;
+      if (own[texts[i]]) held += 1;
+    }
+    return needed === 0 || held > 0;
   }
 
   /** Every element that shares a label's key, and the position the key names (its [n], else the first). */
@@ -1417,7 +1483,7 @@
     } else if (at && at.preferred && at.kin.length === 1 && at.kin[0] === at.preferred) {
       found = at.preferred;
     }
-    if (!found || !wordsHold(found, id)) return null;
+    if (!found || !wordsHold(found, id, text)) return null;
     return shown(found) ? found : null;
   }
 

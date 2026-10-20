@@ -402,7 +402,9 @@ const IDENTITY_CASES = [
   ['class names changed', rowsBoard(TEAM), rowsBoard(TEAM, { cls: 'line' }), ROW_TARGETS, SAME(ROW_TARGETS)],
   ['icon added in another row', rowsBoard(TEAM), rowsBoard(TEAM, { extraIcon: 'Cy' }), ROW_TARGETS, SAME(ROW_TARGETS)],
   ['another cell edited', rowsBoard(TEAM), rowsBoard(TEAM.map((r) => (r.name === 'Bea' ? { ...r, role: 'Product' } : r))), ROW_TARGETS,
-    { ...SAME(ROW_TARGETS), 'Bea-role': 'same-or-moved' }],
+    // The edited cell itself, and the name: with its row's only other word edited, nothing but the name is left to
+    // tell its row from a new row that took the name, so moved is allowed.
+    { ...SAME(ROW_TARGETS), 'Bea-role': 'same-or-moved', 'Bea-b': 'same-or-moved' }],
   ['ranked rows re-sorted', rowsBoard(TEAM, { rank: true }), rowsBoard([...TEAM].reverse(), { rank: true }), ROW_TARGETS, SAME(ROW_TARGETS)],
   ['row added above', rowsBoard(TEAM, { rank: true }), rowsBoard([{ name: 'Zed', role: 'Sales' }, ...TEAM], { rank: true }), ROW_TARGETS, SAME(ROW_TARGETS)],
   ['earlier row removed', rowsBoard(TEAM), rowsBoard(TEAM.slice(1)), ROW_TARGETS, SAME(ROW_TARGETS)],
@@ -420,7 +422,7 @@ const IDENTITY_CASES = [
 const PROBE_ICON = (m) => `<svg data-mark="${m}" width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12"></rect></svg>`;
 const SHAPES = { bold: '<path d="M2 2h5a3 3 0 010 6H2z"></path>', italic: '<path d="M5 2h5M2 10h5M7 2L5 10"></path>', under: '<path d="M3 2v4a3 3 0 006 0V2M2 11h8"></path>', strike: '<path d="M2 6h8M4 3h4"></path>' };
 const TOOL = (k) => `<svg data-mark="${k}" width="12" height="12" viewBox="0 0 12 12">${SHAPES[k]}</svg>`;
-const probeRow = (r) => `<div class="row">${r.cells.map((c) => `<span>${c}</span>`).join(' ')} ${(r.icons ?? []).map(PROBE_ICON).join('')}${r.img ? `<img data-mark="${r.img}" src="dot.svg" alt="" width="12" height="12">` : ''}${r.badge ? ` <em data-mark="${r.badge.mark}">${r.badge.text}</em>` : ''}${r.btn ? ` <button data-mark="${r.btn.mark}" type="button">${r.btn.text}</button>` : ''}</div>`;
+const probeRow = (r) => `<div class="row">${r.cells.map((c) => `<span>${c}</span>`).join(' ')} ${(r.icons ?? []).map(PROBE_ICON).join('')}${r.img ? `<img data-mark="${r.img}" src="dot.svg" alt="" width="12" height="12">` : ''}${r.badge ? ` <em data-mark="${r.badge.mark}">${r.badge.text}</em>` : ''}${r.btn ? ` <button data-mark="${r.btn.mark}" type="button">${r.btn.text}</button>` : ''}${r.raw ?? ''}</div>`;
 const probeBoard = (body) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Probe</title><script src="./support.js"></script></head><body><x-dc>
 <div data-canvas-id="rows">${body}</div></x-dc></body></html>`;
 const probeRows = (list) => probeBoard(list.map(probeRow).join('\n'));
@@ -446,6 +448,22 @@ const PROBE_CASES = [
   ['T7b nested look-alikes, its card\'s items reversed', cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Plan', 'Ship']]]), cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Ship', 'Plan']]]), 'Q2-Ship-edit', 'Q2-Ship-edit'],
   ['T7c nested look-alikes, the other card removed and its items reversed', cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Plan', 'Ship']]]), cards([['Q2', ['Ship', 'Plan']]]), 'Q2-Ship-edit', 'Q2-Ship-edit'],
   ['T7d nested look-alikes, its item removed', cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Plan', 'Ship']]]), cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Plan']]]), 'Q2-Ship-edit', 'moved'],
+  // Closing round: words found only on one row, rows that gain a look-alike, regenerated ids.
+  ['T1b a badge only on its row moves to another row', probeRows([{ cells: ['Ana', 'Lead'], badge: { text: 'Overdue', mark: 'Ana-badge' } }, { cells: ['Bea', 'Design'] }, { cells: ['Cy', 'Eng'] }]),
+    probeRows([{ cells: ['Ana', 'Lead'] }, { cells: ['Bea', 'Design'] }, { cells: ['Cy', 'Eng'], badge: { text: 'Overdue', mark: 'Cy-badge' } }]), 'Ana-badge', 'moved'],
+  ['T2b a button only on its row, its row removed, another row gets it', probeRows([{ cells: ['Ana'], btn: { text: 'Approve', mark: 'Ana-btn' } }, { cells: ['Bea'] }, { cells: ['Cy'] }]),
+    probeRows([{ cells: ['Bea'] }, { cells: ['Cy'], btn: { text: 'Approve', mark: 'Cy-btn' } }]), 'Ana-btn', 'moved'],
+  ['T3b its row renamed', probeRows([r('Ana', ['Lead']), r('Bea', ['Design']), r('Cy', ['Eng'])]), probeRows([r('Ana', ['Lead']), r('Bee', ['Design'], { img: 'Bea-img' }), r('Cy', ['Eng'])]), 'Bea-img', 'Bea-img'],
+  ['T8 its row removed, a new row takes its role (indistinguishable from a rename)', probeRows([r('Ana', ['Lead']), r('Bea', ['Design']), r('Cy', ['Eng'])]),
+    probeRows([r('Ana', ['Lead']), r('Cy', ['Eng']), r('Dee', ['Design'])]), 'Bea-img', 'either'],
+  ['T9 a row without an image gains one and its role, its row removed', probeRows([r('Ana', ['Lead']), r('Bea', ['Design']), r('Cy', ['Eng']), { cells: ['Dee', 'Ops'] }]),
+    probeRows([r('Ana', ['Lead']), r('Cy', ['Eng']), r('Dee', ['Design'])]), 'Bea-img', 'moved'],
+  ['T10 a badge with evidence, its row removed, a new row has the badge', probeRows([{ cells: ['Ana', 'Lead'], badge: { text: 'Overdue', mark: 'Ana-badge' } }, { cells: ['Bea', 'Design'], badge: { text: 'Due soon', mark: 'Bea-badge' } }]),
+    probeRows([{ cells: ['Bea', 'Design'], badge: { text: 'Due soon', mark: 'Bea-badge' } }, { cells: ['Dee', 'Ops'], badge: { text: 'Overdue', mark: 'Dee-badge' } }]), 'Ana-badge', 'moved'],
+  ['T11 a badge among badges moves to an existing row', probeRows([{ cells: ['Ana', 'Lead'], badge: { text: 'Overdue', mark: 'Ana-badge' } }, { cells: ['Bea', 'Design'], badge: { text: 'Due soon', mark: 'Bea-badge' } }, { cells: ['Cy', 'Eng'], badge: { text: 'On track', mark: 'Cy-badge' } }]),
+    probeRows([{ cells: ['Ana', 'Lead'], badge: { text: 'On track', mark: 'Ana-badge2' } }, { cells: ['Bea', 'Design'], badge: { text: 'Due soon', mark: 'Bea-badge' } }, { cells: ['Cy', 'Eng'], badge: { text: 'Overdue', mark: 'Cy-badge2' } }]), 'Ana-badge', 'moved'],
+  ['T12 a kit re-render gives new generated ids', probeRows(['Ana', 'Bea', 'Cy'].map((n, i) => ({ cells: [n, ['Lead', 'Design', 'Eng'][i]], raw: ` <button data-mark="${n}-menu" id="r-${i + 1}" aria-controls="menu-${i + 1}" type="button"><svg width="8" height="8"><path d="M1 1h6"></path></svg></button>` }))),
+    probeRows(['Ana', 'Bea', 'Cy'].map((n, i) => ({ cells: [n, ['Lead', 'Design', 'Eng'][i]], raw: ` <button data-mark="${n}-menu" id="r-${i + 7}" aria-controls="menu-${i + 7}" type="button"><svg width="8" height="8"><path d="M1 1h6"></path></svg></button>` }))), 'Bea-menu', 'Bea-menu'],
 ];
 
 test('CM-09 look-alikes re-attach to the same element or show as moved, never a neighbour', { skip }, async () => {

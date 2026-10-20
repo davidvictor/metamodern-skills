@@ -134,24 +134,25 @@ When a board loads, whether after its file or kit changed or after it was regene
 
 ### Identification
 
-**The guarantee:** a comment is re-attached only on unambiguous evidence; otherwise it shows as moved. A wrong attachment is never acceptable; an extra "moved" after an edit is. This design is provisional (set by the lead on 2026-10-20 after three reviews; revisit with real boards).
+**The guarantee:** a comment is re-attached only on unambiguous evidence; otherwise it shows as moved. A wrong attachment is never acceptable; an extra "moved" after an edit is. This design is provisional (set by the lead on 2026-10-20 after four reviews; revisit with real boards). Cases that are adversarial rather than realistic for design boards are documented below, not handled.
 
 **Terms.**
-- **Look-alikes:** elements with the same tag, the same identifying attributes (`src`, `alt`, `aria-label`, `name`, `placeholder`, `href`, `data-test`, `data-testid`, `role`, `title`, `type`), the same **shape** and the same own text. The shape is a short hash of the element's markup without `class`, `style` and `data-*` attributes and without text, children included: two icons drawn differently are not look-alikes, while a kit re-render that only changes class names still matches.
+- **Look-alikes:** elements with the same tag, the same identifying attributes (`src`, `alt`, `aria-label`, `name`, `placeholder`, `href`, `data-test`, `data-testid`, `role`, `title`, `type`), the same **shape** and the same own text. The shape is a short hash of the element's markup without text, children included, and without `class`, `style`, `data-*`, `id`, `for` and the id-reference attributes `aria-controls`, `aria-labelledby`, `aria-describedby`, `aria-owns` and `aria-activedescendant`: two icons drawn differently are not look-alikes, while a kit re-render that changes class names or generates new ids still matches.
 - **Anchor:** the nearest element above with a stable, unique label, in contract order: a `data-canvas-id` or test id used once, or a kit component alone of its name in its scope; else the board.
-- **A level of evidence** for an element among its look-alikes inside a scope: its **group**, the nearest element above it (`depth` levels up, inside the scope) whose words differ from those of the corresponding element above every other look-alike; **own tokens** (`own`), up to five own texts of the group's descendants (80 characters at most) that no other group has; and **other tokens** (`others`), the texts of the other groups that this group lacks, up to a thousand, each group's first texts first. Ranks and plain numbers (`#2`, `120`, `3.5`) are left out of the other tokens, so re-sorted ranked rows still match.
+- **A level of evidence** for an element among its look-alikes inside a scope: its **group**, the nearest element above it (`depth` levels up, inside the scope) whose words differ from those of the corresponding element above every other look-alike; **own tokens** (`own`), up to five own texts of the group's descendants (80 characters at most) that no other group has; and **other tokens** (`others`), the texts this group lacks from the other look-alikes' groups **and from every sibling of the group's tag** (the other rows beside it, whether or not they hold a look-alike yet), up to five hundred, each group's first texts first. Ranks and plain numbers (`#2`, `120`, `3.5`) are left out of the other tokens, so re-sorted ranked rows still match. All levels of one identity together stay within 96,000 characters (the last other tokens of the largest level are dropped first), well inside the viewer's 256 KB request limit.
+- **Repeated structure:** the nearest element above an element that is one of several of its tag under its parent (a row among rows, a card among cards).
 
 **When a comment is made**, the runtime records:
 1. **Its own unique label** (a `data-canvas-id` or test id used once on the board): nothing more.
-2. **Words of its own** (own text non-empty, and no other element of its tag on the board has it): an `identity` with `mode: "words"` when other elements are drawn like it (same tag, attributes and shape, any words): one level of evidence for its group among them.
+2. **Words of its own** (own text non-empty, and no other element of its tag on the board has it): when it sits inside a repeated structure, an `identity` with `mode: "words"` holding one level of evidence for that row among its siblings. Outside any repeated structure (a page title), nothing more: the words find it.
 3. **Otherwise** an `identity` with `mode: "look-alike"`: the anchor, `like` (tag, attributes, text, shape), up to three levels of evidence (each narrowing from the anchor to the group that tells it apart, then within that group to the next), and its place among the look-alikes left in the innermost group (`count`, `index`).
 
 **When a board loads**, the runtime finds:
 1. an element with its own unique label by that label;
 2. a look-alike identity level by level: inside the current scope, a group holding **any** of that level's other tokens is rejected; among the rest, the one group holding the most own tokens (at least one, with no tie) is the scope for the next level. After the levels, the element is the look-alike at its recorded index, **only while the number of look-alikes there is unchanged**;
-3. an element with words of its own by them: the one element of its tag with those words (if several have them now, the one at the label's place; if none, the element at the label's place when it is still the only one of its kind there), and then, when evidence was recorded, only if its group holds none of the other tokens and at least one of its own.
+3. an element with words of its own by them: the one element of its tag with those words (if several have them now, the one at the label's place; if none, the element at the label's place when it is still the only one of its kind there), and then, when row evidence was recorded, only if the row it is in now (the same number of levels up) holds none of the other rows' tokens and at least one of its row's own tokens **other than those words** (when the row had any): words never follow into another row, or into a new row.
 
-Anything else is missing. A textless icon on a 601-row board is found in about 4 ms (median of 20).
+Anything else is missing. A textless icon on a 601-row board is found in about 4.4 ms (median of 20).
 
 **What the viewer records:**
 - **Found:** the viewer writes the new place (`rect`, `boundingBox`, `x`, `y`) and clears `moved`. A change under half a pixel is not written.
@@ -161,9 +162,10 @@ Anything else is missing. A textless icon on a 601-row board is found in about 4
 A comment is never deleted and never attached to a different element.
 
 **Known limits** (each shows as moved, or, for the last two, is accepted by design):
-- **Moved after an edit:** an element whose words were edited; an element whose row or card took one of another row's words (a role, a vendor) or lost all of its own tokens; an identical item whose group gained or lost a look-alike. Picking the element again re-attaches the comment.
+- **Moved after an edit:** an element whose words were edited; an element whose row or card took one of another row's words (a role, a vendor) or lost all of its own tokens; an element found by its words whose row's only other own word was edited (nothing else tells its row from a new row that took those words); an identical item whose group gained or lost a look-alike. Picking the element again re-attaches the comment.
 - **Rows that share every word but one** (for example only the name differs): editing that word leaves no evidence, so the comment shows as moved.
 - **A row that becomes word for word the one commented on** (its own row removed, another row given exactly its words): indistinguishable, so it is accepted as the same row.
+- **A new row that takes the removed row's remaining words** (its row removed, a new row added with its role but a new name): indistinguishable from the row being renamed and moved, so it is accepted as the same row.
 - **Truly identical items** (toolbar icons drawn the same, rating stars): found by their place, only while their number is unchanged.
 
 ## The agent's command line
@@ -210,4 +212,5 @@ POSTs are accepted only with `content-type: application/json`, an `Origin` that 
   - `canvas.text`;
   - null `label` and `labelKind` for area and board comments;
   - `reactComponents` from the kit component chain.
+- 2026-10-20: closing review: words found inside a repeated structure always carry their row's evidence and must find at least one of the row's other own words; other tokens come from every sibling row; generated ids no longer change the shape; other tokens are capped at 500 per level within a 96,000-character budget.
 - 2026-10-20: after three reviews, `canvas.identity` (replacing a `canvas.fingerprint` that was never released) with the guarantee above: own unique label; else words of its own, checked against their group's evidence; else an identity among look-alikes (anchor, shape, up to three levels of own and other tokens, place). Groups holding another group's tokens are rejected, words never follow into another row, look-alikes drawn differently are told apart, and nested look-alikes are narrowed level by level. Batch files that cannot be read are reported and their comments not sent again; Send all re-checks each comment inside its lock; places are written only under the comment's own values; new files never replace existing ones; ids are checked before any file system call; `wait` says when it is listening.

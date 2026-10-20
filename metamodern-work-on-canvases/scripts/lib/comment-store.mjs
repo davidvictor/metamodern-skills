@@ -109,7 +109,7 @@ export function validIdentity(id) {
   if (!Object.values(id.like.attrs).every((v) => typeof v === 'string') || typeof id.like.shape !== 'string') return false;
   const strings = (l, max) => Array.isArray(l) && l.length <= max && l.every((t) => typeof t === 'string' && t);
   if (!Array.isArray(id.levels) || id.levels.length > 3) return false;
-  if (!id.levels.every((v) => isObject(v) && Number.isInteger(v.depth) && v.depth > 0 && strings(v.own, 5) && strings(v.others, 1000))) return false;
+  if (!id.levels.every((v) => isObject(v) && Number.isInteger(v.depth) && v.depth > 0 && strings(v.own, 5) && strings(v.others, 500))) return false;
   if (id.mode === 'words') return id.levels.length === 1;
   return isCount(id.count) && Number.isInteger(id.index) && id.index >= -1;
 }
