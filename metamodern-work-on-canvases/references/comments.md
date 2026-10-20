@@ -179,7 +179,7 @@ A project's install can wire this as `npm run canvas -- comments …`.
 | `POST /_comments/<id>/place` | `{rect, boardWidth}` or `{moved: true}`: where the comment's element is now. |
 | `POST /_comments/send` | Send all to agent: `{batch}`, or `{batch: null}` when nothing is open. |
 
-POSTs are accepted only with `content-type: application/json`, an `Origin` that is the viewer itself, and a body of at most 256 KB. The server watches `comments/` and sends a `{type: "comments"}` event when anything there changes.
+POSTs are accepted only with `content-type: application/json`, an `Origin` that is the viewer itself, and a body of at most 256 KB. The server watches `comments/` (a recursive watch, with a 300 ms poll of the files as a safety net) and sends a `{type: "comments"}` event when anything there changes.
 
 ## Change log
 

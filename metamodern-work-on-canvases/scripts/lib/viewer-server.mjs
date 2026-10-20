@@ -308,20 +308,38 @@ function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }
   fs.watchFile(liveFile, { interval: KIT_POLL_MS }, onLive);
   closers.push(() => fs.unwatchFile(liveFile, onLive));
 
-  // Comments: any change under comments/ (an agent's reply, a new batch) tells the browser to read them again.
+  // Comments: any change under comments/ (an agent's reply, a new batch) tells the browser to read them again. A
+  // recursive watch reports most changes at once; a poll of the files' names, sizes and times every 300 ms catches
+  // what it misses (folders created after the watch began, systems without recursive watching).
   const commentsDir = commentsRoot(projectRoot);
   let commentWatcher = null;
   let commentRetry = null;
   let commentTimer = null;
-  // Every event counts, temporary and lock files included: a rename may be reported under the temporary name only.
-  const onComment = () => {
-    if (!commentTimer) commentTimer = setTimeout(() => { commentTimer = null; emit({ type: 'comments' }); }, 40);
+  const commentSignature = () => {
+    const parts = [];
+    let dirs = [];
+    try { dirs = fs.readdirSync(commentsDir, { withFileTypes: true }); } catch { return ''; }
+    for (const d of dirs) {
+      if (!d.isDirectory()) continue;
+      let files = [];
+      try { files = fs.readdirSync(path.join(commentsDir, d.name)); } catch { continue; }
+      for (const f of files) {
+        if (!f.endsWith('.json')) continue;
+        try { const st = fs.statSync(path.join(commentsDir, d.name, f)); parts.push(`${d.name}/${f}:${st.size}:${st.mtimeMs}`); } catch { /* replaced meanwhile */ }
+      }
+    }
+    return parts.sort().join('|');
   };
+  let commentSig = commentSignature();
+  const announce = () => {
+    if (!commentTimer) commentTimer = setTimeout(() => { commentTimer = null; commentSig = commentSignature(); emit({ type: 'comments' }); }, 40);
+  };
+  // Every event counts, temporary and lock files included: a rename may be reported under the temporary name only.
   const watchComments = () => {
     commentRetry = null;
     if (closed) return;
     try {
-      const mine = fs.watch(commentsDir, { recursive: true }, onComment);
+      const mine = fs.watch(commentsDir, { recursive: true }, announce);
       commentWatcher = mine;
       mine.on('error', () => { mine.close(); if (commentWatcher === mine) commentWatcher = null; if (!closed) commentRetry = setTimeout(watchComments, 1000); });
     } catch {
@@ -329,7 +347,9 @@ function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }
     }
   };
   watchComments();
-  closers.push(() => { clearTimeout(commentRetry); clearTimeout(commentTimer); commentWatcher?.close(); });
+  const commentPoll = setInterval(() => { if (!commentTimer && commentSignature() !== commentSig) announce(); }, 300);
+  commentPoll.unref?.();
+  closers.push(() => { clearTimeout(commentRetry); clearTimeout(commentTimer); clearInterval(commentPoll); commentWatcher?.close(); });
 
   return () => { clearTimeout(timer); for (const close of closers) close(); };
 }
