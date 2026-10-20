@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.21.0",
+  "collectionVersion": "1.24.0",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -145,7 +145,7 @@
     {
       "name": "metamodern-work-on-canvases",
       "path": "metamodern-work-on-canvases",
-      "version": "0.0.4",
+      "version": "0.1.0",
       "category": "brand-and-design",
       "summary": "Build, view, render-check, review and comment on design canvases that mount a project's real component kit, with comments sent to agents."
     }
