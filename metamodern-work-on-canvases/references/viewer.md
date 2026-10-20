@@ -44,7 +44,7 @@ The side panel's Properties tab shows the selected board: its kit (with the swit
 
 ## Motion
 
-Replay, quarter speed and pause, for the selected board (panel, or `R`, `S`, `P`) or every board on the page (top bar, or `Shift R`, `Shift S`, `Shift P`; with no board selected the plain keys act on the page). They are sent as `canvas:motion` (`rate` 1, 0.25 or 0, and `replay`). A page rate applies to boards that start later too; a board's own rate wins until the page rate is set again.
+Replay, quarter speed and pause, for the selected board (panel, or `R`, `S`, `P`) or every board on the page (top bar, or `Shift R`, `Shift S`, `Shift P`; with no board selected the plain keys act on the page). They are sent as `canvas:motion` (`rate` 1, 0.25 or 0, and `replay`); the runtime applies the rate to Web Animations and to the board's JavaScript clock, so CSS, Web Animations and frame-driven springs all slow and pause together. A page rate applies to boards that start later too; a board's own rate wins until the page rate is set again.
 
 ## Live reload
 

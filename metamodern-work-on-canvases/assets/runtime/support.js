@@ -1,5 +1,5 @@
 /*
- * Canvas board runtime (board language 1, canvas-runtime 0.0.1). Written from scratch, no framework.
+ * Canvas board runtime (board language 1, canvas-runtime 0.0.2). Written from scratch, no framework.
  *
  * Every board loads this file first as ./support.js. It takes over the rest of the document so the
  * board source is read inert, loads the head in order (kits through ds/<ns>/, with React 18.3.1
@@ -13,7 +13,7 @@
   'use strict';
   if (window.__canvasRuntime) return;
 
-  var VERSION = '0.0.1';
+  var VERSION = '0.0.2';
   var SVG = 'http://www.w3.org/2000/svg';
   var XLINK = 'http://www.w3.org/1999/xlink';
   var XML = 'http://www.w3.org/XML/1998/namespace';
@@ -22,6 +22,95 @@
   var boardFile = decodeURIComponent(location.pathname.split('/').pop() || '');
   var boardId = boardFile.replace(/\.dc\.html$/, '');
   var params = new URLSearchParams(location.search);
+
+  // ---------------------------------------------------------------- the motion clock
+  // canvas:motion scales the board's JavaScript clock as well as its Web Animations. performance.now(),
+  // requestAnimationFrame timestamps and timers with a delay (setTimeout, setInterval) run at the motion rate
+  // (0 freezes them) and stay continuous when the rate changes, so spring, frame and timer-driven motion slows
+  // and pauses with CSS motion. Timers with no delay stay immediate, and Date.now() stays real. Installed
+  // before any kit script runs, so a library that keeps a reference to one of these functions gets this one.
+  var clock = (function () {
+    var perf = window.performance;
+    var realNow = perf && perf.now ? perf.now.bind(perf) : function () { return Date.now(); };
+    var realRaf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : null;
+    var realSetTimeout = window.setTimeout.bind(window);
+    var realClearTimeout = window.clearTimeout.bind(window);
+    var realClearInterval = window.clearInterval.bind(window);
+    var rate = 1;
+    var from = realNow();
+    var base = from;
+    var last = from;
+    function at(real) {
+      var virtual = base + (real - from) * rate;
+      if (virtual < last) virtual = last;
+      last = virtual;
+      return virtual;
+    }
+    function now() { return at(realNow()); }
+    try { if (perf) perf.now = function now$() { return now(); }; } catch (error) { /* a read-only performance object */ }
+    if (realRaf) {
+      window.requestAnimationFrame = function requestAnimationFrame(callback) {
+        return realRaf(function (timestamp) { callback(at(timestamp)); });
+      };
+    }
+
+    // Timers with a delay wait in board time. Their ids start far above the browser's own.
+    var timers = {};
+    var nextId = 1000000000;
+    function schedule(timer) {
+      if (timer.handle != null) realClearTimeout(timer.handle);
+      timer.handle = null;
+      if (rate === 0) return;
+      timer.handle = realSetTimeout(function () { fire(timer); }, Math.max(0, (timer.due - now()) / rate));
+    }
+    function fire(timer) {
+      timer.handle = null;
+      if (timer.interval != null) {
+        timer.due += timer.interval;
+        schedule(timer);
+      } else {
+        delete timers[timer.id];
+      }
+      timer.fn.apply(window, timer.args);
+    }
+    function add(fn, delay, args, repeat) {
+      var ms = Number(delay) || 0;
+      if (typeof fn !== 'function' || !(ms > 0)) return null;
+      var timer = { id: nextId++, fn: fn, args: args, due: now() + ms, interval: repeat ? ms : null, handle: null };
+      timers[timer.id] = timer;
+      schedule(timer);
+      return timer.id;
+    }
+    function clear(id) {
+      var timer = timers[id];
+      if (!timer) return false;
+      if (timer.handle != null) realClearTimeout(timer.handle);
+      delete timers[id];
+      return true;
+    }
+    var realSetInterval = window.setInterval.bind(window);
+    window.setTimeout = function setTimeout(fn, delay) {
+      var id = add(fn, delay, Array.prototype.slice.call(arguments, 2), false);
+      return id != null ? id : realSetTimeout.apply(window, arguments);
+    };
+    window.setInterval = function setInterval(fn, delay) {
+      var id = add(fn, delay, Array.prototype.slice.call(arguments, 2), true);
+      return id != null ? id : realSetInterval.apply(window, arguments);
+    };
+    window.clearTimeout = function clearTimeout(id) { if (!clear(id)) realClearTimeout(id); };
+    window.clearInterval = function clearInterval(id) { if (!clear(id)) realClearInterval(id); };
+
+    return {
+      now: now,
+      setRate: function (next) {
+        var real = realNow();
+        base = at(real);
+        from = real;
+        rate = next;
+        Object.keys(timers).forEach(function (id) { schedule(timers[id]); });
+      },
+    };
+  })();
 
   var handlers = {};
   var readyResolve;
@@ -37,6 +126,7 @@
     kit: null,
     kits: {},
     motion: { rate: 1 },
+    clock: clock,
     render: function () { scheduleRender(); },
   });
 
@@ -726,10 +816,21 @@
     event.target.getAnimations().forEach(function (animation) { setRate(animation, rate); });
   }
 
+  // Animations a script starts with element.animate() (motion libraries do) start at the current rate.
+  if (window.Element && Element.prototype.animate) {
+    var realAnimate = Element.prototype.animate;
+    Element.prototype.animate = function animate() {
+      var animation = realAnimate.apply(this, arguments);
+      if (runtime.motion.rate !== 1) setRate(animation, runtime.motion.rate);
+      return animation;
+    };
+  }
+
   function motion(message) {
     var rate = Number(message.rate);
     if (!(rate >= 0) || !isFinite(rate)) return;
     runtime.motion.rate = rate;
+    clock.setRate(rate);
     if (message.replay) {
       // Replay: draw the board afresh so entrance motion runs again, then restart animations still on the page.
       managed.forEach(unmountTree);

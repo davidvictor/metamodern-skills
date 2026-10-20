@@ -147,6 +147,50 @@ function Tabs({ items = [], defaultValue, onChange, children }) {
   );
 }
 
+// A frame-driven spring with no animation library, the way spring motion libraries run: each frame steps a
+// damped spring by the frame's timestamp. It moves its box from 0 to `to` pixels when it mounts and marks
+// itself settled, so a check can time it at each motion rate.
+function Spring({ to = 160, stiffness = 170, damping = 26 }) {
+  const box = useRef(null);
+  useEffect(() => {
+    const el = box.current;
+    let x = 0;
+    let v = 0;
+    let last = null;
+    let frame = 0;
+    const started = performance.now();
+    el.removeAttribute('data-settled');
+    const step = (now) => {
+      if (last !== null) {
+        let dt = Math.min(0.064, (now - last) / 1000);
+        while (dt > 0) {
+          const h = Math.min(dt, 0.004);
+          v += (-stiffness * (x - to) - damping * v) * h;
+          x += v * h;
+          dt -= h;
+        }
+      }
+      last = now;
+      el.style.transform = `translateX(${x.toFixed(2)}px)`;
+      el.dataset.x = x.toFixed(2);
+      if (Math.abs(x - to) < 0.5 && Math.abs(v) < 0.5) {
+        el.style.transform = `translateX(${to}px)`;
+        el.dataset.x = String(to);
+        el.dataset.settled = String(Math.round(performance.now() - started));
+        return;
+      }
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [to, stiffness, damping]);
+  return (
+    <div data-kit-component="Spring" className="fx-spring-track">
+      <div ref={box} className="fx-spring" data-x="0" />
+    </div>
+  );
+}
+
 const ICON_PATHS = { Check: 'M5 12.5l4.5 4.5L19 7.5', Close: 'M6 6l12 12M18 6L6 18', Plus: 'M12 5v14M5 12h14' };
 const Icons = Object.fromEntries(
   Object.entries(ICON_PATHS).map(([name, d]) => {
@@ -287,6 +331,7 @@ const kit = {
   Input,
   Dialog,
   Tabs,
+  Spring,
   Icons,
 };
 kit.mount = markup.createMount({ React, createRoot, global: kit });

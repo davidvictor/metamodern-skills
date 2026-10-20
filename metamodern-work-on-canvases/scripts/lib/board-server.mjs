@@ -49,12 +49,16 @@ export function sendText(res, status, body, type = 'text/plain; charset=utf-8') 
   res.end(body);
 }
 
-/** Streams one file, or answers 404 when it is missing or not a file. */
+/** Streams one file, or answers 404 when it is missing, not a file or unreadable (also when it goes away mid-request). */
 export function sendFile(res, file) {
   fs.stat(file, (error, stat) => {
     if (error || !stat.isFile()) return sendText(res, 404, 'Not found');
-    res.writeHead(200, { 'content-type': TYPES[path.extname(file).toLowerCase()] ?? 'application/octet-stream', 'cache-control': 'no-store' });
-    fs.createReadStream(file).pipe(res);
+    const stream = fs.createReadStream(file);
+    stream.on('open', () => {
+      res.writeHead(200, { 'content-type': TYPES[path.extname(file).toLowerCase()] ?? 'application/octet-stream', 'cache-control': 'no-store' });
+      stream.pipe(res);
+    });
+    stream.on('error', () => (res.headersSent ? res.destroy() : sendText(res, 404, 'Not found')));
   });
 }
 

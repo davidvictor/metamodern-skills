@@ -76,38 +76,44 @@ export function buildIndex({ projectRoot, config }) {
   const canvases = [];
   const problems = [];
   for (const [id, dir] of canvasFolders(projectRoot, config)) {
-    const canvas = readJson(path.join(dir, 'project', 'canvas.json'));
-    if (!canvas) { problems.push({ canvas: id, issues: ['canvas.json: not readable JSON'] }); continue; }
-    const issues = validateCanvas(canvas);
-    if (issues.length) problems.push({ canvas: id, issues });
-    const declared = Array.isArray(canvas.pages) ? canvas.pages.filter((p) => p && typeof p.id === 'string') : [];
-    const pages = declared.length ? declared.map((p) => ({ id: p.id, name: typeof p.name === 'string' && p.name ? p.name : p.id })) : [{ id: PAGELESS, name: 'Boards' }];
-    const first = pages[0].id;
-    const rank = new Map((Array.isArray(canvas.order) ? canvas.order : []).map((f, i) => [f, i]));
-    const boards = Object.entries(canvas.boards && typeof canvas.boards === 'object' ? canvas.boards : {})
-      .filter(([f, b]) => f.endsWith('.dc.html') && b && typeof b === 'object')
-      .map(([f, b]) => ({
-        f,
-        t: typeof b.title === 'string' && b.title ? b.title : f.replace(/\.dc\.html$/, ''),
-        p: declared.length && pages.some((p) => p.id === b.page) ? b.page : first,
-        x: Number(b.x) || 0, y: Number(b.y) || 0, w: Number(b.w) || 1, h: Number(b.h) || 1,
-        kit: typeof b.ws?.kit === 'string' ? b.ws.kit : 'pinned',
-        row: b.ws?.row ?? null,
-        set: b.ws?.set ?? null,
-      }))
-      .sort((a, b) => (rank.get(a.f) ?? 1e9) - (rank.get(b.f) ?? 1e9) || a.y - b.y || a.x - b.x);
-    const launch = pages.some((p) => p.id === canvas.launch?.page) ? canvas.launch.page : first;
-    canvases.push({
-      id,
-      title: typeof canvas.title === 'string' && canvas.title ? canvas.title : id,
-      group: canvasGroup(canvas),
-      frozen: isFrozen(canvas),
-      launch,
-      pageless: !declared.length,
-      pages,
-      boards,
-      about: readAbout(dir),
-    });
+    try {
+      const canvas = readJson(path.join(dir, 'project', 'canvas.json'));
+      if (!canvas) { problems.push({ canvas: id, issues: ['canvas.json: not readable JSON'] }); continue; }
+      const issues = validateCanvas(canvas);
+      // /<canvas>/project/... is where boards load their files, so a page cannot be called project.
+      if (Array.isArray(canvas.pages) && canvas.pages.some((p) => p?.id === 'project')) issues.push('canvas.json: the page id project is taken by the viewer\'s board paths');
+      if (issues.length) problems.push({ canvas: id, issues });
+      const declared = Array.isArray(canvas.pages) ? canvas.pages.filter((p) => p && typeof p.id === 'string') : [];
+      const pages = declared.length ? declared.map((p) => ({ id: p.id, name: typeof p.name === 'string' && p.name ? p.name : p.id })) : [{ id: PAGELESS, name: 'Boards' }];
+      const first = pages[0].id;
+      const rank = new Map((Array.isArray(canvas.order) ? canvas.order : []).map((f, i) => [f, i]));
+      const boards = Object.entries(canvas.boards && typeof canvas.boards === 'object' ? canvas.boards : {})
+        .filter(([f, b]) => f.endsWith('.dc.html') && b && typeof b === 'object')
+        .map(([f, b]) => ({
+          f,
+          t: typeof b.title === 'string' && b.title ? b.title : f.replace(/\.dc\.html$/, ''),
+          p: declared.length && pages.some((p) => p.id === b.page) ? b.page : first,
+          x: Number(b.x) || 0, y: Number(b.y) || 0, w: Number(b.w) || 1, h: Number(b.h) || 1,
+          kit: typeof b.ws?.kit === 'string' ? b.ws.kit : 'pinned',
+          row: b.ws?.row ?? null,
+          set: b.ws?.set ?? null,
+        }))
+        .sort((a, b) => (rank.get(a.f) ?? 1e9) - (rank.get(b.f) ?? 1e9) || a.y - b.y || a.x - b.x);
+      const launch = pages.some((p) => p.id === canvas.launch?.page) ? canvas.launch.page : first;
+      canvases.push({
+        id,
+        title: typeof canvas.title === 'string' && canvas.title ? canvas.title : id,
+        group: canvasGroup(canvas),
+        frozen: isFrozen(canvas),
+        launch,
+        pageless: !declared.length,
+        pages,
+        boards,
+        about: readAbout(dir),
+      });
+    } catch (error) {
+      problems.push({ canvas: id, issues: [`canvas.json: ${error.message}`] });
+    }
   }
   const order = [...config.groups, ...GROUPS.filter((g) => !config.groups.includes(g))];
   canvases.sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group) || a.title.localeCompare(b.title));
@@ -207,23 +213,41 @@ function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }
   };
   const later = () => { if (!timer) timer = setTimeout(flush, 60); };
 
+  // The canvases folder is watched recursively. A watcher that fails (the folder is removed or renamed, or the
+  // system runs out of watches) is closed and tried again every second, as is a folder that does not exist yet.
   const canvasesDir = path.resolve(projectRoot, config.canvases);
-  try {
-    const real = fs.realpathSync(canvasesDir);
-    const watcher = fs.watch(real, { recursive: true }, (_, name) => {
-      if (!name) return;
-      const parts = String(name).split(path.sep);
-      const [canvas, folder, ...rest] = parts;
-      if (!canvas || !ID.test(canvas)) return;
-      if (parts.length === 1 || (parts.length === 2 && folder === 'README.md') || (folder === 'project' && rest.join('/') === 'canvas.json')) index = true;
-      if (folder === 'project' && rest.length) {
-        const file = rest.join('/');
-        pending.set(`${canvas}/${file}`, { canvas, file });
-      }
-      later();
-    });
-    closers.push(() => watcher.close());
-  } catch { /* no recursive watch on this system: reload by hand */ }
+  let closed = false;
+  let watcher = null;
+  let retry = null;
+  const onChange = (_, name) => {
+    if (!name) return;
+    const parts = String(name).split(path.sep);
+    const [canvas, folder, ...rest] = parts;
+    if (!canvas || !ID.test(canvas)) return;
+    if (parts.length === 1 || (parts.length === 2 && folder === 'README.md') || (folder === 'project' && rest.join('/') === 'canvas.json')) index = true;
+    if (folder === 'project' && rest.length) {
+      const file = rest.join('/');
+      pending.set(`${canvas}/${file}`, { canvas, file });
+    }
+    later();
+  };
+  const watchCanvases = () => {
+    retry = null;
+    if (closed) return;
+    try {
+      watcher = fs.watch(fs.realpathSync(canvasesDir), { recursive: true }, onChange);
+      watcher.on('error', () => {
+        watcher?.close();
+        watcher = null;
+        if (!closed) { index = true; later(); retry = setTimeout(watchCanvases, 1000); }
+      });
+    } catch (error) {
+      // No folder yet: try again. No recursive watching on this system: reload by hand.
+      if (error.code === 'ENOENT' || error.code === 'ENOTDIR') retry = setTimeout(watchCanvases, 1000);
+    }
+  };
+  watchCanvases();
+  closers.push(() => { closed = true; clearTimeout(retry); watcher?.close(); });
 
   const skin = path.resolve(projectRoot, config.skin);
   let skinTime = mtime(skin);
@@ -266,6 +290,7 @@ function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }
     if (t === liveTime) return;
     liveTime = t;
     await reloadLiveKits();
+    if (closed) return;
     syncKits();
     emit({ type: 'kits' });
   };
@@ -338,16 +363,15 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
     return sendText(res, 404, 'Not found');
   });
 
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(port ?? config.port, '127.0.0.1', resolve);
+  });
   const stopWatching = watch
     ? watchProject({ projectRoot, config, getLiveKits: () => liveKits, reloadLiveKits, emit: (data) => hub.send(data) })
     : () => {};
   const ping = setInterval(() => hub.ping(), 25000);
   ping.unref();
-
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(port ?? config.port, '127.0.0.1', resolve);
-  });
   const { port: actual } = server.address();
   const origin = `http://127.0.0.1:${actual}`;
   if (!quiet) {

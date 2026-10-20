@@ -192,6 +192,7 @@ class CanvasView {
       if (this.page) this.saveView();
       this.page = page; this.boards = this.boardsOn(page);
       this.sel = null; this.live = null;
+      this.canvasRate = 1;
       this.renderWorld();
       const saved = store.get(`view:${this.canvas.id}/${page}`, null);
       if (board) this.fitBoard(board, { animate: false });
@@ -901,9 +902,12 @@ function onKey(e, fromBoard = false) {
   if (overlay || openMenu) { if (e.key === 'Escape') { closeOverlays(); return true; } return false; }
   if (typing) return false;
   if (fromBoard && e.key !== 'Escape' && !mod) return false; // a live board keeps its own keys
+  if (fromBoard && e.key === 'Escape' && e.defaultPrevented) return false; // the board used Esc itself (a menu or dialog)
   if (e.key === '?' || (e.key === '/' && e.shiftKey)) { showHelp(); return true; }
   if (e.key === '/') { openPalette(); return true; }
-  if (e.key === ' ' && view && !e.target.closest?.('button, a, [role="button"], [role="tab"]')) { spaceDown = true; view.stage.classList.add('panning'); return true; }
+  // Enter and Space on a focused control belong to that control.
+  if ((e.key === 'Enter' || e.key === ' ') && !fromBoard && e.target.closest?.('button, a, summary, [role="button"], [role="tab"], [role="option"]')) return false;
+  if (e.key === ' ' && view) { spaceDown = true; view.stage.classList.add('panning'); return true; }
   return view ? view.key(e) : false;
 }
 function onKeyUp(e) { if (e.key === ' ') { spaceDown = false; view?.stage.classList.remove('panning'); } }

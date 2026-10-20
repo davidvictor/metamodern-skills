@@ -224,10 +224,12 @@ test('VW-05 viewer links round-trip through the contract helpers the viewer foll
   assert.deepEqual(parseViewerLink('/fixture/language/'), { canvas: 'fixture', page: 'language' });
 });
 
-/** Reads server-sent events until `match` returns true for one, or times out. */
-function nextEvent(origin, match, timeout = 5000) {
-  return new Promise((resolve, reject) => {
-    const req = http.get(`${origin}/_events`, (res) => {
+/** Opens the event stream; `opened` resolves once the server has registered it, `next(match)` waits for an event. */
+function events(origin) {
+  const waiting = [];
+  let req;
+  const opened = new Promise((resolve, reject) => {
+    req = http.get(`${origin}/_events`, (res) => {
       let buffer = '';
       res.setEncoding('utf8');
       res.on('data', (chunk) => {
@@ -236,44 +238,77 @@ function nextEvent(origin, match, timeout = 5000) {
         while ((at = buffer.indexOf('\n\n')) >= 0) {
           const block = buffer.slice(0, at);
           buffer = buffer.slice(at + 2);
+          if (block.startsWith(': open')) resolve();
           const line = block.split('\n').find((l) => l.startsWith('data: '));
           if (!line) continue;
           const data = JSON.parse(line.slice(6));
-          if (match(data)) { clearTimeout(timer); req.destroy(); resolve(data); return; }
+          for (const w of [...waiting]) if (w.match(data)) { waiting.splice(waiting.indexOf(w), 1); clearTimeout(w.timer); w.resolve(data); }
         }
       });
     });
-    const timer = setTimeout(() => { req.destroy(); reject(new Error('no matching event')); }, timeout);
-    req.on('error', () => {});
+    req.on('error', reject);
   });
+  return {
+    opened,
+    next: (match, timeout = 5000) => new Promise((resolve, reject) => {
+      const w = { match, resolve, timer: setTimeout(() => reject(new Error('no matching event')), timeout) };
+      waiting.push(w);
+    }),
+    close: () => req.destroy(),
+  };
 }
 
 test('VW-06 the server sends file changes, index changes, kit rebuilds and live kit registrations', async () => {
   const viewer = await startViewer({ projectRoot: root, port: 0 });
+  const stream = events(viewer.origin);
   try {
+    await stream.opened;
     const board = path.join(root, 'canvases', 'pair', 'project', 'button-live.dc.html');
-    const ready = (p) => new Promise((r) => setTimeout(r, 150)).then(p);
-    const files = nextEvent(viewer.origin, (d) => d.type === 'files' && d.changes.some((c) => c.canvas === 'pair' && c.file === 'button-live.dc.html'));
-    await ready(() => fs.appendFile(board, '\n'));
+    const files = stream.next((d) => d.type === 'files' && d.changes.some((c) => c.canvas === 'pair' && c.file === 'button-live.dc.html'));
+    await fs.appendFile(board, '\n');
     await files;
-    const index = nextEvent(viewer.origin, (d) => d.type === 'index');
-    await ready(async () => fs.appendFile(path.join(root, 'canvases', 'pair', 'project', 'canvas.json'), '\n'));
+    const index = stream.next((d) => d.type === 'index');
+    await fs.appendFile(path.join(root, 'canvases', 'pair', 'project', 'canvas.json'), '\n');
     await index;
-    const kit = nextEvent(viewer.origin, (d) => d.type === 'kit' && d.kit === 'live:watch');
-    await ready(async () => {
-      const file = path.join(liveDir, 'kit.json');
-      const next = JSON.parse(await fs.readFile(file, 'utf8'));
-      next.version = 'live-0b';
-      await fs.writeFile(`${file}.tmp`, JSON.stringify(next));
-      await fs.rename(`${file}.tmp`, file);
-    });
+    const kit = stream.next((d) => d.type === 'kit' && d.kit === 'live:watch');
+    const file = path.join(liveDir, 'kit.json');
+    const next = JSON.parse(await fs.readFile(file, 'utf8'));
+    next.version = 'live-0b';
+    await fs.writeFile(`${file}.tmp`, JSON.stringify(next));
+    await fs.rename(`${file}.tmp`, file);
     await kit;
-    const kits = nextEvent(viewer.origin, (d) => d.type === 'kits');
-    await ready(() => writeJson(path.join(root, '.canvas', 'live.json'), { watch: liveDir, other: liveDir }));
+    const kits = stream.next((d) => d.type === 'kits');
+    await writeJson(path.join(root, '.canvas', 'live.json'), { watch: liveDir, other: liveDir });
     await kits;
     assert.deepEqual(JSON.parse((await get(viewer.origin, '/_kits')).body).live.map((k) => k.name), ['other', 'watch']);
+    const back = stream.next((d) => d.type === 'kits');
     await writeJson(path.join(root, '.canvas', 'live.json'), { watch: liveDir });
+    await back;
   } finally {
+    stream.close();
+    await viewer.close();
+  }
+});
+
+test('VW-07 a malformed canvas.json or an unreadable file never stops the server', async () => {
+  const viewer = await startViewer({ projectRoot: root, port: 0, watch: false });
+  const bad = path.join(root, 'canvases', 'bad', 'project');
+  const locked = path.join(root, 'canvases', 'pair', 'project', 'locked.css');
+  try {
+    await writeJson(path.join(bad, 'canvas.json'), { v: 3, title: 'Bad', launch: { view: 'canvas' }, pages: [{ id: 'project', name: 'Project' }], boards: 5, order: ['a.dc.html'] });
+    const index = JSON.parse((await get(viewer.origin, '/_index')).body);
+    const issues = index.problems.find((p) => p.canvas === 'bad').issues.join('\n');
+    assert.match(issues, /order names a\.dc\.html/);
+    assert.match(issues, /page id project/);
+    await fs.writeFile(locked, 'body{}');
+    await fs.chmod(locked, 0o000);
+    const canRead = await fs.readFile(locked).then(() => true, () => false);
+    if (!canRead) assert.equal((await get(viewer.origin, '/pair/project/locked.css')).status, 404);
+    assert.equal((await get(viewer.origin, '/_index')).status, 200, 'the server is still running');
+  } finally {
+    await fs.chmod(locked, 0o644).catch(() => {});
+    await fs.rm(locked, { force: true });
+    await fs.rm(path.join(root, 'canvases', 'bad'), { recursive: true, force: true });
     await viewer.close();
   }
 });
@@ -401,16 +436,32 @@ test('VW-13 motion: quarter speed and pause for one board or the whole page, and
   }
 });
 
+/** Waits until a board's frame has loaded the given kit version and shows the given button text. */
+async function boardOnKit(file, version, text) {
+  await page.waitForFunction(({ file, version }) => {
+    const win = document.querySelector(`iframe[data-board="${file}"]`)?.contentWindow;
+    try { return win?.__canvasRuntime?.kit?.manifest?.version === version; } catch { return false; }
+  }, { file, version }, { timeout: 10000 });
+  await boardText(file, '[data-test="button"]', text);
+}
+
 test('VW-14 the kit switch moves one board to the live kit and back, keeping its values', { skip }, async () => {
   await page.selectOption('[data-test="board-kit"]', 'live:watch');
   await page.waitForFunction(() => document.querySelector('.board[data-f="button-pinned.dc.html"] [data-test="kit-banner"]').textContent.startsWith('Live watch'));
-  await boardText('button-pinned.dc.html', '[data-test="button"]', 'Publish');
-  assert.equal(await kitVersion('button-pinned.dc.html'), 'live-1');
   assert.match(await page.getAttribute('iframe[data-board="button-pinned.dc.html"]', 'src'), /\?canvas-kit=live%3Awatch$/);
+  await boardOnKit('button-pinned.dc.html', 'live-1', 'Publish');
   await page.selectOption('[data-test="board-kit"]', 'pinned');
   await page.waitForFunction(() => document.querySelector('.board[data-f="button-pinned.dc.html"] [data-test="kit-banner"]').textContent.startsWith('Pinned'));
-  await boardText('button-pinned.dc.html', '[data-test="button"]', 'Publish');
-  assert.equal(await kitVersion('button-pinned.dc.html'), pinnedVersion);
+  await boardOnKit('button-pinned.dc.html', pinnedVersion, 'Publish');
+});
+
+test('VW-16 Enter on a focused sidebar link opens that board, not the selected one', { skip }, async () => {
+  await page.focus('.tree .bd[data-f="-/button-live.dc.html"]');
+  await page.keyboard.press('Enter');
+  await page.waitForURL(`${viewer.origin}/pair/-/button-live`);
+  await page.waitForFunction(() => document.querySelector('.crumb.at')?.textContent === 'Button on the live kit');
+  await page.click('.tree .bd[data-f="-/button-pinned.dc.html"]');
+  await page.waitForFunction(() => document.querySelector('.crumb.at')?.textContent === 'Button on the pinned kit');
 });
 
 test('VW-15 a live kit rebuild reloads the boards on that kit only, and a board edit reloads within 2 seconds', { skip }, async (t) => {
