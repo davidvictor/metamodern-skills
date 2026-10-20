@@ -50,8 +50,10 @@ Install and update never write these, apart from install creating the starting f
 ## Update
 
 ```sh
-npm run canvas -- update --from <checkout> --ref <new tag> [--dry-run]
+node <checkout>/metamodern-work-on-canvases/scripts/canvas.mjs update --project <design repo> --from <checkout> --ref <new tag> [--dry-run]
 ```
+
+Run it with the new checkout's command, so the updater is the new version's. `npm run canvas -- update --from <checkout> --ref <new tag>` runs the installed version's updater and works the same way.
 
 For each installed file, update compares three hashes: the lock's (what was installed), the new package's, and the file in the project.
 

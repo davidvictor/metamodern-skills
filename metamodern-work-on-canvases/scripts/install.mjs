@@ -304,7 +304,11 @@ function scaffold(project, { dir, source, name, namespace }) {
 
 // ---------- commands ----------
 
-const describe = (lock) => `${lock.package} ${lock.version}${lock.source.ref ? ` (${lock.source.ref}, ${lock.source.commit.slice(0, 7)})` : ''}`;
+const describe = (lock) => {
+  const { ref, commit } = lock.source;
+  const at = !ref ? '' : commit.startsWith(ref) ? ` (${commit.slice(0, 7)})` : ` (${ref}, ${commit.slice(0, 7)})`;
+  return `${lock.package} ${lock.version}${at}`;
+};
 
 function report(result, log) {
   const counts = {};
