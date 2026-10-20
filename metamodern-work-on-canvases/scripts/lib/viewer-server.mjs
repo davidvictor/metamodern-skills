@@ -384,7 +384,7 @@ async function serveComments({ req, res, parts, projectRoot, canvases }) {
     if (req.method === 'GET' && parts.length === 1) {
       const { comments, problems } = await readComments(projectRoot);
       const report = await readBatchReport(projectRoot);
-      return json(200, { comments, batches: report.batches, problems: problems.concat(report.problems) });
+      return json(200, { comments, batches: report.batches, unreadableBatches: [...report.unreadable], problems: problems.concat(report.problems) });
     }
     if (req.method !== 'POST') return sendText(res, 405, 'Method not allowed');
     const body = await readBody(req);

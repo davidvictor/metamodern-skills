@@ -18,6 +18,7 @@ export async function installComments(api) {
   const state = {
     comments: [],
     batches: [],
+    unreadable: [],
     problems: [],
     mode: false,
     filter: 'open',
@@ -37,6 +38,7 @@ export async function installComments(api) {
       if (mine !== loads) return;
       state.comments = data.comments ?? [];
       state.batches = data.batches ?? [];
+      state.unreadable = data.unreadableBatches ?? [];
       state.problems = data.problems ?? [];
     } catch { return; }
     refresh();
@@ -57,7 +59,9 @@ export async function installComments(api) {
     const live = state.places.get(c.id);
     return { rect: live?.rect ?? c.canvas.rect, moved: live ? live.moved : c.canvas.moved };
   };
-  const activeBatch = (c) => c.canvas.batch && state.batches.find((b) => b.id === c.canvas.batch && b.status !== 'done');
+  // With the agent: in a batch not yet done, or in a batch file that cannot be read (the server never sends those again).
+  const activeBatch = (c) => c.canvas.batch && (state.batches.find((b) => b.id === c.canvas.batch && b.status !== 'done')
+    ?? (state.unreadable.includes(c.canvas.batch) ? { id: c.canvas.batch, status: 'sent' } : undefined));
   const sendable = () => state.comments.filter((c) => c.status === 'pending' && !activeBatch(c));
   // Pins are numbered per canvas, oldest first, counting every comment so a number never changes.
   const numberOf = (c) => state.comments.filter((x) => x.canvas.canvas === c.canvas.canvas).indexOf(c) + 1;
@@ -70,7 +74,7 @@ export async function installComments(api) {
     for (const c of list) {
       view.post(rec, 'canvas:locate', {
         label: c.canvas.label, labelKind: c.canvas.labelKind, elementPath: c.elementPath,
-        ...(c.canvas.text ? { text: c.canvas.text } : {}), ...(typeof c.canvas.fingerprint === 'string' ? { fingerprint: c.canvas.fingerprint } : {}),
+        ...(c.canvas.text ? { text: c.canvas.text } : {}), ...(c.canvas.identity ? { identity: c.canvas.identity } : {}),
       });
     }
   }
@@ -163,7 +167,7 @@ export async function installComments(api) {
       url: location.origin + urlFor(view.canvas.id, rec.b.p, rec.b.f),
       ...(p ? {
         label: p.label, labelKind: p.labelKind, elementPath: p.elementPath, element: p.element, text: p.text, nearbyText: p.nearbyText,
-        ...(p.fingerprint ? { fingerprint: p.fingerprint } : {}), ...(p.reactComponents ? { reactComponents: p.reactComponents } : {}),
+        ...(p.identity ? { identity: p.identity } : {}), ...(p.reactComponents ? { reactComponents: p.reactComponents } : {}),
       } : {}),
     };
     input.disabled = true;

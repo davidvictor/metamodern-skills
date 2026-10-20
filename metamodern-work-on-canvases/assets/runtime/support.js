@@ -1030,35 +1030,172 @@
       text: text,
     };
     if (kits.length) out.reactComponents = kits.join(' > ');
-    // A second fingerprint when the text alone cannot tell this element from others like it: no text, text shared
-    // with another element, or not the only element of its kind at its label's place.
-    var at = resolve(label, out.labelKind);
-    if (!text || sameText(node, text) > 1 || !at || at.kin.length > 1) out.fingerprint = fingerprintOf(node);
+    // How the element is found again (references/comments.md, Identification). An element with its own unique label,
+    // or with words of its own that no other element of its tag has, needs nothing more; any other element records
+    // an identity among the elements that look like it.
+    if (!ownUniqueLabel(node) && !(text && sameText(node.localName, text) === 1)) out.identity = identityOf(node);
     return out;
   }
 
-  var FINGERPRINT_ATTRS = ['src', 'alt', 'aria-label', 'name', 'placeholder', 'href', 'title', 'type', 'role', 'data-test', 'data-testid', 'data-kit-component'];
+  var IDENTIFYING_ATTRS = ['src', 'alt', 'aria-label', 'name', 'placeholder', 'href', 'data-test', 'data-testid', 'role', 'title', 'type'];
+  var MAX_TOKENS = 5;
+  var MAX_TOKEN_LENGTH = 80;
 
   /** How many elements of this tag on the board have this text. */
-  function sameText(node, text) {
+  function sameText(tag, text) {
     var n = 0;
-    Array.prototype.forEach.call(document.body.querySelectorAll(node.localName), function (other) { if (ownText(other) === text) n += 1; });
+    var list = document.body.getElementsByTagName(tag);
+    for (var i = 0; i < list.length; i += 1) if (ownText(list[i]) === text) n += 1;
     return n;
   }
 
-  /**
-   * What tells an element apart beyond its own text: its identifying attributes and the text of the nearest element
-   * above it whose text is unique on the board (a row, a card, a list item).
-   */
-  function fingerprintOf(node) {
-    var attrs = FINGERPRINT_ATTRS.filter(function (a) { return node.hasAttribute(a); })
-      .map(function (a) { return a + '=' + node.getAttribute(a); }).join(';');
-    var context = '';
+  /** A data-canvas-id or data-test/data-testid used by this element alone on the board. */
+  function ownUniqueLabel(node) {
+    var id = node.getAttribute('data-canvas-id');
+    if (id != null) return document.querySelectorAll('[data-canvas-id=' + cssValue(id) + ']').length === 1 ? { kind: 'canvas-id', key: id } : null;
+    var test = node.getAttribute('data-test') || node.getAttribute('data-testid');
+    if (test) return document.querySelectorAll('[data-test=' + cssValue(test) + '],[data-testid=' + cssValue(test) + ']').length === 1 ? { kind: 'test-id', key: test } : null;
+    return null;
+  }
+
+  /** The nearest element above with a stable, unique label: a unique id or test id, or a kit component alone of its name in its scope. */
+  function anchorOf(node) {
     for (var n = node.parentElement; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
-      var t = ownText(n);
-      if (t && sameText(n, t) === 1) { context = n.localName + ':' + t; break; }
+      var own = ownUniqueLabel(n);
+      if (own) return { kind: own.kind, key: own.key, el: n };
+      var kit = n.getAttribute('data-kit-component');
+      if (kit) {
+        var scope = n.parentElement && n.parentElement.closest('[data-canvas-id]');
+        var scopeLabel = scope ? ownUniqueLabel(scope) : null;
+        if ((!scope || scopeLabel) && (scope || document).querySelectorAll('[data-kit-component=' + cssValue(kit) + ']').length === 1) {
+          return { kind: 'kit-component', key: (scopeLabel ? scopeLabel.key : '') + '/' + kit, el: n };
+        }
+      }
     }
-    return attrs + '|' + context;
+    return { kind: 'board', key: '', el: document.body };
+  }
+
+  function anchorNow(anchor) {
+    if (!anchor || anchor.kind === 'board') return document.body;
+    if (anchor.kind === 'canvas-id' || anchor.kind === 'test-id') {
+      var list = anchor.kind === 'canvas-id' ? document.querySelectorAll('[data-canvas-id=' + cssValue(anchor.key) + ']')
+        : document.querySelectorAll('[data-test=' + cssValue(anchor.key) + '],[data-testid=' + cssValue(anchor.key) + ']');
+      return list.length === 1 ? list[0] : null;
+    }
+    if (anchor.kind === 'kit-component') {
+      var cut = anchor.key.lastIndexOf('/');
+      var scope = cut > 0 ? anchorNow({ kind: 'canvas-id', key: anchor.key.slice(0, cut) }) : document;
+      if (!scope) return null;
+      var kits = scope.querySelectorAll('[data-kit-component=' + cssValue(anchor.key.slice(cut + 1)) + ']');
+      return kits.length === 1 ? kits[0] : null;
+    }
+    return null;
+  }
+
+  function attrsOf(node) {
+    var out = {};
+    IDENTIFYING_ATTRS.forEach(function (a) { if (node.hasAttribute(a)) out[a] = node.getAttribute(a); });
+    return out;
+  }
+
+  /** Elements inside `top` that look like the recorded one: same tag, identifying attributes and own text. */
+  function lookAlikes(top, like) {
+    var keys = Object.keys(like.attrs);
+    var out = [];
+    var list = top.getElementsByTagName(like.tag);
+    for (var i = 0; i < list.length; i += 1) {
+      var n = list[i];
+      if (IDENTIFYING_ATTRS.some(function (a) { return n.getAttribute(a) !== (keys.indexOf(a) < 0 ? null : like.attrs[a]); })) continue;
+      if (ownText(n) === like.text) out.push(n);
+    }
+    return out;
+  }
+
+  function up(node, depth) {
+    for (var i = 0; i < depth && node; i += 1) node = node.parentElement;
+    return node;
+  }
+
+  /** The own texts (up to 80 characters) of an element's descendants, in document order. */
+  function innerTexts(node) {
+    var out = [];
+    var all = node.getElementsByTagName('*');
+    for (var i = 0; i < all.length; i += 1) {
+      var t = ownText(all[i]);
+      if (t && t.length <= MAX_TOKEN_LENGTH && out.indexOf(t) < 0) out.push(t);
+    }
+    return out;
+  }
+
+  /**
+   * An element's identity among its look-alikes inside its anchor: the anchor, what it looks like, and either
+   *   - a group: the nearest ancestor (depth levels up) whose counterparts above the other look-alikes have other
+   *     words, up to five context tokens (descendant texts found in no other group), and its place among the
+   *     look-alikes inside that group; or
+   *   - with no such ancestor (truly identical items, such as toolbar icons), its place among the look-alikes in the
+   *     anchor.
+   */
+  function identityOf(node) {
+    var anchor = anchorOf(node);
+    var like = { tag: node.localName, attrs: attrsOf(node), text: ownText(node) };
+    var all = lookAlikes(anchor.el, like);
+    var depth = 0;
+    var tokens = [];
+    for (var d = 1; ; d += 1) {
+      var group = up(node, d);
+      if (!group || group === anchor.el || !anchor.el.contains(group)) break;
+      var others = [];
+      all.forEach(function (o) { if (!group.contains(o)) { var g = up(o, d); if (g && others.indexOf(g) < 0) others.push(g); } });
+      if (!others.length) continue;
+      var mine = ownText(group);
+      if (others.some(function (g) { return ownText(g) === mine; })) continue;
+      var taken = {};
+      others.forEach(function (g) { innerTexts(g).forEach(function (t) { taken[t] = true; }); });
+      tokens = innerTexts(group).filter(function (t) { return !taken[t]; }).slice(0, MAX_TOKENS);
+      if (tokens.length) { depth = d; break; }
+    }
+    var scope = depth ? up(node, depth) : anchor.el;
+    var inGroup = lookAlikes(scope, like);
+    return { anchor: { kind: anchor.kind, key: anchor.key }, like: like, depth: depth, tokens: tokens, count: inGroup.length, index: inGroup.indexOf(node) };
+  }
+
+  /**
+   * The element an identity names now, or null. Look-alikes are taken inside the anchor. With context tokens, each
+   * look-alike's group (its ancestor `depth` levels up) is scored by how many tokens it holds; the one group with
+   * strictly the most, holding at least half the tokens, is the element's group. Inside the group (or the anchor, with
+   * no tokens), the element is the look-alike at its recorded place, and only while the number of look-alikes there
+   * is unchanged. Anything ambiguous is null: the comment shows as moved.
+   */
+  function byIdentity(id) {
+    if (!id || typeof id !== 'object' || !id.like || typeof id.like.tag !== 'string') return null;
+    var like = { tag: id.like.tag, attrs: id.like.attrs && typeof id.like.attrs === 'object' ? id.like.attrs : {}, text: String(id.like.text || '') };
+    var anchor = anchorNow(id.anchor);
+    if (!anchor) return null;
+    var scope = anchor;
+    var tokens = Array.isArray(id.tokens) ? id.tokens.filter(function (t) { return typeof t === 'string' && t; }) : [];
+    var depth = Number(id.depth) || 0;
+    if (depth > 0 && tokens.length) {
+      var groups = [];
+      lookAlikes(anchor, like).forEach(function (n) { var g = up(n, depth); if (g && anchor.contains(g) && g !== anchor && groups.indexOf(g) < 0) groups.push(g); });
+      var wanted = {};
+      tokens.forEach(function (t) { wanted[t] = true; });
+      var best = null;
+      var bestScore = 0;
+      var second = 0;
+      groups.forEach(function (g) {
+        var found = {};
+        var all = g.getElementsByTagName('*');
+        for (var i = 0; i < all.length; i += 1) { var t = ownText(all[i]); if (wanted[t]) found[t] = true; }
+        var score = Object.keys(found).length;
+        if (score > bestScore) { second = bestScore; bestScore = score; best = g; } else if (score > second) second = score;
+      });
+      if (!best || bestScore === second || bestScore * 2 < tokens.length) return null;
+      scope = best;
+    }
+    var inScope = lookAlikes(scope, like);
+    if (inScope.length !== id.count) return null;
+    var node = inScope[id.index];
+    return shown(node) ? node : null;
   }
 
   /** Every element that shares a label's key, and the position the key names (its [n], else the first). */
@@ -1128,28 +1265,39 @@
     return { preferred: preferred, kin: kin };
   }
 
+  function tagOf(elementPath) {
+    var last = String(elementPath || '').split(' > ').pop();
+    var m = /^([a-zA-Z][\w-]*)/.exec(last || '');
+    return m ? m[1].toLowerCase() : null;
+  }
+
   /**
-   * The element a label names now, or null. A label that counts its way to an element ([n], or a path of steps) can
-   * lead to a different element once others are added or removed, so what was recorded when it was picked settles it:
-   * its own text, and when that could not tell it apart, a fingerprint (identifying attributes and the text of the
-   * nearest uniquely-worded element above it).
-   *   1. the element at the label's place, when it still matches;
-   *   2. else the one element of its kind there that matches;
-   *   3. else, with no fingerprint recorded (it was the only one of its kind, with words of its own), the element at
-   *      the label's place when it is still the only one of its kind: its text was edited.
-   * Otherwise it is missing, and the comment shows as moved: never attached to a different element.
+   * The element a comment names now, or null (the comment shows as moved). Never a doubtful attachment:
+   *   1. an element with its own unique label (a data-canvas-id or test id used once): that label;
+   *   2. an identity (recorded for anything else without words of its own): byIdentity;
+   *   3. words of its own, unique to its tag on the board when picked: the one element of that tag with those words,
+   *      wherever it moved; if several have them now, the one at the label's place; if none (the words were edited),
+   *      the element at the label's place when it is still the only one of its kind there.
    */
   function locate(message) {
+    var kind = message.labelKind;
+    var label = String(message.label || '');
+    if ((kind === 'canvas-id' || kind === 'test-id') && label.indexOf(' > ') < 0 && !/\[\d+\]$/.test(label)) {
+      var own = anchorNow({ kind: kind, key: label });
+      if (own) return shown(own) ? own : null;
+    }
+    if (message.identity) return byIdentity(message.identity);
     var text = typeof message.text === 'string' && message.text ? message.text : null;
-    var fingerprint = typeof message.fingerprint === 'string' ? message.fingerprint : null;
-    var at = resolve(message.label, message.labelKind);
-    if (!at) return null;
-    var known = text !== null || fingerprint !== null;
-    var matches = function (n) { return (text === null || ownText(n) === text) && (fingerprint === null || fingerprintOf(n) === fingerprint); };
-    if (known && at.preferred && matches(at.preferred)) return shown(at.preferred) ? at.preferred : null;
-    var same = known ? at.kin.filter(matches) : [];
-    if (same.length === 1) return shown(same[0]) ? same[0] : null;
-    if (same.length === 0 && fingerprint === null && at.kin.length === 1 && at.preferred === at.kin[0]) return shown(at.preferred) ? at.preferred : null;
+    var at = resolve(label, kind);
+    var tag = tagOf(message.elementPath) || (at && at.preferred ? at.preferred.localName : null);
+    if (text && tag) {
+      var hits = [];
+      var list = document.body.getElementsByTagName(tag);
+      for (var i = 0; i < list.length; i += 1) if (ownText(list[i]) === text) hits.push(list[i]);
+      if (hits.length === 1) return shown(hits[0]) ? hits[0] : null;
+      if (hits.length > 1) return at && hits.indexOf(at.preferred) >= 0 && shown(at.preferred) ? at.preferred : null;
+    }
+    if (at && at.preferred && at.kin.length === 1 && at.kin[0] === at.preferred) return shown(at.preferred) ? at.preferred : null;
     return null;
   }
 

@@ -48,15 +48,23 @@ export function newId(prefix, date = new Date()) {
 
 /**
  * Writes JSON (two-space, trailing newline) by renaming a temporary file over the target. With `exclusive`, the
- * file is linked into place instead and an existing file is never replaced (the error's code is EEXIST).
+ * file is linked into place instead (or, on a volume without hard links, created exclusively) and an existing file is
+ * never replaced (the error's code is EEXIST).
  */
 export async function writeJsonAtomic(file, value, { exclusive = false } = {}) {
   await fsp.mkdir(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`;
-  await fsp.writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`);
+  const text = `${JSON.stringify(value, null, 2)}\n`;
+  await fsp.writeFile(tmp, text);
   try {
-    if (exclusive) await fsp.link(tmp, file);
-    else await fsp.rename(tmp, file);
+    if (!exclusive) await fsp.rename(tmp, file);
+    else {
+      try { await fsp.link(tmp, file); } catch (error) {
+        // A volume without hard links: an exclusive create instead (still never replaces a file).
+        if (error.code === 'EEXIST') throw error;
+        await fsp.writeFile(file, text, { flag: 'wx' });
+      }
+    }
   } finally {
     await fsp.rm(tmp, { force: true });
   }
@@ -89,6 +97,18 @@ export async function withLock(target, fn) {
 
 function checkRect(rect, where, issues) {
   if (!isObject(rect) || !['x', 'y', 'w', 'h'].every((k) => isNumber(rect[k]))) issues.push(`${where} must be {x, y, w, h} numbers`);
+}
+
+const isCount = (v) => Number.isInteger(v) && v >= 0;
+
+/** An identity as the runtime records it for an element without words of its own (references/comments.md). */
+export function validIdentity(id) {
+  if (!isObject(id) || !isObject(id.anchor) || !isObject(id.like)) return false;
+  if (!['canvas-id', 'kit-component', 'test-id', 'board'].includes(id.anchor.kind) || typeof id.anchor.key !== 'string') return false;
+  if (typeof id.like.tag !== 'string' || !id.like.tag || typeof id.like.text !== 'string' || !isObject(id.like.attrs)) return false;
+  if (!Object.values(id.like.attrs).every((v) => typeof v === 'string')) return false;
+  if (!Array.isArray(id.tokens) || id.tokens.length > 5 || !id.tokens.every((t) => typeof t === 'string' && t)) return false;
+  return isCount(id.depth) && isCount(id.count) && Number.isInteger(id.index) && id.index >= -1;
 }
 
 /** Issues with one comment against AFS 1.1 and the canvas extension; empty when it is valid. */
@@ -137,7 +157,7 @@ export function validateComment(c) {
   if (typeof x.moved !== 'boolean') issues.push('canvas.moved must be a boolean');
   if (!(x.batch === null || (typeof x.batch === 'string' && BATCH_ID.test(x.batch)))) issues.push('canvas.batch must be a batch id or null');
   if (x.text !== undefined && typeof x.text !== 'string') issues.push('canvas.text must be a string');
-  if (x.fingerprint !== undefined && typeof x.fingerprint !== 'string') issues.push('canvas.fingerprint must be a string');
+  if (x.identity !== undefined && !validIdentity(x.identity)) issues.push('canvas.identity must be {anchor: {kind, key}, like: {tag, attrs, text}, depth, tokens, count, index}');
   return issues;
 }
 
@@ -245,7 +265,7 @@ const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefin
 
 /**
  * Makes and writes a new comment. `input`: {canvas, page, board, kind, comment, rect, boardWidth, label?, labelKind?,
- * elementPath?, element?, text?, fingerprint?, nearbyText?, reactComponents?, attributes?, kit, props, intent?, severity?, url?}.
+ * elementPath?, element?, text?, identity?, nearbyText?, reactComponents?, attributes?, kit, props, intent?, severity?, url?}.
  */
 export async function createComment(projectRoot, input, { now = Date.now() } = {}) {
   const kind = input.kind ?? 'element';
@@ -277,7 +297,7 @@ export async function createComment(projectRoot, input, { now = Date.now() } = {
       moved: false,
       batch: null,
       ...(kind === 'element' && typeof input.text === 'string' ? { text: input.text } : {}),
-      ...(kind === 'element' && typeof input.fingerprint === 'string' ? { fingerprint: input.fingerprint } : {}),
+      ...(kind === 'element' && isObject(input.identity) ? { identity: input.identity } : {}),
     },
   };
   const issues = validateComment(c);

@@ -68,7 +68,8 @@ AFS 1.1 (`https://agentation.com/schema/annotation.v1.1.json`).
   "moved": false,
   "batch": "<batchId or null>",
   "text": "<the element's own text when it was picked>",
-  "fingerprint": "<identifying attributes | the nearest uniquely-worded element above it>"
+  "identity": { "anchor": { "kind": "canvas-id | kit-component | test-id | board", "key": "" },
+                "like": { "tag": "", "attrs": { }, "text": "" }, "depth": 0, "tokens": [], "count": 0, "index": 0 }
 }
 ```
 
@@ -80,7 +81,7 @@ AFS 1.1 (`https://agentation.com/schema/annotation.v1.1.json`).
 - **`moved`:** true while the element is gone.
 - **`batch`:** the last batch the comment went out in.
 - **`text`:** element comments only. It is sent with `canvas:locate` to tell neighbours apart (see Re-attachment).
-- **`fingerprint`:** element comments only, recorded when the text alone cannot tell the element apart: it has no text (an image, an icon, an input, an empty box), its text is shared with another element of its tag (an "Edit" button on every row), or it is not the only element of its kind at its label's place. It is the element's identifying attributes (`src`, `alt`, `aria-label`, `name`, `placeholder`, `href`, `title`, `type`, `role`, `data-test`, `data-testid`, `data-kit-component`), then `|`, then the tag and text of the nearest element above it whose text is unique on the board (its row, card or list item). It is sent with `canvas:locate` as well.
+- **`identity`:** element comments only, recorded for an element without its own unique label and without words of its own that no other element of its tag has (an image, an icon, an input, an "Edit" button on every row). See [Identification](#identification).
 
 ### Stable labels
 
@@ -128,14 +129,30 @@ An agent's reply without `--addressed` adds to the thread and leaves the state a
 
 ## Re-attachment
 
-When a board loads, whether after its file or kit changed or after it was regenerated, and when its values change, the viewer locates each of its open element comments with `canvas:locate` and the comment's `label`, `labelKind`, `elementPath`, `text` and `fingerprint`. The board answers `canvas:located` with the element's rect now, or with `{missing: true}`.
+When a board loads, whether after its file or kit changed or after it was regenerated, and when its values change, the viewer locates each of its open element comments with `canvas:locate` and the comment's `label`, `labelKind`, `elementPath`, `text` and `identity`. The board answers `canvas:located` with the element's rect now, or with `{missing: true}`.
 
-**Choosing the element:** a label that counts its way to an element (`[n]`, or steps) could now point at a neighbour, so what was recorded decides. An element *matches* when its own text equals `text` and, when a `fingerprint` was recorded, its fingerprint equals it too. The runtime tries these in order:
-1. the element at the label's place, if it matches;
-2. otherwise, the one element of its kind there that matches;
-3. otherwise, only when no fingerprint was recorded (the element had words of its own and was the only one of its kind), the element at the label's place if it is still the only one of its kind: its text was edited.
+### Identification
 
-If none of these fits, the element is missing. Moved is always preferred to a doubtful attachment.
+Provisional (decided by the lead on 2026-10-20 after two reviews; revisit with real boards). Moved is always the safe answer: an element is never attached on ambiguity.
+
+**When a comment is made**, the runtime records one of three things:
+1. **Its own unique label:** the element carries a `data-canvas-id` or test id used once on the board. Nothing more is recorded; the label finds it.
+2. **Words of its own:** its own text is non-empty and no other element of its tag on the board has it. Nothing more is recorded; `text` finds it, wherever it moved.
+3. **Otherwise, an `identity`:**
+   - **look-alikes** are the elements with the same tag, the same identifying attributes (`src`, `alt`, `aria-label`, `name`, `placeholder`, `href`, `data-test`, `data-testid`, `role`, `title`, `type`) and the same own text (`like`);
+   - **the anchor** is the nearest element above it with a stable, unique label, in contract order: a `data-canvas-id` or test id used once, or a kit component alone of its name in its scope; else the board;
+   - **the group** is the nearest element above it (`depth` levels up, inside the anchor) whose words differ from those of the corresponding elements above every look-alike outside it (its row, card or list item);
+   - **context tokens** are up to five own texts of the group's descendants (80 characters at most) found in no other look-alike's group, in document order (the row's name, its role, its rank);
+   - **its place:** the number of look-alikes in the group (or, with no group, in the anchor) and its index among them.
+
+   Truly identical items with no distinguishing group, such as toolbar icons or rating stars, have no tokens: depth 0, the anchor is their group.
+
+**When a board loads**, the runtime finds:
+1. an element with its own unique label by that label;
+2. an element with words of its own by them: the one element of its tag with that text, wherever it is; if several have it now, the one at the label's place; if none (its words were edited), the element at the label's place when it is still the only one of its kind there;
+3. an element with an identity: the anchor, then the look-alikes inside it. With tokens, each look-alike's group is scored by how many tokens it holds; the one group with strictly the most, and at least half of them, is the element's group (a changed rank or an edited cell leaves the others to decide). Inside that group, or the anchor without tokens, the element is the look-alike at its recorded index, **only while the number of look-alikes there is unchanged**. Anything else is missing.
+
+Building the look-alike sets once per locate keeps it fast: a textless icon on a 601-row board is found in about 1.4 ms (median of 20, at most 3.1 ms).
 
 **What the viewer records:**
 - **Found:** the viewer writes the new place (`rect`, `boundingBox`, `x`, `y`) and clears `moved`. A change under half a pixel is not written.
@@ -144,11 +161,12 @@ If none of these fits, the element is missing. Moved is always preferred to a do
 
 A comment is never deleted and never attached to a different element.
 
-**Known limits:** these show as moved instead of re-attached, and picking the element again re-attaches the comment:
-- an element whose text was edited and that sits among others of its kind;
-- an element recorded with a fingerprint whose row, card or list item was reworded, or whose identifying attributes changed.
+**Known limits:** these show as moved, and picking the element again re-attaches the comment:
+- an element whose words were edited and that sits among others of its kind;
+- an identical item when the number of its look-alikes in its group changed (an icon added to or removed from the same toolbar or row, even if it is not the one commented on);
+- an element whose group lost more than half of its context tokens at once.
 
-One case is accepted as the same element: the only element of its kind at a uniquely named place, with words of its own, whose words changed (for example a section heading that was retitled).
+One case is accepted as the same element: the only element of its kind at its label's place, with words of its own, whose words changed (for example a retitled section heading).
 
 ## The agent's command line
 
@@ -194,4 +212,4 @@ POSTs are accepted only with `content-type: application/json`, an `Origin` that 
   - `canvas.text`;
   - null `label` and `labelKind` for area and board comments;
   - `reactComponents` from the kit component chain.
-- 2026-10-20: after review, `canvas.fingerprint`: a textless element, or one whose text others share, is re-attached only to the element with the same fingerprint, else shown as moved (before, it could land on a neighbour at its counted place). Batch files that cannot be read are reported and their comments not sent again; Send all re-checks each comment inside its lock; places are written only under the comment's own values; new files never replace existing ones; ids are checked before any file system call; `wait` says when it is listening.
+- 2026-10-20: after the second review, `canvas.identity` replaces the short-lived `canvas.fingerprint` (never released): own unique label, then words of its own, then an identity among look-alikes (anchor, group, context tokens, place). A textless element, or one whose words others share, is re-attached only when its group and place are unambiguous, else shown as moved. Batch files that cannot be read are reported and their comments not sent again; Send all re-checks each comment inside its lock; places are written only under the comment's own values; new files never replace existing ones; ids are checked before any file system call; `wait` says when it is listening.

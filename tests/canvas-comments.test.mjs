@@ -146,6 +146,21 @@ test('CM-04 writes are atomic and locked: concurrent replies are all kept, no te
   await assert.rejects(writeJsonAtomic(file, { replaced: true }, { exclusive: true }), { code: 'EEXIST' });
   assert.equal(JSON.parse(await fs.readFile(file, 'utf8')).id, c.id);
   assert.deepEqual((await fs.readdir(path.join(root, 'comments', 'fixture'))).sort(), [`${c.id}.json`]);
+  // On a volume without hard links, a new file is created exclusively instead, and still never replaces one.
+  const link = fs.link;
+  let refused = 0;
+  fs.link = async () => { refused += 1; throw Object.assign(new Error('not supported'), { code: 'EPERM' }); };
+  try {
+    const fresh = path.join(root, 'comments', 'fixture', 'c_20261020_aaaaaa.json');
+    await writeJsonAtomic(fresh, { made: true }, { exclusive: true });
+    assert.deepEqual(JSON.parse(await fs.readFile(fresh, 'utf8')), { made: true });
+    await assert.rejects(writeJsonAtomic(fresh, { made: false }, { exclusive: true }), { code: 'EEXIST' });
+    await fs.rm(fresh);
+    assert.equal(refused, 2, 'the store tried the hard link first');
+  } finally {
+    fs.link = link;
+  }
+  assert.deepEqual((await fs.readdir(path.join(root, 'comments', 'fixture'))).sort(), [`${c.id}.json`]);
 });
 
 test('CM-05 re-attachment is recorded: a new place moves the pin, a missing element marks it moved, nothing is lost', async () => {
@@ -369,69 +384,83 @@ const commentFiles = async () => (await readComments(broot)).comments;
 const pickingIn = (file) => page.waitForFunction((f) => [...(document.querySelector(`iframe[data-board="${f}"]`)?.contentDocument?.querySelectorAll('style') ?? [])]
   .some((n) => n.textContent.includes('crosshair')), file);
 
-const ROWS_BOARD = (names) => `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Rows</title>
-<script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<div data-canvas-id="rows">
-  <sc-for list="{{rows}}" as="row">
-    <div class="row"><b>{{row.name}}</b> <img src="assets/dot.svg" alt="" width="12" height="12"> <button type="button">Edit</button></div>
-  </sc-for>
-</div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":600,"height":300}}'>
-class Component extends DCLogic {
-  renderVals() { return { rows: ${JSON.stringify(names.map((name) => ({ name })))} }; }
+// Rows of look-alikes: each row has a name, a role, an optional rank, two identical icons, an image and an "Edit"
+// button. `data-mark` (not an identifying attribute) names every element for the checks only.
+const ICON = (m) => `<svg data-mark="${m}" width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12"></rect></svg>`;
+function rowsBoard(rows, o = {}) {
+  const row = (r, i) => `<div class="${o.cls ?? 'row'}" data-mark="${r.name}-row"><b data-mark="${r.name}-b">${r.name}</b> <span data-mark="${r.name}-role">${r.role}</span>${o.rank ? ` <i>#${i + 1}</i>` : ''} ${o.extraIcon === r.name ? ICON(`${r.name}-new`) : ''}${ICON(`${r.name}-svg1`)}${ICON(`${r.name}-svg2`)} <img data-mark="${r.name}-img" src="dot.svg" alt="" width="12" height="12"> <button type="button" data-mark="${r.name}-button">Edit</button></div>`;
+  const toolbar = `<div data-canvas-id="toolbar"><span>Tools</span> ${(o.icons ?? ['a', 'b', 'c']).map((m) => ICON(`tool-${m}`)).join('')}</div>`;
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Rows</title><script src="./support.js"></script></head><body><x-dc>
+${toolbar}<p>${o.note ?? 'Team'}</p><div data-canvas-id="rows">${rows.map(row).join('\n')}</div></x-dc></body></html>`;
 }
-</script>
-</body>
-</html>
-`;
+const TEAM = [{ name: 'Ana', role: 'Lead' }, { name: 'Bea', role: 'Design' }, { name: 'Cy', role: 'Eng' }, { name: 'Dee', role: 'Ops' }];
+const ROW_TARGETS = ['Bea-b', 'Bea-role', 'Bea-svg2', 'Bea-img', 'Bea-button'];
+const SAME = (marks) => Object.fromEntries(marks.map((m) => [m, m]));
+// [name, first board, regenerated board, targets, expected: the same mark, 'moved', or 'same-or-moved']
+const IDENTITY_CASES = [
+  ['rows re-sorted', rowsBoard(TEAM), rowsBoard([...TEAM].reverse()), ROW_TARGETS, SAME(ROW_TARGETS)],
+  ['class names changed', rowsBoard(TEAM), rowsBoard(TEAM, { cls: 'line' }), ROW_TARGETS, SAME(ROW_TARGETS)],
+  ['icon added in another row', rowsBoard(TEAM), rowsBoard(TEAM, { extraIcon: 'Cy' }), ROW_TARGETS, SAME(ROW_TARGETS)],
+  ['another cell edited', rowsBoard(TEAM), rowsBoard(TEAM.map((r) => (r.name === 'Bea' ? { ...r, role: 'Product' } : r))), ROW_TARGETS,
+    { ...SAME(ROW_TARGETS), 'Bea-role': 'same-or-moved' }],
+  ['ranked rows re-sorted', rowsBoard(TEAM, { rank: true }), rowsBoard([...TEAM].reverse(), { rank: true }), ROW_TARGETS, SAME(ROW_TARGETS)],
+  ['row added above', rowsBoard(TEAM, { rank: true }), rowsBoard([{ name: 'Zed', role: 'Sales' }, ...TEAM], { rank: true }), ROW_TARGETS, SAME(ROW_TARGETS)],
+  ['earlier row removed', rowsBoard(TEAM), rowsBoard(TEAM.slice(1)), ROW_TARGETS, SAME(ROW_TARGETS)],
+  ['its row removed', rowsBoard(TEAM), rowsBoard(TEAM.filter((r) => r.name !== 'Bea')), ROW_TARGETS, Object.fromEntries(ROW_TARGETS.map((m) => [m, 'moved']))],
+  ['identical icon inserted in its row', rowsBoard(TEAM), rowsBoard(TEAM, { extraIcon: 'Bea' }), ROW_TARGETS, { ...SAME(ROW_TARGETS), 'Bea-svg2': 'moved' }],
+  ['identical toolbar icon inserted first', rowsBoard(TEAM), rowsBoard(TEAM, { icons: ['new', 'a', 'b', 'c'] }), ['tool-b'], { 'tool-b': 'moved' }],
+  ['picked toolbar icon removed', rowsBoard(TEAM), rowsBoard(TEAM, { icons: ['a', 'c'] }), ['tool-b'], { 'tool-b': 'moved' }],
+  ['earlier toolbar icon removed', rowsBoard(TEAM), rowsBoard(TEAM, { icons: ['b', 'c'] }), ['tool-b'], { 'tool-b': 'moved' }],
+  ['toolbar unchanged, words elsewhere edited', rowsBoard(TEAM), rowsBoard(TEAM, { note: 'Our team' }), ['tool-b'], { 'tool-b': 'tool-b' }],
+];
 
-test('CM-09 a textless element and an element whose text its siblings share re-attach to the same element or show as moved, never a neighbour', { skip }, async () => {
-  const dir = path.join(broot, 'canvases', 'fixture', 'project');
-  const file = path.join(dir, 'rows.dc.html');
-  await fs.writeFile(file, ROWS_BOARD(['Ana', 'Bea', 'Cy']));
+test('CM-09 look-alikes re-attach to the same element or show as moved, never a neighbour', { skip }, async () => {
+  const file = path.join(broot, 'canvases', 'fixture', 'project', 'rows.dc.html');
   const p = await browser.newPage();
+  const open = async () => {
+    await p.goto(`${viewer.origin}/fixture/project/rows.dc.html`);
+    await p.waitForFunction(() => window.__canvasRuntime && document.querySelector('[data-canvas-id="rows"] div'));
+  };
+  const failures = [];
   try {
-    const open = async () => {
-      await p.goto(`${viewer.origin}/fixture/project/rows.dc.html`);
-      await p.waitForFunction(() => document.querySelectorAll('.row').length > 0 && window.__canvasRuntime);
-    };
-    await open();
-    // In the second row: its image (no text) and its Edit button (text every row shares).
-    const picked = await p.evaluate(() => {
-      const row = document.querySelectorAll('.row')[1];
-      return ['img', 'button'].map((tag) => window.__canvasRuntime.describe(row.querySelector(tag)));
-    });
-    for (const d of picked) {
-      assert.equal(typeof d.fingerprint, 'string', `${d.element} has a fingerprint`);
-      assert.match(d.label, /^rows > div:nth-of-type\(2\) > /);
+    for (const [name, first, next, targets, expected] of IDENTITY_CASES) {
+      await fs.writeFile(file, first);
+      await open();
+      const picked = await p.evaluate((marks) => marks.map((m) => window.__canvasRuntime.describe(document.querySelector(`[data-mark="${m}"]`))), targets);
+      await fs.writeFile(file, next);
+      await open();
+      const got = await p.evaluate((list) => list.map((d) => window.__canvasRuntime.locate(d)?.dataset.mark ?? 'moved'), picked);
+      targets.forEach((m, i) => {
+        const want = expected[m];
+        const ok = want === 'same-or-moved' ? got[i] === m || got[i] === 'moved' : got[i] === want;
+        if (!ok) failures.push(`${name}: ${m} -> ${got[i]} (expected ${want})`);
+      });
     }
-    assert.equal(picked[0].text, '');
-    assert.equal(picked[1].text, 'Edit');
-    const whereNow = () => p.evaluate((list) => list.map((d) => {
+    // The name cell has words of its own: it records no identity and is found by them wherever it moves.
+    await fs.writeFile(file, rowsBoard(TEAM));
+    await open();
+    const b = await p.evaluate(() => window.__canvasRuntime.describe(document.querySelector('[data-mark="Bea-b"]')));
+    assert.equal(b.identity, undefined);
+    // 600 rows: a textless icon is found again in well under 20 ms.
+    const many = Array.from({ length: 600 }, (_, i) => ({ name: `N${i}`, role: `R${i}` }));
+    many[1] = { name: 'Bea', role: 'Design' };
+    await fs.writeFile(file, rowsBoard(many));
+    await open();
+    const icon = await p.evaluate(() => window.__canvasRuntime.describe(document.querySelector('[data-mark="Bea-svg2"]')));
+    await fs.writeFile(file, rowsBoard([{ name: 'Zed', role: 'Sales' }, ...many]));
+    await open();
+    const timing = await p.evaluate((d) => {
+      const t0 = performance.now();
       const n = window.__canvasRuntime.locate(d);
-      return n ? n.closest('.row').querySelector('b').textContent : null;
-    }), picked);
-    assert.deepEqual(await whereNow(), ['Bea', 'Bea']);
-    // The first row is removed: the counted place now holds Cy's row; both comments stay with Bea's.
-    await fs.writeFile(file, ROWS_BOARD(['Bea', 'Cy']));
-    await open();
-    assert.deepEqual(await whereNow(), ['Bea', 'Bea']);
-    // Bea's row is removed: neither comment moves to a neighbour; both show as moved.
-    await fs.writeFile(file, ROWS_BOARD(['Ana', 'Cy', 'Dee']));
-    await open();
-    assert.deepEqual(await whereNow(), [null, null]);
+      return { ms: performance.now() - t0, mark: n?.dataset.mark ?? 'moved' };
+    }, icon);
+    assert.equal(timing.mark, 'Bea-svg2');
+    assert.ok(timing.ms < 20, `${timing.ms.toFixed(1)} ms`);
   } finally {
     await p.close();
     await fs.rm(file, { force: true });
   }
+  assert.deepEqual(failures, []);
 });
 
 test('CM-10 click an element at quarter zoom, comment, send to a listening agent, reply, resolve and reopen, regenerate', { skip }, async () => {
