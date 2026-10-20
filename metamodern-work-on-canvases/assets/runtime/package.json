@@ -1,0 +1,4 @@
+{
+  "//": "The runtime files are classic browser scripts; react-markup.js is also a CommonJS module for kit bundlers.",
+  "type": "commonjs"
+}

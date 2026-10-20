@@ -1,0 +1,4 @@
+/* Legacy fixture kit styles. */
+.lg-panel { border: 1px solid #d9dad6; border-radius: 12px; padding: 16px; font: 14px/20px system-ui, sans-serif; }
+.lg-panel h2 { margin: 0 0 8px; font-size: 16px; }
+.lg-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #eef2fb; margin-right: 6px; }

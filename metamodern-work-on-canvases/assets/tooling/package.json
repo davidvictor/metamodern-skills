@@ -1,0 +1,12 @@
+{
+  "name": "metamodern-canvas-tooling",
+  "private": true,
+  "description": "Node tooling for the canvas package checks: builds the fixture kit and drives headless Chromium. Installed outside the repository by scripts/tooling.mjs.",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "playwright-core": "1.62.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Values, lists and branches</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="skin.css">
+<link rel="stylesheet" href="board.css">
+<link rel="stylesheet" href="ds/fixture/components/bundle.css">
+<script src="ds/fixture/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}.basics-outside{padding:16px 32px 0}</style>
+</helmet>
+<div class="basics-outside" data-canvas-id="outside">
+  <p class="board-note" data-test="outside-text">Outside any component: {{taskCount}} tasks for {{sample.team}}.</p>
+  <svg width="64" height="16" viewBox="0 0 64 16" aria-hidden="true" data-canvas-id="outside-svg">
+    <sc-for list="{{tasks}}" as="task" hint-placeholder-count="4">
+      <rect x="{{task.x}}" y="2" width="12" height="12" rx="3" fill-opacity="0.9" fill="{{task.fill}}"></rect>
+    </sc-for>
+    <sc-if value="{{ false }}" hint-placeholder-val="{{ false }}"><circle cx="8" cy="8" r="8" fill="red"></circle></sc-if>
+  </svg>
+  <button type="button" data-test="outside-button" onClick="{{bump}}">Pressed {{presses}} times</button>
+</div>
+<x-import component-from-global-scope="Fixture.Root" theme="{{theme}}" density="{{density}}" contrast="{{contrast}}">
+<div class="board" data-canvas-id="board">
+  <h1 class="board-title">{{heading}}</h1>
+  <div class="board-row" data-canvas-id="buttons">
+    <x-import component-from-global-scope="Fixture.Button" variant="{{variant}}" data-test="primary-action">Save changes</x-import>
+    <x-import component-from-global-scope="Fixture.Button" variant="secondary" disabled>Archived</x-import>
+    <x-import component-from-global-scope="Fixture.Button" variant="ghost" size="small" aria-label="Add a task" on-click="{{bump}}">
+      <x-import component-from-global-scope="Fixture.Icons.Plus" size="14"></x-import>
+      Add {{presses}}
+    </x-import>
+    <x-import component-from-global-scope="Fixture.Badge" tone="{{tone}}">{{badge}}</x-import>
+    <x-import component-from-global-scope="Fixture.Badge" class="badge-wide" style="width: {{badgeWidth}}px; display: inline-block">Placed</x-import>
+  </div>
+  <x-import component-from-global-scope="Fixture.Card" title="{{cardTitle}}" description="Due {{firstDue}}, {{openCount}} open">
+    <x-import component-from-global-scope="Fixture.List" label="Tasks">
+      <sc-for list="{{tasks}}" as="task" hint-placeholder-count="4">
+        <x-import component-from-global-scope="Fixture.ListItem" label="{{task.title}}" detail="{{task.owner}}" selected="{{task.done}}">
+          <sc-if value="{{task.done}}" hint-placeholder-val="{{ true }}">
+            <x-import component-from-global-scope="Fixture.Icons.Check" size="16" label="Done"></x-import>
+          </sc-if>
+          <span class="doc-label">#{{$index}}</span>
+          <img src="{{task.icon}}" alt="" width="12" height="12">
+        </x-import>
+      </sc-for>
+    </x-import>
+  </x-import>
+  <table data-test="owners">
+    <tbody>
+      <tr><td>{{lead.name}}</td><td colspan="1">{{lead.role}}</td></tr>
+      <tr><td>{{second.name}}</td><td>{{second.role}}</td></tr>
+    </tbody>
+  </table>
+  <x-import component-from-global-scope="Fixture.Input" label="Note" default-value="{{note}}" on-change="{{typed}}"></x-import>
+  <p class="board-note" data-test="typed">Typed: {{typedText}}</p>
+  <div class="board-row">
+    <sc-for list="{{groups}}" as="group" hint-placeholder-count="2">
+      <div class="doc-cell" data-test="group">
+        <b>{{group.name}}</b>
+        <sc-for list="{{group.items}}" as="item" hint-placeholder-count="2"><span>{{item}}</span></sc-for>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light","section":"Appearance"},"density":{"editor":"enum","options":["default","compact"],"default":"default","section":"Appearance"},"contrast":{"editor":"enum","options":["standard","high"],"default":"standard"},"variant":{"editor":"enum","options":["primary","secondary","ghost"],"default":"primary"},"showDone":{"editor":"boolean","default":true,"section":"Content"},"limit":{"editor":"int","default":4,"min":0,"max":4,"section":"Content"},"heading":{"editor":"text","default":"This week","section":"Content"},"$preview":{"width":1200,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { presses: 0, typedText: '' };
+  }
+  renderVals() {
+    const sample = window.Fixture.sample;
+    const limit = this.props.limit ?? 4;
+    const tasks = sample.tasks
+      .filter((t) => this.props.showDone !== false || !t.done)
+      .slice(0, limit)
+      .map((t, i) => Object.assign({}, t, { x: i * 16, fill: t.done ? '#2f7d4f' : '#2457c5', icon: 'assets/dot.svg' }));
+    return {
+      theme: this.props.theme ?? 'light',
+      density: this.props.density ?? 'default',
+      contrast: this.props.contrast ?? 'standard',
+      variant: this.props.variant ?? 'primary',
+      heading: this.props.heading ?? 'This week',
+      sample,
+      tasks,
+      taskCount: tasks.length,
+      openCount: tasks.filter((t) => !t.done).length,
+      firstDue: tasks.length ? sample.formatDate(tasks[0].due) : 'never',
+      cardTitle: sample.formatCount(tasks.length, 'task', 'tasks'),
+      lead: sample.members[0],
+      second: sample.members[1],
+      tone: tasks.every((t) => t.done) ? 'positive' : 'neutral',
+      badge: tasks.every((t) => t.done) ? 'All done' : 'In progress',
+      badgeWidth: 96,
+      presses: this.state.presses,
+      bump: () => this.setState((s) => ({ presses: s.presses + 1 })),
+      note: 'Bring the survey draft',
+      typed: (event) => this.setState({ typedText: event.target.value }),
+      typedText: this.state.typedText,
+      groups: [
+        { name: 'Morning', items: ['Stand-up', 'Reviews'] },
+        { name: 'Afternoon', items: ['Interviews'] },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

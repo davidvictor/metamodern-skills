@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Imported boards</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="skin.css">
+<link rel="stylesheet" href="board.css">
+<link rel="stylesheet" href="ds/fixture/components/bundle.css">
+<script src="ds/fixture/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<div class="board" data-canvas-id="imports">
+  <h1 class="board-title">Pills from another board</h1>
+  <div class="board-row" data-test="outside">
+    <dc-import name="Pill" label="Ready" size="28" quiet="" tone="green" hint-size="80px,28px"></dc-import>
+    <dc-import name="Pill" label="{{label}}" size="{{size}}" quiet="false" hint-size="80px,24px"></dc-import>
+  </div>
+  <x-import component-from-global-scope="Fixture.Root" theme="{{theme}}">
+    <x-import component-from-global-scope="Fixture.Card" title="Inside a component">
+      <div class="board-row" data-test="inside">
+        <sc-for list="{{labels}}" as="text" hint-placeholder-count="3">
+          <dc-import name="Pill" label="{{text}}" size="20" hint-size="60px,20px"></dc-import>
+        </sc-for>
+        <sc-if value="{{showLast}}" hint-placeholder-val="{{ true }}">
+          <dc-import name="Pill" label="Last" words="" hint-size="60px,24px"></dc-import>
+        </sc-if>
+      </div>
+    </x-import>
+  </x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"showLast":{"editor":"boolean","default":true},"$preview":{"width":1200,"height":700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      theme: this.props.theme ?? 'light',
+      label: 'Waiting',
+      size: 24,
+      labels: ['One', 'Two', 'Three'],
+      showLast: this.props.showLast,
+    };
+  }
+}
+</script>
+</body>
+</html>

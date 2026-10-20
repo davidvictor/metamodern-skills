@@ -1,0 +1,9 @@
+{
+  "schema": "canvas-config/1",
+  "name": "Fixture project",
+  "canvases": "canvases",
+  "kit": { "namespace": "Fixture", "pinned": "kit/current" },
+  "skin": "skin/board.css",
+  "port": 5410,
+  "groups": ["foundations", "lab", "app", "exploring", "decided", "archive"]
+}

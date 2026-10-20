@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dialog motion</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fixture/components/bundle.css">
+<script src="ds/fixture/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}.slow-spin{width:24px;height:24px;border-radius:6px;background:#2457c5;animation:spin calc(2s / var(--canvas-motion-rate, 1)) linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style>
+</helmet>
+<x-import component-from-global-scope="Fixture.Root" theme="{{theme}}">
+  <div class="board" data-canvas-id="motion">
+    <div class="slow-spin" data-test="spinner"></div>
+    <x-import component-from-global-scope="Fixture.Tabs" items="{{tabs}}" default-value="members">
+      <p class="board-note">Members and roles.</p>
+    </x-import>
+  </div>
+  <x-import component-from-global-scope="Fixture.Dialog" open="{{open}}" title="Rename team" description="The new name shows to everyone on the team.">
+    <x-import component-from-global-scope="Fixture.Input" label="Team name" default-value="{{team}}"></x-import>
+  </x-import>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"open":{"editor":"boolean","default":true},"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      theme: this.props.theme ?? 'light',
+      open: this.props.open,
+      team: window.Fixture.sample.team,
+      tabs: [{ id: 'members', label: 'Members' }, { id: 'roles', label: 'Roles' }],
+    };
+  }
+}
+</script>
+</body>
+</html>

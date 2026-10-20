@@ -1,0 +1,6 @@
+{
+  "v": 3,
+  "title": "Legacy fixture kit",
+  "namespace": "Legacy",
+  "libraries": [{ "name": "react", "version": "18" }, { "name": "react-dom", "version": "18" }]
+}

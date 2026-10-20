@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.19.1",
+  "collectionVersion": "1.20.0",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -141,6 +141,13 @@
       "version": "0.1.2",
       "category": "brand-and-design",
       "summary": "Inspect, build, revise, verify, and hand off editable Figma work."
+    },
+    {
+      "name": "metamodern-work-on-canvases",
+      "path": "metamodern-work-on-canvases",
+      "version": "0.0.1",
+      "category": "brand-and-design",
+      "summary": "Run design canvases that mount a project's real component kit on a shared board runtime, with the canvas format and kit contract."
     }
   ]
 }
