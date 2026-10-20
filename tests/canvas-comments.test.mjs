@@ -429,6 +429,10 @@ const probeRows = (list) => probeBoard(list.map(probeRow).join('\n'));
 const card = (q, items) => `<section class="card"><h3>${q}</h3><ul>${items.map((it) => `<li><span>${it}</span> <button data-mark="${q}-${it}-edit" type="button">Edit</button></li>`).join('')}</ul></section>`;
 const cards = (list) => probeBoard(list.map(([q, items]) => card(q, items)).join('\n'));
 const r = (name, cells, extra = {}) => ({ cells: [name, ...cells], img: `${name}-img`, ...extra });
+const cellRow = (n, role, badge, m) => `<tr><td>${n}</td><td>${role}</td><td>${badge ? `<em data-mark="${m}">${badge}</em>` : ''}</td></tr>`;
+const cellTable = (list) => probeBoard(`<table><tbody>${list.join('')}</tbody></table>`);
+const divRow = (n, role, badge, m) => `<div class="row"><div class="cell"><span>${n}</span></div><div class="cell"><span>${role}</span></div><div class="cell">${badge ? `<em data-mark="${m}">${badge}</em>` : ''}</div></div>`;
+const cardItem = (t, sub, btn, m) => `<article><header><h4>${t}</h4><p>${sub}</p></header><footer><span>Due</span>${btn ? `<button data-mark="${m}" type="button">${btn}</button>` : ''}</footer></article>`;
 const PROBE_CASES = [
   ['T1 a badge\'s words move to another row', probeRows([r('Ana', ['Lead'], { badge: { text: 'Overdue', mark: 'Ana-badge' } }), r('Bea', ['Design'], { badge: { text: 'Due', mark: 'Bea-badge' } }), r('Cy', ['Eng'], { badge: { text: 'Paid', mark: 'Cy-badge' } })]),
     probeRows([r('Ana', ['Lead'], { badge: { text: 'Paid', mark: 'Ana-badge' } }), r('Bea', ['Design'], { badge: { text: 'Due', mark: 'Bea-badge' } }), r('Cy', ['Eng'], { badge: { text: 'Overdue', mark: 'Cy-badge' } })]), 'Ana-badge', 'moved'],
@@ -464,6 +468,19 @@ const PROBE_CASES = [
     probeRows([{ cells: ['Ana', 'Lead'], badge: { text: 'On track', mark: 'Ana-badge2' } }, { cells: ['Bea', 'Design'], badge: { text: 'Due soon', mark: 'Bea-badge' } }, { cells: ['Cy', 'Eng'], badge: { text: 'Overdue', mark: 'Cy-badge2' } }]), 'Ana-badge', 'moved'],
   ['T12 a kit re-render gives new generated ids', probeRows(['Ana', 'Bea', 'Cy'].map((n, i) => ({ cells: [n, ['Lead', 'Design', 'Eng'][i]], raw: ` <button data-mark="${n}-menu" id="r-${i + 1}" aria-controls="menu-${i + 1}" type="button"><svg width="8" height="8"><path d="M1 1h6"></path></svg></button>` }))),
     probeRows(['Ana', 'Bea', 'Cy'].map((n, i) => ({ cells: [n, ['Lead', 'Design', 'Eng'][i]], raw: ` <button data-mark="${n}-menu" id="r-${i + 7}" aria-controls="menu-${i + 7}" type="button"><svg width="8" height="8"><path d="M1 1h6"></path></svg></button>` }))), 'Bea-menu', 'Bea-menu'],
+  // Table cells and cell wrappers: the row, not the cell, holds the evidence.
+  ['U1 a status badge in a table cell moves to another row', cellTable([cellRow('Ana', 'Lead', 'Overdue', 'Ana-badge'), cellRow('Bea', 'Design'), cellRow('Cy', 'Eng')]),
+    cellTable([cellRow('Ana', 'Lead'), cellRow('Bea', 'Design'), cellRow('Cy', 'Eng', 'Overdue', 'Cy-badge')]), 'Ana-badge', 'moved'],
+  ['U2 a status badge in a table cell, its row removed, a new row has it', cellTable([cellRow('Ana', 'Lead', 'Overdue', 'Ana-badge'), cellRow('Bea', 'Design'), cellRow('Cy', 'Eng')]),
+    cellTable([cellRow('Bea', 'Design'), cellRow('Cy', 'Eng'), cellRow('Dee', 'Ops', 'Overdue', 'Dee-badge')]), 'Ana-badge', 'moved'],
+  ['U3 a status badge in a table cell, rows re-sorted', cellTable([cellRow('Ana', 'Lead', 'Overdue', 'Ana-badge'), cellRow('Bea', 'Design'), cellRow('Cy', 'Eng')]),
+    cellTable([cellRow('Cy', 'Eng'), cellRow('Bea', 'Design'), cellRow('Ana', 'Lead', 'Overdue', 'Ana-badge')]), 'Ana-badge', 'Ana-badge'],
+  ['U4 a status badge in a cell wrapper moves to another row', probeBoard([divRow('Ana', 'Lead', 'Overdue', 'Ana-badge'), divRow('Bea', 'Design'), divRow('Cy', 'Eng')].join('')),
+    probeBoard([divRow('Ana', 'Lead'), divRow('Bea', 'Design'), divRow('Cy', 'Eng', 'Overdue', 'Cy-badge')].join('')), 'Ana-badge', 'moved'],
+  ['U5 a card footer action moves to another card', probeBoard([cardItem('Alpha', 'Q1', 'Approve', 'Alpha-btn'), cardItem('Beta', 'Q2'), cardItem('Gamma', 'Q3')].join('')),
+    probeBoard([cardItem('Alpha', 'Q1'), cardItem('Beta', 'Q2'), cardItem('Gamma', 'Q3', 'Approve', 'Gamma-btn')].join('')), 'Alpha-btn', 'moved'],
+  ['U6 a name cell, its row\'s only other word edited (moved by the closing rule)', cellTable([cellRow('Ana', 'Lead'), '<tr><td data-mark="Bea-name">Bea</td><td>Design</td><td></td></tr>', cellRow('Cy', 'Eng')]),
+    cellTable([cellRow('Ana', 'Lead'), '<tr><td data-mark="Bea-name">Bea</td><td>Product</td><td></td></tr>', cellRow('Cy', 'Eng')]), 'Bea-name', 'moved'],
 ];
 
 test('CM-09 look-alikes re-attach to the same element or show as moved, never a neighbour', { skip }, async () => {

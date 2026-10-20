@@ -1162,24 +1162,21 @@
     return node;
   }
 
-  /** The own texts (up to 80 characters) of an element's descendants, in document order. */
+  /** The own texts (up to 80 characters) of an element and its descendants, in document order. */
   function innerTexts(node) {
     var out = [];
     var seen = {};
+    var add = function (t) { if (t && t.length <= MAX_TOKEN_LENGTH && !seen[t]) { seen[t] = true; out.push(t); } };
+    // The element's own direct text first (a plain <td>Ana</td> cell), then each descendant's text.
+    var direct = '';
+    for (var c = node.firstChild; c; c = c.nextSibling) if (c.nodeType === 3) direct += ' ' + c.nodeValue;
+    add(direct.replace(/\s+/g, ' ').trim());
     var all = node.getElementsByTagName('*');
-    for (var i = 0; i < all.length; i += 1) {
-      var t = ownText(all[i]);
-      if (t && t.length <= MAX_TOKEN_LENGTH && !seen[t]) { seen[t] = true; out.push(t); }
-    }
+    for (var i = 0; i < all.length; i += 1) add(ownText(all[i]));
     return out;
   }
 
-  /**
-   * One level of evidence for `node` among `alikes` inside `scope`: the nearest group (an element `depth` levels up,
-   * inside the scope) whose words differ from those of every other look-alike's group, its own tokens (texts no other
-   * group has, up to five) and the other groups' tokens (texts the group does not have, ranks and numbers left out,
-   * up to a thousand, taking each group's first texts first). Null when no group tells the node apart.
-   */
+
   /** The other groups' texts, round by round so each group's first texts come first, ranks and numbers left out. */
   function otherTokens(otherLists, mineSet) {
     var rest = [];
@@ -1274,27 +1271,35 @@
     return { mode: 'look-alike', anchor: { kind: anchor.kind, key: anchor.key }, like: like, levels: withinBudget(levels), count: left.length, index: left.indexOf(node) };
   }
 
-  /** The nearest element above `node` that is one of several of its tag under its parent: its row among rows. */
-  function repeatedAncestor(node) {
+  /** The elements above `node` that are each one of several of their tag under their parent, nearest first. */
+  function repeatedAncestors(node) {
+    var out = [];
     for (var n = node.parentElement, d = 1; n && n !== document.body && n !== document.documentElement; n = n.parentElement, d += 1) {
-      if (siblingGroups(n).length) return { el: n, depth: d };
+      if (siblingGroups(n).length) out.push({ el: n, depth: d });
     }
-    return null;
+    return out;
   }
 
   /**
-   * Evidence for an element with words of its own that sits in a repeated structure (its row among rows, its card
-   * among cards): that row's own tokens and the other rows' tokens. Null outside any repeated structure (a page
-   * title is found by its words alone).
+   * Evidence for an element with words of its own that sits in a repeated structure: the nearest repeated ancestor
+   * (a row among rows, a card among cards) with an own token other than the element's own words, so a cell among its
+   * row's cells gives way to the row; with none, the outermost repeated ancestor. Its own tokens and the other
+   * siblings' tokens. Null outside any repeated structure (a page title is found by its words alone).
    */
   function wordsIdentity(node) {
-    var row = repeatedAncestor(node);
-    if (!row) return null;
-    var level = evidenceFor(row.el, [], row.depth);
-    if (!level) return null;
+    var text = ownText(node);
+    var chosen = null;
+    var rows = repeatedAncestors(node);
+    for (var i = 0; i < rows.length; i += 1) {
+      var level = evidenceFor(rows[i].el, [], rows[i].depth);
+      if (!level) continue;
+      chosen = level;
+      if (level.own.some(function (t) { return t !== text; })) break;
+    }
+    if (!chosen) return null;
     var anchor = anchorOf(node);
     var like = { tag: node.localName, attrs: attrsOf(node), text: '', shape: shapeOf(node) };
-    return { mode: 'words', anchor: { kind: anchor.kind, key: anchor.key }, like: like, levels: withinBudget([level]) };
+    return { mode: 'words', anchor: { kind: anchor.kind, key: anchor.key }, like: like, levels: withinBudget([chosen]) };
   }
 
   /** A level's tokens as lookup sets, made once per level. */
