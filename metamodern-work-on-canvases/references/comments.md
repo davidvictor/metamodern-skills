@@ -172,7 +172,7 @@ A project's install can wire this as `npm run canvas -- comments …`.
 
 | Route | What it does |
 | --- | --- |
-| `GET /_comments` | `{comments, batches, problems}`. A comment file that does not pass the check is listed in `problems`, never dropped. |
+| `GET /_comments` | `{comments, batches, problems}`. A comment file that does not pass the check is left on disk and listed in `problems` (shown in the Comments tab), not in `comments`. |
 | `POST /_comments` | Creates a comment. |
 | `POST /_comments/<id>/reply` | `{content}`: a person's reply. |
 | `POST /_comments/<id>/resolve` | Resolves the comment. |

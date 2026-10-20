@@ -150,6 +150,14 @@ test('CM-05 re-attachment is recorded: a new place moves the pin, a missing elem
   x = await placeComment(root, c.id, { rect: { x: 300, y: 420, w: 96, h: 32 } });
   assert.equal(x.canvas.moved, false);
   assert.equal((await readComments(root)).comments.length, 1);
+  // A broken file is reported, left on disk, and not handed on.
+  const broken = path.join(root, 'comments', 'fixture', 'c_20261020_broken.json');
+  await fs.writeFile(broken, JSON.stringify({ id: 'c_20261020_broken', comment: 'Half a comment' }));
+  const read = await readComments(root);
+  assert.equal(read.comments.length, 1);
+  assert.equal(read.problems.length, 1);
+  assert.match(read.problems[0].file, /c_20261020_broken\.json$/);
+  await fs.access(broken);
 });
 
 test('CM-06 Send all to agent: one batch of every open comment, then taken and done', async () => {

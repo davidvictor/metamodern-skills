@@ -150,7 +150,7 @@ async function listDir(dir) {
   try { return await fsp.readdir(dir, { withFileTypes: true }); } catch { return []; }
 }
 
-/** Every comment in the project, oldest first. Files that are not valid comments are reported, never dropped silently. */
+/** Every valid comment in the project, oldest first. Files that are not valid comments are reported in problems, never dropped silently. */
 export async function readComments(projectRoot) {
   const root = commentsRoot(projectRoot);
   const comments = [];
@@ -165,8 +165,9 @@ export async function readComments(projectRoot) {
         const issues = validateComment(c);
         if (c?.id !== f.name.slice(0, -5)) issues.push('the file name is not the comment id');
         if (c?.canvas?.canvas !== entry.name) issues.push('the folder is not the comment\'s canvas');
+        // A file that is not a valid comment is reported in problems and left on disk, never handed on half-read.
         if (issues.length) problems.push({ file: path.relative(path.resolve(projectRoot), file), issues });
-        comments.push(c);
+        else comments.push(c);
       } catch (error) {
         problems.push({ file: path.relative(path.resolve(projectRoot), file), issues: [`not readable JSON: ${error.message}`] });
       }
