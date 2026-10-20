@@ -193,7 +193,7 @@ Update preserves stable identities and presenter work and reports unresolved cha
 | [Brand world](./metamodern-build-brand-world/SKILL.md) · `$metamodern-build-brand-world` | Develop a visual world through explicit creative direction and approval gates. |
 | [Midjourney](./metamodern-midjourney/SKILL.md) · `$metamodern-midjourney` | Build look kits, complete recipes, calibration runs, and screened sets. |
 | [Figma](./metamodern-work-in-figma/SKILL.md) · `$metamodern-work-in-figma` | Inspect, construct, revise, verify, and hand off editable design work. |
-| [Canvases](./metamodern-work-on-canvases/SKILL.md) · `$metamodern-work-on-canvases` | Run design canvases that mount your real component kit, and view them locally with a per-board kit switch, properties and motion controls. |
+| [Canvases](./metamodern-work-on-canvases/SKILL.md) · `$metamodern-work-on-canvases` | Run design canvases that mount your real component kit, view them locally with a per-board kit switch, properties and motion controls, and build, render-check and review them with one board builder, one render check, review sets with build briefs, and exploration canvases. |
 | [App bootstrap](./metamodern-bootstrap-app/SKILL.md) · `$metamodern-bootstrap-app` | Prepare a MakerKit application and verify its local setup. |
 | [Engineering initiation](./metamodern-initiate-engineering/SKILL.md) · `$metamodern-initiate-engineering` | Establish proportional engineering preparation and a first-task handoff. |
 | [Engineering configuration](./metamodern-configure-engineering/SKILL.md) · `$metamodern-configure-engineering` | Adopt portable testing policy and native Codex/Claude Code routing with explicit evidence states. |
