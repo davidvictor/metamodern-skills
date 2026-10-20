@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A kit that expects React from the page</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/legacy/components/bundle.css">
+<script src="ds/legacy/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;padding:24px}</style>
+</helmet>
+<x-import component-from-global-scope="Legacy.Panel" title="{{title}}">
+  <p data-test="react-version">React {{version}}</p>
+  <sc-for list="{{tags}}" as="tag" hint-placeholder-count="2">
+    <x-import component-from-global-scope="Legacy.Tag">{{tag}}</x-import>
+  </sc-for>
+  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" stroke-width="2" stroke="#2457c5" fill="none"></circle></svg>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"title":{"editor":"text","default":"Shared notes"},"$preview":{"width":900,"height":600}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { title: this.props.title, version: window.Legacy.reactVersion, tags: ['Notes', 'Drafts'] };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pill</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="ds/fixture/components/bundle.css">
+<script src="ds/fixture/components/bundle.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+.pill{display:inline-flex;align-items:center;gap:6px;padding:0 10px;border-radius:999px;border:1px solid #d9dad6;font:13px/1 system-ui,sans-serif}
+.pill.is-quiet{color:#5f6166}
+</style>
+</helmet>
+<span class="pill {{quietClass}}" style="height: {{size}}px" data-canvas-id="pill" data-size="{{size}}" data-double="{{double}}" data-tone="{{tone}}">
+  <sc-if value="{{showDot}}" hint-placeholder-val="{{ true }}"><span class="swatch" style="background: {{color}}"></span></sc-if>
+  {{label}}
+</span>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"label":{"editor":"text","default":"Open","section":"Pill"},"size":{"editor":"int","default":24,"min":16,"max":48,"section":"Pill"},"quiet":{"editor":"boolean","default":false,"section":"Pill"},"tone":{"editor":"enum","default":"blue","options":["blue","green"],"section":"Pill"},"$preview":{"width":240,"height":80}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const size = this.props.size;
+    return {
+      size,
+      double: size * 2 + 0,
+      quietClass: this.props.quiet ? 'is-quiet' : '',
+      showDot: !this.props.quiet,
+      color: this.props.tone === 'green' ? '#2f7d4f' : '#2457c5',
+      label: this.props.label,
+      tone: this.props.tone,
+    };
+  }
+}
+</script>
+</body>
+</html>

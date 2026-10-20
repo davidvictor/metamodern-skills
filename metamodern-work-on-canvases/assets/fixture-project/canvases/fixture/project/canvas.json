@@ -1,0 +1,20 @@
+{
+  "v": 3,
+  "title": "Fixture canvas",
+  "launch": { "view": "canvas", "page": "language" },
+  "pages": [
+    { "id": "language", "name": "Board language" },
+    { "id": "kit", "name": "Kit" }
+  ],
+  "boards": {
+    "basics.dc.html": { "x": 0, "y": 0, "w": 1200, "h": 900, "title": "Values, lists and branches", "page": "language", "ws": { "set": "language-basics", "row": "live" } },
+    "logic.dc.html": { "x": 1280, "y": 0, "w": 800, "h": 600, "title": "Board logic", "page": "language", "is_interactive": true },
+    "imports.dc.html": { "x": 0, "y": 1000, "w": 1200, "h": 700, "title": "Imported boards", "page": "language" },
+    "plain.dc.html": { "x": 1280, "y": 1000, "w": 800, "h": 500, "title": "A board without a kit", "page": "language" },
+    "Pill.dc.html": { "x": 2160, "y": 0, "w": 240, "h": 80, "title": "Pill", "page": "language" },
+    "scenes.dc.html": { "x": 0, "y": 0, "w": 1280, "h": 800, "title": "Scenes", "page": "kit", "expand": "fill", "ws": { "kit": "pinned" } },
+    "motion.dc.html": { "x": 1360, "y": 0, "w": 1280, "h": 800, "title": "Dialog motion", "page": "kit" }
+  },
+  "order": ["basics.dc.html", "logic.dc.html", "imports.dc.html", "plain.dc.html", "Pill.dc.html", "scenes.dc.html", "motion.dc.html"],
+  "ws": { "group": "lab" }
+}

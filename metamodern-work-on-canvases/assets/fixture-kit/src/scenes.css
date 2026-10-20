@@ -1,0 +1,2 @@
+/* The fixture kit's scene stylesheet. */
+.fx-scene[data-scene="settings"] { max-width: 640px; }

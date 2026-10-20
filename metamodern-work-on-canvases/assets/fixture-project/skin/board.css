@@ -1,0 +1,5 @@
+/* The fixture project's board skin. */
+.board { display: flex; flex-direction: column; gap: 24px; padding: 32px; font: 14px/20px system-ui, -apple-system, "Segoe UI", sans-serif; }
+.board-title { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; }
+.board-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.board-note { margin: 0; color: #5f6166; }

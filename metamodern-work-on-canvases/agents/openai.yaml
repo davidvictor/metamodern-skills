@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Work on Canvases"
+  short_description: "Run and check design canvases on the shared runtime"
+  default_prompt: "Use $metamodern-work-on-canvases to read, validate or run these design canvases on the shared runtime and report what you checked."

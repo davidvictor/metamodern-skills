@@ -1,0 +1,11 @@
+{
+  "v": 3,
+  "title": "Legacy kit canvas",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "legacy.dc.html": { "x": 0, "y": 0, "w": 900, "h": 600, "title": "A kit that expects React from the page" }
+  },
+  "order": ["legacy.dc.html"],
+  "ws": { "group": "archive", "frozen": true }
+}

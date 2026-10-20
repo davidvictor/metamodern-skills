@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A board without a kit</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="board.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0;font:14px/20px system-ui,sans-serif}.plain{padding:32px;display:flex;flex-direction:column;gap:12px}</style>
+</helmet>
+<div class="plain" data-canvas-id="plain">
+  <h1>{{title}}</h1>
+  <ul>
+    <sc-for list="{{rows}}" as="row" hint-placeholder-count="3">
+      <li class="{{row.cls}}">{{row.text}} <b>{{row.count}}</b></li>
+    </sc-for>
+  </ul>
+  <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}"><p data-test="empty">No rows.</p></sc-if>
+  <p data-test="mode">Mode {{mode}}, rows {{count}}</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["all","none"],"default":"all"},"$preview":{"width":800,"height":500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const rows = this.props.mode === 'none' ? [] : [
+      { text: 'Drafts', count: 3, cls: 'row' },
+      { text: 'Reviews', count: 1, cls: 'row' },
+      { text: 'Shipped', count: 12, cls: 'row is-last' },
+    ];
+    return { title: 'Plain markup', rows, empty: rows.length === 0, mode: this.props.mode, count: rows.length };
+  }
+}
+</script>
+</body>
+</html>
