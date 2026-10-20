@@ -479,6 +479,9 @@ const PROBE_CASES = [
     probeBoard([divRow('Ana', 'Lead'), divRow('Bea', 'Design'), divRow('Cy', 'Eng', 'Overdue', 'Cy-badge')].join('')), 'Ana-badge', 'moved'],
   ['U5 a card footer action moves to another card', probeBoard([cardItem('Alpha', 'Q1', 'Approve', 'Alpha-btn'), cardItem('Beta', 'Q2'), cardItem('Gamma', 'Q3')].join('')),
     probeBoard([cardItem('Alpha', 'Q1'), cardItem('Beta', 'Q2'), cardItem('Gamma', 'Q3', 'Approve', 'Gamma-btn')].join('')), 'Alpha-btn', 'moved'],
+  // Long texts that differ only after their first 200 characters stay apart (a digest of the whole text is kept).
+  ['L1 two long paragraphs alike for 200 characters, one removed and a third added after', probeBoard(`<section><p data-mark="p1">${'Terms of the renewal. '.repeat(12)}Alpha.</p><p data-mark="p2">${'Terms of the renewal. '.repeat(12)}Beta.</p></section>`),
+    probeBoard(`<section><p data-mark="p2">${'Terms of the renewal. '.repeat(12)}Beta.</p><p data-mark="p3">${'Terms of the renewal. '.repeat(12)}Gamma.</p></section>`), 'p2', 'p2'],
   ['U6 a name cell, its row\'s only other word edited (moved by the closing rule)', cellTable([cellRow('Ana', 'Lead'), '<tr><td data-mark="Bea-name">Bea</td><td>Design</td><td></td></tr>', cellRow('Cy', 'Eng')]),
     cellTable([cellRow('Ana', 'Lead'), '<tr><td data-mark="Bea-name">Bea</td><td>Product</td><td></td></tr>', cellRow('Cy', 'Eng')]), 'Bea-name', 'moved'],
 ];

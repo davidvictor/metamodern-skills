@@ -950,8 +950,23 @@
 
   function cssValue(value) { return '"' + String(value).replace(/["\\]/g, '\\$&') + '"'; }
 
+  function fullText(node) {
+    return String(node.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function digest(s) {
+    var h = 5381;
+    for (var i = 0; i < s.length; i += 1) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36) + '.' + s.length.toString(36);
+  }
+
+  /**
+   * An element's words as compared and recorded: the whole text up to 200 characters; a longer text keeps its first
+   * 200 characters and a digest of all of it, so two long texts that differ only further on still differ.
+   */
   function ownText(node) {
-    return String(node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+    var t = fullText(node);
+    return t.length <= 200 ? t : t.slice(0, 200) + '…#' + digest(t);
   }
 
   function boardRect(node) {
@@ -1026,7 +1041,7 @@
       elementPath: elementPath,
       element: node.getAttribute('data-kit-component') || node.localName,
       rect: boardRect(node),
-      nearbyText: text || (node.parentElement ? ownText(node.parentElement) : ''),
+      nearbyText: fullText(node).slice(0, 200) || (node.parentElement ? fullText(node.parentElement).slice(0, 200) : ''),
       text: text,
     };
     if (kits.length) out.reactComponents = kits.join(' > ');
@@ -1560,9 +1575,14 @@
   }
 
   runtime.on('canvas:pick', function (data) { setPicking(data.enabled); });
+  // Every canvas:locate is answered, carrying back its `request` when it had one, so the viewer can match answers
+  // to questions even if one is ever lost.
   runtime.on('canvas:locate', function (data) {
-    var node = runtime.locate(data);
-    post('canvas:located', node ? { rect: boardRect(node) } : { missing: true });
+    var node = null;
+    try { node = runtime.locate(data); } catch (error) { fail('locate failed', error); }
+    var answer = node ? { rect: boardRect(node) } : { missing: true };
+    if (data.request != null) answer.request = data.request;
+    post('canvas:located', answer);
   });
   // One shape cache per call: the board can change between calls.
   runtime.describe = function (node) { shapeCache = new WeakMap(); try { return describe(node); } finally { shapeCache = null; } };

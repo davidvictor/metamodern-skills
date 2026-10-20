@@ -27,6 +27,7 @@ export async function installComments(api) {
     places: new Map(), // id -> {rect, moved}: where the comment's element is now, as the open board reports it
     replies: new Map(), // id -> reply text being typed
     flyTo: null,
+    requests: 0, // canvas:locate request numbers
   };
 
   let loads = 0;
@@ -69,11 +70,13 @@ export async function installComments(api) {
   /* ---------- locating: after a board loads, every comment finds its element again ---------- */
   function locateAll(view, rec, { persist }) {
     const list = onBoard(view, rec).filter((c) => c.canvas.kind === 'element' && c.status !== 'resolved');
-    // Answers come back in the order asked, so each canvas:located is matched to the oldest question waiting.
-    rec.locateQueue = (rec.locateQueue ?? []).concat(list.map((c) => ({ id: c.id, persist })));
+    // Each question carries a request number the board sends back with its answer.
+    rec.locateQueue = rec.locateQueue ?? [];
     for (const c of list) {
+      const request = ++state.requests;
+      rec.locateQueue.push({ id: c.id, persist, request });
       view.post(rec, 'canvas:locate', {
-        label: c.canvas.label, labelKind: c.canvas.labelKind, elementPath: c.elementPath,
+        request, label: c.canvas.label, labelKind: c.canvas.labelKind, elementPath: c.elementPath,
         ...(c.canvas.text ? { text: c.canvas.text } : {}), ...(c.canvas.identity ? { identity: c.canvas.identity } : {}),
       });
     }
@@ -84,8 +87,11 @@ export async function installComments(api) {
     return Object.entries(c.canvas.props ?? {}).every(([k, v]) => JSON.stringify(now[k]) === JSON.stringify(v));
   }
   function located(view, rec, data) {
-    const next = rec.locateQueue?.shift();
-    if (!next) return;
+    // Matched by request number; a board on an older runtime without one answers in the order asked.
+    const queue = rec.locateQueue ?? [];
+    const at = data.request != null ? queue.findIndex((q) => q.request === data.request) : 0;
+    if (at < 0 || !queue.length) return;
+    const [next] = queue.splice(at, 1);
     const c = state.comments.find((x) => x.id === next.id);
     if (!c) return;
     const place = data.missing ? { rect: c.canvas.rect, moved: true } : { rect: data.rect, moved: false };
