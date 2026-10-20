@@ -6,6 +6,7 @@
    Each board runs in its own frame, so each board can show its own kit. */
 import { el, MOD, toast, copyText } from './dom.js';
 import { kitEntry, kitLabel, motionControls, renderBoardPanel, updateBoardPanel, valuesJson } from './panel.js';
+import { installComments } from './comments.js';
 
 const app = document.getElementById('app');
 const store = {
@@ -40,6 +41,9 @@ const boardHooks = new Map();
 export function onBoardMessage(type, fn) { if (!boardHooks.has(type)) boardHooks.set(type, []); boardHooks.get(type).push(fn); }
 export const PANELS = [{ id: 'properties', label: 'Properties', render: (body, v) => v.renderProperties(body) }];
 export const TOOLS = [];
+/* Layers can also take keys first (key(e, view, fromBoard) returns true when used), learn when a page's boards are
+   drawn (world(view)) and when a board's frame loads (frame(view, rec)), and hear server events (event(data)). */
+export const LAYERS = [];
 
 /* ---------- routing ---------- */
 const urlFor = (c, p, f) => '/' + [c, p, f && slug(f)].filter(Boolean).map(encodeURIComponent).join('/') + (f ? '' : '/');
@@ -224,6 +228,7 @@ class CanvasView {
       this.els.set(b.f, rec);
       this.markKit(rec);
     }
+    for (const l of LAYERS) l.world?.(this);
   }
   /** The banner on a board: which kit it shows and its commit or branch. */
   markKit(rec) {
@@ -267,6 +272,8 @@ class CanvasView {
     if (!doc) return;
     doc.addEventListener('keydown', (e) => { if (onKey(e, true)) e.preventDefault(); });
     doc.addEventListener('keyup', (e) => onKeyUp(e));
+    const rec = this.recForWindow(f.contentWindow);
+    if (rec) for (const l of LAYERS) l.frame?.(this, rec);
     // Scrolling over a live board moves the canvas, unless the board has something of its own to scroll.
     doc.addEventListener('wheel', (e) => {
       if (scrollsInside(e.target, e.deltaX, e.deltaY) && !e.ctrlKey && !e.metaKey) return;
@@ -452,7 +459,7 @@ class CanvasView {
       const vis = R > -m && B > -m && L < W + m && T < H + m;
       if (vis) this.placeholder(rec);
       const keep = rec === this.live || rec === this.sel;
-      if (vis && (s >= LIVE_MIN_ZOOM || keep)) near.push({ rec, d: Math.hypot((L + R) / 2 - W / 2, (T + B) / 2 - H / 2) - (keep ? 1e9 : 0) });
+      if (vis && (s >= (this.liveMinZoom ?? LIVE_MIN_ZOOM) || keep)) near.push({ rec, d: Math.hypot((L + R) / 2 - W / 2, (T + B) / 2 - H / 2) - (keep ? 1e9 : 0) });
       else if (!keep) this.unmount(rec);
     }
     near.sort((a, b) => a.d - b.d);
@@ -880,6 +887,10 @@ const SHORTCUTS = [
   ['A board', [
     ['Open it on its own', ['O']], ['Copy a link to it, with its kit and values', ['L']], ['Shortcuts', ['?']],
   ]],
+  ['Comments', [
+    ['Comment mode on and off', ['C']], ['Comment on an element', ['Click it, in comment mode']], ['Comment on an area', ['Drag a box, in comment mode']],
+    ['Comment on the selected board', ['Shift C']], ['Cancel', ['Esc']], ['Post a comment or reply', ['Enter']], ['A new line', ['Shift Enter']],
+  ]],
 ];
 function showHelp() {
   closeOverlays();
@@ -901,6 +912,7 @@ function onKey(e, fromBoard = false) {
   if (mod && (e.key === 'k' || e.key === 'K')) { overlay ? closeOverlays() : openPalette(); return true; }
   if (overlay || openMenu) { if (e.key === 'Escape') { closeOverlays(); return true; } return false; }
   if (typing) return false;
+  for (const l of LAYERS) if (l.key?.(e, view, fromBoard)) return true;
   if (fromBoard && e.key !== 'Escape' && !mod) return false; // a live board keeps its own keys
   if (fromBoard && e.key === 'Escape' && e.defaultPrevented) return false; // the board used Esc itself (a menu or dialog)
   if (e.key === '?' || (e.key === '/' && e.shiftKey)) { showHelp(); return true; }
@@ -943,6 +955,7 @@ events.onmessage = async (m) => {
   let d;
   try { d = JSON.parse(m.data); } catch { return; }
   if (d.type === 'index') { clearTimeout(indexTimer); indexTimer = setTimeout(refreshIndex, 120); return; }
+  for (const l of LAYERS) l.event?.(d);
   if (!view && d.type !== 'kits' && d.type !== 'kit') return;
   if (d.type === 'files') {
     const mine = d.changes.filter((c) => c.canvas === view.canvas.id && c.file !== 'canvas.json').map((c) => c.file);
@@ -961,4 +974,5 @@ events.onmessage = async (m) => {
 };
 
 await Promise.all([loadIndex(), loadKits()]);
+await installComments({ PANELS, TOOLS, LAYERS, onBoardMessage, getView: () => view, getIndex: () => INDEX, go, urlFor, choiceFor, keyOf, slug });
 route();

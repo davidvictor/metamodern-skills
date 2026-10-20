@@ -74,7 +74,7 @@ Every enum default is one of its options. A `<dc-import>` may still pass a value
 
 ## Stable labels
 
-Comments attach to elements by the first label found, in this order:
+Comments attach to elements by the first label found, in this order (the label forms are in [comments.md](comments.md#stable-labels)):
 
 1. `data-canvas-id`, which builder scripts put on the sections and elements they generate;
 2. `data-kit-component="<Name>"` plus its position among siblings, which kit components render on their root;
@@ -91,18 +91,19 @@ Messages go over `postMessage` on the board's own origin, and the runtime accept
 | viewer to board | `canvas:set-props` | `{values}` |
 | board to viewer | `canvas:props-changed` | `{values}`, every current value, after `canvas:set-props` |
 | viewer to board | `canvas:motion` | `{rate: 1, 0.25 or 0, replay?: true}`; `0` pauses. Applied to every Web Animation (CSS animations and transitions included, also ones that start later, and ones a script starts with `element.animate()`) as `playbackRate`, as the `--canvas-motion-rate` CSS variable, and to the board's JavaScript clock: `performance.now()`, `requestAnimationFrame` timestamps and timers with a delay (`setTimeout`, `setInterval`) run at the rate (0 freezes them) and stay continuous when it changes, so spring, frame and timer-driven motion slows and pauses too. Timers with no delay stay immediate and `Date.now()` stays real. `replay` draws the board afresh so entrance motion runs again. |
-| viewer to board | `canvas:pick` | `{enabled}`: turns element picking on or off |
-| board to viewer | `canvas:picked` | `{label, labelKind, elementPath, element, rect, nearbyText, reactComponents?}`, with `rect` relative to the board |
-| viewer to board | `canvas:locate` | `{label, labelKind, elementPath}`, used to re-attach comments |
-| board to viewer | `canvas:located` | `{rect}` or `{missing: true}` |
+| viewer to board | `canvas:pick` | `{enabled}`: turns element picking on or off. While on, the element under the pointer is outlined and pointer presses never reach the board. |
+| board to viewer | `canvas:picked` | `{label, labelKind, elementPath, element, rect, nearbyText, text, reactComponents?}`, sent when a press is released within 5 px of where it started (a longer drag is the viewer's area). `rect` is in board pixels from the board's top left, at any zoom. `text` is the element's own text. |
+| viewer to board | `canvas:locate` | `{label, labelKind, elementPath, text?}`, used to re-attach comments; `text` tells apart neighbours a counted label could point at |
+| board to viewer | `canvas:located` | `{rect}` or `{missing: true}`, one answer per `canvas:locate`, in the order asked |
 
-`kit.mode` is `live` when the board's link carries `canvas-kit=live:<name>`, else `pinned`; `kit.ref` is the live name or `kit.json`'s `source.commit`; `kit.version` is `kit.json`'s `version` (`null` for a legacy kit). Picking and locating are added by the comments slice through the runtime's extension point.
+`kit.mode` is `live` when the board's link carries `canvas-kit=live:<name>`, else `pinned`; `kit.ref` is the live name or `kit.json`'s `source.commit`; `kit.version` is `kit.json`'s `version` (`null` for a legacy kit). Picking and locating (runtime 0.0.3) are described with comments in [comments.md](comments.md): the label forms, and how `canvas:locate` uses the recorded text.
 
 ## Runtime extension point
 
-`window.__canvasRuntime` exposes `version`, `language` (1), `board`, `motion` (`{rate}`), `clock` (`now()`, the board's scaled clock), `ready` (a promise that resolves when `canvas:ready` is sent), `props`, `schema`, `kit`, `on(type, handler)` (handlers receive every accepted `canvas:*` message of that type), `post(type, payload)` and `render()`.
+`window.__canvasRuntime` exposes `version`, `language` (1), `board`, `motion` (`{rate}`), `clock` (`now()`, the board's scaled clock), `ready` (a promise that resolves when `canvas:ready` is sent), `props`, `schema`, `kit`, `on(type, handler)` (handlers receive every accepted `canvas:*` message of that type), `post(type, payload)`, `render()`, and from 0.0.3 `describe(element)` (what `canvas:picked` sends for an element) and `locate({label, labelKind, elementPath, text})` (the element a label names now, or null).
 
 ## Change log
 
 - 2026-10-20: first pinned version, with the catalogue above. MM-01 adds the `style` wrapper rule, `dc-import` type conversion, JSX whitespace, `canvas-props` and `canvas-kit` link values, and the extension point.
 - 2026-10-20: MM-02 (runtime 0.0.2) extends `canvas:motion` to the board's JavaScript clock (`performance.now()`, `requestAnimationFrame` timestamps, timers with a delay) and to animations started with `element.animate()`, so frame-driven springs replay, slow and pause with CSS motion. The message is unchanged.
+- 2026-10-20: MM-03 (runtime 0.0.3) implements `canvas:pick`, `canvas:picked`, `canvas:locate` and `canvas:located`. Additions, accepted before any consumer: `canvas:picked` carries `text` (the element's own text) and `canvas:locate` accepts it, so a label that counts its way to an element (`[n]`, `nth-of-type`) is never re-attached to a neighbour after a board is regenerated. Picking happens on pointer release, because a disabled control gets no click event.

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 // The package's command line, the same for every harness. Run it from the project root, or pass --project.
-// MM-03 adds `comments`.
 //
 //   canvas view     [--project <dir>] [--port <n>]
 //   canvas render   [--canvas <id> ...] [--board <file> ...] [--out <dir>] [--jobs <n>] [--no-heights]
@@ -14,6 +13,8 @@
 //                   [--renders <dir>]
 //   canvas explore  create <id> --title t --question q [--set <set id>] [--copy <canvas>/<board> ...]
 //   canvas explore  decide <id> [--lead text]
+//   canvas comments list [--open] [--batch <id>] | wait [--timeout <s>] | take <batchId> | reply <id> "<text>" [--addressed]
+//                   | done <batchId>   (scripts/comments.mjs)
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs as parseOptions } from 'node:util';
@@ -53,7 +54,7 @@ const OPTIONS = {
   help: { type: 'boolean', short: 'h' },
 };
 
-const USAGE = `Usage: canvas <view | render | review | explore> ...  (see the header of scripts/canvas.mjs)`;
+const USAGE = `Usage: canvas <view | render | review | explore | comments> ...  (see the header of scripts/canvas.mjs)`;
 const VIEW_USAGE = 'Usage: canvas view [--project <dir>] [--port <n>]';
 
 /** The options of `canvas view`. */
@@ -103,6 +104,7 @@ async function view(argv) {
 
 export async function main(argv) {
   if (argv[0] === 'view') return view(argv);
+  if (argv[0] === 'comments') return (await import('./comments.mjs')).main(argv.slice(1));
   const { values: o, positionals } = parseOptions({ args: argv, options: OPTIONS, allowPositionals: true, strict: true });
   const [command, sub, ...rest] = positionals;
   if (o.help || !command) { console.log(USAGE); return 0; }

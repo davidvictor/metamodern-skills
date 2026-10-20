@@ -1,19 +1,20 @@
 /*
- * Canvas board runtime (board language 1, canvas-runtime 0.0.2). Written from scratch, no framework.
+ * Canvas board runtime (board language 1, canvas-runtime 0.0.3). Written from scratch, no framework.
  *
  * Every board loads this file first as ./support.js. It takes over the rest of the document so the
  * board source is read inert, loads the head in order (kits through ds/<ns>/, with React 18.3.1
  * supplied only for legacy kits), runs the board's DCLogic, expands the markup (<x-import>,
  * <dc-import>, <sc-for>, <sc-if>, {{values}}) and mounts kit components through the kit's
  * mount(el, name, props). It speaks the board side of the viewer messages (canvas:ready,
- * canvas:set-props, canvas:props-changed, canvas:motion); other message types go to handlers
- * registered on window.__canvasRuntime.on(type, handler).
+ * canvas:set-props, canvas:props-changed, canvas:motion, and for comments canvas:pick, canvas:picked,
+ * canvas:locate and canvas:located); other message types go to handlers registered on
+ * window.__canvasRuntime.on(type, handler).
  */
 (function () {
   'use strict';
   if (window.__canvasRuntime) return;
 
-  var VERSION = '0.0.2';
+  var VERSION = '0.0.3';
   var SVG = 'http://www.w3.org/2000/svg';
   var XLINK = 'http://www.w3.org/1999/xlink';
   var XML = 'http://www.w3.org/XML/1998/namespace';
@@ -928,6 +929,264 @@
       try { fn(data, event); } catch (error) { fail(data.type + ' handler failed', error); }
     });
   });
+
+  // ---------------------------------------------------------------- picking and locating (comments)
+  // canvas:pick {enabled} turns element picking on: the element under the pointer is outlined, and a click (not a
+  // drag) sends canvas:picked with that element's stable label instead of reaching the board. While picking, pointer
+  // presses never reach the board's own handlers, so nothing on the board changes. canvas:locate finds a labelled
+  // element again, after the board is drawn afresh or regenerated, and answers canvas:located with its rect or
+  // {missing: true}. Rects are in board pixels from the board's top left (document coordinates), whatever the zoom.
+  //
+  // A label is the nearest element at or above the picked one that carries, in order, data-canvas-id,
+  // data-kit-component or data-test/data-testid, then the path from it down to the picked element:
+  //   canvas-id      <id>[ > <steps>]                   (<id>[n] when the id is used more than once)
+  //   kit-component  <scope id>/<Name>[n][ > <steps>]   n counts <Name> components in document order inside the
+  //                                                      nearest data-canvas-id above it (or the whole board)
+  //   test-id        <value>[ > <steps>]                (<value>[n] when used more than once)
+  //   path           body > <steps>                     no label above the element
+  // A step is tag:nth-of-type(n).
+  var picking = { on: false, box: null, style: null, down: null };
+  var PICK_EVENTS = ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click', 'dblclick', 'auxclick', 'contextmenu', 'touchstart', 'touchend'];
+
+  function cssValue(value) { return '"' + String(value).replace(/["\\]/g, '\\$&') + '"'; }
+
+  function ownText(node) {
+    return String(node.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  }
+
+  function boardRect(node) {
+    var r = node.getBoundingClientRect();
+    var round = function (n) { return Math.round(n * 100) / 100; };
+    return { x: round(r.left + window.scrollX), y: round(r.top + window.scrollY), w: round(r.width), h: round(r.height) };
+  }
+
+  function step(node) {
+    var n = 1;
+    for (var s = node.previousElementSibling; s; s = s.previousElementSibling) if (s.localName === node.localName) n += 1;
+    return node.localName + ':nth-of-type(' + n + ')';
+  }
+
+  function stepsBetween(top, node) {
+    var steps = [];
+    for (var n = node; n && n !== top; n = n.parentElement) steps.unshift(step(n));
+    return steps.join(' > ');
+  }
+
+  function cssPath(node) {
+    if (node === document.body) return 'body';
+    if (!document.body.contains(node)) return node.localName;
+    return 'body > ' + stepsBetween(document.body, node);
+  }
+
+  function nth(list, node) {
+    for (var i = 0; i < list.length; i += 1) if (list[i] === node) return i + 1;
+    return 0;
+  }
+
+  function numbered(value, list, node) { return list.length > 1 ? value + '[' + nth(list, node) + ']' : value; }
+
+  function canvasIdKey(node) {
+    var id = node.getAttribute('data-canvas-id');
+    return numbered(id, document.querySelectorAll('[data-canvas-id=' + cssValue(id) + ']'), node);
+  }
+
+  /** The label of an element that carries one itself: {kind, key}, or null. */
+  function ownLabel(node) {
+    if (node.nodeType !== 1) return null;
+    if (node.hasAttribute('data-canvas-id')) return { kind: 'canvas-id', key: canvasIdKey(node) };
+    var kit = node.getAttribute('data-kit-component');
+    if (kit) {
+      var scope = node.parentElement && node.parentElement.closest('[data-canvas-id]');
+      var all = (scope || document).querySelectorAll('[data-kit-component=' + cssValue(kit) + ']');
+      return { kind: 'kit-component', key: (scope ? canvasIdKey(scope) : '') + '/' + kit + '[' + nth(all, node) + ']' };
+    }
+    var test = node.getAttribute('data-test') || node.getAttribute('data-testid');
+    if (test) {
+      return { kind: 'test-id', key: numbered(test, document.querySelectorAll('[data-test=' + cssValue(test) + '],[data-testid=' + cssValue(test) + ']'), node) };
+    }
+    return null;
+  }
+
+  /** Everything a comment records about an element. */
+  function describe(node) {
+    var anchor = node;
+    var own = null;
+    while (anchor && anchor !== document.documentElement && !(own = ownLabel(anchor))) anchor = anchor.parentElement;
+    var elementPath = cssPath(node);
+    var label = own ? own.key + (anchor === node ? '' : ' > ' + stepsBetween(anchor, node)) : elementPath;
+    var kits = [];
+    for (var n = node; n && n.nodeType === 1; n = n.parentElement) {
+      var name = n.getAttribute('data-kit-component');
+      if (name) kits.unshift(name);
+    }
+    var text = ownText(node);
+    var out = {
+      label: label,
+      labelKind: own ? own.kind : 'path',
+      elementPath: elementPath,
+      element: node.getAttribute('data-kit-component') || node.localName,
+      rect: boardRect(node),
+      nearbyText: text || (node.parentElement ? ownText(node.parentElement) : ''),
+      text: text,
+    };
+    if (kits.length) out.reactComponents = kits.join(' > ');
+    return out;
+  }
+
+  /** Every element that shares a label's key, and the position the key names (its [n], else the first). */
+  function keyed(kind, key) {
+    var m = /^(.*)\[(\d+)\]$/.exec(key);
+    if (kind === 'kit-component') {
+      var k = /^(.*)\/([^/]+)\[(\d+)\]$/.exec(key);
+      if (!k) return null;
+      var scope = k[1] ? only(keyed('canvas-id', k[1])) : document;
+      if (!scope) return null;
+      return { list: scope.querySelectorAll('[data-kit-component=' + cssValue(k[2]) + ']'), index: Number(k[3]) - 1 };
+    }
+    var query = function (v) {
+      return kind === 'canvas-id' ? document.querySelectorAll('[data-canvas-id=' + cssValue(v) + ']')
+        : document.querySelectorAll('[data-test=' + cssValue(v) + '],[data-testid=' + cssValue(v) + ']');
+    };
+    var exact = query(key);
+    if (exact.length || !m) return { list: exact, index: 0 };
+    return { list: query(m[1]), index: Number(m[2]) - 1 };
+  }
+
+  function only(found) { return found && found.list[found.index] ? found.list[found.index] : null; }
+
+  function walk(top, steps) {
+    var node = top;
+    for (var i = 0; i < steps.length && node; i += 1) {
+      var s = /^([^:]+):nth-of-type\((\d+)\)$/.exec(steps[i]);
+      if (!s) return null;
+      var n = Number(s[2]);
+      var found = null;
+      for (var c = node.firstElementChild; c; c = c.nextElementSibling) {
+        if (c.localName === s[1] && (n -= 1) === 0) { found = c; break; }
+      }
+      node = found;
+    }
+    return node;
+  }
+
+  var shown = function (node) { return !!node && node.isConnected && node.getClientRects().length > 0; };
+
+  /**
+   * The element a label names now, or null. A label that counts its way to an element ([n], or a path of steps) can
+   * lead to a different element once others are added or removed, so the text recorded when it was picked settles
+   * it: the element at the label's place when its text still matches, else the one element of its kind there with
+   * that text, else the element at the label's place when it is the only one of its kind (its text was edited).
+   * Otherwise it is missing, and the comment shows as moved: never attached to the wrong element.
+   */
+  function locate(message) {
+    var label = String(message.label || '');
+    var kind = message.labelKind;
+    var text = typeof message.text === 'string' && message.text ? message.text : null;
+    var found;
+    var steps;
+    if (kind === 'path') {
+      found = { list: [document.body], index: 0 };
+      steps = label === 'body' ? [] : label.replace(/^body > /, '').split(' > ');
+    } else if (kind === 'canvas-id' || kind === 'kit-component' || kind === 'test-id') {
+      var cut = label.indexOf(' > ');
+      found = keyed(kind, cut < 0 ? label : label.slice(0, cut));
+      steps = cut < 0 ? [] : label.slice(cut + 3).split(' > ');
+    } else {
+      return null;
+    }
+    if (!found) return null;
+    var tag = steps.length ? /^([^:]+)/.exec(steps[steps.length - 1])[1] : null;
+    var preferred = found.list[found.index] ? walk(found.list[found.index], steps) : null;
+    if (!text) return shown(preferred) ? preferred : null;
+    if (preferred && ownText(preferred) === text) return shown(preferred) ? preferred : null;
+    // Others of its kind: every element sharing the key (at the same steps), and inside the named one, every
+    // element with the same tag.
+    var kin = [];
+    Array.prototype.forEach.call(found.list, function (top) {
+      var n = walk(top, steps);
+      if (n && kin.indexOf(n) < 0) kin.push(n);
+      if (tag) Array.prototype.forEach.call(top.querySelectorAll(tag), function (d) { if (kin.indexOf(d) < 0) kin.push(d); });
+    });
+    var same = kin.filter(function (n) { return ownText(n) === text; });
+    if (same.length === 1) return shown(same[0]) ? same[0] : null;
+    if (same.length === 0 && kin.length === 1 && preferred === kin[0]) return shown(preferred) ? preferred : null;
+    return null;
+  }
+
+  function outline(node) {
+    if (!picking.box) {
+      picking.box = document.createElement('div');
+      picking.box.setAttribute('data-canvas-pick-box', '');
+      picking.box.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;box-sizing:border-box;'
+        + 'border:2px solid #2f6fed;background:rgba(47,111,237,.12);border-radius:2px;display:none';
+      document.documentElement.appendChild(picking.box);
+    }
+    if (!node || node === picking.box) { picking.box.style.display = 'none'; return; }
+    var r = node.getBoundingClientRect();
+    // The board may be shown scaled (a zoomed canvas): keep the outline about two screen pixels wide.
+    var scale = 1;
+    try { if (window.frameElement) scale = window.frameElement.getBoundingClientRect().width / (window.innerWidth || 1) || 1; } catch (error) { scale = 1; }
+    picking.box.style.borderWidth = Math.max(1, 2 / scale) + 'px';
+    // A light ring outside it keeps the outline visible on an element of the same colour.
+    picking.box.style.boxShadow = '0 0 0 ' + Math.max(1, 1.5 / scale) + 'px rgba(255,255,255,.95)';
+    picking.box.style.display = 'block';
+    picking.box.style.left = r.left + 'px';
+    picking.box.style.top = r.top + 'px';
+    picking.box.style.width = r.width + 'px';
+    picking.box.style.height = r.height + 'px';
+    picking.target = node;
+  }
+
+  function onPickMove(event) {
+    if (event.target && event.target.nodeType === 1) outline(event.target);
+  }
+
+  function onPickEvent(event) {
+    event.stopPropagation();
+    if (event.cancelable) event.preventDefault();
+    if (event.type === 'pointerdown' && event.button === 0) picking.down = { x: event.clientX, y: event.clientY };
+    // Picks on pointerup, not click: a disabled control gets no click event, but it gets pointer events.
+    if (event.type !== 'pointerup') return;
+    var down = picking.down;
+    picking.down = null;
+    // A drag is the viewer's (an area); only a press and release in place picks an element.
+    if (!down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > 5) return;
+    var node = document.elementFromPoint(event.clientX, event.clientY);
+    if (!node || node === picking.box) node = event.target;
+    if (!node || node.nodeType !== 1) return;
+    outline(node);
+    post('canvas:picked', describe(node));
+  }
+
+  function onPickScroll() { if (picking.target) outline(picking.target); }
+
+  function setPicking(enabled) {
+    enabled = !!enabled;
+    if (enabled === picking.on) return;
+    picking.on = enabled;
+    var method = enabled ? 'addEventListener' : 'removeEventListener';
+    PICK_EVENTS.forEach(function (type) { window[method](type, onPickEvent, true); });
+    window[method]('pointermove', onPickMove, true);
+    window[method]('scroll', onPickScroll, true);
+    if (enabled) {
+      picking.style = document.createElement('style');
+      picking.style.textContent = '*{cursor:crosshair!important;user-select:none!important}';
+      document.head.appendChild(picking.style);
+    } else {
+      if (picking.style) picking.style.remove();
+      picking.style = null;
+      outline(null);
+      picking.target = null;
+    }
+  }
+
+  runtime.on('canvas:pick', function (data) { setPicking(data.enabled); });
+  runtime.on('canvas:locate', function (data) {
+    var node = locate(data);
+    post('canvas:located', node ? { rect: boardRect(node) } : { missing: true });
+  });
+  runtime.describe = describe;
+  runtime.locate = locate;
 
   // ---------------------------------------------------------------- start
 

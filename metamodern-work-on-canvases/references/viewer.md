@@ -1,6 +1,6 @@
 # The viewer
 
-A local viewer for every canvas in a project: a home page, the canvases with pan and zoom, a finder, live reload, a kit switch per board, a properties panel and motion controls. It shows boards, adjusts their values and plays their motion; design changes are made in files. It reads the project and never writes to it.
+A local viewer for every canvas in a project: a home page, the canvases with pan and zoom, a finder, live reload, a kit switch per board, a properties panel, motion controls and comments. It shows boards, adjusts their values, plays their motion and takes comments; design changes are made in files. The only thing it writes is comments, in `comments/` ([comments.md](comments.md)).
 
 Code: [`scripts/canvas.mjs`](../scripts/canvas.mjs) (the command), [`scripts/lib/viewer-server.mjs`](../scripts/lib/viewer-server.mjs) (the server) and [`assets/viewer/`](../assets/viewer/app.js) (the browser app). Every board request goes through [`scripts/board-resolve.mjs`](../scripts/board-resolve.mjs) (contract 1); boards and the viewer talk through the messages of contract 2 ([board-language.md](board-language.md)).
 
@@ -59,10 +59,11 @@ The server watches the canvases folder and batches changes for 60 ms. The browse
 | `/_viewer/<file>` | the viewer app's own files |
 | `/_index` | `{name, groups, namespace, canvases: [{id, title, group, frozen, launch, pageless, pages, boards: [{f, t, p, x, y, w, h, kit, row, set}], about}], problems}` |
 | `/_kits` | `{namespace, pinned, live: [...], issue}`: each kit's `choice`, `name`, `exists`, `legacy` and, from `kit.json`, `namespace`, `version`, `repo`, `commit`, `branch`, `dirty`, `builtAt` |
-| `/_events` | server-sent events: `{type: "files", changes: [{canvas, file}]}`, `{type: "index"}`, `{type: "skin"}`, `{type: "kit", kit}`, `{type: "kits"}` |
+| `/_events` | server-sent events: `{type: "files", changes: [{canvas, file}]}`, `{type: "index"}`, `{type: "skin"}`, `{type: "kit", kit}`, `{type: "kits"}`, `{type: "comments"}` |
+| `/_comments`, `/_comments/…` | comments and batches: read, create, reply, resolve, place, Send all to agent ([comments.md](comments.md#viewer-routes)) |
 | `/_blob/<id>` | a file from a canvas's `assets/` or `project/assets/` (by name without extension), or from its optional `tools/blobs.json` map (`{"<id>": "<path inside the canvas folder>"}`); entries outside the canvas are ignored |
 
-Only `GET` and `HEAD` are answered.
+Only `GET` and `HEAD` are answered, except the comment routes' `POST`s, which must come from the viewer page itself (its own `Origin`, JSON).
 
 ## Keys
 
@@ -79,10 +80,11 @@ Only `GET` and `HEAD` are answered.
 | `R` `S` `P` (Shift for the page) | replay, quarter speed, pause |
 | `I`, Cmd or Ctrl backslash, `M` | side panel, sidebar, map |
 | `O`, `L` | open the board alone, copy its link |
+| `C`, Shift C | comment mode on and off, comment on the selected board ([comments.md](comments.md)) |
 | `?` | all shortcuts |
 
 A live board keeps its own keys; only Esc and modified keys reach the viewer from inside it.
 
 ## Slots for other layers
 
-The side panel takes more tabs (`PANELS` in `app.js`), the top bar has a tools group (`TOOLS`, `data-slot="tools"`), and `onBoardMessage(type, handler)` hands board messages such as `canvas:picked` to the layer that asked for them. Comments use these.
+The side panel takes more tabs (`PANELS` in `app.js`), the top bar has a tools group (`TOOLS`, `data-slot="tools"`), `onBoardMessage(type, handler)` hands board messages such as `canvas:picked` to the layer that asked for them, and `LAYERS` lets a layer take keys first, learn when a page's boards are drawn or a board's frame loads, and hear server events. Comments ([`comments.js`](../assets/viewer/comments.js)) use all of these: the Comments tab, the comment and Send all to agent buttons, and pins on the boards. A view's `liveMinZoom` lowers the zoom from which boards run live (comment mode uses 10%).
