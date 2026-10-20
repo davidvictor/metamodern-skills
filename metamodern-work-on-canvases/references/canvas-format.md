@@ -72,8 +72,9 @@ Every request a board makes is relative to its canvas's `project/` folder and re
 | any other path | a file inside `project/`; a kit copied into `project/ds/<folder>/` follows the same legacy rule |
 | a path holding an unexpanded `{{value}}` | an empty answer (HTTP 204): the browser's preload scanner reads the raw board before the runtime takes it over |
 
-Paths with `..`, `.`, empty segments, backslashes, absolute or drive paths, or encoded forms of these are refused (HTTP 400). A board's kit choice is its own link's `canvas-kit` query value, else its `ws.kit`, else `pinned`; requests the board makes carry that choice through their referrer.
+Paths with `..`, `.`, empty segments, backslashes, absolute or drive paths, or encoded forms of these are refused (HTTP 400). A board's kit choice is its own link's `canvas-kit` query value, else its `ws.kit`, else `pinned`; requests the board makes carry that choice through their referrer, and the runtime adds it to kit stylesheet links so what a stylesheet loads (fonts, images) comes from the same kit.
 
 ## Change log
 
 - 2026-10-20: first pinned version. MM-01 adds the `support/<file>` path, the generated legacy `kit.json` record and the empty answer for unexpanded values to "What a board can load".
+- 2026-10-20: MM-02 adds the board's kit choice to kit stylesheet links (no format change).

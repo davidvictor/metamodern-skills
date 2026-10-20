@@ -272,7 +272,16 @@
       var href = node.getAttribute('href');
       var kit = kitFolder(href);
       if (kit) prepareKit(kit);
-      return load('link', copyAttributes(node));
+      var attrs = copyAttributes(node);
+      // A kit stylesheet carries the board's kit choice, so what it loads (fonts, images) comes from the same kit.
+      var choice = params.get('canvas-kit');
+      if (kit && choice && attrs.href) {
+        try {
+          var sheet = new URL(attrs.href, location.href);
+          if (!sheet.searchParams.has('canvas-kit')) { sheet.searchParams.set('canvas-kit', choice); attrs.href = sheet.href; }
+        } catch (error) { /* keep the link as written */ }
+      }
+      return load('link', attrs);
     }
     if (tag === 'title') { document.title = node.textContent; return Promise.resolve(); }
     if (tag === 'meta' && node.getAttribute('charset')) return Promise.resolve();
@@ -828,7 +837,7 @@
 
   function setRate(animation, rate) {
     try {
-      if (rate === 0) { if (animation.playState === 'running') animation.pause(); animation.__canvasPaused = true; return; }
+      if (rate === 0) { if (animation.playState === 'running') { animation.pause(); animation.__canvasPaused = true; } return; }
       if (animation.__canvasPaused && animation.playState === 'paused') { animation.__canvasPaused = false; animation.play(); }
       animation.playbackRate = rate;
     } catch (error) { /* an animation that finished between listing and setting */ }
@@ -854,10 +863,15 @@
           configurable: true,
           get: function () {
             var value = startTime.get.call(this);
-            return value == null ? value : value - (document.timeline.currentTime - clock.now());
+            if (value == null) return value;
+            // The value a script set, while the animation still runs from it; otherwise converted.
+            if (this.__canvasStart != null && this.__canvasStartReal === value) return this.__canvasStart;
+            return value - (document.timeline.currentTime - clock.now());
           },
           set: function (value) {
             startTime.set.call(this, value == null ? value : value + (document.timeline.currentTime - clock.now()));
+            this.__canvasStart = value;
+            this.__canvasStartReal = startTime.get.call(this);
             if (runtime.motion.rate === 0 && value != null) { try { this.pause(); this.__canvasPaused = true; } catch (error) { /* finished */ } }
           },
         });

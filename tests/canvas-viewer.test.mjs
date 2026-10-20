@@ -395,6 +395,8 @@ test('VW-11 a pinned board and a live board of the same component sit side by si
   assert.equal(await kitVersion('button-pinned.dc.html'), pinnedVersion);
   assert.equal(await kitVersion('button-live.dc.html'), 'live-1');
   assert.match(await banner('button-pinned.dc.html'), new RegExp(`^Pinned · Fixture ${pinnedVersion.replace(/\./g, '\\.')} · [0-9a-f]{7}$`));
+  const sheet = await (await frameOf('button-live.dc.html')).evaluate(() => document.querySelector('link[href*="bundle.css"]').href);
+  assert.match(sheet, /canvas-kit=live%3Awatch/, 'a kit stylesheet carries the board\'s kit choice, so its fonts and images come from the same kit');
   assert.match(await banner('button-live.dc.html'), /^Live watch · Fixture live-1 · branch feature\/pill · [0-9a-f]{7} · uncommitted changes$/);
 });
 

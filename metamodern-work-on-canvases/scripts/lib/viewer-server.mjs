@@ -350,7 +350,7 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
       let id;
       try { id = decodeURIComponent(parts[1]); } catch { return sendText(res, 400, 'Bad request'); }
       if (!ID.test(id)) return sendText(res, 400, 'Bad request');
-      if (!blobs || !blobs.has(id)) blobs = blobMap(canvasFolders(projectRoot, config));
+      if (!blobs || !blobs.has(id) || !fs.existsSync(blobs.get(id))) blobs = blobMap(canvasFolders(projectRoot, config));
       return blobs.has(id) ? sendFile(res, blobs.get(id)) : sendText(res, 404, 'Not found');
     }
     let canvasId;
@@ -374,7 +374,14 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
     server.listen(port ?? config.port, '127.0.0.1', resolve);
   });
   const stopWatching = watch
-    ? watchProject({ projectRoot, config, getLiveKits: () => liveKits, reloadLiveKits, emit: (data) => hub.send(data) })
+    ? watchProject({
+      projectRoot, config, getLiveKits: () => liveKits, reloadLiveKits,
+      emit: (data) => {
+        // A canvas's files changed: blob ids are looked up afresh.
+        if (data.type === 'files' || data.type === 'index') blobs = null;
+        hub.send(data);
+      },
+    })
     : () => {};
   const ping = setInterval(() => hub.ping(), 25000);
   ping.unref();

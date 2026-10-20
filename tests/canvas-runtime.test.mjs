@@ -298,6 +298,18 @@ test('RT-12 canvas:motion scales the board clock: a frame-driven spring takes ab
   });
   assert.equal(paused.state, 'paused');
   assert.ok(paused.time < 50, `held near its start: ${paused.time} ms`);
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0.25 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0.25);
+  const kept = await frame.evaluate(async () => {
+    const a = document.body.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 1000 });
+    const set = performance.now();
+    a.startTime = set;
+    for (let i = 0; i < 5; i += 1) await new Promise((r) => requestAnimationFrame(() => r()));
+    const read = a.startTime;
+    a.cancel();
+    return read - set;
+  });
+  assert.equal(kept, 0, 'a startTime a script set reads back unchanged');
   await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
   await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1);
   const started = await frame.evaluate(() => {
