@@ -145,9 +145,9 @@
     {
       "name": "metamodern-work-on-canvases",
       "path": "metamodern-work-on-canvases",
-      "version": "0.0.1",
+      "version": "0.0.3",
       "category": "brand-and-design",
-      "summary": "Run design canvases that mount a project's real component kit on a shared board runtime, with the canvas format and kit contract."
+      "summary": "Build, render-check and review design canvases that mount a project's real component kit on a shared board runtime."
     }
   ]
 }

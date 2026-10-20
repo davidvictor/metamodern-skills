@@ -3,3 +3,27 @@
 .board-title { margin: 0; font-size: 20px; line-height: 28px; font-weight: 600; }
 .board-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .board-note { margin: 0; color: #5f6166; }
+
+/* Board shells written by the package's board builder (scripts/board-builder.mjs). */
+.board-shell { gap: 24px; padding: 32px; font: 14px/20px system-ui, -apple-system, "Segoe UI", sans-serif; background: #ffffff; color: #1c1d1f; }
+.board-shell[data-theme="dark"] { background: #141517; color: #ececea; }
+.shell-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+.shell-where, .shell-summary, .shell-cell-label, .shell-section-desc, .shell-foot { margin: 0; color: #5f6166; }
+.board-shell[data-theme="dark"] :is(.shell-where, .shell-summary, .shell-cell-label, .shell-section-desc, .shell-foot) { color: #a3a5aa; }
+.board-shell[data-contrast="high"] :is(.shell-where, .shell-summary, .shell-cell-label, .shell-section-desc, .shell-foot) { color: inherit; }
+.shell-title { margin: 4px 0; font-size: 20px; line-height: 28px; font-weight: 600; }
+.shell-tags { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.shell-tag { padding: 2px 10px; border: 1px solid currentColor; border-radius: 999px; font-size: 12px; }
+.shell-stage { display: flex; flex-direction: column; gap: 24px; }
+.shell-section { display: flex; flex-direction: column; gap: 12px; }
+.shell-section-title { margin: 0; font-size: 15px; line-height: 20px; font-weight: 600; text-transform: capitalize; }
+.shell-section p { margin: 0; }
+.shell-grid, .shell-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+.shell-cell { display: flex; flex-direction: column; gap: 8px; min-width: 120px; }
+.shell-cell-label { font-size: 12px; }
+.shell-foot { display: flex; gap: 24px; font-size: 12px; }
+.swatch-chip { display: block; width: 120px; height: 48px; border-radius: 8px; border: 1px solid rgb(0 0 0 / 0.12); }
+.space-bar { display: block; height: 16px; background: #2457c5; }
+.radius-box { display: block; width: 64px; height: 48px; border: 2px solid #2457c5; }
+.archive-picture { display: block; max-width: 100%; height: auto; border: 1px solid #d9dad6; }
+.archive-list { margin: 0; padding-left: 20px; }

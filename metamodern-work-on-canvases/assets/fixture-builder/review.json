@@ -1,0 +1,80 @@
+{
+  "schema": "canvas-review/1",
+  "sets": [
+    {
+      "id": "tasks-due-dates",
+      "page": "tasks",
+      "title": "Due dates in the list",
+      "question": "How does a task show when it is due?",
+      "lead": "The due date as a quiet badge after the owner.",
+      "status": "ready",
+      "waits_on": [],
+      "replaces": [],
+      "canvas": null,
+      "boards": ["D_due_badges.dc.html"],
+      "locked": null,
+      "build": { "issue": null, "pr": null, "branch": null },
+      "live": { "commit": null }
+    },
+    {
+      "id": "tasks-filter",
+      "page": "tasks",
+      "title": "Filtering by owner",
+      "question": "How do you see one person's tasks?",
+      "lead": "Tabs above the list, one per member.",
+      "status": "waiting",
+      "waits_on": ["tasks-due-dates"],
+      "replaces": [],
+      "canvas": null,
+      "boards": ["D_filter_tabs.dc.html"],
+      "locked": null,
+      "build": { "issue": null, "pr": null, "branch": null },
+      "live": { "commit": null }
+    },
+    {
+      "id": "tasks-done",
+      "page": "tasks",
+      "title": "Done tasks",
+      "question": "How does a finished task look?",
+      "lead": "It keeps its place with a check.",
+      "status": "building",
+      "waits_on": [],
+      "replaces": [],
+      "canvas": null,
+      "boards": ["B_done_check.dc.html"],
+      "locked": { "date": "2026-10-19", "words": "Keep the check, build it.", "harness": "claude-code" },
+      "build": { "issue": 12, "pr": "https://example.com/pulls/12", "branch": "claude/lock-tasks-done" },
+      "live": { "commit": null }
+    },
+    {
+      "id": "tasks-bulk",
+      "page": "tasks",
+      "title": "Moving several tasks",
+      "question": "How do you move many tasks at once?",
+      "lead": "Select tasks, then one Move button.",
+      "status": "next",
+      "waits_on": [],
+      "replaces": [],
+      "canvas": null,
+      "boards": ["N_bulk_move.dc.html"],
+      "locked": null,
+      "build": { "issue": null, "pr": null, "branch": null },
+      "live": { "commit": null }
+    },
+    {
+      "id": "tasks-history",
+      "page": "tasks",
+      "title": "A task's history",
+      "question": "Where do you see who changed a task?",
+      "lead": "One line under the title, newest change last.",
+      "status": "later",
+      "waits_on": [],
+      "replaces": [],
+      "canvas": null,
+      "boards": ["L_history.dc.html"],
+      "locked": null,
+      "build": { "issue": null, "pr": null, "branch": null },
+      "live": { "commit": null }
+    }
+  ]
+}

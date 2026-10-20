@@ -207,7 +207,7 @@ test('RT-07 viewer messages: canvas:ready, canvas:set-props and canvas:props-cha
   assert.equal(ready.values.limit, 4);
   assert.equal(ready.kit.mode, 'pinned');
   assert.match(ready.kit.ref, /^[0-9a-f]{40}$/);
-  assert.equal(ready.kit.version, '0.0.1-fixture');
+  assert.equal(ready.kit.version, `${(await fs.readFile(path.join(PACKAGE, 'PACKAGE_VERSION'), 'utf8')).trim().split('@').pop()}-fixture`);
   await page.evaluate(() => window.send({ type: 'canvas:set-props', values: { theme: 'dark', limit: 2, heading: 'Next week' } }));
   await page.waitForFunction(() => window.__messages.some((m) => m.type === 'canvas:props-changed' && m.values.theme === 'dark'));
   await frame.waitForFunction(() => document.querySelector('[data-kit-component="Root"]')?.dataset.theme === 'dark' && document.querySelector('h1')?.textContent === 'Next week');
