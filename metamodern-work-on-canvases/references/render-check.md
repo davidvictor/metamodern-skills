@@ -11,7 +11,7 @@ Code: [`scripts/render-check.mjs`](../scripts/render-check.mjs) (`renderCheck()`
 ## What it does
 
 1. Reads `canvas.config.json`, `.canvas/live.json` and each canvas's `project/canvas.json`.
-2. Serves every canvas through board resolution (contract 1) on `127.0.0.1`, so each board loads exactly what the viewer gives it, including its own kit choice (`ws.kit`).
+2. Serves every canvas on `127.0.0.1` through the board handler the viewer uses (board resolution, contract 1), so each board loads exactly what the viewer gives it, including its own kit choice (`ws.kit`).
 3. Opens every board in headless Chromium at its own size, in each theme variant, several pages at a time (`--jobs`, default half the processors, from 2 to 8).
 4. Waits for the runtime's `canvas:ready`, every mount, images and fonts. No fixed waits.
 5. Saves a screenshot per board per variant and writes a report.

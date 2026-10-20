@@ -1,5 +1,5 @@
 /*
- * Canvas board runtime (board language 1, canvas-runtime 0.0.1). Written from scratch, no framework.
+ * Canvas board runtime (board language 1, canvas-runtime 0.0.2). Written from scratch, no framework.
  *
  * Every board loads this file first as ./support.js. It takes over the rest of the document so the
  * board source is read inert, loads the head in order (kits through ds/<ns>/, with React 18.3.1
@@ -13,7 +13,7 @@
   'use strict';
   if (window.__canvasRuntime) return;
 
-  var VERSION = '0.0.1';
+  var VERSION = '0.0.2';
   var SVG = 'http://www.w3.org/2000/svg';
   var XLINK = 'http://www.w3.org/1999/xlink';
   var XML = 'http://www.w3.org/XML/1998/namespace';
@@ -22,6 +22,119 @@
   var boardFile = decodeURIComponent(location.pathname.split('/').pop() || '');
   var boardId = boardFile.replace(/\.dc\.html$/, '');
   var params = new URLSearchParams(location.search);
+
+  // ---------------------------------------------------------------- the motion clock
+  // canvas:motion scales the board's JavaScript clock as well as its Web Animations. performance.now(),
+  // requestAnimationFrame timestamps and timers with a delay (setTimeout, setInterval) run at the motion rate
+  // (0 freezes them) and stay continuous when the rate changes, so spring, frame and timer-driven motion slows
+  // and pauses with CSS motion. Timers with no delay stay immediate, and Date.now() stays real. Installed
+  // before any kit script runs, so a library that keeps a reference to one of these functions gets this one.
+  var clock = (function () {
+    var perf = window.performance;
+    var realNow = perf && perf.now ? perf.now.bind(perf) : function () { return Date.now(); };
+    var realRaf = window.requestAnimationFrame ? window.requestAnimationFrame.bind(window) : null;
+    var realSetTimeout = window.setTimeout.bind(window);
+    var realClearTimeout = window.clearTimeout.bind(window);
+    var realClearInterval = window.clearInterval.bind(window);
+    var rate = 1;
+    var from = realNow();
+    var base = from;
+    var last = from;
+    function at(real) {
+      var virtual = base + (real - from) * rate;
+      if (virtual < last) virtual = last;
+      last = virtual;
+      return virtual;
+    }
+    function now() { return at(realNow()); }
+    try { if (perf) perf.now = function now$() { return now(); }; } catch (error) { /* a read-only performance object */ }
+    // Every callback of one frame gets the same timestamp, as in the browser.
+    var frameReal = null;
+    var frameVirtual = 0;
+    function frameAt(timestamp) {
+      if (timestamp !== frameReal) {
+        frameReal = timestamp;
+        frameVirtual = Math.max(base, base + (timestamp - from) * rate);
+      }
+      return frameVirtual;
+    }
+    if (realRaf) {
+      window.requestAnimationFrame = function requestAnimationFrame(callback) {
+        return realRaf(function (timestamp) { callback(frameAt(timestamp)); });
+      };
+    }
+
+    // Timers with a delay wait in board time. Their ids start far above the browser's own.
+    var timers = {};
+    var nextId = 1000000000;
+    function schedule(timer) {
+      if (timer.handle != null) realClearTimeout(timer.handle);
+      timer.handle = null;
+      if (rate === 0) return;
+      timer.handle = realSetTimeout(function () { fire(timer); }, Math.max(0, Math.ceil((timer.due - now()) / rate)));
+    }
+    function fire(timer) {
+      timer.handle = null;
+      var current = now();
+      // Never early: the browser may round a delay down.
+      if (current < timer.due) { schedule(timer); return; }
+      if (timer.interval != null) {
+        timer.due += timer.interval;
+        // Missed beats (a throttled frame) are skipped, as browsers do, rather than caught up.
+        if (timer.due <= current) timer.due = current + timer.interval - ((current - timer.due) % timer.interval);
+        schedule(timer);
+      } else {
+        delete timers[timer.id];
+      }
+      timer.fn.apply(window, timer.args);
+    }
+    function add(fn, delay, args, repeat) {
+      var ms = Number(delay) || 0;
+      if (typeof fn !== 'function' || !(ms > 0)) return null;
+      var timer = { id: nextId++, fn: fn, args: args, due: now() + ms, interval: repeat ? ms : null, handle: null };
+      timers[timer.id] = timer;
+      schedule(timer);
+      return timer.id;
+    }
+    function clear(id) {
+      var timer = timers[id];
+      if (!timer) return false;
+      if (timer.handle != null) realClearTimeout(timer.handle);
+      delete timers[id];
+      return true;
+    }
+    var realSetInterval = window.setInterval.bind(window);
+    window.setTimeout = function setTimeout(fn, delay) {
+      var id = add(fn, delay, Array.prototype.slice.call(arguments, 2), false);
+      return id != null ? id : realSetTimeout.apply(window, arguments);
+    };
+    window.setInterval = function setInterval(fn, delay) {
+      var id = add(fn, delay, Array.prototype.slice.call(arguments, 2), true);
+      return id != null ? id : realSetInterval.apply(window, arguments);
+    };
+    window.clearTimeout = function clearTimeout(id) { if (!clear(id)) realClearTimeout(id); };
+    window.clearInterval = function clearInterval(id) { if (!clear(id)) realClearInterval(id); };
+
+    return {
+      now: now,
+      // Back to the browser's clock (a replay draws the board afresh, so nothing in it can see the jump).
+      resync: function () {
+        var real = realNow();
+        base = real;
+        from = real;
+        last = Math.min(last, real);
+        frameReal = null;
+        Object.keys(timers).forEach(function (id) { schedule(timers[id]); });
+      },
+      setRate: function (next) {
+        var real = realNow();
+        base = at(real);
+        from = real;
+        rate = next;
+        Object.keys(timers).forEach(function (id) { schedule(timers[id]); });
+      },
+    };
+  })();
 
   var handlers = {};
   var readyResolve;
@@ -37,6 +150,7 @@
     kit: null,
     kits: {},
     motion: { rate: 1 },
+    clock: clock,
     render: function () { scheduleRender(); },
   });
 
@@ -158,7 +272,16 @@
       var href = node.getAttribute('href');
       var kit = kitFolder(href);
       if (kit) prepareKit(kit);
-      return load('link', copyAttributes(node));
+      var attrs = copyAttributes(node);
+      // A kit stylesheet carries the board's kit choice, so what it loads (fonts, images) comes from the same kit.
+      var choice = params.get('canvas-kit');
+      if (kit && choice && attrs.href) {
+        try {
+          var sheet = new URL(attrs.href, location.href);
+          if (!sheet.searchParams.has('canvas-kit')) { sheet.searchParams.set('canvas-kit', choice); attrs.href = sheet.href; }
+        } catch (error) { /* keep the link as written */ }
+      }
+      return load('link', attrs);
     }
     if (tag === 'title') { document.title = node.textContent; return Promise.resolve(); }
     if (tag === 'meta' && node.getAttribute('charset')) return Promise.resolve();
@@ -714,7 +837,7 @@
 
   function setRate(animation, rate) {
     try {
-      if (rate === 0) { if (animation.playState === 'running') animation.pause(); animation.__canvasPaused = true; return; }
+      if (rate === 0) { if (animation.playState === 'running') { animation.pause(); animation.__canvasPaused = true; } return; }
       if (animation.__canvasPaused && animation.playState === 'paused') { animation.__canvasPaused = false; animation.play(); }
       animation.playbackRate = rate;
     } catch (error) { /* an animation that finished between listing and setting */ }
@@ -726,10 +849,44 @@
     event.target.getAnimations().forEach(function (animation) { setRate(animation, rate); });
   }
 
+  // Animations a script starts with element.animate() (motion libraries do) start at the current rate.
+  if (window.Element && Element.prototype.animate) {
+    var realAnimate = Element.prototype.animate;
+    var startTime = window.Animation && Object.getOwnPropertyDescriptor(Animation.prototype, 'startTime');
+    Element.prototype.animate = function animate() {
+      var animation = realAnimate.apply(this, arguments);
+      if (startTime && startTime.get && startTime.set && document.timeline) {
+        // A script that sets startTime from performance.now() means board time; the timeline runs on the
+        // browser's clock, so the value is moved by the difference. Setting it plays a paused animation, so
+        // a paused board pauses it again.
+        Object.defineProperty(animation, 'startTime', {
+          configurable: true,
+          get: function () {
+            var value = startTime.get.call(this);
+            if (value == null) return value;
+            // The value a script set, while the animation still runs from it; otherwise converted.
+            if (this.__canvasStart != null && this.__canvasStartReal === value) return this.__canvasStart;
+            return value - (document.timeline.currentTime - clock.now());
+          },
+          set: function (value) {
+            startTime.set.call(this, value == null ? value : value + (document.timeline.currentTime - clock.now()));
+            this.__canvasStart = value;
+            this.__canvasStartReal = startTime.get.call(this);
+            if (runtime.motion.rate === 0 && value != null) { try { this.pause(); this.__canvasPaused = true; } catch (error) { /* finished */ } }
+          },
+        });
+      }
+      if (runtime.motion.rate !== 1) setRate(animation, runtime.motion.rate);
+      return animation;
+    };
+  }
+
   function motion(message) {
     var rate = Number(message.rate);
     if (!(rate >= 0) || !isFinite(rate)) return;
     runtime.motion.rate = rate;
+    if (message.replay) clock.resync();
+    clock.setRate(rate);
     if (message.replay) {
       // Replay: draw the board afresh so entrance motion runs again, then restart animations still on the page.
       managed.forEach(unmountTree);

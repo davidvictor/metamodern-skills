@@ -6,15 +6,16 @@
 //   node scripts/canvas.mjs render [--project <dir>] [--canvas <id> ...] [--board <file> ...] [--out <dir>]
 //        [--jobs <n>] [--no-heights]
 //
-// Boards are served through board-resolve.mjs by the package's small board server (serveBoards below), so a
+// Boards are served through board-resolve.mjs by the shared board handler the viewer uses (serveBoards below), so a
 // board loads exactly what the viewer would give it, its own kit choice included.
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { readCanvas, readConfig, readLiveKits } from './canvas-format.mjs';
 import { writeHeights, stableJson } from './board-builder.mjs';
-import { startBoardServer } from './lib/board-server.mjs';
+import { localHost, sendText, serveBoardRequest } from './lib/board-server.mjs';
 import { openBoard } from './lib/check-board.mjs';
 import { chromium } from './tooling.mjs';
 
@@ -92,10 +93,31 @@ export async function projectCanvases(projectRoot, config) {
   return found;
 }
 
-/** The small, isolated server part: serves every canvas's project/ folder through board resolution on 127.0.0.1. */
-export function serveBoards({ projectRoot, config, canvasDirs, liveKits }) {
-  const canvases = Object.fromEntries(Object.entries(canvasDirs).map(([id, dir]) => [id, path.join(dir, 'project')]));
-  return startBoardServer({ projectRoot, config, canvases, liveKits });
+/**
+ * The small, isolated server part: /<canvas>/project/<path> for every canvas, on 127.0.0.1 only, answered by the
+ * shared board handler the viewer uses (serveBoardRequest), so a board loads exactly what the viewer gives it.
+ */
+export function serveBoards({ projectRoot, config, canvasDirs, liveKits = {} }) {
+  const server = http.createServer((req, res) => {
+    if (!localHost(req)) return sendText(res, 403, 'Forbidden');
+    let url;
+    let canvasId;
+    try {
+      url = new URL(req.url ?? '/', 'http://127.0.0.1');
+      canvasId = decodeURIComponent(url.pathname.split('/')[1] ?? '');
+    } catch {
+      return sendText(res, 400, 'Bad request');
+    }
+    const parts = url.pathname.split('/');
+    if (parts[2] !== 'project' || !Object.hasOwn(canvasDirs, canvasId)) return sendText(res, 404, 'Not found');
+    return serveBoardRequest({ req, res, url, projectRoot, config, projectDir: path.join(canvasDirs[canvasId], 'project'), requestPath: parts.slice(3).join('/'), liveKits });
+  });
+  return new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      resolve({ origin: `http://127.0.0.1:${server.address().port}`, close: () => new Promise((r) => { server.closeAllConnections?.(); server.close(r); }) });
+    });
+  });
 }
 
 // Runs inside the board page after it is ready: waits for images and fonts, then reports images with no picture,

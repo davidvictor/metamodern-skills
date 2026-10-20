@@ -51,4 +51,6 @@
 .fx-scene { display: flex; flex-direction: column; gap: 16px; padding: 24px; }
 @keyframes fx-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fx-rise { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+.fx-spring-track { position: relative; height: 24px; width: 200px; }
+.fx-spring { width: 24px; height: 24px; border-radius: 6px; background: var(--fx-accent, #2457c5); }
 @media (prefers-reduced-motion: reduce) { .fx-overlay, .fx-dialog { animation: none; } .fx-tab-indicator, .fx-button { transition: none; } }

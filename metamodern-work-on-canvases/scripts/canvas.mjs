@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // The package's command line, the same for every harness. Run it from the project root, or pass --project.
+// MM-03 adds `comments`.
 //
+//   canvas view     [--project <dir>] [--port <n>]
 //   canvas render   [--canvas <id> ...] [--board <file> ...] [--out <dir>] [--jobs <n>] [--no-heights]
 //   canvas review   validate | list
 //   canvas review   create <id> --page <page> [--title t] [--question q] [--lead l] [--status s] [--waits-on id ...]
@@ -14,7 +16,9 @@
 //   canvas explore  decide <id> [--lead text]
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
+import { parseArgs as parseOptions } from 'node:util';
+import { readConfig } from './canvas-format.mjs';
+import { findProject, startViewer } from './lib/viewer-server.mjs';
 import { renderCheck } from './render-check.mjs';
 import { archiveSet, createSet, lockSet, readReview, setStatus, statusRow, validateReview, writeReview } from './review-sets.mjs';
 import { createExploration, decideExploration } from './explore.mjs';
@@ -49,10 +53,57 @@ const OPTIONS = {
   help: { type: 'boolean', short: 'h' },
 };
 
-const USAGE = `Usage: canvas <render | review | explore> ...  (see the header of scripts/canvas.mjs)`;
+const USAGE = `Usage: canvas <view | render | review | explore> ...  (see the header of scripts/canvas.mjs)`;
+const VIEW_USAGE = 'Usage: canvas view [--project <dir>] [--port <n>]';
+
+/** The options of `canvas view`. */
+export function parseArgs(argv) {
+  const [command, ...rest] = argv;
+  const options = { command };
+  for (let i = 0; i < rest.length; i += 1) {
+    const flag = rest[i];
+    if (flag === '--project' || flag === '--port') {
+      const value = rest[i + 1];
+      if (value === undefined || value.startsWith('--')) throw new Error(`${flag} needs a value`);
+      options[flag.slice(2)] = value;
+      i += 1;
+    } else {
+      throw new Error(`Unknown option ${flag}`);
+    }
+  }
+  if (options.port !== undefined) {
+    const port = Number(options.port);
+    if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('--port must be an integer from 0 to 65535');
+    options.port = port;
+  }
+  return options;
+}
+
+// `view` starts the viewer for the project that holds canvas.config.json (the --project folder, or the nearest one
+// at or above the working directory) on 127.0.0.1, at the config's port unless --port is given. It keeps running and
+// returns null.
+async function view(argv) {
+  let options;
+  try { options = parseArgs(argv); } catch (error) { console.error(`${error.message}\n${VIEW_USAGE}`); return 1; }
+  const projectRoot = options.project ? path.resolve(options.project) : findProject();
+  if (!projectRoot) { console.error('No canvas.config.json in this folder or above it. Pass --project <dir>.'); return 1; }
+  let config;
+  try { config = await readConfig(projectRoot); } catch (error) { console.error(`canvas.config.json: ${error.message}`); return 1; }
+  try {
+    const viewer = await startViewer({ projectRoot, config, port: options.port, quiet: false });
+    const stop = () => viewer.close().then(() => process.exit(0));
+    process.on('SIGINT', stop);
+    process.on('SIGTERM', stop);
+  } catch (error) {
+    console.error(error.code === 'EADDRINUSE' ? `Port ${options.port ?? config.port} is in use. Pass --port <n>.` : error.message);
+    return 1;
+  }
+  return null;
+}
 
 export async function main(argv) {
-  const { values: o, positionals } = parseArgs({ args: argv, options: OPTIONS, allowPositionals: true, strict: true });
+  if (argv[0] === 'view') return view(argv);
+  const { values: o, positionals } = parseOptions({ args: argv, options: OPTIONS, allowPositionals: true, strict: true });
   const [command, sub, ...rest] = positionals;
   if (o.help || !command) { console.log(USAGE); return 0; }
   const project = path.resolve(o.project ?? process.cwd());
@@ -147,5 +198,5 @@ export async function main(argv) {
 
 const self = process.argv[1] && path.resolve(process.argv[1]);
 if (self && self === fileURLToPath(import.meta.url)) {
-  main(process.argv.slice(2)).then((code) => { process.exitCode = code; }, (error) => { console.error(error.message); process.exitCode = error.code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION' ? 2 : 1; });
+  main(process.argv.slice(2)).then((code) => { if (code !== null) process.exitCode = code; }, (error) => { console.error(error.message); process.exitCode = error.code === 'ERR_PARSE_ARGS_UNKNOWN_OPTION' ? 2 : 1; });
 }
