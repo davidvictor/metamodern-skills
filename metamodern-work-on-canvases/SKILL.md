@@ -20,6 +20,7 @@ The package is the runner, the file format and the method. The project owns its 
 - Boards that are recorded, rendered for the decision-maker, or used as a lead or a Live row use the pinned kit. A live worktree kit is only for boards switched to it during a lab session, and the banner shows it.
 - Lock only with the decision-maker's own words. A lock that needs a database, API or permission change stops and goes back as product work.
 - Generated boards are never edited by hand, and no canvas gets its own copy of the tooling. The installed package is never edited in the project.
+- Never resolve, hand-edit or delete a comment: reply through `canvas comments`, and leave resolving to the person who commented.
 - Never open or copy a hosted canvas runtime script. Copy on boards is plain and final.
 
 ## Working loops
@@ -34,7 +35,7 @@ Each loop is described in [the method](references/method.md):
 6. **Locking:** `canvas review lock` with the words, then the build from `builds/<set>.md` in the product's repository.
 7. **Keeping Live current:** run the project's kit sync after a build merges and before rendering for a decision, then rebuild and render-check.
 8. **Archiving:** `canvas review archive` keeps replaced or set-aside boards as pictures.
-9. **Comments:** `canvas comments wait`, `take`, `reply --addressed`, `done`, after the decision-maker presses Send all to agent.
+9. **Comments** ([comments.md](references/comments.md)): `canvas comments wait`, `take`, `reply --addressed`, `done`, after the decision-maker presses Send all to agent.
 
 ## Commands
 
@@ -62,5 +63,6 @@ Install the browser tooling once per machine, outside the repository: `node scri
 - [Board builder](references/board-builder.md): the library every builder script uses, and exploration canvases.
 - [Render check](references/render-check.md): what fails a board, theme variants, screenshots and heights.
 - [Review sets and build briefs](references/review-sets.md): `review.json`, rows, lock briefs and the archive canvas.
+- [Comments](references/comments.md): click-to-comment in the viewer, comment files in Agentation's format, threads and states, Send all to agent, re-attachment, and the agent's command line.
 
 Existing boards can be run unchanged on the runtime with `node scripts/compat-check.mjs --canvas <folder> --kit <Namespace>=<kit folder> --out <evidence folder>`, and a kit folder checked with `validateKitFolder(dir)` from `scripts/kit-contract.mjs`.

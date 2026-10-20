@@ -1,5 +1,5 @@
-// The canvas viewer's server: every canvas in a project, live, on 127.0.0.1 only. A viewer, never an editor:
-// nothing here writes to the project. Node built-ins only.
+// The canvas viewer's server: every canvas in a project, live, on 127.0.0.1 only. A viewer, never an editor: the
+// only thing it writes is comments (comments/, contract 4), on the person's actions. Node built-ins only.
 //
 //   /                                   the home page (the viewer app)
 //   /<canvas>/  /<canvas>/<page>/  /<canvas>/<page>/<board>   viewer links (contract 1), the viewer app
@@ -9,6 +9,9 @@
 //   /_kits                              the pinned kit and every live kit, from their kit.json
 //   /_events                            server-sent events: file changes, kit rebuilds, live kit registry
 //   /_blob/<id>                         a file from a canvas's assets/ folders or its tools/blobs.json map
+//   /_comments                          GET every comment and batch; POST a new comment
+//   /_comments/<id>/reply|resolve|place POST a person's reply, resolving, or where the comment's element is now
+//   /_comments/send                     POST: Send all to agent, one batch of every open comment
 import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
@@ -16,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { GROUPS, isFrozen, parseViewerLink, readConfig, readLiveKits, validateCanvas } from '../canvas-format.mjs';
 import { kitDirFor } from '../board-resolve.mjs';
 import { localHost, sendFile, sendText, serveBoardRequest, TYPES } from './board-server.mjs';
+import { COMMENT_ID, commentsRoot, createComment, placeComment, readBatchReport, readComments, replyToComment, resolveComment, sendAll } from './comment-store.mjs';
 
 export const VIEWER_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'viewer');
 const ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -198,6 +202,7 @@ const mtime = (file) => { try { return fs.statSync(file).mtimeMs; } catch { retu
  *   {type: 'skin'}                                the project skin changed
  *   {type: 'kit', kit: 'pinned' | 'live:<name>'}  a kit was rebuilt (its kit.json, or any bundle file of a legacy kit)
  *   {type: 'kits'}                                .canvas/live.json changed
+ *   {type: 'comments'}                            a comment or batch file changed
  */
 function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }) {
   const closers = [];
@@ -303,7 +308,101 @@ function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }
   fs.watchFile(liveFile, { interval: KIT_POLL_MS }, onLive);
   closers.push(() => fs.unwatchFile(liveFile, onLive));
 
+  // Comments: any change under comments/ (an agent's reply, a new batch) tells the browser to read them again. A
+  // recursive watch reports most changes at once; a poll of the files' names, sizes and times every 300 ms catches
+  // what it misses (folders created after the watch began, systems without recursive watching).
+  const commentsDir = commentsRoot(projectRoot);
+  let commentWatcher = null;
+  let commentRetry = null;
+  let commentTimer = null;
+  const commentSignature = () => {
+    const parts = [];
+    let dirs = [];
+    try { dirs = fs.readdirSync(commentsDir, { withFileTypes: true }); } catch { return ''; }
+    for (const d of dirs) {
+      if (!d.isDirectory()) continue;
+      let files = [];
+      try { files = fs.readdirSync(path.join(commentsDir, d.name)); } catch { continue; }
+      for (const f of files) {
+        if (!f.endsWith('.json')) continue;
+        try { const st = fs.statSync(path.join(commentsDir, d.name, f)); parts.push(`${d.name}/${f}:${st.size}:${st.mtimeMs}`); } catch { /* replaced meanwhile */ }
+      }
+    }
+    return parts.sort().join('|');
+  };
+  let commentSig = commentSignature();
+  const announce = () => {
+    if (!commentTimer) commentTimer = setTimeout(() => { commentTimer = null; commentSig = commentSignature(); emit({ type: 'comments' }); }, 40);
+  };
+  // Every event counts, temporary and lock files included: a rename may be reported under the temporary name only.
+  const watchComments = () => {
+    commentRetry = null;
+    if (closed) return;
+    try {
+      const mine = fs.watch(commentsDir, { recursive: true }, announce);
+      commentWatcher = mine;
+      mine.on('error', () => { mine.close(); if (commentWatcher === mine) commentWatcher = null; if (!closed) commentRetry = setTimeout(watchComments, 1000); });
+    } catch {
+      commentRetry = setTimeout(watchComments, 1000);
+    }
+  };
+  watchComments();
+  const commentPoll = setInterval(() => { if (!commentTimer && commentSignature() !== commentSig) announce(); }, 300);
+  commentPoll.unref?.();
+  closers.push(() => { clearTimeout(commentRetry); clearTimeout(commentTimer); clearInterval(commentPoll); commentWatcher?.close(); });
+
   return () => { clearTimeout(timer); for (const close of closers) close(); };
+}
+
+const MAX_BODY = 256 * 1024;
+
+/** A JSON body from the viewer page itself: same origin, JSON, at most 256 KB. */
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const origin = req.headers.origin;
+    if (origin !== `http://${req.headers.host}`) return reject(Object.assign(new Error('Forbidden'), { status: 403 }));
+    if (!String(req.headers['content-type'] ?? '').startsWith('application/json')) return reject(Object.assign(new Error('JSON only'), { status: 415 }));
+    let size = 0;
+    const chunks = [];
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > MAX_BODY) { reject(Object.assign(new Error('Too large'), { status: 413 })); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => {
+      try { resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {}); }
+      catch { reject(Object.assign(new Error('Not JSON'), { status: 400 })); }
+    });
+    req.on('error', reject);
+  });
+}
+
+/** The comment routes. Writes go through comment-store.mjs (atomic, locked); the watcher tells every viewer. */
+async function serveComments({ req, res, parts, projectRoot, canvases }) {
+  const json = (status, value) => sendText(res, status, JSON.stringify(value), TYPES['.json']);
+  try {
+    if (req.method === 'GET' && parts.length === 1) {
+      const { comments, problems } = await readComments(projectRoot);
+      const report = await readBatchReport(projectRoot);
+      return json(200, { comments, batches: report.batches, unreadableBatches: [...report.unreadable], problems: problems.concat(report.problems) });
+    }
+    if (req.method !== 'POST') return sendText(res, 405, 'Method not allowed');
+    const body = await readBody(req);
+    if (parts.length === 1) {
+      if (!canvases().has(body?.canvas)) return json(400, { error: `No canvas named ${body?.canvas}` });
+      return json(201, await createComment(projectRoot, body));
+    }
+    if (parts.length === 2 && parts[1] === 'send') return json(200, { batch: await sendAll(projectRoot) });
+    const [, id, action] = parts;
+    if (parts.length !== 3 || !COMMENT_ID.test(id ?? '')) return sendText(res, 404, 'Not found');
+    if (action === 'reply') return json(200, await replyToComment(projectRoot, id, { role: 'human', content: body.content }));
+    if (action === 'resolve') return json(200, await resolveComment(projectRoot, id));
+    if (action === 'place') return json(200, await placeComment(projectRoot, id, body));
+    return sendText(res, 404, 'Not found');
+  } catch (error) {
+    if (res.headersSent) return undefined;
+    return json(error.status ?? (/^No comment/.test(error.message) ? 404 : 400), { error: error.message });
+  }
 }
 
 /**
@@ -327,7 +426,6 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
 
   const server = http.createServer((req, res) => {
     if (!localHost(req)) return sendText(res, 403, 'Forbidden');
-    if (req.method !== 'GET' && req.method !== 'HEAD') return sendText(res, 405, 'Method not allowed');
     let url;
     let parts;
     try {
@@ -337,6 +435,8 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
       return sendText(res, 400, 'Bad request');
     }
     const [head] = parts;
+    if (head === '_comments') return serveComments({ req, res, parts, projectRoot, canvases: () => canvasFolders(projectRoot, config) });
+    if (req.method !== 'GET' && req.method !== 'HEAD') return sendText(res, 405, 'Method not allowed');
     if (head === '_viewer') {
       const name = parts.length === 2 ? parts[1] : '';
       return viewerFiles.has(name) ? sendFile(res, path.join(VIEWER_DIR, name)) : sendText(res, 404, 'Not found');

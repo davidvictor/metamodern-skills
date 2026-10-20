@@ -90,10 +90,10 @@ When a set goes live and `replaces` other sets, or a set is set aside, archive i
 
 ## The comment loop
 
-The decision-maker comments on boards in the viewer and presses **Send all to agent**, which bundles every open comment into one batch.
+The decision-maker comments on boards in the viewer and presses **Send all to agent**, which bundles every open comment into one batch. The files, states and command line are in [comments.md](comments.md); in an installed project the commands run as `npm run canvas -- comments ...`.
 
 - **Listening:** `canvas comments wait` blocks until a batch is sent and prints it as JSON. Use it while a design session is open.
 - **When asked instead:** `canvas comments list --open` shows what is waiting.
 - **Working a batch:** `canvas comments take <batch>`, change the builder scripts or files each comment points at, rebuild and render-check, then `canvas comments reply <id> "<what changed>" --addressed` for each comment and `canvas comments done <batch>`.
-- Only the decision-maker resolves a comment. A reply that does not address it leaves it open.
+- Only the decision-maker resolves a comment. A reply without `--addressed` asks a question and leaves the state as it is. Never edit or delete a comment file by hand.
 - Comments point at boards by their viewer links and stable labels, so they survive a rebuild; a comment whose element is gone shows as moved, never lost.

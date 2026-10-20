@@ -119,6 +119,10 @@ test('installs into an empty folder at a pinned ref, with a hash for every file 
     const verify = spawnSync(process.execPath, [...pkg.scripts.canvas.split(' ').slice(1), 'verify'], { cwd: project, encoding: 'utf8' });
     assert.equal(verify.status, 0, verify.stderr);
     assert.match(verify.stdout, /matches canvas\.lock\.json/);
+    // The comment loop runs from the installed copy too.
+    const comments = spawnSync(process.execPath, [...pkg.scripts.canvas.split(' ').slice(1), 'comments', 'list', '--open'], { cwd: project, encoding: 'utf8' });
+    assert.equal(comments.status, 0, comments.stderr);
+    assert.doesNotThrow(() => JSON.parse(comments.stdout));
   });
 });
 

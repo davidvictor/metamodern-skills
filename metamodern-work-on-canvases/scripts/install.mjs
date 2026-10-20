@@ -381,7 +381,7 @@ export function run(command, argv, { log = console.log, err = console.error } = 
       log(`Installed ${describe(result.nextLock)} into ${dir}: ${summary}. Lock: ${LOCK_FILE}.`);
       if (created.length) log(`Created ${created.join(', ')}.`);
       for (const note of notes) log(note);
-      log('Run the command line with: npm run canvas -- <view | render | review | explore | update | verify> ...');
+      log('Run the command line with: npm run canvas -- <view | render | review | explore | comments | update | verify> ...');
       return 0;
     }
     if (command === 'update') {

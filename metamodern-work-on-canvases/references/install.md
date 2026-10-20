@@ -45,7 +45,7 @@ It sits beside the config rather than in `.canvas/`, because `.canvas/` is machi
 
 ## Project-owned paths
 
-Install and update never write these, apart from install creating the starting files above when they are absent: `canvas.config.json`, `package.json` (install only adds the `canvas` script), `.gitignore`, `review.json`, `skin/`, `canvases/` (builder scripts, boards, heights), `comments/`, `builds/`, `decisions/`, `kit/` and `.canvas/`. The installed folder is never one of them.
+Install and update never write these, apart from install creating the starting files above when they are absent: `canvas.config.json`, `package.json` (install only adds the `canvas` script), `.gitignore`, `review.json`, `skin/`, `canvases/` (builder scripts, boards, heights), `comments/` (comment and batch files, written by the viewer and `canvas comments`), `builds/`, `decisions/`, `kit/` and `.canvas/`. The installed folder is never one of them.
 
 ## Update
 
