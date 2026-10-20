@@ -35,22 +35,48 @@ const PAGE_LINES = {
   archive: 'Directions set aside.',
 };
 
-/** Files a board needs from its canvas: imported boards and relative stylesheets, scripts and pictures. */
+// An attribute value in any quoting HTML allows: "double", 'single' or unquoted.
+const attrValue = (name) => new RegExp(`\\b(?:${name})\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'=<>\`]+))`, 'gi');
+// A CSS url() reference, quoted or not.
+const CSS_URL = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s"']+))\s*\)/gi;
+const valueOf = (m) => m[1] ?? m[2] ?? m[3] ?? '';
+
+/** A canvas-relative file path for a reference made from `fromDir` (a folder inside the canvas), or null. */
+function localPath(ref, fromDir) {
+  const raw = ref.trim();
+  if (!raw || /^(?:[a-z][a-z0-9+.-]*:|\/|#)|\{\{/i.test(raw)) return null;
+  const clean = raw.split(/[?#]/)[0];
+  const joined = path.posix.normalize(path.posix.join(fromDir, clean));
+  if (!joined || joined === '.' || joined.startsWith('..') || path.posix.isAbsolute(joined)) return null;
+  if (fromDir === '.' && /^(?:support(?:\.js|\/)|skin\.css$|ds\/)/i.test(joined)) return null; // served by the package or the kit
+  return joined;
+}
+
+/** Files a board needs from its canvas: imported boards, and relative stylesheets, scripts and pictures (with what stylesheets load). */
 async function dependencies(projectDir, file, seen = new Set()) {
   if (seen.has(file)) return seen;
   seen.add(file);
-  const html = await fs.readFile(path.join(projectDir, file), 'utf8');
-  for (const m of html.matchAll(/<dc-import\b[^>]*\bname="([^"]+)"/g)) {
-    if (!ID.test(m[1])) continue; // not a board of this canvas; the render check reports it
-    const name = `${m[1]}${BOARD_SUFFIX}`;
-    try { await fs.access(path.join(projectDir, name)); await dependencies(projectDir, name, seen); } catch { /* the render check reports it */ }
+  const text = await fs.readFile(path.join(projectDir, file), 'utf8');
+  const dir = path.posix.dirname(file);
+  const refs = [];
+  if (file.endsWith(BOARD_SUFFIX)) {
+    for (const m of text.matchAll(/<dc-import\b[^>]*>/gi)) {
+      const name = [...m[0].matchAll(attrValue('name'))].map(valueOf)[0];
+      if (!name || !ID.test(name)) continue; // not a board of this canvas; the render check reports it
+      const board = `${name}${BOARD_SUFFIX}`;
+      try { await fs.access(path.join(projectDir, board)); await dependencies(projectDir, board, seen); } catch { /* the render check reports it */ }
+    }
+    for (const m of text.matchAll(attrValue('href|src'))) refs.push(valueOf(m));
   }
-  for (const m of html.matchAll(/\b(?:href|src)="([^"]+)"/g)) {
-    const ref = m[1].replace(/^\.\//, '');
-    if (/^(?:[a-z]+:|\/|#)|\{\{|^support(?:\.js|\/)|^skin\.css$|^ds\//i.test(ref)) continue;
-    const clean = ref.split(/[?#]/)[0];
-    if (!clean || clean.split('/').some((s) => s === '..' || s === '.' || !s)) continue;
-    try { if ((await fs.stat(path.join(projectDir, clean))).isFile()) seen.add(clean); } catch { /* not a file of the canvas */ }
+  if (file.endsWith(BOARD_SUFFIX) || file.endsWith('.css')) for (const m of text.matchAll(CSS_URL)) refs.push(valueOf(m));
+  for (const ref of refs) {
+    const local = localPath(ref, dir);
+    if (!local || seen.has(local)) continue;
+    try {
+      if (!(await fs.stat(path.join(projectDir, local))).isFile()) continue;
+      if (local.endsWith('.css')) await dependencies(projectDir, local, seen);
+      else seen.add(local);
+    } catch { /* not a file of the canvas */ }
   }
   return seen;
 }

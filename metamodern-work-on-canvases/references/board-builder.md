@@ -62,7 +62,7 @@ The skin styles the shell's classes: `board-shell`, `shell-head`, `shell-where`,
 - reads `tools/heights.json` and gives each board its measured height, rounded up to 10 px with an 8 px margin (`fit: false` keeps the given height);
 - writes each board whose content changed, and `canvas.json` (key order `v`, `title`, `launch`, `pages`, `boards`, `order`, `ws`, which follow the spec, then any other field an existing file had, such as `notes`);
 - removes boards it generated earlier (they carry the generator meta tag) that the spec no longer lists;
-- never overwrites or removes a board without the generator meta tag, and stops with an error if the spec names one;
+- never overwrites or removes a board without the generator meta tag, and stops with an error if the spec names one; every board is rendered and every target checked before the first write, so a build that stops writes nothing;
 - refuses to write into a frozen canvas (`ws.frozen`, or a `History:` or `Decided:` title) unless `force` is set;
 - returns `{written, removed, unchanged, canvas}`; with `dryRun: true` it makes every check and writes nothing.
 
@@ -78,7 +78,7 @@ The same input gives byte-identical files, and a second run writes nothing, so t
 
 - four pages: Start here (the question and its state), Directions, Lead and Archive;
 - `ws.group: exploring`, on the project's pinned kit (boards with no `ws.kit`);
-- copies of the named boards on Directions, with the files they load from their canvas (imported boards, relative stylesheets and pictures); a copy is the exploration's own board, so it loses the generator meta tag;
+- copies of the named boards on Directions, with the files they load from their canvas: imported boards, relative `src` and `href` files in any quoting, `url()` references, and what copied stylesheets load; a copy is the exploration's own board, so it loses the generator meta tag;
 - `tools/explore.json` with the title, question, set and date, and a short `README.md`;
 - with `--set`, the review set's `canvas` points at it.
 

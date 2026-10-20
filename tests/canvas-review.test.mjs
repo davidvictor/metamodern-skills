@@ -284,3 +284,26 @@ test('RS-10 ids and copies cannot reach outside their folders, and refusals leav
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('RS-11 exploration copies follow references in any quoting, and what stylesheets load', async () => {
+  const root = await project();
+  try {
+    const showcase = path.join(root, 'canvases', 'showcase', 'project');
+    await fs.mkdir(path.join(showcase, 'assets'), { recursive: true });
+    for (const name of ['single.svg', 'bare.svg', 'inline.svg', 'from-css.svg']) await fs.writeFile(path.join(showcase, 'assets', name), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+    await fs.writeFile(path.join(showcase, 'quoted.css'), ".x{background:url('assets/from-css.svg')}");
+    const board = (await fs.readFile(path.join(showcase, 'D_due_badges.dc.html'), 'utf8'))
+      .replace(/<meta name="generator"[^>]*>\n/, '')
+      .replace('</head>', "<link rel='stylesheet' href='quoted.css'>\n</head>")
+      .replace('</x-dc>', `<img src='assets/single.svg' alt=''><img src=assets/bare.svg alt=''><div style="background: url(assets/inline.svg)"></div><dc-import name='Pill'></dc-import></x-dc>`);
+    await fs.writeFile(path.join(showcase, 'Quoted.dc.html'), board);
+    await fs.copyFile(path.join(root, 'canvases', 'fixture', 'project', 'Pill.dc.html'), path.join(showcase, 'Pill.dc.html'));
+    const index = JSON.parse(await fs.readFile(path.join(showcase, 'canvas.json'), 'utf8'));
+    index.boards['Quoted.dc.html'] = { x: 0, y: 9000, w: 400, h: 300, title: 'Quoted', page: 'tasks' };
+    await fs.writeFile(path.join(showcase, 'canvas.json'), JSON.stringify(index));
+    const made = await createExploration(root, { id: 'quotes', title: 'Quotes', question: 'Does every reference come along?', copies: ['showcase/Quoted'], date: '2026-10-20' });
+    assert.deepEqual(made.copied, ['Pill.dc.html', 'Quoted.dc.html', 'assets/bare.svg', 'assets/from-css.svg', 'assets/inline.svg', 'assets/single.svg', 'quoted.css']);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
