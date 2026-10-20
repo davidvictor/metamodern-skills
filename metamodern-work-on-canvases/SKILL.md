@@ -1,6 +1,6 @@
 ---
 name: metamodern-work-on-canvases
-description: Use when working with design canvases that mount a project's real component kit, including viewing canvases in the local viewer, switching a board between the pinned and a live kit, adjusting board values or motion, reading or validating canvas.json and canvas.config.json, writing or running a canvas builder script, render-checking boards, creating, locking or archiving review sets, making an exploration canvas, running existing boards on the package's board runtime, or checking a kit against the kit contract.
+description: Use when working with design canvases that mount a project's real component kit, including viewing canvases in the local viewer, switching a board between the pinned and a live kit, adjusting board values or motion, commenting on boards or working through comments sent to an agent, reading or validating canvas.json and canvas.config.json, writing or running a canvas builder script, render-checking boards, creating, locking or archiving review sets, making an exploration canvas, running existing boards on the package's board runtime, or checking a kit against the kit contract.
 ---
 
 # Metamodern Work on Canvases
@@ -18,13 +18,23 @@ Canvases are where interface designs are explored and decided against the real c
 - [Board builder](references/board-builder.md): the one library every project builder script uses, board shells, layout, heights, and exploration canvases.
 - [Render check](references/render-check.md): what it opens, what fails a board, theme variants, screenshots, reports and heights.
 - [Review sets and build briefs](references/review-sets.md): `review.json`, the status-to-row mapping, lock briefs and the archive canvas.
+- [Comments](references/comments.md): click-to-comment in the viewer, comment files in Agentation's format, threads and states, Send all to agent, re-attachment after a board is regenerated, and the agent's command line.
 - The board runtime, `assets/runtime/support.js`, with no framework of its own.
 - The viewer: `scripts/canvas.mjs view`, its server `scripts/lib/viewer-server.mjs` and its browser app in `assets/viewer/`.
-- Node modules with no dependencies: `scripts/canvas-format.mjs`, `scripts/board-resolve.mjs`, `scripts/kit-contract.mjs`, `scripts/board-builder.mjs`, `scripts/render-check.mjs`, `scripts/review-sets.mjs` and `scripts/explore.mjs`, with one command line, `scripts/canvas.mjs` (`view`, `render`, `review`, `explore`).
+- Node modules with no dependencies: `scripts/canvas-format.mjs`, `scripts/board-resolve.mjs`, `scripts/kit-contract.mjs`, `scripts/board-builder.mjs`, `scripts/render-check.mjs`, `scripts/review-sets.mjs`, `scripts/explore.mjs`, `scripts/lib/comment-store.mjs` and `scripts/comments.mjs`, with one command line, `scripts/canvas.mjs` (`view`, `render`, `review`, `explore`, `comments`).
 
 ## Viewing canvases
 
 Run `node scripts/canvas.mjs view` from inside the project (or pass `--project <dir>`). It serves every canvas on `127.0.0.1` at the config's port and prints the address. Send viewer links (`/<canvas>/<page>/<board>`), never file paths. A board link can carry `?canvas-kit=live:<name>` and `?canvas-props=<json>`. Boards that are recorded, rendered for review or used as a lead stay on the pinned kit; a live kit is for boards switched to it during a lab session, and every board's banner names the kit it shows.
+
+## Comments
+
+The person comments in the viewer (`C`, then click an element, drag a box, or Shift C for the board) and sends every open comment as one batch with **Send all to agent**. An agent works through it with `node scripts/canvas.mjs comments …` from inside the project:
+
+1. `comments wait` when listening for the person (it prints a batch the moment one is sent), or `comments list --open` when asked to look.
+2. `comments take <batchId>`, then change the files each comment is about (its `link`, `canvas.board`, `canvas.label`, `reactComponents`, `canvas.props` and `canvas.kit` say where and against what).
+3. `comments reply <id> "<what changed>" --addressed` for each comment worked through; a plain reply asks a question instead.
+4. `comments done <batchId>`. Only the person resolves or reopens a comment.
 
 ## Checks
 
@@ -43,3 +53,4 @@ Paths below are relative to this skill's folder (`metamodern-work-on-canvases/`)
 - Lock a set only with the decision-maker's words, after its lead boards pass the render check at their current source.
 - Never open or copy a hosted canvas runtime script. The runtime is written from the boards themselves.
 - Copy on boards is plain and final.
+- Never resolve a comment, edit a comment file by hand, or delete one: reply through the command line, and leave resolving to the person who commented.
