@@ -48,9 +48,19 @@
     }
     function now() { return at(realNow()); }
     try { if (perf) perf.now = function now$() { return now(); }; } catch (error) { /* a read-only performance object */ }
+    // Every callback of one frame gets the same timestamp, as in the browser.
+    var frameReal = null;
+    var frameVirtual = 0;
+    function frameAt(timestamp) {
+      if (timestamp !== frameReal) {
+        frameReal = timestamp;
+        frameVirtual = Math.max(base, base + (timestamp - from) * rate);
+      }
+      return frameVirtual;
+    }
     if (realRaf) {
       window.requestAnimationFrame = function requestAnimationFrame(callback) {
-        return realRaf(function (timestamp) { callback(at(timestamp)); });
+        return realRaf(function (timestamp) { callback(frameAt(timestamp)); });
       };
     }
 
@@ -61,12 +71,17 @@
       if (timer.handle != null) realClearTimeout(timer.handle);
       timer.handle = null;
       if (rate === 0) return;
-      timer.handle = realSetTimeout(function () { fire(timer); }, Math.max(0, (timer.due - now()) / rate));
+      timer.handle = realSetTimeout(function () { fire(timer); }, Math.max(0, Math.ceil((timer.due - now()) / rate)));
     }
     function fire(timer) {
       timer.handle = null;
+      var current = now();
+      // Never early: the browser may round a delay down.
+      if (current < timer.due) { schedule(timer); return; }
       if (timer.interval != null) {
         timer.due += timer.interval;
+        // Missed beats (a throttled frame) are skipped, as browsers do, rather than caught up.
+        if (timer.due <= current) timer.due = current + timer.interval - ((current - timer.due) % timer.interval);
         schedule(timer);
       } else {
         delete timers[timer.id];
@@ -102,6 +117,15 @@
 
     return {
       now: now,
+      // Back to the browser's clock (a replay draws the board afresh, so nothing in it can see the jump).
+      resync: function () {
+        var real = realNow();
+        base = real;
+        from = real;
+        last = Math.min(last, real);
+        frameReal = null;
+        Object.keys(timers).forEach(function (id) { schedule(timers[id]); });
+      },
       setRate: function (next) {
         var real = realNow();
         base = at(real);
@@ -819,8 +843,25 @@
   // Animations a script starts with element.animate() (motion libraries do) start at the current rate.
   if (window.Element && Element.prototype.animate) {
     var realAnimate = Element.prototype.animate;
+    var startTime = window.Animation && Object.getOwnPropertyDescriptor(Animation.prototype, 'startTime');
     Element.prototype.animate = function animate() {
       var animation = realAnimate.apply(this, arguments);
+      if (startTime && startTime.get && startTime.set && document.timeline) {
+        // A script that sets startTime from performance.now() means board time; the timeline runs on the
+        // browser's clock, so the value is moved by the difference. Setting it plays a paused animation, so
+        // a paused board pauses it again.
+        Object.defineProperty(animation, 'startTime', {
+          configurable: true,
+          get: function () {
+            var value = startTime.get.call(this);
+            return value == null ? value : value - (document.timeline.currentTime - clock.now());
+          },
+          set: function (value) {
+            startTime.set.call(this, value == null ? value : value + (document.timeline.currentTime - clock.now()));
+            if (runtime.motion.rate === 0 && value != null) { try { this.pause(); this.__canvasPaused = true; } catch (error) { /* finished */ } }
+          },
+        });
+      }
       if (runtime.motion.rate !== 1) setRate(animation, runtime.motion.rate);
       return animation;
     };
@@ -830,6 +871,7 @@
     var rate = Number(message.rate);
     if (!(rate >= 0) || !isFinite(rate)) return;
     runtime.motion.rate = rate;
+    if (message.replay) clock.resync();
     clock.setRate(rate);
     if (message.replay) {
       // Replay: draw the board afresh so entrance motion runs again, then restart animations still on the page.

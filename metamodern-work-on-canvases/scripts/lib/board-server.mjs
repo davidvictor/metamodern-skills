@@ -59,6 +59,7 @@ export function sendFile(res, file) {
       stream.pipe(res);
     });
     stream.on('error', () => (res.headersSent ? res.destroy() : sendText(res, 404, 'Not found')));
+    res.on('close', () => stream.destroy());
   });
 }
 

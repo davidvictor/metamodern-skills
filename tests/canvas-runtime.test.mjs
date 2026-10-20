@@ -286,7 +286,28 @@ test('RT-12 canvas:motion scales the board clock: a frame-driven spring takes ab
   }));
   assert.ok(timers.delayed >= 300 && timers.delayed < 1000, `a 100 ms timer took ${timers.delayed} ms at a quarter`);
   assert.ok(timers.immediate !== null && timers.immediate < 100, 'a timer with no delay stays immediate');
+  // A script animation whose startTime is set from performance.now() (motion libraries do this) starts at
+  // its beginning even after the board clock fell behind, and stays paused on a paused board.
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0);
+  const paused = await frame.evaluate(async () => {
+    const a = document.body.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 1000 });
+    a.startTime = performance.now();
+    for (let i = 0; i < 10; i += 1) await new Promise((r) => requestAnimationFrame(() => r()));
+    return { state: a.playState, time: Math.round(Number(a.currentTime)) };
+  });
+  assert.equal(paused.state, 'paused');
+  assert.ok(paused.time < 50, `held near its start: ${paused.time} ms`);
   await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1);
+  const started = await frame.evaluate(() => {
+    const a = document.body.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 1000 });
+    a.startTime = performance.now();
+    const time = Number(a.currentTime);
+    a.cancel();
+    return Math.round(time);
+  });
+  assert.ok(Math.abs(started) < 50, `a fresh animation starts at its beginning: ${started} ms`);
   assert.deepEqual(problems, []);
   await page.close();
 });

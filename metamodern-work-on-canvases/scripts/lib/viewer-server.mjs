@@ -235,11 +235,17 @@ function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }
     retry = null;
     if (closed) return;
     try {
-      watcher = fs.watch(fs.realpathSync(canvasesDir), { recursive: true }, onChange);
-      watcher.on('error', () => {
-        watcher?.close();
+      const mine = fs.watch(fs.realpathSync(canvasesDir), { recursive: true }, onChange);
+      watcher = mine;
+      mine.on('error', () => {
+        mine.close();
+        if (watcher !== mine) return;
         watcher = null;
-        if (!closed) { index = true; later(); retry = setTimeout(watchCanvases, 1000); }
+        if (closed) return;
+        index = true;
+        later();
+        clearTimeout(retry);
+        retry = setTimeout(watchCanvases, 1000);
       });
     } catch (error) {
       // No folder yet: try again. No recursive watching on this system: reload by hand.
