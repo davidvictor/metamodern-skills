@@ -1,4 +1,4 @@
 interface:
   display_name: "Metamodern: Work on Canvases"
-  short_description: "Run and check design canvases on the shared runtime"
-  default_prompt: "Use $metamodern-work-on-canvases to read, validate or run these design canvases on the shared runtime and report what you checked."
+  short_description: "Design on canvases with the real kit, from exploring to a locked build"
+  default_prompt: "Use $metamodern-work-on-canvases to follow the canvas method for this design work, render-check what you change and report the viewer links."

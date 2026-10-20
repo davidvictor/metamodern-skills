@@ -319,7 +319,9 @@ export async function renderCheck({ projectRoot, canvases: only, boards: boardFi
   if (!launcher) throw new Error('The canvas tooling is not installed: node scripts/tooling.mjs install --browser');
   const server = await serveBoards({ projectRoot: root, config, canvasDirs, liveKits });
   const browser = await launcher.launch();
-  const context = await browser.newContext({ deviceScaleFactor: 1, reducedMotion: 'reduce' });
+  // Each board and variant gets its own browser context, so storage a board keeps (localStorage, cookies, IndexedDB)
+  // never reaches another page running beside it or after it.
+  const newContext = () => browser.newContext({ deviceScaleFactor: 1, reducedMotion: 'reduce' });
   const started = Date.now();
   const parallel = Math.max(1, jobs ?? Math.min(8, Math.max(2, Math.floor((os.availableParallelism?.() ?? os.cpus().length) / 2))));
   try {
@@ -330,17 +332,19 @@ export async function renderCheck({ projectRoot, canvases: only, boards: boardFi
       const url = `${server.origin}/${encodeURIComponent(id)}/project/${encodeURIComponent(entry.file)}${query}`;
       const shot = path.join(outDir, id, 'screens', `${entry.file.replace(/\.dc\.html$/, '')}.${name}.png`);
       const t0 = Date.now();
+      let context = null;
       let page = null;
       let problems = [];
       let found = { problems: [], natural: null };
       try {
+        context = await newContext();
         ({ page, problems } = await openBoard(context, url, { viewport: { width, height }, timeout }));
         found = await inspectPage(page, timeout, { interactive: entry.interactive, width: Math.round(entry.w), height: Math.round(entry.h) });
         await page.screenshot({ path: shot });
       } catch (error) {
         found.problems.push(`check failed: ${String(error.message).split('\n')[0].slice(0, 200)}`);
       } finally {
-        await page?.close().catch(() => {});
+        await context?.close().catch(() => {});
       }
       const all = tidy([...problems, ...found.problems]);
       const ms = Date.now() - t0;

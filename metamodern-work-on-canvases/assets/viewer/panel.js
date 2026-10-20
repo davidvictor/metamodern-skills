@@ -28,7 +28,8 @@ export function kitLabel(entry, namespace) {
   if (entry.legacy) return `${mode} · legacy kit (no kit.json)`;
   if (entry.error) return `${mode} · ${entry.error}`;
   const parts = [mode, [entry.namespace ?? namespace, entry.version].filter(Boolean).join(' ')];
-  if (entry.branch) parts.push(`branch ${entry.branch}`);
+  // A detached worktree's build names its branch HEAD: say detached; the short commit follows.
+  if (entry.branch) parts.push(entry.branch === 'HEAD' ? 'detached' : `branch ${entry.branch}`);
   if (entry.commit) parts.push(short(entry.commit));
   if (entry.dirty) parts.push('uncommitted changes');
   return parts.filter(Boolean).join(' · ');

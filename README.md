@@ -177,6 +177,18 @@ The Studio's interface views are Inspect, Compare, Gallery, and Present, plus To
 
 Update preserves stable identities and presenter work and reports unresolved changes. Verification distinguishes source inspection, local runtime, native runtime, hosted publication, and user acceptance. Installing this skill does not deploy an application, connect accounts, or establish any of those outcomes. See the [manifest and update contract](./metamodern-interface-studio/references/manifest.md), [verification guide](./metamodern-interface-studio/references/verification.md), and [shell guide](./metamodern-interface-studio/references/shell.md) for the detailed boundaries.
 
+## Design on canvases
+
+[Canvases](./metamodern-work-on-canvases/SKILL.md) is a method and a runner for designing against your real component kit. Each board mounts the kit's own components; a local viewer shows every canvas with a kit switch per board, properties, motion controls and click-to-comment; one board builder and one render check serve every canvas; review sets carry each design question from exploring to a lock and a build brief. The [method](./metamodern-work-on-canvases/references/method.md) sets the loops and rules: Foundations, component labs with live mode, the app canvas, exploring, choosing a lead, locking, keeping Live current, archiving and the comment loop.
+
+A project installs the package at a pinned version and commits the lock file. From a checkout of this repository:
+
+```bash
+node metamodern-work-on-canvases/scripts/canvas.mjs install --project <design repo> --from . --ref <release tag>
+```
+
+Install puts the package in `.agents/skills/metamodern-work-on-canvases/` (with a Claude Code entry in `.claude/skills/`), writes `canvas.lock.json` and creates a config, a skin and a start canvas when they are absent. Then run `npm run canvas -- view`, `render`, `review`, `explore` or `comments` from the project. `canvas update --from <checkout> --ref <newer tag>` updates the package and never touches the project's own files; it refuses to overwrite an installed file edited in the project. See [installing and updating](./metamodern-work-on-canvases/references/install.md). Invoke `$metamodern-work-on-canvases` in Codex or `/metamodern-work-on-canvases` in Claude Code.
+
 ## Choose a skill
 
 | Skill | What it helps you do |

@@ -15,6 +15,9 @@
 //   canvas explore  decide <id> [--lead text]
 //   canvas comments list [--open] [--batch <id>] | wait [--timeout <s>] | take <batchId> | reply <id> "<text>" [--addressed]
 //                   | done <batchId>   (scripts/comments.mjs)
+//   canvas install  [--project <dir>] [--from <checkout or package>] [--ref <tag>] [--dir <path>] [--name n] [--namespace ns]
+//   canvas update   --from <checkout or package> [--ref <tag>] [--keep <path> [--reason why]] [--replace <path>] [--dry-run]
+//   canvas verify   (install, update and verify: scripts/install.mjs, references/install.md)
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs as parseOptions } from 'node:util';
@@ -54,7 +57,7 @@ const OPTIONS = {
   help: { type: 'boolean', short: 'h' },
 };
 
-const USAGE = `Usage: canvas <view | render | review | explore | comments> ...  (see the header of scripts/canvas.mjs)`;
+const USAGE = `Usage: canvas <view | render | review | explore | comments | install | update | verify> ...  (see the header of scripts/canvas.mjs)`;
 const VIEW_USAGE = 'Usage: canvas view [--project <dir>] [--port <n>]';
 
 /** The options of `canvas view`. */
@@ -105,6 +108,7 @@ async function view(argv) {
 export async function main(argv) {
   if (argv[0] === 'view') return view(argv);
   if (argv[0] === 'comments') return (await import('./comments.mjs')).main(argv.slice(1));
+  if (['install', 'update', 'verify'].includes(argv[0])) return (await import('./install.mjs')).run(argv[0], argv.slice(1));
   const { values: o, positionals } = parseOptions({ args: argv, options: OPTIONS, allowPositionals: true, strict: true });
   const [command, sub, ...rest] = positionals;
   if (o.help || !command) { console.log(USAGE); return 0; }
