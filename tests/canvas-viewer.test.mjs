@@ -265,6 +265,21 @@ function events(origin) {
   };
 }
 
+/**
+ * Makes a change and repeats it every 500 ms (at most 10 times) until the awaited event arrives: a recursive watch on
+ * macOS (FSEvents) starts asynchronously, so a change made the moment the server starts can come before it listens.
+ */
+async function until(event, change) {
+  let done = false;
+  const settled = event.finally(() => { done = true; });
+  await change();
+  for (let i = 0; i < 10 && !done; i += 1) {
+    await Promise.race([settled.catch(() => {}), new Promise((r) => setTimeout(r, 500))]);
+    if (!done) await change();
+  }
+  return settled;
+}
+
 test('VW-06 the server sends file changes, index changes, kit rebuilds and live kit registrations', async () => {
   const viewer = await startViewer({ projectRoot: root, port: 0 });
   const stream = events(viewer.origin);
@@ -272,11 +287,9 @@ test('VW-06 the server sends file changes, index changes, kit rebuilds and live 
     await stream.opened;
     const board = path.join(root, 'canvases', 'pair', 'project', 'button-live.dc.html');
     const files = stream.next((d) => d.type === 'files' && d.changes.some((c) => c.canvas === 'pair' && c.file === 'button-live.dc.html'));
-    await fs.appendFile(board, '\n');
-    await files;
+    await until(files, () => fs.appendFile(board, '\n'));
     const index = stream.next((d) => d.type === 'index');
-    await fs.appendFile(path.join(root, 'canvases', 'pair', 'project', 'canvas.json'), '\n');
-    await index;
+    await until(index, () => fs.appendFile(path.join(root, 'canvases', 'pair', 'project', 'canvas.json'), '\n'));
     const kit = stream.next((d) => d.type === 'kit' && d.kit === 'live:watch');
     const file = path.join(liveDir, 'kit.json');
     const next = JSON.parse(await fs.readFile(file, 'utf8'));
