@@ -414,6 +414,40 @@ const IDENTITY_CASES = [
   ['toolbar unchanged, words elsewhere edited', rowsBoard(TEAM), rowsBoard(TEAM, { note: 'Our team' }), ['tool-b'], { 'tool-b': 'tool-b' }],
 ];
 
+// Third-review cases: words that move to another row, rows that take another row's words, look-alikes drawn
+// differently, and nested look-alikes. Each is [name, first board, regenerated board, mark, expected], expected being
+// the same mark, 'moved', or 'either' (indistinguishable by design).
+const PROBE_ICON = (m) => `<svg data-mark="${m}" width="12" height="12" viewBox="0 0 12 12"><rect width="12" height="12"></rect></svg>`;
+const SHAPES = { bold: '<path d="M2 2h5a3 3 0 010 6H2z"></path>', italic: '<path d="M5 2h5M2 10h5M7 2L5 10"></path>', under: '<path d="M3 2v4a3 3 0 006 0V2M2 11h8"></path>', strike: '<path d="M2 6h8M4 3h4"></path>' };
+const TOOL = (k) => `<svg data-mark="${k}" width="12" height="12" viewBox="0 0 12 12">${SHAPES[k]}</svg>`;
+const probeRow = (r) => `<div class="row">${r.cells.map((c) => `<span>${c}</span>`).join(' ')} ${(r.icons ?? []).map(PROBE_ICON).join('')}${r.img ? `<img data-mark="${r.img}" src="dot.svg" alt="" width="12" height="12">` : ''}${r.badge ? ` <em data-mark="${r.badge.mark}">${r.badge.text}</em>` : ''}${r.btn ? ` <button data-mark="${r.btn.mark}" type="button">${r.btn.text}</button>` : ''}</div>`;
+const probeBoard = (body) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Probe</title><script src="./support.js"></script></head><body><x-dc>
+<div data-canvas-id="rows">${body}</div></x-dc></body></html>`;
+const probeRows = (list) => probeBoard(list.map(probeRow).join('\n'));
+const card = (q, items) => `<section class="card"><h3>${q}</h3><ul>${items.map((it) => `<li><span>${it}</span> <button data-mark="${q}-${it}-edit" type="button">Edit</button></li>`).join('')}</ul></section>`;
+const cards = (list) => probeBoard(list.map(([q, items]) => card(q, items)).join('\n'));
+const r = (name, cells, extra = {}) => ({ cells: [name, ...cells], img: `${name}-img`, ...extra });
+const PROBE_CASES = [
+  ['T1 a badge\'s words move to another row', probeRows([r('Ana', ['Lead'], { badge: { text: 'Overdue', mark: 'Ana-badge' } }), r('Bea', ['Design'], { badge: { text: 'Due', mark: 'Bea-badge' } }), r('Cy', ['Eng'], { badge: { text: 'Paid', mark: 'Cy-badge' } })]),
+    probeRows([r('Ana', ['Lead'], { badge: { text: 'Paid', mark: 'Ana-badge' } }), r('Bea', ['Design'], { badge: { text: 'Due', mark: 'Bea-badge' } }), r('Cy', ['Eng'], { badge: { text: 'Overdue', mark: 'Cy-badge' } })]), 'Ana-badge', 'moved'],
+  ['T2 a button\'s words move to another row, its row removed', probeRows([r('Ana', ['Lead'], { btn: { text: 'Approve', mark: 'Ana-btn' } }), r('Bea', ['Design'], { btn: { text: 'Review', mark: 'Bea-btn' } }), r('Cy', ['Eng'], { btn: { text: 'Hold', mark: 'Cy-btn' } })]),
+    probeRows([r('Bea', ['Design'], { btn: { text: 'Review', mark: 'Bea-btn' } }), r('Cy', ['Eng'], { btn: { text: 'Approve', mark: 'Cy-btn' } })]), 'Ana-btn', 'moved'],
+  ['T3 its row removed, another row takes its role', probeRows([r('Ana', ['Lead']), r('Bea', ['Design']), r('Cy', ['Eng'])]),
+    probeRows([r('Ana', ['Lead']), r('Cy', ['Design'])]), 'Bea-img', 'moved'],
+  ['T4 its row removed, another row takes its date and vendor', probeRows([r('Ana', ['Nov 2', 'Acme', '120']), r('Bea', ['Nov 5', 'Globex', '80']), r('Cy', ['Nov 9', 'Initech', '45'])]),
+    probeRows([r('Ana', ['Nov 2', 'Acme', '120']), r('Cy', ['Nov 5', 'Globex', '45'])]), 'Bea-img', 'moved'],
+  ['T5 rows share every word but the name, the name edited', probeRows([r('Ana', ['Design', 'Acme']), r('Bea', ['Design', 'Acme']), r('Cy', ['Design', 'Acme'])]),
+    probeRows([r('Ana', ['Design', 'Acme']), r('Beatrice', ['Design', 'Acme'], { img: 'Bea-img' }), r('Cy', ['Design', 'Acme'])]), 'Bea-img', 'moved'],
+  ['T5b its row removed, another row becomes word for word the same', probeRows([r('Ana', ['Lead']), r('Bea', ['Design']), r('Cy', ['Eng'])]),
+    probeRows([r('Ana', ['Lead']), r('Bea', ['Design'], { img: 'Cy-img' })]), 'Bea-img', 'either'],
+  ['T6c toolbar icons drawn differently, one replaced', probeBoard(['bold', 'italic', 'under'].map(TOOL).join('')), probeBoard(['italic', 'under', 'strike'].map(TOOL).join('')), 'italic', 'italic'],
+  ['T6d toolbar icons drawn differently, reordered', probeBoard(['bold', 'italic', 'under'].map(TOOL).join('')), probeBoard(['under', 'italic', 'bold'].map(TOOL).join('')), 'bold', 'bold'],
+  ['T7 nested look-alikes, cards reordered', cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Plan', 'Ship']]]), cards([['Q2', ['Plan', 'Ship']], ['Q1', ['Plan', 'Ship']]]), 'Q2-Ship-edit', 'Q2-Ship-edit'],
+  ['T7b nested look-alikes, its card\'s items reversed', cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Plan', 'Ship']]]), cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Ship', 'Plan']]]), 'Q2-Ship-edit', 'Q2-Ship-edit'],
+  ['T7c nested look-alikes, the other card removed and its items reversed', cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Plan', 'Ship']]]), cards([['Q2', ['Ship', 'Plan']]]), 'Q2-Ship-edit', 'Q2-Ship-edit'],
+  ['T7d nested look-alikes, its item removed', cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Plan', 'Ship']]]), cards([['Q1', ['Plan', 'Ship']], ['Q2', ['Plan']]]), 'Q2-Ship-edit', 'moved'],
+];
+
 test('CM-09 look-alikes re-attach to the same element or show as moved, never a neighbour', { skip }, async () => {
   const file = path.join(broot, 'canvases', 'fixture', 'project', 'rows.dc.html');
   const p = await browser.newPage();
@@ -436,11 +470,24 @@ test('CM-09 look-alikes re-attach to the same element or show as moved, never a 
         if (!ok) failures.push(`${name}: ${m} -> ${got[i]} (expected ${want})`);
       });
     }
-    // The name cell has words of its own: it records no identity and is found by them wherever it moves.
+    for (const [name, first, next, mark, want] of PROBE_CASES) {
+      await fs.writeFile(file, first);
+      await p.goto(`${viewer.origin}/fixture/project/rows.dc.html`);
+      await p.waitForFunction(() => window.__canvasRuntime && document.querySelector('[data-canvas-id] *'));
+      const d = await p.evaluate((m) => window.__canvasRuntime.describe(document.querySelector(`[data-mark="${m}"]`)), mark);
+      await fs.writeFile(file, next);
+      await p.goto(`${viewer.origin}/fixture/project/rows.dc.html`);
+      await p.waitForFunction(() => window.__canvasRuntime && document.querySelector('[data-canvas-id] *'));
+      const got = await p.evaluate((x) => window.__canvasRuntime.locate(x)?.dataset.mark ?? 'moved', d);
+      if (want !== 'either' && got !== want) failures.push(`${name}: ${mark} -> ${got} (expected ${want})`);
+    }
+    // The name cell has words of its own: it is found by them wherever it moves, and its row's evidence is recorded
+    // so the words are never followed into another row.
     await fs.writeFile(file, rowsBoard(TEAM));
     await open();
     const b = await p.evaluate(() => window.__canvasRuntime.describe(document.querySelector('[data-mark="Bea-b"]')));
-    assert.equal(b.identity, undefined);
+    assert.equal(b.identity.mode, 'words');
+    assert.deepEqual(b.identity.levels[0].own, ['Bea', 'Design']);
     // 600 rows: a textless icon is found again in well under 20 ms per comment.
     const many = Array.from({ length: 600 }, (_, i) => ({ name: `N${i}`, role: `R${i}` }));
     many[1] = { name: 'Bea', role: 'Design' };

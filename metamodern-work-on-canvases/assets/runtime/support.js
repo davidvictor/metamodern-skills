@@ -1030,16 +1030,22 @@
       text: text,
     };
     if (kits.length) out.reactComponents = kits.join(' > ');
-    // How the element is found again (references/comments.md, Identification). An element with its own unique label,
-    // or with words of its own that no other element of its tag has, needs nothing more; any other element records
-    // an identity among the elements that look like it.
-    if (!ownUniqueLabel(node) && !(text && sameText(node.localName, text) === 1)) out.identity = identityOf(node);
+    // How the element is found again (references/comments.md, Identification). The guarantee: re-attach only on
+    // unambiguous evidence, otherwise moved.
+    if (!ownUniqueLabel(node)) {
+      var identity = text && sameText(node.localName, text) === 1 ? wordsIdentity(node) : identityOf(node);
+      if (identity) out.identity = identity;
+    }
     return out;
   }
 
   var IDENTIFYING_ATTRS = ['src', 'alt', 'aria-label', 'name', 'placeholder', 'href', 'data-test', 'data-testid', 'role', 'title', 'type'];
-  var MAX_TOKENS = 5;
+  var MAX_OWN_TOKENS = 5;
+  var MAX_OTHER_TOKENS = 1000;
   var MAX_TOKEN_LENGTH = 80;
+  var MAX_LEVELS = 3;
+  // Ranks and plain numbers move between rows when they are re-sorted, so they never reject a row.
+  var RANK = /^[#№]?\s*[\d.,:/%+-]+$/;
 
   /** How many elements of this tag on the board have this text. */
   function sameText(tag, text) {
@@ -1098,15 +1104,52 @@
     return out;
   }
 
-  /** Elements inside `top` that look like the recorded one: same tag, identifying attributes and own text. */
-  function lookAlikes(top, like) {
-    var keys = Object.keys(like.attrs);
+  /**
+   * The element's drawing: its tag, its attributes other than class, style and data-*, and the same for every child,
+   * as a short hash. Text is left out (it is compared on its own). Two icons drawn differently differ; a kit re-render
+   * that only changes class names does not.
+   */
+  var shapeCache = null; // element -> shape, for the length of one locate or describe
+  function shapeOf(node) {
+    if (shapeCache && shapeCache.has(node)) return shapeCache.get(node);
+    var shape = computeShape(node);
+    if (shapeCache) shapeCache.set(node, shape);
+    return shape;
+  }
+  function computeShape(node) {
+    var parts = [];
+    (function walkShape(n) {
+      var attrs = [];
+      for (var i = 0; i < n.attributes.length; i += 1) {
+        var a = n.attributes[i];
+        if (a.name === 'class' || a.name === 'style' || a.name.indexOf('data-') === 0) continue;
+        attrs.push(a.name + '=' + a.value);
+      }
+      attrs.sort();
+      parts.push('<' + n.localName + (attrs.length ? ' ' + attrs.join(' ') : '') + '>');
+      for (var c = n.firstElementChild; c; c = c.nextElementSibling) walkShape(c);
+      parts.push('</>');
+    })(node);
+    var s = parts.join('');
+    var h = 5381;
+    for (var i = 0; i < s.length; i += 1) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+    return h.toString(36) + '.' + s.length.toString(36);
+  }
+
+  /**
+   * Elements inside `top` that look like the recorded one: same tag, identifying attributes and drawing, and the same
+   * own text unless `anyText` (for elements found by their words, whose look-alikes are drawn alike but worded apart).
+   */
+  function lookAlikes(top, like, anyText) {
+    var keys = Object.keys(like.attrs || {});
     var out = [];
     var list = top.getElementsByTagName(like.tag);
     for (var i = 0; i < list.length; i += 1) {
       var n = list[i];
       if (IDENTIFYING_ATTRS.some(function (a) { return n.getAttribute(a) !== (keys.indexOf(a) < 0 ? null : like.attrs[a]); })) continue;
-      if (ownText(n) === like.text) out.push(n);
+      if (!anyText && ownText(n) !== like.text) continue;
+      if (like.shape && shapeOf(n) !== like.shape) continue;
+      out.push(n);
     }
     return out;
   }
@@ -1119,83 +1162,155 @@
   /** The own texts (up to 80 characters) of an element's descendants, in document order. */
   function innerTexts(node) {
     var out = [];
+    var seen = {};
     var all = node.getElementsByTagName('*');
     for (var i = 0; i < all.length; i += 1) {
       var t = ownText(all[i]);
-      if (t && t.length <= MAX_TOKEN_LENGTH && out.indexOf(t) < 0) out.push(t);
+      if (t && t.length <= MAX_TOKEN_LENGTH && !seen[t]) { seen[t] = true; out.push(t); }
     }
     return out;
   }
 
   /**
-   * An element's identity among its look-alikes inside its anchor: the anchor, what it looks like, and either
-   *   - a group: the nearest ancestor (depth levels up) whose counterparts above the other look-alikes have other
-   *     words, up to five context tokens (descendant texts found in no other group), and its place among the
-   *     look-alikes inside that group; or
-   *   - with no such ancestor (truly identical items, such as toolbar icons), its place among the look-alikes in the
-   *     anchor.
+   * One level of evidence for `node` among `alikes` inside `scope`: the nearest group (an element `depth` levels up,
+   * inside the scope) whose words differ from those of every other look-alike's group, its own tokens (texts no other
+   * group has, up to five) and the other groups' tokens (texts the group does not have, ranks and numbers left out,
+   * up to a thousand, taking each group's first texts first). Null when no group tells the node apart.
    */
-  function identityOf(node) {
-    var anchor = anchorOf(node);
-    var like = { tag: node.localName, attrs: attrsOf(node), text: ownText(node) };
-    var all = lookAlikes(anchor.el, like);
-    var depth = 0;
-    var tokens = [];
+  function groupEvidence(node, alikes, scope) {
     for (var d = 1; ; d += 1) {
       var group = up(node, d);
-      if (!group || group === anchor.el || !anchor.el.contains(group)) break;
+      if (!group || group === scope || !scope.contains(group)) return null;
       var others = [];
-      all.forEach(function (o) { if (!group.contains(o)) { var g = up(o, d); if (g && others.indexOf(g) < 0) others.push(g); } });
+      alikes.forEach(function (o) { if (o !== node && !group.contains(o)) { var g = up(o, d); if (g && g !== scope && scope.contains(g) && others.indexOf(g) < 0) others.push(g); } });
       if (!others.length) continue;
       var mine = ownText(group);
       if (others.some(function (g) { return ownText(g) === mine; })) continue;
-      var taken = {};
-      others.forEach(function (g) { innerTexts(g).forEach(function (t) { taken[t] = true; }); });
-      tokens = innerTexts(group).filter(function (t) { return !taken[t]; }).slice(0, MAX_TOKENS);
-      if (tokens.length) { depth = d; break; }
+      var mineTexts = innerTexts(group);
+      var mineSet = {};
+      mineTexts.forEach(function (t) { mineSet[t] = true; });
+      var otherLists = others.map(innerTexts);
+      var inOthers = {};
+      otherLists.forEach(function (l) { l.forEach(function (t) { inOthers[t] = true; }); });
+      var own = mineTexts.filter(function (t) { return !inOthers[t]; }).slice(0, MAX_OWN_TOKENS);
+      if (!own.length) continue;
+      var rest = [];
+      var seen = {};
+      for (var round = 0; rest.length < MAX_OTHER_TOKENS; round += 1) {
+        var any = false;
+        for (var g = 0; g < otherLists.length && rest.length < MAX_OTHER_TOKENS; g += 1) {
+          var t = otherLists[g][round];
+          if (t === undefined) continue;
+          any = true;
+          if (!mineSet[t] && !seen[t] && !RANK.test(t)) { seen[t] = true; rest.push(t); }
+        }
+        if (!any) break;
+      }
+      return { depth: d, own: own, others: rest };
     }
-    var scope = depth ? up(node, depth) : anchor.el;
-    var inGroup = lookAlikes(scope, like);
-    return { anchor: { kind: anchor.kind, key: anchor.key }, like: like, depth: depth, tokens: tokens, count: inGroup.length, index: inGroup.indexOf(node) };
   }
 
   /**
-   * The element an identity names now, or null. Look-alikes are taken inside the anchor. With context tokens, each
-   * look-alike's group (its ancestor `depth` levels up) is scored by how many tokens it holds; the one group with
-   * strictly the most, holding at least half the tokens, is the element's group. Inside the group (or the anchor, with
-   * no tokens), the element is the look-alike at its recorded place, and only while the number of look-alikes there
-   * is unchanged. Anything ambiguous is null: the comment shows as moved.
+   * The identity of an element without words of its own: its anchor, what it looks like, then up to three levels of
+   * evidence (each narrowing to the group that tells it apart from its look-alikes), then its place among the
+   * look-alikes left in the innermost group.
    */
+  function identityOf(node) {
+    var anchor = anchorOf(node);
+    var like = { tag: node.localName, attrs: attrsOf(node), text: ownText(node), shape: shapeOf(node) };
+    var scope = anchor.el;
+    var levels = [];
+    for (var l = 0; l < MAX_LEVELS; l += 1) {
+      var alikes = lookAlikes(scope, like);
+      if (alikes.length < 2) break;
+      var level = groupEvidence(node, alikes, scope);
+      if (!level) break;
+      levels.push(level);
+      scope = up(node, level.depth);
+    }
+    var left = lookAlikes(scope, like);
+    return { mode: 'look-alike', anchor: { kind: anchor.kind, key: anchor.key }, like: like, levels: levels, count: left.length, index: left.indexOf(node) };
+  }
+
+  /** Evidence for an element with words of its own: its group among the elements drawn like it (null when none are). */
+  function wordsIdentity(node) {
+    var anchor = anchorOf(node);
+    var like = { tag: node.localName, attrs: attrsOf(node), text: '', shape: shapeOf(node) };
+    var alikes = lookAlikes(anchor.el, like, true);
+    if (alikes.length < 2) return null;
+    var level = groupEvidence(node, alikes, anchor.el);
+    if (!level) return null;
+    return { mode: 'words', anchor: { kind: anchor.kind, key: anchor.key }, like: like, levels: [level] };
+  }
+
+  /** A level's tokens as lookup sets, made once per level. */
+  function levelSets(level) {
+    var own = {};
+    var others = {};
+    level.own.forEach(function (t) { own[t] = true; });
+    level.others.forEach(function (t) { others[t] = true; });
+    return { own: own, others: others };
+  }
+
+  /** Whether a group passes a level's evidence: -1 when it holds any other group's token, else how many of its own it holds. */
+  function score(group, sets) {
+    var texts = innerTexts(group);
+    var n = 0;
+    for (var i = 0; i < texts.length; i += 1) {
+      if (sets.others[texts[i]]) return -1;
+      if (sets.own[texts[i]]) n += 1;
+    }
+    return n;
+  }
+
+  /** The one group at this level the evidence points to, or null: rejected groups out, then the single best (at least one token). */
+  function pickGroup(candidates, level, scope) {
+    var groups = [];
+    candidates.forEach(function (n) { var g = up(n, level.depth); if (g && g !== scope && scope.contains(g) && groups.indexOf(g) < 0) groups.push(g); });
+    var sets = levelSets(level);
+    var best = null;
+    var bestScore = 0;
+    var tie = false;
+    groups.forEach(function (g) {
+      var s = score(g, sets);
+      if (s > bestScore) { best = g; bestScore = s; tie = false; } else if (s === bestScore && s > 0) tie = true;
+    });
+    return best && !tie ? best : null;
+  }
+
+  function validLevel(level) {
+    return level && Number(level.depth) > 0 && Array.isArray(level.own) && Array.isArray(level.others);
+  }
+
+  /** The element a look-alike identity names now, or null. */
   function byIdentity(id) {
     if (!id || typeof id !== 'object' || !id.like || typeof id.like.tag !== 'string') return null;
-    var like = { tag: id.like.tag, attrs: id.like.attrs && typeof id.like.attrs === 'object' ? id.like.attrs : {}, text: String(id.like.text || '') };
-    var anchor = anchorNow(id.anchor);
-    if (!anchor) return null;
-    var scope = anchor;
-    var tokens = Array.isArray(id.tokens) ? id.tokens.filter(function (t) { return typeof t === 'string' && t; }) : [];
-    var depth = Number(id.depth) || 0;
-    if (depth > 0 && tokens.length) {
-      var groups = [];
-      lookAlikes(anchor, like).forEach(function (n) { var g = up(n, depth); if (g && anchor.contains(g) && g !== anchor && groups.indexOf(g) < 0) groups.push(g); });
-      var wanted = {};
-      tokens.forEach(function (t) { wanted[t] = true; });
-      var best = null;
-      var bestScore = 0;
-      var second = 0;
-      groups.forEach(function (g) {
-        var found = {};
-        var all = g.getElementsByTagName('*');
-        for (var i = 0; i < all.length; i += 1) { var t = ownText(all[i]); if (wanted[t]) found[t] = true; }
-        var score = Object.keys(found).length;
-        if (score > bestScore) { second = bestScore; bestScore = score; best = g; } else if (score > second) second = score;
-      });
-      if (!best || bestScore === second || bestScore * 2 < tokens.length) return null;
-      scope = best;
+    var like = { tag: id.like.tag, attrs: id.like.attrs && typeof id.like.attrs === 'object' ? id.like.attrs : {}, text: String(id.like.text || ''), shape: id.like.shape || null };
+    var scope = anchorNow(id.anchor);
+    if (!scope) return null;
+    var levels = Array.isArray(id.levels) ? id.levels : [];
+    for (var l = 0; l < levels.length; l += 1) {
+      if (!validLevel(levels[l])) return null;
+      scope = pickGroup(lookAlikes(scope, like), levels[l], scope);
+      if (!scope) return null;
     }
-    var inScope = lookAlikes(scope, like);
-    if (inScope.length !== id.count) return null;
-    var node = inScope[id.index];
+    var left = lookAlikes(scope, like);
+    if (left.length !== id.count) return null;
+    var node = left[id.index];
     return shown(node) ? node : null;
+  }
+
+  /** Whether an element found by its words passes its group evidence (when any was recorded). */
+  function wordsHold(node, id) {
+    if (!id || id.mode !== 'words' || !Array.isArray(id.levels) || !id.levels.length) return true;
+    var level = id.levels[0];
+    if (!validLevel(level)) return false;
+    var scope = anchorNow(id.anchor);
+    if (!scope || !scope.contains(node)) return false;
+    var group = up(node, level.depth);
+    if (!group || group === scope || !scope.contains(group)) return false;
+    var s = score(group, levelSets(level));
+    return s > 0 || (s === 0 && !level.own.length);
   }
 
   /** Every element that shares a label's key, and the position the key names (its [n], else the first). */
@@ -1272,12 +1387,12 @@
   }
 
   /**
-   * The element a comment names now, or null (the comment shows as moved). Never a doubtful attachment:
+   * The element a comment names now, or null (the comment shows as moved). Re-attach only on unambiguous evidence:
    *   1. an element with its own unique label (a data-canvas-id or test id used once): that label;
-   *   2. an identity (recorded for anything else without words of its own): byIdentity;
-   *   3. words of its own, unique to its tag on the board when picked: the one element of that tag with those words,
-   *      wherever it moved; if several have them now, the one at the label's place; if none (the words were edited),
-   *      the element at the label's place when it is still the only one of its kind there.
+   *   2. a look-alike identity: byIdentity;
+   *   3. words of its own, unique to its tag on the board when picked: the one element of that tag with those words
+   *      (if several have them now, the one at the label's place; if none, the element at the label's place when it
+   *      is still the only one of its kind there), and only when its group passes the recorded evidence.
    */
   function locate(message) {
     var kind = message.labelKind;
@@ -1286,19 +1401,24 @@
       var own = anchorNow({ kind: kind, key: label });
       if (own) return shown(own) ? own : null;
     }
-    if (message.identity) return byIdentity(message.identity);
+    var id = message.identity && typeof message.identity === 'object' ? message.identity : null;
+    if (id && id.mode !== 'words') return byIdentity(id);
     var text = typeof message.text === 'string' && message.text ? message.text : null;
     var at = resolve(label, kind);
     var tag = tagOf(message.elementPath) || (at && at.preferred ? at.preferred.localName : null);
+    var found = null;
     if (text && tag) {
       var hits = [];
       var list = document.body.getElementsByTagName(tag);
       for (var i = 0; i < list.length; i += 1) if (ownText(list[i]) === text) hits.push(list[i]);
-      if (hits.length === 1) return shown(hits[0]) ? hits[0] : null;
-      if (hits.length > 1) return at && hits.indexOf(at.preferred) >= 0 && shown(at.preferred) ? at.preferred : null;
+      if (hits.length === 1) found = hits[0];
+      else if (hits.length > 1) found = at && hits.indexOf(at.preferred) >= 0 ? at.preferred : null;
+      else if (at && at.preferred && at.kin.length === 1 && at.kin[0] === at.preferred) found = at.preferred;
+    } else if (at && at.preferred && at.kin.length === 1 && at.kin[0] === at.preferred) {
+      found = at.preferred;
     }
-    if (at && at.preferred && at.kin.length === 1 && at.kin[0] === at.preferred) return shown(at.preferred) ? at.preferred : null;
-    return null;
+    if (!found || !wordsHold(found, id)) return null;
+    return shown(found) ? found : null;
   }
 
   function outline(node) {
@@ -1343,7 +1463,7 @@
     if (!node || node === picking.box) node = event.target;
     if (!node || node.nodeType !== 1) return;
     outline(node);
-    post('canvas:picked', describe(node));
+    post('canvas:picked', runtime.describe(node));
   }
 
   function onPickScroll() { if (picking.target) outline(picking.target); }
@@ -1370,11 +1490,12 @@
 
   runtime.on('canvas:pick', function (data) { setPicking(data.enabled); });
   runtime.on('canvas:locate', function (data) {
-    var node = locate(data);
+    var node = runtime.locate(data);
     post('canvas:located', node ? { rect: boardRect(node) } : { missing: true });
   });
-  runtime.describe = describe;
-  runtime.locate = locate;
+  // One shape cache per call: the board can change between calls.
+  runtime.describe = function (node) { shapeCache = new WeakMap(); try { return describe(node); } finally { shapeCache = null; } };
+  runtime.locate = function (message) { shapeCache = new WeakMap(); try { return locate(message); } finally { shapeCache = null; } };
 
   // ---------------------------------------------------------------- start
 

@@ -101,14 +101,17 @@ function checkRect(rect, where, issues) {
 
 const isCount = (v) => Number.isInteger(v) && v >= 0;
 
-/** An identity as the runtime records it for an element without words of its own (references/comments.md). */
+/** An identity as the runtime records it for an element it cannot find by a unique label alone (references/comments.md). */
 export function validIdentity(id) {
-  if (!isObject(id) || !isObject(id.anchor) || !isObject(id.like)) return false;
+  if (!isObject(id) || !isObject(id.anchor) || !isObject(id.like) || !['look-alike', 'words'].includes(id.mode)) return false;
   if (!['canvas-id', 'kit-component', 'test-id', 'board'].includes(id.anchor.kind) || typeof id.anchor.key !== 'string') return false;
   if (typeof id.like.tag !== 'string' || !id.like.tag || typeof id.like.text !== 'string' || !isObject(id.like.attrs)) return false;
-  if (!Object.values(id.like.attrs).every((v) => typeof v === 'string')) return false;
-  if (!Array.isArray(id.tokens) || id.tokens.length > 5 || !id.tokens.every((t) => typeof t === 'string' && t)) return false;
-  return isCount(id.depth) && isCount(id.count) && Number.isInteger(id.index) && id.index >= -1;
+  if (!Object.values(id.like.attrs).every((v) => typeof v === 'string') || typeof id.like.shape !== 'string') return false;
+  const strings = (l, max) => Array.isArray(l) && l.length <= max && l.every((t) => typeof t === 'string' && t);
+  if (!Array.isArray(id.levels) || id.levels.length > 3) return false;
+  if (!id.levels.every((v) => isObject(v) && Number.isInteger(v.depth) && v.depth > 0 && strings(v.own, 5) && strings(v.others, 1000))) return false;
+  if (id.mode === 'words') return id.levels.length === 1;
+  return isCount(id.count) && Number.isInteger(id.index) && id.index >= -1;
 }
 
 /** Issues with one comment against AFS 1.1 and the canvas extension; empty when it is valid. */
@@ -157,7 +160,7 @@ export function validateComment(c) {
   if (typeof x.moved !== 'boolean') issues.push('canvas.moved must be a boolean');
   if (!(x.batch === null || (typeof x.batch === 'string' && BATCH_ID.test(x.batch)))) issues.push('canvas.batch must be a batch id or null');
   if (x.text !== undefined && typeof x.text !== 'string') issues.push('canvas.text must be a string');
-  if (x.identity !== undefined && !validIdentity(x.identity)) issues.push('canvas.identity must be {anchor: {kind, key}, like: {tag, attrs, text}, depth, tokens, count, index}');
+  if (x.identity !== undefined && !validIdentity(x.identity)) issues.push('canvas.identity must be {mode, anchor: {kind, key}, like: {tag, attrs, text, shape}, levels: [{depth, own, others}], count?, index?}');
   return issues;
 }
 
