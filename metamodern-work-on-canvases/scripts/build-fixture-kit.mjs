@@ -26,12 +26,16 @@ function sourceCommit() {
   }
 }
 
-export async function buildFixtureKit(outDir) {
+/**
+ * Builds the fixture kit into outDir. `version` and `source` override kit.json's, so a test can build a
+ * second, "live" copy (source.branch, source.dirty) beside the pinned one.
+ */
+export async function buildFixtureKit(outDir, { version: versionOverride, source: sourceOverride } = {}) {
   const require = toolingRequire();
   if (!require) throw new Error('The canvas tooling is not installed: node scripts/tooling.mjs install');
   const esbuild = require('esbuild');
   const reactVersion = require('react/package.json').version;
-  const version = `${packageVersion()}-fixture`;
+  const version = versionOverride ?? `${packageVersion()}-fixture`;
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(path.join(outDir, 'components'), { recursive: true });
   const toolingModules = path.dirname(path.dirname(require.resolve('react/package.json')));
@@ -60,7 +64,7 @@ export async function buildFixtureKit(outDir) {
     schema: 'canvas-kit/1',
     namespace: 'Fixture',
     version,
-    source: { repo: 'davidvictor/metamodern-skills', commit: sourceCommit(), dirty: false },
+    source: { repo: 'davidvictor/metamodern-skills', commit: sourceCommit(), dirty: false, ...sourceOverride },
     inputs: ['metamodern-work-on-canvases/assets/fixture-kit/src/**', 'metamodern-work-on-canvases/assets/runtime/support/react-markup.js'],
     builtAt: new Date().toISOString(),
     react: reactVersion,

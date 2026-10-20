@@ -1,6 +1,6 @@
 ---
 name: metamodern-work-on-canvases
-description: Use when working with design canvases that mount a project's real component kit, including reading or validating canvas.json and canvas.config.json, running existing boards on the package's board runtime, checking a kit against the kit contract, or confirming that existing boards still run unchanged.
+description: Use when working with design canvases that mount a project's real component kit, including viewing canvases in the local viewer, switching a board between the pinned and a live kit, adjusting board values or motion, reading or validating canvas.json and canvas.config.json, running existing boards on the package's board runtime, checking a kit against the kit contract, or confirming that existing boards still run unchanged.
 ---
 
 # Metamodern Work on Canvases
@@ -14,8 +14,14 @@ Canvases are where interface designs are explored and decided against the real c
 - [Canvas format and project config](references/canvas-format.md): `canvas.json` v3 with the `ws` additions, `canvas.config.json`, live kits, frozen canvases, viewer links and what a board can load.
 - [Board language and messages](references/board-language.md): the constructs boards use, how each behaves, and the messages between a board and the viewer.
 - [Kit contract](references/kit-contract.md): what a project's kit provides, including legacy kits.
+- [The viewer](references/viewer.md): the home page, links, the kit switch and banner, the properties panel, motion controls, live reload and keys.
 - The board runtime, `assets/runtime/support.js`, with no framework of its own.
+- The viewer: `scripts/canvas.mjs view`, its server `scripts/lib/viewer-server.mjs` and its browser app in `assets/viewer/`.
 - Node modules with no dependencies: `scripts/canvas-format.mjs`, `scripts/board-resolve.mjs` and `scripts/kit-contract.mjs`.
+
+## Viewing canvases
+
+Run `node scripts/canvas.mjs view` from inside the project (or pass `--project <dir>`). It serves every canvas on `127.0.0.1` at the config's port and prints the address. Send viewer links (`/<canvas>/<page>/<board>`), never file paths. A board link can carry `?canvas-kit=live:<name>` and `?canvas-props=<json>`. Boards that are recorded, rendered for review or used as a lead stay on the pinned kit; a live kit is for boards switched to it during a lab session, and every board's banner names the kit it shows.
 
 ## Checks
 

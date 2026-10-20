@@ -90,7 +90,7 @@ Messages go over `postMessage` on the board's own origin, and the runtime accept
 | board to viewer | `canvas:ready` | `{props: <data-props schema>, values, kit: {mode, ref, version}}`, sent once every mounted component has drawn |
 | viewer to board | `canvas:set-props` | `{values}` |
 | board to viewer | `canvas:props-changed` | `{values}`, every current value, after `canvas:set-props` |
-| viewer to board | `canvas:motion` | `{rate: 1, 0.25 or 0, replay?: true}`; `0` pauses. Applied to every Web Animation (CSS animations and transitions included, also ones that start later) as `playbackRate`, and as the `--canvas-motion-rate` CSS variable. `replay` draws the board afresh so entrance motion runs again. |
+| viewer to board | `canvas:motion` | `{rate: 1, 0.25 or 0, replay?: true}`; `0` pauses. Applied to every Web Animation (CSS animations and transitions included, also ones that start later, and ones a script starts with `element.animate()`) as `playbackRate`, as the `--canvas-motion-rate` CSS variable, and to the board's JavaScript clock: `performance.now()`, `requestAnimationFrame` timestamps and timers with a delay (`setTimeout`, `setInterval`) run at the rate (0 freezes them) and stay continuous when it changes, so spring, frame and timer-driven motion slows and pauses too. Timers with no delay stay immediate and `Date.now()` stays real. `replay` draws the board afresh so entrance motion runs again. |
 | viewer to board | `canvas:pick` | `{enabled}`: turns element picking on or off |
 | board to viewer | `canvas:picked` | `{label, labelKind, elementPath, element, rect, nearbyText, reactComponents?}`, with `rect` relative to the board |
 | viewer to board | `canvas:locate` | `{label, labelKind, elementPath}`, used to re-attach comments |
@@ -100,8 +100,9 @@ Messages go over `postMessage` on the board's own origin, and the runtime accept
 
 ## Runtime extension point
 
-`window.__canvasRuntime` exposes `version`, `language` (1), `board`, `ready` (a promise that resolves when `canvas:ready` is sent), `props`, `schema`, `kit`, `on(type, handler)` (handlers receive every accepted `canvas:*` message of that type), `post(type, payload)` and `render()`.
+`window.__canvasRuntime` exposes `version`, `language` (1), `board`, `motion` (`{rate}`), `clock` (`now()`, the board's scaled clock), `ready` (a promise that resolves when `canvas:ready` is sent), `props`, `schema`, `kit`, `on(type, handler)` (handlers receive every accepted `canvas:*` message of that type), `post(type, payload)` and `render()`.
 
 ## Change log
 
 - 2026-10-20: first pinned version, with the catalogue above. MM-01 adds the `style` wrapper rule, `dc-import` type conversion, JSX whitespace, `canvas-props` and `canvas-kit` link values, and the extension point.
+- 2026-10-20: MM-02 (runtime 0.0.2) extends `canvas:motion` to the board's JavaScript clock (`performance.now()`, `requestAnimationFrame` timestamps, timers with a delay) and to animations started with `element.animate()`, so frame-driven springs replay, slow and pause with CSS motion. The message is unchanged.

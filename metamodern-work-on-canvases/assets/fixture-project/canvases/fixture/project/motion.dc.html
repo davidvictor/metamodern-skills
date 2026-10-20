@@ -15,6 +15,7 @@
 <x-import component-from-global-scope="Fixture.Root" theme="{{theme}}">
   <div class="board" data-canvas-id="motion">
     <div class="slow-spin" data-test="spinner"></div>
+    <x-import component-from-global-scope="Fixture.Spring" to="160"></x-import>
     <x-import component-from-global-scope="Fixture.Tabs" items="{{tabs}}" default-value="members">
       <p class="board-note">Members and roles.</p>
     </x-import>

@@ -207,7 +207,7 @@ test('RT-07 viewer messages: canvas:ready, canvas:set-props and canvas:props-cha
   assert.equal(ready.values.limit, 4);
   assert.equal(ready.kit.mode, 'pinned');
   assert.match(ready.kit.ref, /^[0-9a-f]{40}$/);
-  assert.equal(ready.kit.version, '0.0.1-fixture');
+  assert.equal(ready.kit.version, `${(await fs.readFile(path.join(PACKAGE, 'PACKAGE_VERSION'), 'utf8')).trim().split('@').pop()}-fixture`);
   await page.evaluate(() => window.send({ type: 'canvas:set-props', values: { theme: 'dark', limit: 2, heading: 'Next week' } }));
   await page.waitForFunction(() => window.__messages.some((m) => m.type === 'canvas:props-changed' && m.values.theme === 'dark'));
   await frame.waitForFunction(() => document.querySelector('[data-kit-component="Root"]')?.dataset.theme === 'dark' && document.querySelector('h1')?.textContent === 'Next week');
@@ -232,6 +232,95 @@ test('RT-08 canvas:motion slows, pauses and replays Web Animations and sets --ca
     const dialog = document.querySelector('.fx-dialog');
     return dialog && dialog.getAnimations().some((a) => a.playState === 'running' && a.playbackRate === 1);
   });
+  await page.close();
+});
+
+test('RT-12 canvas:motion scales the board clock: a frame-driven spring takes about 4 times as long at a quarter, freezes at 0 and resumes without a jump', { skip }, async () => {
+  const { page, frame, problems } = await harness('fixture/project/motion');
+  const spring = '[data-kit-component="Spring"] .fx-spring';
+  await frame.waitForSelector(`${spring}[data-settled]`);
+  const timed = async (rate) => {
+    await frame.evaluate(() => { window.__t0 = Date.now(); });
+    await page.evaluate((r) => window.send({ type: 'canvas:motion', rate: r, replay: true }), rate);
+    const handle = await frame.waitForFunction((s) => {
+      const el = document.querySelector(s);
+      return el && el.dataset.settled ? { real: Date.now() - window.__t0, virtual: Number(el.dataset.settled) } : null;
+    }, spring, { timeout: 15000 });
+    return handle.jsonValue();
+  };
+  const normal = await timed(1);
+  const quarter = await timed(0.25);
+  const ratio = quarter.real / normal.real;
+  assert.ok(ratio > 3 && ratio < 5.5, `quarter speed took ${quarter.real} ms against ${normal.real} ms (${ratio.toFixed(2)} times)`);
+  assert.ok(Math.abs(quarter.virtual - normal.virtual) < normal.virtual * 0.25, `the spring's own clock agrees: ${quarter.virtual} and ${normal.virtual} ms`);
+
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1, replay: true }));
+  await frame.waitForFunction((s) => { const el = document.querySelector(s); return el && !el.dataset.settled && Number(el.dataset.x) > 20; }, spring);
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0 }));
+  const frozen = await frame.evaluate(async (s) => {
+    const read = () => Number(document.querySelector(s).dataset.x);
+    await new Promise((r) => requestAnimationFrame(() => r()));
+    const at = read();
+    for (let i = 0; i < 30; i += 1) await new Promise((r) => requestAnimationFrame(() => r()));
+    return { at, after: read(), settled: !!document.querySelector(s).dataset.settled };
+  }, spring);
+  assert.equal(frozen.after, frozen.at, 'nothing moves while paused');
+  assert.equal(frozen.settled, false);
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
+  const resumed = await frame.evaluate(async (s) => {
+    for (let i = 0; i < 2; i += 1) await new Promise((r) => requestAnimationFrame(() => r()));
+    return Number(document.querySelector(s).dataset.x);
+  }, spring);
+  // Two frames of motion move it a few pixels; a clock that jumped over the pause would land it near 160.
+  assert.ok(Math.abs(resumed - frozen.at) < 40, `resumed from ${frozen.at} to ${resumed} px in two frames, no jump`);
+  await frame.waitForSelector(`${spring}[data-settled]`);
+
+  // Timers with a delay run in board time too; timers with none stay immediate.
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0.25 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0.25);
+  const timers = await frame.evaluate(() => new Promise((resolve) => {
+    const t0 = Date.now();
+    let immediate = null;
+    setTimeout(() => { immediate = Date.now() - t0; }, 0);
+    setTimeout(() => resolve({ delayed: Date.now() - t0, immediate }), 100);
+  }));
+  assert.ok(timers.delayed >= 300 && timers.delayed < 1000, `a 100 ms timer took ${timers.delayed} ms at a quarter`);
+  assert.ok(timers.immediate !== null && timers.immediate < 100, 'a timer with no delay stays immediate');
+  // A script animation whose startTime is set from performance.now() (motion libraries do this) starts at
+  // its beginning even after the board clock fell behind, and stays paused on a paused board.
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0);
+  const paused = await frame.evaluate(async () => {
+    const a = document.body.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 1000 });
+    a.startTime = performance.now();
+    for (let i = 0; i < 10; i += 1) await new Promise((r) => requestAnimationFrame(() => r()));
+    return { state: a.playState, time: Math.round(Number(a.currentTime)) };
+  });
+  assert.equal(paused.state, 'paused');
+  assert.ok(paused.time < 50, `held near its start: ${paused.time} ms`);
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0.25 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0.25);
+  const kept = await frame.evaluate(async () => {
+    const a = document.body.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 1000 });
+    const set = performance.now();
+    a.startTime = set;
+    for (let i = 0; i < 5; i += 1) await new Promise((r) => requestAnimationFrame(() => r()));
+    const read = a.startTime;
+    a.cancel();
+    return read - set;
+  });
+  assert.equal(kept, 0, 'a startTime a script set reads back unchanged');
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1);
+  const started = await frame.evaluate(() => {
+    const a = document.body.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 1000 });
+    a.startTime = performance.now();
+    const time = Number(a.currentTime);
+    a.cancel();
+    return Math.round(time);
+  });
+  assert.ok(Math.abs(started) < 50, `a fresh animation starts at its beginning: ${started} ms`);
+  assert.deepEqual(problems, []);
   await page.close();
 });
 

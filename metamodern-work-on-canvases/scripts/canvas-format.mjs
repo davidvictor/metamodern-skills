@@ -47,7 +47,7 @@ export function validateCanvas(canvas) {
   }
   if (canvas.order != null) {
     if (!Array.isArray(canvas.order)) issues.push('canvas.json: order must be an array');
-    else for (const file of canvas.order) if (!canvas.boards || !(file in canvas.boards)) issues.push(`canvas.json: order names ${file}, which is not a board`);
+    else for (const file of canvas.order) if (!isObject(canvas.boards) || !Object.hasOwn(canvas.boards, file)) issues.push(`canvas.json: order names ${file}, which is not a board`);
   }
   if (canvas.ws != null) {
     if (!isObject(canvas.ws)) issues.push('canvas.json: ws must be an object');

@@ -20,6 +20,7 @@ export interface FixtureKit {
   Input: Component<{ label: string; defaultValue?: string; placeholder?: string; onChange?: (event: unknown) => void }>;
   Dialog: Component<{ open?: boolean; title?: string; description?: string; onOpenChange?: (open: boolean) => void; children?: Node }>;
   Tabs: Component<{ items: { id: string; label: string }[]; defaultValue?: string; onChange?: (id: string) => void; children?: Node }>;
+  Spring: Component<{ to?: number; stiffness?: number; damping?: number }>;
   Icons: { Check: Component<{ size?: number; label?: string }>; Close: Component<{ size?: number; label?: string }>; Plus: Component<{ size?: number; label?: string }> };
   Scenes?: { Overview: Component<{ state?: string } & RootProps>; Settings: Component<{ state?: string } & RootProps> };
 }
