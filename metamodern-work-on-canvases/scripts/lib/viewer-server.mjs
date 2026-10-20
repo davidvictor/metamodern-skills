@@ -1,5 +1,5 @@
 // The canvas viewer's server: every canvas in a project, live, on 127.0.0.1 only. A viewer, never an editor: the
-// only thing it writes is comments (comments/, contract 4), on David's actions. Node built-ins only.
+// only thing it writes is comments (comments/, contract 4), on the person's actions. Node built-ins only.
 //
 //   /                                   the home page (the viewer app)
 //   /<canvas>/  /<canvas>/<page>/  /<canvas>/<page>/<board>   viewer links (contract 1), the viewer app
@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { GROUPS, isFrozen, parseViewerLink, readConfig, readLiveKits, validateCanvas } from '../canvas-format.mjs';
 import { kitDirFor } from '../board-resolve.mjs';
 import { localHost, sendFile, sendText, serveBoardRequest, TYPES } from './board-server.mjs';
-import { COMMENT_ID, commentsRoot, createComment, placeComment, readBatches, readComments, replyToComment, resolveComment, sendAll } from './comment-store.mjs';
+import { COMMENT_ID, commentsRoot, createComment, placeComment, readBatchReport, readComments, replyToComment, resolveComment, sendAll } from './comment-store.mjs';
 
 export const VIEWER_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'viewer');
 const ID = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -383,7 +383,8 @@ async function serveComments({ req, res, parts, projectRoot, canvases }) {
   try {
     if (req.method === 'GET' && parts.length === 1) {
       const { comments, problems } = await readComments(projectRoot);
-      return json(200, { comments, batches: await readBatches(projectRoot), problems });
+      const report = await readBatchReport(projectRoot);
+      return json(200, { comments, batches: report.batches, problems: problems.concat(report.problems) });
     }
     if (req.method !== 'POST') return sendText(res, 405, 'Method not allowed');
     const body = await readBody(req);

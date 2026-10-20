@@ -13,8 +13,8 @@ import test, { after, before } from 'node:test';
 import { chromium, toolingInstalled } from '../metamodern-work-on-canvases/scripts/tooling.mjs';
 import { startViewer } from '../metamodern-work-on-canvases/scripts/lib/viewer-server.mjs';
 import {
-  BATCH_ID, COMMENT_ID, createComment, findComment, finishBatch, newId, placeComment, readBatch, readBatches, readComments,
-  replyToComment, resolveComment, sendAll, takeBatch, validateBatch, validateComment, waitForBatch, withLock,
+  BATCH_ID, COMMENT_ID, createComment, findComment, finishBatch, newId, placeComment, readBatch, readBatchReport, readBatches, readComments,
+  replyToComment, resolveComment, sendAll, takeBatch, updateComment, validateBatch, validateComment, waitForBatch, withLock, writeJsonAtomic,
 } from '../metamodern-work-on-canvases/scripts/lib/comment-store.mjs';
 import { main as commentsMain, sessionName } from '../metamodern-work-on-canvases/scripts/comments.mjs';
 
@@ -40,16 +40,23 @@ const ELEMENT = {
   reactComponents: 'Root > Button', kit: { mode: 'pinned', ref: 'a'.repeat(40), version: '1.0.0' }, props: { theme: 'dark', $preview: { width: 1 } },
 };
 
-/** Runs the command line in its own process. */
+/**
+ * Runs the command line in its own process. The promise has `waiting`, which settles once `comments wait` says it is
+ * listening (or the process ends).
+ */
 function cli(args, { cwd } = {}) {
-  return new Promise((resolve) => {
+  let heard;
+  const waiting = new Promise((resolve) => { heard = resolve; });
+  const done = new Promise((resolve) => {
     const child = spawn(process.execPath, [CLI, ...args], { cwd, env: { ...process.env, CANVAS_SESSION: 'test/session' } });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (c) => { stdout += c; });
-    child.stderr.on('data', (c) => { stderr += c; });
-    child.on('close', (code) => resolve({ code, stdout, stderr, at: Date.now() }));
+    child.stderr.on('data', (c) => { stderr += c; if (stderr.includes('Waiting for a batch.')) heard(); });
+    child.on('close', (code) => { heard(); resolve({ code, stdout, stderr, at: Date.now() }); });
   });
+  done.waiting = waiting;
+  return done;
 }
 
 test('CM-01 ids follow c_<yyyymmdd>_<6 base36> and b_<yyyymmdd>_<6 base36>', () => {
@@ -135,6 +142,10 @@ test('CM-04 writes are atomic and locked: concurrent replies are all kept, no te
   const old = new Date(Date.now() - 60000);
   await fs.utimes(`${file}.lock`, old, old);
   assert.equal(await withLock(file, async () => 'ran'), 'ran');
+  // A new comment never replaces a file already there.
+  await assert.rejects(writeJsonAtomic(file, { replaced: true }, { exclusive: true }), { code: 'EEXIST' });
+  assert.equal(JSON.parse(await fs.readFile(file, 'utf8')).id, c.id);
+  assert.deepEqual((await fs.readdir(path.join(root, 'comments', 'fixture'))).sort(), [`${c.id}.json`]);
 });
 
 test('CM-05 re-attachment is recorded: a new place moves the pin, a missing element marks it moved, nothing is lost', async () => {
@@ -184,6 +195,18 @@ test('CM-06 Send all to agent: one batch of every open comment, then taken and d
   assert.deepEqual(again.comments, [b.id]);
   assert.equal((await readBatches(root)).length, 2);
   await assert.rejects(readBatch(root, 'b_x'), /not a batch id/);
+  // A batch file that cannot be read is reported, left on disk, and its comments are not sent again.
+  const d = await createComment(root, ELEMENT);
+  const unreadable = 'b_20261020_zzzzzz';
+  await updateComment(root, d.id, (x) => { x.canvas.batch = unreadable; return x; });
+  await fs.writeFile(path.join(root, 'comments', 'batches', `${unreadable}.json`), '{"schema": "canvas-batch/1", "id"');
+  const report = await readBatchReport(root);
+  assert.deepEqual(report.problems.map((p) => path.basename(p.file)), [`${unreadable}.json`]);
+  assert.ok(report.unreadable.has(unreadable));
+  assert.equal(await sendAll(root), null, 'a comment in a batch that cannot be read counts as still with the agent');
+  // A batch id with no file at all (a send that stopped before writing it) is sent again.
+  await updateComment(root, d.id, (x) => { x.canvas.batch = 'b_20261020_000000'; return x; });
+  assert.deepEqual((await sendAll(root)).comments, [d.id]);
 });
 
 test('CM-07 the command line: list, wait (a batch written by another process arrives within 2 s), take, reply, done', async () => {
@@ -198,7 +221,7 @@ test('CM-07 the command line: list, wait (a batch written by another process arr
   assert.equal(r.code, 2, 'no batch before the timeout');
   // The listener runs first; the batch is sent from this process once it is waiting.
   const listening = cli(['comments', 'wait', '--timeout', '20'], { cwd: path.join(root, 'canvases', 'fixture') });
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  await listening.waiting;
   const sentAt = Date.now();
   const batch = await sendAll(root);
   const heard = await listening;
@@ -221,6 +244,16 @@ test('CM-07 the command line: list, wait (a batch written by another process arr
   assert.match(r.stderr, /No comment/);
   r = await cli(['comments', 'bogus', '--project', root]);
   assert.equal(r.code, 1);
+  // Ids are checked before the file system is touched: nothing is made outside the project.
+  for (const sub of ['done', 'take']) {
+    r = await cli(['comments', sub, '../../../outside/deep/x', '--project', root]);
+    assert.equal(r.code, 1);
+    assert.match(r.stderr, /not a batch id/);
+  }
+  r = await cli(['comments', 'reply', '../../x', 'Hi', '--project', root]);
+  assert.match(r.stderr, /not a comment id/);
+  await assert.rejects(fs.access(path.join(root, '..', 'outside')), { code: 'ENOENT' });
+  await assert.rejects(fs.access(path.join(root, 'outside')), { code: 'ENOENT' });
   assert.equal(await commentsMain(['list', '--nope']), 1);
   assert.equal(sessionName({ CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'abc' }), 'claude-code/abc');
   assert.equal(sessionName({ CODEX_THREAD_ID: 't1' }), 'codex/t1');
@@ -248,19 +281,31 @@ test('CM-08 the viewer\'s comment routes: same-origin JSON only, and a change on
     assert.equal((await request(viewer.origin, '/_comments', { method: 'POST', body: ELEMENT, headers: { origin: viewer.origin, 'content-type': 'text/plain' } })).status, 415);
     assert.equal((await request(viewer.origin, '/_comments', { method: 'POST', body: { ...ELEMENT, canvas: 'nope' }, headers: json })).status, 400);
     assert.equal((await request(viewer.origin, '/_index', { method: 'POST', body: {}, headers: json })).status, 405);
+    // Events: the comment the viewer writes is announced; then so is an agent's reply written on disk.
+    let text = '';
+    let wake = () => {};
+    const opened = new Promise((resolve) => {
+      const es = http.get(`${viewer.origin}/_events`, (res) => {
+        res.setEncoding('utf8');
+        res.on('data', (d) => { text += d; wake(); });
+        resolve(es);
+      });
+    });
+    const es = await opened;
+    const announced = (ms = 3000) => new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(false), ms);
+      wake = () => { if (text.includes('"comments"')) { clearTimeout(timer); resolve(true); } };
+      wake();
+    });
     const made = await request(viewer.origin, '/_comments', { method: 'POST', body: ELEMENT, headers: json });
     assert.equal(made.status, 201);
     const c = JSON.parse(made.body);
-    // Events: wait for the watcher, then an agent's reply on disk is announced.
-    const events = [];
-    const es = http.get(`${viewer.origin}/_events`, (res) => { res.setEncoding('utf8'); res.on('data', (d) => events.push(d)); });
-    await new Promise((resolve) => setTimeout(resolve, 1300));
-    events.length = 0;
+    assert.ok(await announced(), 'the new comment is announced');
+    text = '';
     await replyToComment(root, c.id, { role: 'agent', content: 'Changed.', addressed: true });
-    const t0 = Date.now();
-    while (!events.join('').includes('"comments"') && Date.now() - t0 < 3000) await new Promise((resolve) => setTimeout(resolve, 25));
+    const heard = await announced();
     es.destroy();
-    assert.ok(events.join('').includes('"comments"'), 'the browser hears about the change');
+    assert.ok(heard, 'the browser hears about the agent\'s reply');
     let r = await request(viewer.origin, `/_comments/${c.id}/reply`, { method: 'POST', body: { content: 'Thanks, reopening for the phone.' }, headers: json });
     assert.equal(JSON.parse(r.body).status, 'pending');
     r = await request(viewer.origin, `/_comments/${c.id}/resolve`, { method: 'POST', body: {}, headers: json });
@@ -324,6 +369,71 @@ const commentFiles = async () => (await readComments(broot)).comments;
 const pickingIn = (file) => page.waitForFunction((f) => [...(document.querySelector(`iframe[data-board="${f}"]`)?.contentDocument?.querySelectorAll('style') ?? [])]
   .some((n) => n.textContent.includes('crosshair')), file);
 
+const ROWS_BOARD = (names) => `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rows</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div data-canvas-id="rows">
+  <sc-for list="{{rows}}" as="row">
+    <div class="row"><b>{{row.name}}</b> <img src="assets/dot.svg" alt="" width="12" height="12"> <button type="button">Edit</button></div>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":600,"height":300}}'>
+class Component extends DCLogic {
+  renderVals() { return { rows: ${JSON.stringify(names.map((name) => ({ name })))} }; }
+}
+</script>
+</body>
+</html>
+`;
+
+test('CM-09 a textless element and an element whose text its siblings share re-attach to the same element or show as moved, never a neighbour', { skip }, async () => {
+  const dir = path.join(broot, 'canvases', 'fixture', 'project');
+  const file = path.join(dir, 'rows.dc.html');
+  await fs.writeFile(file, ROWS_BOARD(['Ana', 'Bea', 'Cy']));
+  const p = await browser.newPage();
+  try {
+    const open = async () => {
+      await p.goto(`${viewer.origin}/fixture/project/rows.dc.html`);
+      await p.waitForFunction(() => document.querySelectorAll('.row').length > 0 && window.__canvasRuntime);
+    };
+    await open();
+    // In the second row: its image (no text) and its Edit button (text every row shares).
+    const picked = await p.evaluate(() => {
+      const row = document.querySelectorAll('.row')[1];
+      return ['img', 'button'].map((tag) => window.__canvasRuntime.describe(row.querySelector(tag)));
+    });
+    for (const d of picked) {
+      assert.equal(typeof d.fingerprint, 'string', `${d.element} has a fingerprint`);
+      assert.match(d.label, /^rows > div:nth-of-type\(2\) > /);
+    }
+    assert.equal(picked[0].text, '');
+    assert.equal(picked[1].text, 'Edit');
+    const whereNow = () => p.evaluate((list) => list.map((d) => {
+      const n = window.__canvasRuntime.locate(d);
+      return n ? n.closest('.row').querySelector('b').textContent : null;
+    }), picked);
+    assert.deepEqual(await whereNow(), ['Bea', 'Bea']);
+    // The first row is removed: the counted place now holds Cy's row; both comments stay with Bea's.
+    await fs.writeFile(file, ROWS_BOARD(['Bea', 'Cy']));
+    await open();
+    assert.deepEqual(await whereNow(), ['Bea', 'Bea']);
+    // Bea's row is removed: neither comment moves to a neighbour; both show as moved.
+    await fs.writeFile(file, ROWS_BOARD(['Ana', 'Cy', 'Dee']));
+    await open();
+    assert.deepEqual(await whereNow(), [null, null]);
+  } finally {
+    await p.close();
+    await fs.rm(file, { force: true });
+  }
+});
+
 test('CM-10 click an element at quarter zoom, comment, send to a listening agent, reply, resolve and reopen, regenerate', { skip }, async () => {
   const board = 'basics.dc.html';
   await page.goto(`${viewer.origin}/fixture/language/basics`);
@@ -386,7 +496,7 @@ test('CM-10 click an element at quarter zoom, comment, send to a listening agent
 
   // Send all to agent, with an agent listening in another process.
   const listening = cli(['comments', 'wait', '--timeout', '20', '--project', broot]);
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  await listening.waiting;
   assert.equal(await page.textContent('[data-test="send-all"] .count'), '3');
   const clickedAt = Date.now();
   await page.click('[data-test="send-all"]');

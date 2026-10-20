@@ -3,6 +3,7 @@
 //
 //   canvas comments list [--open] [--batch <id>]       comments as JSON (open: pending)
 //   canvas comments wait [--timeout <s>]               blocks until a batch is sent, then prints it with its comments
+//                                                      ("Waiting for a batch." on standard error once it is listening)
 //   canvas comments take <batchId> [--by <who>]        takes a sent batch and prints it with its comments
 //   canvas comments reply <id> "<text>" [--addressed]  replies as the agent; --addressed marks it acknowledged
 //   canvas comments done <batchId>                     the batch is worked through
@@ -78,7 +79,8 @@ export async function main(argv, { env = process.env } = {}) {
         if (!Number.isFinite(s) || s < 0) throw new Error('--timeout takes seconds');
         timeoutMs = Math.round(s * 1000);
       }
-      const batch = await waitForBatch(projectRoot, { timeoutMs });
+      // Standard error says when it is listening, so a script can start the person's side only then.
+      const batch = await waitForBatch(projectRoot, { timeoutMs, onWaiting: () => process.stderr.write('Waiting for a batch.\n') });
       if (!batch) { console.error('No batch was sent before the timeout.'); return 2; }
       const full = await expandBatch(projectRoot, batch);
       print({ ...full, annotations: await withLinks(projectRoot, full.annotations) });

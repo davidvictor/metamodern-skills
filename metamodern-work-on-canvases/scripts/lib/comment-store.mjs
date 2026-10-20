@@ -46,12 +46,20 @@ export function newId(prefix, date = new Date()) {
 
 // ---------------------------------------------------------------- files
 
-/** Writes JSON (two-space, trailing newline) by renaming a temporary file over the target. */
-export async function writeJsonAtomic(file, value) {
+/**
+ * Writes JSON (two-space, trailing newline) by renaming a temporary file over the target. With `exclusive`, the
+ * file is linked into place instead and an existing file is never replaced (the error's code is EEXIST).
+ */
+export async function writeJsonAtomic(file, value, { exclusive = false } = {}) {
   await fsp.mkdir(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`;
   await fsp.writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`);
-  try { await fsp.rename(tmp, file); } catch (error) { await fsp.rm(tmp, { force: true }); throw error; }
+  try {
+    if (exclusive) await fsp.link(tmp, file);
+    else await fsp.rename(tmp, file);
+  } finally {
+    await fsp.rm(tmp, { force: true });
+  }
 }
 
 async function readJson(file) {
@@ -129,6 +137,7 @@ export function validateComment(c) {
   if (typeof x.moved !== 'boolean') issues.push('canvas.moved must be a boolean');
   if (!(x.batch === null || (typeof x.batch === 'string' && BATCH_ID.test(x.batch)))) issues.push('canvas.batch must be a batch id or null');
   if (x.text !== undefined && typeof x.text !== 'string') issues.push('canvas.text must be a string');
+  if (x.fingerprint !== undefined && typeof x.fingerprint !== 'string') issues.push('canvas.fingerprint must be a string');
   return issues;
 }
 
@@ -179,7 +188,7 @@ export async function readComments(projectRoot) {
 
 /** One comment by id, from any canvas folder. */
 export async function findComment(projectRoot, id) {
-  if (!COMMENT_ID.test(id)) throw new Error(`${id} is not a comment id (c_<yyyymmdd>_<6 base36>)`);
+  if (typeof id !== 'string' || !COMMENT_ID.test(id)) throw new Error(`${id} is not a comment id (c_<yyyymmdd>_<6 base36>)`);
   for (const entry of await listDir(commentsRoot(projectRoot))) {
     if (!entry.isDirectory() || entry.name === 'batches') continue;
     const file = path.join(commentsRoot(projectRoot), entry.name, `${id}.json`);
@@ -188,19 +197,45 @@ export async function findComment(projectRoot, id) {
   throw new Error(`No comment ${id}`);
 }
 
-/** Every batch, oldest first. */
-export async function readBatches(projectRoot) {
-  const out = [];
+/**
+ * Every valid batch, oldest first, and the batch files that are not valid batches (reported in problems, left on
+ * disk; `unreadable` holds their ids, and their comments count as still with the agent).
+ */
+export async function readBatchReport(projectRoot) {
+  const batches = [];
+  const problems = [];
+  const unreadable = new Set();
   for (const f of await listDir(batchesDir(projectRoot))) {
     if (!f.isFile() || !/^b_.*\.json$/.test(f.name)) continue;
-    try { out.push(await readJson(path.join(batchesDir(projectRoot), f.name))); } catch { /* being replaced; the next read sees it */ }
+    const file = path.join(batchesDir(projectRoot), f.name);
+    const id = f.name.slice(0, -5);
+    let issues;
+    let b = null;
+    try {
+      b = await readJson(file);
+      issues = validateBatch(b);
+      if (b?.id !== id) issues.push('the file name is not the batch id');
+    } catch (error) {
+      issues = [`not readable JSON: ${error.message}`];
+    }
+    if (issues.length) {
+      problems.push({ file: path.relative(path.resolve(projectRoot), file), issues });
+      unreadable.add(id);
+    } else {
+      batches.push(b);
+    }
   }
-  out.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || String(a.id).localeCompare(String(b.id)));
-  return out;
+  batches.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || String(a.id).localeCompare(String(b.id)));
+  return { batches, problems, unreadable };
+}
+
+/** Every valid batch, oldest first. */
+export async function readBatches(projectRoot) {
+  return (await readBatchReport(projectRoot)).batches;
 }
 
 export async function readBatch(projectRoot, id) {
-  if (!BATCH_ID.test(id)) throw new Error(`${id} is not a batch id (b_<yyyymmdd>_<6 base36>)`);
+  if (typeof id !== 'string' || !BATCH_ID.test(id)) throw new Error(`${id} is not a batch id (b_<yyyymmdd>_<6 base36>)`);
   try { return await readJson(batchFile(projectRoot, id)); } catch { throw new Error(`No batch ${id}`); }
 }
 
@@ -210,7 +245,7 @@ const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o[k] !== undefin
 
 /**
  * Makes and writes a new comment. `input`: {canvas, page, board, kind, comment, rect, boardWidth, label?, labelKind?,
- * elementPath?, element?, text?, nearbyText?, reactComponents?, attributes?, kit, props, intent?, severity?, url?}.
+ * elementPath?, element?, text?, fingerprint?, nearbyText?, reactComponents?, attributes?, kit, props, intent?, severity?, url?}.
  */
 export async function createComment(projectRoot, input, { now = Date.now() } = {}) {
   const kind = input.kind ?? 'element';
@@ -242,12 +277,21 @@ export async function createComment(projectRoot, input, { now = Date.now() } = {
       moved: false,
       batch: null,
       ...(kind === 'element' && typeof input.text === 'string' ? { text: input.text } : {}),
+      ...(kind === 'element' && typeof input.fingerprint === 'string' ? { fingerprint: input.fingerprint } : {}),
     },
   };
   const issues = validateComment(c);
   if (issues.length) throw new Error(`The comment is not valid: ${issues.join('; ')}`);
-  await writeJsonAtomic(commentFile(projectRoot, c.canvas.canvas, c.id), c);
-  return c;
+  // Never replaces a comment: a new id is taken if this one is already in use.
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      await writeJsonAtomic(commentFile(projectRoot, c.canvas.canvas, c.id), c, { exclusive: true });
+      return c;
+    } catch (error) {
+      if (error.code !== 'EEXIST' || attempt >= 4) throw error;
+      c.id = newId('c', new Date(now));
+    }
+  }
 }
 
 /** Changes one comment under its lock: fn(comment) returns the new comment (validated before it is written). */
@@ -327,19 +371,34 @@ export async function placeComment(projectRoot, id, { rect, moved, boardWidth })
  */
 export async function sendAll(projectRoot, { now = Date.now() } = {}) {
   return withLock(path.join(batchesDir(projectRoot), 'send'), async () => {
-    const batches = new Map((await readBatches(projectRoot)).map((b) => [b.id, b]));
+    const report = await readBatchReport(projectRoot);
+    const batches = new Map(report.batches.map((b) => [b.id, b]));
+    // With the agent: in a batch that is sent or taken, or in a batch file that cannot be read (never sent twice).
+    // A batch id with no file at all (a send that stopped before writing it) is not with the agent.
+    const withAgent = (id) => !!id && (report.unreadable.has(id) || (batches.has(id) && batches.get(id).status !== 'done'));
+    const sendable = (c) => c?.status === 'pending' && !withAgent(c.canvas?.batch);
     const { comments } = await readComments(projectRoot);
-    const open = comments.filter((c) => c?.status === 'pending' && validateComment(c).length === 0
-      && (!c.canvas.batch || !batches.has(c.canvas.batch) || batches.get(c.canvas.batch).status === 'done'));
+    const open = comments.filter(sendable);
     if (!open.length) return null;
-    const batch = { schema: BATCH_SCHEMA, id: newId('b', new Date(now)), createdAt: new Date(now).toISOString(), comments: open.map((c) => c.id), status: 'sent', takenBy: null };
-    for (const c of open) await updateComment(projectRoot, c.id, (x) => { x.canvas.batch = batch.id; return x; });
-    await writeJsonAtomic(batchFile(projectRoot, batch.id), batch);
+    const batch = { schema: BATCH_SCHEMA, id: newId('b', new Date(now)), createdAt: new Date(now).toISOString(), comments: [], status: 'sent', takenBy: null };
+    // Checked again inside each comment's lock: a comment resolved or sent meanwhile is left out.
+    for (const c of open) {
+      await updateComment(projectRoot, c.id, (x) => {
+        if (!sendable(x)) return x;
+        x.canvas.batch = batch.id;
+        batch.comments.push(x.id);
+        return x;
+      });
+    }
+    if (!batch.comments.length) return null;
+    await writeJsonAtomic(batchFile(projectRoot, batch.id), batch, { exclusive: true });
     return batch;
   });
 }
 
 async function updateBatch(projectRoot, id, fn) {
+  // The id is checked before anything touches the file system.
+  if (typeof id !== 'string' || !BATCH_ID.test(id)) throw new Error(`${id} is not a batch id (b_<yyyymmdd>_<6 base36>)`);
   const file = batchFile(projectRoot, id);
   return withLock(file, async () => {
     const current = await readBatch(projectRoot, id);
@@ -376,9 +435,10 @@ export async function expandBatch(projectRoot, batch) {
 
 /**
  * Waits until a batch is sent and returns it (the oldest one still waiting, at once, if there is one). Watches the
- * batches folder, with a poll as a safety net. `timeoutMs` 0 waits for ever; on a timeout it returns null.
+ * batches folder, with a poll as a safety net; `onWaiting` is called once both are in place. `timeoutMs` 0 waits for
+ * ever; on a timeout it returns null.
  */
-export async function waitForBatch(projectRoot, { timeoutMs = 0, pollMs = 1000, signal } = {}) {
+export async function waitForBatch(projectRoot, { timeoutMs = 0, pollMs = 1000, signal, onWaiting } = {}) {
   const dir = batchesDir(projectRoot);
   await fsp.mkdir(dir, { recursive: true });
   const waiting = async () => (await readBatches(projectRoot)).find((b) => b.status === 'sent' && validateBatch(b).length === 0) ?? null;
@@ -415,6 +475,7 @@ export async function waitForBatch(projectRoot, { timeoutMs = 0, pollMs = 1000, 
     const poll = setInterval(check, pollMs);
     const timer = timeoutMs > 0 ? setTimeout(() => finish(null), timeoutMs) : null;
     signal?.addEventListener('abort', onAbort);
+    onWaiting?.();
     check();
   });
 }

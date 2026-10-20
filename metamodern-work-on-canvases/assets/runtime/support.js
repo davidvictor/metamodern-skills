@@ -1030,7 +1030,35 @@
       text: text,
     };
     if (kits.length) out.reactComponents = kits.join(' > ');
+    // A second fingerprint when the text alone cannot tell this element from others like it: no text, text shared
+    // with another element, or not the only element of its kind at its label's place.
+    var at = resolve(label, out.labelKind);
+    if (!text || sameText(node, text) > 1 || !at || at.kin.length > 1) out.fingerprint = fingerprintOf(node);
     return out;
+  }
+
+  var FINGERPRINT_ATTRS = ['src', 'alt', 'aria-label', 'name', 'placeholder', 'href', 'title', 'type', 'role', 'data-test', 'data-testid', 'data-kit-component'];
+
+  /** How many elements of this tag on the board have this text. */
+  function sameText(node, text) {
+    var n = 0;
+    Array.prototype.forEach.call(document.body.querySelectorAll(node.localName), function (other) { if (ownText(other) === text) n += 1; });
+    return n;
+  }
+
+  /**
+   * What tells an element apart beyond its own text: its identifying attributes and the text of the nearest element
+   * above it whose text is unique on the board (a row, a card, a list item).
+   */
+  function fingerprintOf(node) {
+    var attrs = FINGERPRINT_ATTRS.filter(function (a) { return node.hasAttribute(a); })
+      .map(function (a) { return a + '=' + node.getAttribute(a); }).join(';');
+    var context = '';
+    for (var n = node.parentElement; n && n !== document.body && n !== document.documentElement; n = n.parentElement) {
+      var t = ownText(n);
+      if (t && sameText(n, t) === 1) { context = n.localName + ':' + t; break; }
+    }
+    return attrs + '|' + context;
   }
 
   /** Every element that shares a label's key, and the position the key names (its [n], else the first). */
@@ -1071,19 +1099,11 @@
 
   var shown = function (node) { return !!node && node.isConnected && node.getClientRects().length > 0; };
 
-  /**
-   * The element a label names now, or null. A label that counts its way to an element ([n], or a path of steps) can
-   * lead to a different element once others are added or removed, so the text recorded when it was picked settles
-   * it: the element at the label's place when its text still matches, else the one element of its kind there with
-   * that text, else the element at the label's place when it is the only one of its kind (its text was edited).
-   * Otherwise it is missing, and the comment shows as moved: never attached to the wrong element.
-   */
-  function locate(message) {
-    var label = String(message.label || '');
-    var kind = message.labelKind;
-    var text = typeof message.text === 'string' && message.text ? message.text : null;
+  /** A label's place now: the elements sharing its key, the element at its place, and every element of its kind there. */
+  function resolve(label, kind) {
     var found;
     var steps;
+    label = String(label || '');
     if (kind === 'path') {
       found = { list: [document.body], index: 0 };
       steps = label === 'body' ? [] : label.replace(/^body > /, '').split(' > ');
@@ -1097,19 +1117,39 @@
     if (!found) return null;
     var tag = steps.length ? /^([^:]+)/.exec(steps[steps.length - 1])[1] : null;
     var preferred = found.list[found.index] ? walk(found.list[found.index], steps) : null;
-    if (!text) return shown(preferred) ? preferred : null;
-    if (preferred && ownText(preferred) === text) return shown(preferred) ? preferred : null;
-    // Others of its kind: every element sharing the key (at the same steps), and inside the named one, every
-    // element with the same tag.
+    // Others of its kind: every element sharing the key (at the same steps), and inside each, every element with the
+    // same tag.
     var kin = [];
     Array.prototype.forEach.call(found.list, function (top) {
       var n = walk(top, steps);
       if (n && kin.indexOf(n) < 0) kin.push(n);
       if (tag) Array.prototype.forEach.call(top.querySelectorAll(tag), function (d) { if (kin.indexOf(d) < 0) kin.push(d); });
     });
-    var same = kin.filter(function (n) { return ownText(n) === text; });
+    return { preferred: preferred, kin: kin };
+  }
+
+  /**
+   * The element a label names now, or null. A label that counts its way to an element ([n], or a path of steps) can
+   * lead to a different element once others are added or removed, so what was recorded when it was picked settles it:
+   * its own text, and when that could not tell it apart, a fingerprint (identifying attributes and the text of the
+   * nearest uniquely-worded element above it).
+   *   1. the element at the label's place, when it still matches;
+   *   2. else the one element of its kind there that matches;
+   *   3. else, with no fingerprint recorded (it was the only one of its kind, with words of its own), the element at
+   *      the label's place when it is still the only one of its kind: its text was edited.
+   * Otherwise it is missing, and the comment shows as moved: never attached to a different element.
+   */
+  function locate(message) {
+    var text = typeof message.text === 'string' && message.text ? message.text : null;
+    var fingerprint = typeof message.fingerprint === 'string' ? message.fingerprint : null;
+    var at = resolve(message.label, message.labelKind);
+    if (!at) return null;
+    var known = text !== null || fingerprint !== null;
+    var matches = function (n) { return (text === null || ownText(n) === text) && (fingerprint === null || fingerprintOf(n) === fingerprint); };
+    if (known && at.preferred && matches(at.preferred)) return shown(at.preferred) ? at.preferred : null;
+    var same = known ? at.kin.filter(matches) : [];
     if (same.length === 1) return shown(same[0]) ? same[0] : null;
-    if (same.length === 0 && kin.length === 1 && preferred === kin[0]) return shown(preferred) ? preferred : null;
+    if (same.length === 0 && fingerprint === null && at.kin.length === 1 && at.preferred === at.kin[0]) return shown(at.preferred) ? at.preferred : null;
     return null;
   }
 

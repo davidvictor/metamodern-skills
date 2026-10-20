@@ -29,7 +29,7 @@ comments/<canvas>/<id>.json          one annotation per file
 comments/batches/<batchId>.json
 ```
 
-Each write replaces the file atomically: a temporary file is renamed over the target, under a short lock (`<file>.lock`, a directory; one older than 10 seconds is taken over). That way the viewer and an agent can write the same comment at once without losing either change. JSON is written with two-space indents and a trailing newline.
+Each write replaces the file atomically: a temporary file is renamed over the target, under a short lock (`<file>.lock`, a directory; one older than 10 seconds is taken over). That way the viewer and an agent can write the same comment at once without losing either change. A new comment or batch is linked into place instead, so it never replaces a file already there. JSON is written with two-space indents and a trailing newline. Every id is checked against its form before anything touches the file system.
 
 **Ids:** comments are `c_<yyyymmdd>_<6 base36>`, batches `b_<yyyymmdd>_<6 base36>`, and thread messages `m_<time base36>_<6 hex>`.
 
@@ -42,7 +42,7 @@ AFS 1.1 (`https://agentation.com/schema/annotation.v1.1.json`).
 | Field | Our value |
 | --- | --- |
 | `id` | The comment id. |
-| `comment` | David's words. |
+| `comment` | The person's words. |
 | `elementPath` | A CSS path from `body` (`body > div:nth-of-type(1) > p:nth-of-type(2)`). For an area or board comment, `body`. |
 | `timestamp` | Milliseconds since the epoch. |
 | `x` | The pin's place as a percent of the board's width. |
@@ -52,7 +52,7 @@ AFS 1.1 (`https://agentation.com/schema/annotation.v1.1.json`).
 **Optional fields we use:** `boundingBox` (`{x, y, width, height}` in board pixels), `url` (the board's viewer link), `reactComponents`, `nearbyText`, `attributes`, `intent` (`fix|change|question|approve`), `severity` (`blocking|important|suggestion`), `status`, `resolvedAt`, `resolvedBy` and `thread`.
 - **`reactComponents`:** the kit components from the outermost one down to the element, from their `data-kit-component` names, such as `Root > Card > List > ListItem`.
 - **`nearbyText`:** the element's own text, or its parent's when it has none.
-- **`thread`:** `[{id, role: "human" | "agent", content, timestamp}]`. David's first words are in `comment`, not in the thread.
+- **`thread`:** `[{id, role: "human" | "agent", content, timestamp}]`. The person's first words are in `comment`, not in the thread.
 
 **Our extension**, under one key:
 
@@ -67,7 +67,8 @@ AFS 1.1 (`https://agentation.com/schema/annotation.v1.1.json`).
   "props": { },
   "moved": false,
   "batch": "<batchId or null>",
-  "text": "<the element's own text when it was picked>"
+  "text": "<the element's own text when it was picked>",
+  "fingerprint": "<identifying attributes | the nearest uniquely-worded element above it>"
 }
 ```
 
@@ -79,6 +80,7 @@ AFS 1.1 (`https://agentation.com/schema/annotation.v1.1.json`).
 - **`moved`:** true while the element is gone.
 - **`batch`:** the last batch the comment went out in.
 - **`text`:** element comments only. It is sent with `canvas:locate` to tell neighbours apart (see Re-attachment).
+- **`fingerprint`:** element comments only, recorded when the text alone cannot tell the element apart: it has no text (an image, an icon, an input, an empty box), its text is shared with another element of its tag (an "Edit" button on every row), or it is not the only element of its kind at its label's place. It is the element's identifying attributes (`src`, `alt`, `aria-label`, `name`, `placeholder`, `href`, `title`, `type`, `role`, `data-test`, `data-testid`, `data-kit-component`), then `|`, then the tag and text of the nearest element above it whose text is unique on the board (its row, card or list item). It is sent with `canvas:locate` as well.
 
 ### Stable labels
 
@@ -105,8 +107,8 @@ A step is `tag:nth-of-type(n)`.
 | --- | --- | --- |
 | Open | `pending` | A new comment, or one a person replied to. |
 | Addressed | `acknowledged` | The agent replied with `--addressed`; its message is in the thread. |
-| Resolved | `resolved`, with `resolvedAt` and `resolvedBy: "human"` | David chose **Resolve** in the viewer. Only a person resolves. |
-| Reopened | `pending` again | David replied to an addressed or resolved comment. |
+| Resolved | `resolved`, with `resolvedAt` and `resolvedBy: "human"` | The person chose **Resolve** in the viewer. Only a person resolves. |
+| Reopened | `pending` again | The person replied to an addressed or resolved comment. |
 
 An agent's reply without `--addressed` adds to the thread and leaves the state as it is. An agent cannot address a resolved comment, because only a person reopens it.
 
@@ -118,30 +120,35 @@ An agent's reply without `--addressed` adds to the thread and leaves the state a
 ```
 
 **Send all to agent** bundles every comment that is `pending` and not in a batch an agent has yet to finish (`sent` or `taken`).
-- Each comment records the batch in `canvas.batch`.
+- Each comment is checked again inside its own lock and records the batch in `canvas.batch`; the batch lists only the comments that did. A comment resolved or sent meanwhile is left out.
+- A batch file that cannot be read, or is not a valid batch, is left on disk and reported in `problems`; its comments count as still with the agent, so they are never sent twice. A comment whose batch has no file at all (a send that stopped before writing it) goes out again.
 - The batch file is written last, so a listener never sees a batch its comments don't know about.
 - A comment still open after its batch is `done` goes out in the next batch.
 - With nothing open, no batch is made.
 
 ## Re-attachment
 
-When a board loads, whether after its file or kit changed or after it was regenerated, the viewer locates each of its open element comments with `canvas:locate` and the comment's `label`, `labelKind`, `elementPath` and `text`. The board answers `canvas:located` with the element's rect now, or with `{missing: true}`.
+When a board loads, whether after its file or kit changed or after it was regenerated, and when its values change, the viewer locates each of its open element comments with `canvas:locate` and the comment's `label`, `labelKind`, `elementPath`, `text` and `fingerprint`. The board answers `canvas:located` with the element's rect now, or with `{missing: true}`.
 
-**Choosing the element:** a label that counts its way to an element (`[n]`, or steps) could now point at a neighbour, so the recorded text decides. The runtime tries these in order:
-1. the element at the label's place, if its text still matches;
-2. otherwise, the one element of its kind there that has that text;
-3. otherwise, the element at the label's place, if it is the only one of its kind (its text was edited).
+**Choosing the element:** a label that counts its way to an element (`[n]`, or steps) could now point at a neighbour, so what was recorded decides. An element *matches* when its own text equals `text` and, when a `fingerprint` was recorded, its fingerprint equals it too. The runtime tries these in order:
+1. the element at the label's place, if it matches;
+2. otherwise, the one element of its kind there that matches;
+3. otherwise, only when no fingerprint was recorded (the element had words of its own and was the only one of its kind), the element at the label's place if it is still the only one of its kind: its text was edited.
 
-If none of these fits, the element is missing.
+If none of these fits, the element is missing. Moved is always preferred to a doubtful attachment.
 
 **What the viewer records:**
 - **Found:** the viewer writes the new place (`rect`, `boundingBox`, `x`, `y`) and clears `moved`. A change under half a pixel is not written.
 - **Missing:** the viewer sets `moved`, and the pin stays at the last place.
-- **Adjusting values:** while David adjusts a board's values, pins follow the board without writing the files.
+- **Only under the same values:** the file is written only while the board shows every value the comment recorded in `canvas.props`. Under other values an element can be hidden or elsewhere for a while: the pin follows the board, and the file keeps the place the element had under the comment's own values.
 
 A comment is never deleted and never attached to a different element.
 
-**Known limit:** an element whose text was edited, and that sits among others of its kind, shows as moved instead of re-attached. Picking it again re-attaches the comment.
+**Known limits:** these show as moved instead of re-attached, and picking the element again re-attaches the comment:
+- an element whose text was edited and that sits among others of its kind;
+- an element recorded with a fingerprint whose row, card or list item was reworded, or whose identifying attributes changed.
+
+One case is accepted as the same element: the only element of its kind at a uniquely named place, with words of its own, whose words changed (for example a section heading that was retitled).
 
 ## The agent's command line
 
@@ -160,7 +167,7 @@ A project's install can wire this as `npm run canvas -- comments …`.
 - **`list`:** prints comments with their viewer `link`. `--open` limits it to `pending` comments, and `--batch` to one batch's comments.
 - **`wait`:** blocks until a batch is `sent`, then prints it with its comments in full (`annotations`, each with its `link`).
   - A batch already waiting is printed at once, the oldest first.
-  - It watches `comments/batches/`, polling once a second as a safety net. A batch reaches a listening session well within a second of the click (see the tests).
+  - It watches `comments/batches/`, polling once a second as a safety net, and writes `Waiting for a batch.` to standard error once it is listening. A batch reaches a listening session well within a second of the click (see the tests).
   - With `--timeout`, it exits with code 2 when nothing arrives.
 - **`take`:** marks the batch `taken` by `--by`, else `CANVAS_SESSION`, else the harness and session the environment names (`claude-code/<session>`, `codex/<thread>`). A batch taken by another session is refused.
 - **`reply`:** adds the agent's message. `--addressed` marks the comment `acknowledged`.
@@ -172,7 +179,7 @@ A project's install can wire this as `npm run canvas -- comments …`.
 
 | Route | What it does |
 | --- | --- |
-| `GET /_comments` | `{comments, batches, problems}`. A comment file that does not pass the check is left on disk and listed in `problems` (shown in the Comments tab), not in `comments`. |
+| `GET /_comments` | `{comments, batches, problems}`. A comment or batch file that does not pass the check is left on disk and listed in `problems` (shown in the Comments tab), not in `comments` or `batches`. |
 | `POST /_comments` | Creates a comment. |
 | `POST /_comments/<id>/reply` | `{content}`: a person's reply. |
 | `POST /_comments/<id>/resolve` | Resolves the comment. |
@@ -187,3 +194,4 @@ POSTs are accepted only with `content-type: application/json`, an `Origin` that 
   - `canvas.text`;
   - null `label` and `labelKind` for area and board comments;
   - `reactComponents` from the kit component chain.
+- 2026-10-20: after review, `canvas.fingerprint`: a textless element, or one whose text others share, is re-attached only to the element with the same fingerprint, else shown as moved (before, it could land on a neighbour at its counted place). Batch files that cannot be read are reported and their comments not sent again; Send all re-checks each comment inside its lock; places are written only under the comment's own values; new files never replace existing ones; ids are checked before any file system call; `wait` says when it is listening.

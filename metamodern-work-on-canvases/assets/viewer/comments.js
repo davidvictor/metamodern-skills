@@ -68,8 +68,16 @@ export async function installComments(api) {
     // Answers come back in the order asked, so each canvas:located is matched to the oldest question waiting.
     rec.locateQueue = (rec.locateQueue ?? []).concat(list.map((c) => ({ id: c.id, persist })));
     for (const c of list) {
-      view.post(rec, 'canvas:locate', { label: c.canvas.label, labelKind: c.canvas.labelKind, elementPath: c.elementPath, ...(c.canvas.text ? { text: c.canvas.text } : {}) });
+      view.post(rec, 'canvas:locate', {
+        label: c.canvas.label, labelKind: c.canvas.labelKind, elementPath: c.elementPath,
+        ...(c.canvas.text ? { text: c.canvas.text } : {}), ...(typeof c.canvas.fingerprint === 'string' ? { fingerprint: c.canvas.fingerprint } : {}),
+      });
     }
+  }
+  /** Whether the board now shows every value the comment recorded. */
+  function sameValues(rec, c) {
+    const now = rec.state?.values ?? {};
+    return Object.entries(c.canvas.props ?? {}).every(([k, v]) => JSON.stringify(now[k]) === JSON.stringify(v));
   }
   function located(view, rec, data) {
     const next = rec.locateQueue?.shift();
@@ -80,8 +88,9 @@ export async function installComments(api) {
     state.places.set(c.id, place);
     drawPins(view);
     if (state.active === c.id || getView()?.tab === 'comments') refreshPanel();
-    // The file keeps the last place the element was found, and whether it is gone, when the board loads.
-    if (!next.persist) return;
+    // The file keeps the last place the element was found, and whether it is gone, when the board loads showing the
+    // values the comment was made with. Under other values an element can be hidden or elsewhere for a while.
+    if (!next.persist || !sameValues(rec, c)) return;
     const r = c.canvas.rect;
     const same = !data.missing && ['x', 'y', 'w', 'h'].every((k) => Math.abs(data.rect[k] - r[k]) < 0.5);
     if ((data.missing && !c.canvas.moved) || (!data.missing && (!same || c.canvas.moved))) {
@@ -152,7 +161,10 @@ export async function installComments(api) {
       canvas: view.canvas.id, page: rec.b.p, board: slug(rec.b.f), kind: d.kind, comment: words,
       rect: d.rect, boardWidth: rec.b.w, kit: kitFor(view, rec), props: rec.state?.values ?? {},
       url: location.origin + urlFor(view.canvas.id, rec.b.p, rec.b.f),
-      ...(p ? { label: p.label, labelKind: p.labelKind, elementPath: p.elementPath, element: p.element, text: p.text, nearbyText: p.nearbyText, ...(p.reactComponents ? { reactComponents: p.reactComponents } : {}) } : {}),
+      ...(p ? {
+        label: p.label, labelKind: p.labelKind, elementPath: p.elementPath, element: p.element, text: p.text, nearbyText: p.nearbyText,
+        ...(p.fingerprint ? { fingerprint: p.fingerprint } : {}), ...(p.reactComponents ? { reactComponents: p.reactComponents } : {}),
+      } : {}),
     };
     input.disabled = true;
     // Posted: Esc from here on leaves comment mode instead of cancelling a comment that is being saved.
@@ -408,9 +420,10 @@ export async function installComments(api) {
     locateAll(view, rec, { persist: true });
   });
   onBoardMessage('canvas:props-changed', ({ view, rec }) => {
-    // The pins follow the board's values while they are adjusted; the files keep the place from the last load.
+    // The pins follow the board's values while they are adjusted. A file is written only while the board shows the
+    // values its comment was made with (see located).
     clearTimeout(rec.relocate);
-    rec.relocate = setTimeout(() => locateAll(view, rec, { persist: false }), 60);
+    rec.relocate = setTimeout(() => locateAll(view, rec, { persist: true }), 60);
   });
   onBoardMessage('canvas:located', ({ view, rec, data }) => located(view, rec, data));
   onBoardMessage('canvas:picked', ({ view, rec, data }) => {

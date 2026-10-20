@@ -29,12 +29,12 @@ Run `node scripts/canvas.mjs view` from inside the project (or pass `--project <
 
 ## Comments
 
-David comments in the viewer (`C`, then click an element, drag a box, or Shift C for the board) and sends every open comment as one batch with **Send all to agent**. An agent works through it with `node scripts/canvas.mjs comments …` from inside the project:
+The person comments in the viewer (`C`, then click an element, drag a box, or Shift C for the board) and sends every open comment as one batch with **Send all to agent**. An agent works through it with `node scripts/canvas.mjs comments …` from inside the project:
 
-1. `comments wait` when listening for David (it prints a batch the moment one is sent), or `comments list --open` when asked to look.
+1. `comments wait` when listening for the person (it prints a batch the moment one is sent), or `comments list --open` when asked to look.
 2. `comments take <batchId>`, then change the files each comment is about (its `link`, `canvas.board`, `canvas.label`, `reactComponents`, `canvas.props` and `canvas.kit` say where and against what).
 3. `comments reply <id> "<what changed>" --addressed` for each comment worked through; a plain reply asks a question instead.
-4. `comments done <batchId>`. Only David resolves or reopens a comment.
+4. `comments done <batchId>`. Only the person resolves or reopens a comment.
 
 ## Checks
 
