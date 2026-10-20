@@ -15,6 +15,8 @@
 
   var VERSION = '0.0.1';
   var SVG = 'http://www.w3.org/2000/svg';
+  var XLINK = 'http://www.w3.org/1999/xlink';
+  var XML = 'http://www.w3.org/XML/1998/namespace';
   var self = document.currentScript;
   var runtimeUrl = self && self.src ? self.src : location.href;
   var boardFile = decodeURIComponent(location.pathname.split('/').pop() || '');
@@ -67,8 +69,10 @@
     // Loaded late (for example injected by a test page): read the live document instead.
     var copy = document.implementation.createHTMLDocument('');
     copy.documentElement.innerHTML = document.documentElement.innerHTML;
-    var live = document.querySelector('x-dc');
-    if (live) live.parentNode.removeChild(live);
+    // The copy is drawn afresh, so the live body keeps only its scripts.
+    Array.prototype.slice.call(document.body.childNodes).forEach(function (n) {
+      if (!(n.nodeType === 1 && n.localName === 'script')) n.parentNode.removeChild(n);
+    });
     Array.prototype.forEach.call(copy.head.querySelectorAll('script[src],link[rel~="stylesheet"]'), function (n) { n.remove(); });
     return copy;
   }
@@ -131,8 +135,9 @@
     return attrs;
   }
 
-  function runInline(code) {
+  function runInline(code, type) {
     var el = document.createElement('script');
+    if (type) el.type = type;
     el.textContent = code;
     document.head.appendChild(el);
   }
@@ -143,7 +148,7 @@
       var type = (node.getAttribute('type') || '').trim().toLowerCase();
       if (type && type !== 'text/javascript' && type !== 'application/javascript' && type !== 'module') return Promise.resolve();
       var src = node.getAttribute('src');
-      if (!src) { runInline(node.textContent); return Promise.resolve(); }
+      if (!src) { runInline(node.textContent, type); return Promise.resolve(); }
       if (/(^|\/)support\.js$/.test(src.split('?')[0])) return Promise.resolve();
       var folder = kitFolder(src);
       var before = folder ? prepareKit(folder) : Promise.resolve();
@@ -237,7 +242,8 @@
 
   var imported = {};
   var importedBoards = {};
-  function importBoard(name) {
+  function importBoard(name, chain) {
+    chain = chain || [];
     if (!imported[name]) {
       imported[name] = fetch(encodeURIComponent(name) + '.dc.html', { cache: 'no-store' })
         .then(function (response) {
@@ -251,7 +257,7 @@
           board.helmet.forEach(function (h) { helmetNodes = helmetNodes.concat(Array.prototype.slice.call(h.childNodes)); });
           var head = Array.prototype.filter.call(doc.head.children, function (n) { return n.localName !== 'title'; });
           return processSequence(head.concat(helmetNodes.filter(function (n) { return n.nodeType === 1; })))
-            .then(function () { return preloadImports(board.template); })
+            .then(function () { return preloadImports(board.template, chain.concat(name)); })
             .then(function () { importedBoards[name] = board; return board; });
         })
         .catch(function (error) { fail('could not import ' + name, error); importedBoards[name] = null; return null; });
@@ -259,14 +265,17 @@
     return imported[name];
   }
 
-  function preloadImports(template) {
+  // Loads every board a template imports; a board already being loaded further up the chain is not waited for,
+  // so a cycle cannot stall the start.
+  function preloadImports(template, chain) {
     if (!template) return Promise.resolve();
+    chain = chain || [];
     var names = {};
     Array.prototype.forEach.call(template.querySelectorAll('dc-import'), function (n) {
       var name = n.getAttribute('name');
-      if (name && name.indexOf('{{') < 0) names[name] = true;
+      if (name && name.indexOf('{{') < 0 && chain.indexOf(name) < 0) names[name] = true;
     });
-    return Promise.all(Object.keys(names).map(importBoard));
+    return Promise.all(Object.keys(names).map(function (name) { return importBoard(name, chain); }));
   }
 
   // ---------------------------------------------------------------- values
@@ -403,6 +412,10 @@
     if (!(name in importedBoards)) { importBoard(name).then(function () { scheduleRender(); }); return null; }
     var board = importedBoards[name];
     if (!board) return null;
+    if ((path + '.').indexOf(':' + name + '.') >= 0) {
+      fail(name + ' imports itself; the inner copy is not drawn');
+      return null;
+    }
     var props = defaults(board.schema);
     Array.prototype.forEach.call(node.attributes, function (a) {
       if (a.name === 'name' || a.name.indexOf('hint-') === 0) return;
@@ -531,7 +544,9 @@
       if (v === prev[name] && el.hasAttribute(name)) return;
       if (v == null || v === false) { el.removeAttribute(name); return; }
       var text = v === true ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
-      try { el.setAttribute(name, text); } catch (error) { fail('attribute ' + name + ' is not valid', error); }
+      var ns = name.indexOf('xlink:') === 0 ? XLINK : name.indexOf('xml:') === 0 ? XML : null;
+      try { if (ns) el.setAttributeNS(ns, name, text); else el.setAttribute(name, text); }
+      catch (error) { fail('attribute ' + name + ' is not valid', error); }
     });
   }
 
@@ -622,9 +637,10 @@
     var mounts = pendingMounts;
     pendingMounts = [];
     mounts.forEach(function (pair) { mountComponent(pair[0], pair[1]); });
-    lifecycle();
+    // Callbacks queued by setState during the lifecycle methods belong to the next render.
     var callbacks = afterCommit;
     afterCommit = [];
+    lifecycle();
     callbacks.forEach(function (cb) { try { cb(); } catch (error) { fail('setState callback failed', error); } });
     applyMotion();
     if (firstCommit) {

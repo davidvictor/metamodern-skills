@@ -47,16 +47,25 @@ export function startBoardServer({ projectRoot, config, canvases, liveKits = {},
       res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
       res.end(body);
     };
+    // Only this machine's own names: a page elsewhere that rebinds a host name to 127.0.0.1 is refused.
+    const host = String(req.headers.host ?? '').replace(/:\d+$/, '');
+    if (!['127.0.0.1', 'localhost', '[::1]'].includes(host)) return send(403, 'Forbidden');
     let url;
-    try { url = new URL(req.url ?? '/', 'http://127.0.0.1'); } catch { return send(400, 'Bad request'); }
+    let canvasId;
+    let boardFile;
+    try {
+      url = new URL(req.url ?? '/', 'http://127.0.0.1');
+      canvasId = decodeURIComponent(url.pathname.split('/')[1] ?? '');
+    } catch {
+      return send(400, 'Bad request');
+    }
     if (url.pathname === '/_harness') return send(200, HARNESS, TYPES['.html']);
     const parts = url.pathname.split('/');
-    const canvasId = parts[1] ? decodeURIComponent(parts[1]) : '';
-    if (parts[2] !== 'project' || !canvases[canvasId]) return send(404, 'Not found');
+    if (parts[2] !== 'project' || !Object.hasOwn(canvases, canvasId)) return send(404, 'Not found');
     const requestPath = parts.slice(3).join('/');
     const projectDir = canvases[canvasId];
     let choice = url.searchParams.get('canvas-kit');
-    let boardFile = requestPath.endsWith('.dc.html') ? decodeURIComponent(requestPath) : null;
+    try { boardFile = requestPath.endsWith('.dc.html') ? decodeURIComponent(requestPath) : null; } catch { return send(400, 'Bad request'); }
     if (!choice && req.headers.referer) {
       try {
         const ref = new URL(req.headers.referer);
@@ -65,7 +74,9 @@ export function startBoardServer({ projectRoot, config, canvases, liveKits = {},
       } catch { /* no referer kit */ }
     }
     const kit = boardKit(readCanvasJson(projectDir), boardFile, choice ?? undefined);
-    const result = resolveBoardRequest({ projectRoot, config, canvasProjectDir: projectDir, requestPath, kit, liveKits });
+    let result;
+    try { result = resolveBoardRequest({ projectRoot, config, canvasProjectDir: projectDir, requestPath, kit, liveKits }); }
+    catch { return send(400, 'Bad request'); }
     if (result.kind === 'error') return send(result.status, result.message);
     if (result.kind === 'json') return send(200, JSON.stringify(result.body), TYPES['.json']);
     if (result.kind === 'empty') return send(204, '');

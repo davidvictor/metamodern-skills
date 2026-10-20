@@ -138,6 +138,8 @@
         } else {
           prop = HTML_NAMES[lower] || name;
           if (BOOLEAN[lower]) value = value === '' || value === true || value === lower;
+          // React 18 does not know inert as a boolean; it takes the empty string instead.
+          if (lower === 'inert') { if (!value) return; value = /^18\./.test(React.version || '') ? '' : true; }
         }
         props[prop] = value;
       });

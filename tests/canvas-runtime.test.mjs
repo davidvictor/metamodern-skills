@@ -34,6 +34,13 @@ before(async () => {
       '<h1>{{title}}</h1><x-import component-from-global-scope="Fixture.Missing"></x-import>',
     ),
   );
+  await fs.writeFile(
+    path.join(root, 'canvases', 'fixture', 'project', 'Loop.dc.html'),
+    (await fs.readFile(path.join(root, 'canvases', 'fixture', 'project', 'plain.dc.html'), 'utf8')).replace(
+      '<h1>{{title}}</h1>',
+      '<h1>{{title}}</h1><svg width="8" height="8"><defs><circle id="dot" cx="4" cy="4" r="4"></circle></defs><use xlink:href="#dot" data-test="use"></use></svg><dc-import name="Loop" mode="none"></dc-import>',
+    ),
+  );
   await buildFixtureKit(path.join(root, 'kit', 'current'));
   const config = JSON.parse(await fs.readFile(path.join(root, 'canvas.config.json'), 'utf8'));
   server = await startBoardServer({
@@ -246,4 +253,20 @@ test('RT-10 the board server refuses traversal and answers unexpanded values emp
   assert.equal(await get('/fixture/project/%7B%7Btask.icon%7D%7D'), 204);
   assert.equal(await get('/fixture/project/ds/fixture/kit.json'), 200);
   assert.equal(await get('/legacy/project/ds/legacy/kit.json'), 200);
+  assert.equal(await get('/%E0%A4%A/project/x'), 400, 'a malformed escape is refused, and the server keeps running');
+  assert.equal(await get('/fixture/project/%E0%A4%A.dc.html'), 400);
+  assert.equal(await get('/__proto__/project/x.css'), 404);
+  const rebound = await new Promise((resolve) => http.get(`${server.origin}/fixture/project/plain.dc.html`, { headers: { host: 'example.test' } }, (res) => { res.resume(); resolve(res.statusCode); }));
+  assert.equal(rebound, 403, 'only this machine\'s host names are served');
+  assert.equal(await get('/fixture/project/plain.dc.html'), 200);
+});
+
+test('RT-11 a board that imports itself still starts, says so, and keeps xlink attributes namespaced', { skip }, async () => {
+  const { page, problems, state } = await open('fixture/project/Loop');
+  const ns = await page.evaluate(() => document.querySelector('[data-test="use"]').getAttributeNodeNS('http://www.w3.org/1999/xlink', 'href')?.value);
+  await page.close();
+  assert.ok(state.ready, 'the board became ready');
+  assert.equal(ns, '#dot');
+  assert.ok(problems.some((p) => /Loop imports itself/.test(p)), problems.join('\n'));
+  assert.ok(state.text.includes('Plain markup'));
 });
