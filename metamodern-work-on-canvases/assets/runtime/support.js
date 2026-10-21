@@ -845,37 +845,57 @@
     } catch (error) { /* an animation that finished between listing and setting */ }
   }
 
-  // CSS animations and transitions start at the current rate. The event's target is the originating element even
-  // when the animation runs on a pseudo-element (::before, ::after, ::marker); getAnimations() leaves those out, so
-  // ask with subtree and keep the element's own animations and its pseudo-elements' (their effect's target is the
-  // element), never its descendants', which have their own events. Without the option, ask the document.
+  // New CSS animations and transitions take the board's rate. The browser announces one (transitionrun,
+  // animationstart) an update after creating it, and an animation with a delay only when its delay ends, so the
+  // runtime also looks for new animations on every frame while the rate is not 1. Each new one is adopted once:
+  // if it was created after the last rate change, the time it already ran at full speed is scaled to the rate (to
+  // its start while paused), then the rate is set. Animations that existed at a change are adopted by the change.
+  var motionChangedAt = null;
+  var watching = false;
+
+  function timelineNow() { return document.timeline && document.timeline.currentTime != null ? document.timeline.currentTime : null; }
+
+  function adopt(animation, rate) {
+    if (!animation.__canvasAdopted) {
+      animation.__canvasAdopted = true;
+      var now = timelineNow();
+      var since = motionChangedAt == null || now == null ? Infinity : now - motionChangedAt;
+      try {
+        var time = animation.currentTime;
+        if (time != null && time > 0 && time <= since + 1) animation.currentTime = time * rate;
+      } catch (error) { /* finished */ }
+    }
+    setRate(animation, rate);
+  }
+
+  function watchNew() {
+    if (runtime.motion.rate === 1 || !document.getAnimations) { watching = false; return; }
+    var rate = runtime.motion.rate;
+    document.getAnimations().forEach(function (animation) { if (!animation.__canvasAdopted) adopt(animation, rate); });
+    window.requestAnimationFrame(watchNew);
+  }
+
+  function startWatching() {
+    if (watching || runtime.motion.rate === 1) return;
+    watching = true;
+    window.requestAnimationFrame(watchNew);
+  }
+
+  // The event's target is the originating element even for a pseudo-element's animation (::before, ::after,
+  // ::marker), which getAnimations() leaves out: ask with subtree and keep the element's own animations and its
+  // pseudo-elements' (their effect's target is the element), never its descendants', which have their own events
+  // and may run at their own speed. Without the option, ask the document.
   function ownAnimations(target) {
     var own = function (a) { return a.effect && a.effect.target === target; };
     try { if (target.getAnimations) return target.getAnimations({ subtree: true }).filter(own); } catch (error) { /* below */ }
     return document.getAnimations ? document.getAnimations().filter(own) : [];
   }
 
-  // The animation this event announces: its property or name, on the element or the event's pseudo-element.
-  function announced(event, animation) {
-    var pseudo = (animation.effect && animation.effect.pseudoElement) || '';
-    if (pseudo !== (event.pseudoElement || '')) return false;
-    if (event.type === 'transitionrun' || event.type === 'transitionstart') return animation.transitionProperty === event.propertyName;
-    return animation.animationName === event.animationName;
-  }
-
   function onAnimationStart(event) {
     var rate = runtime.motion.rate;
     var target = event.target;
     if (rate === 1 || !target) return;
-    ownAnimations(target).forEach(function (animation) {
-      // The event comes at the update after the animation was created, which already ran at full speed: once, bring
-      // its time to what the board's clock allows (none while paused), then set the rate.
-      if (!animation.__canvasRebased && announced(event, animation)) {
-        animation.__canvasRebased = true;
-        try { if (animation.currentTime != null) animation.currentTime = animation.currentTime * rate; } catch (error) { /* finished */ }
-      }
-      setRate(animation, rate);
-    });
+    ownAnimations(target).forEach(function (animation) { if (!animation.__canvasAdopted) adopt(animation, rate); });
   }
 
   // Animations a script starts with element.animate() (motion libraries do) start at the current rate.
@@ -905,6 +925,8 @@
           },
         });
       }
+      // A script animation takes the rate as it starts, so it has no full-speed time to take back.
+      animation.__canvasAdopted = true;
       if (runtime.motion.rate !== 1) setRate(animation, runtime.motion.rate);
       return animation;
     };
@@ -914,6 +936,8 @@
     var rate = Number(message.rate);
     if (!(rate >= 0) || !isFinite(rate)) return;
     runtime.motion.rate = rate;
+    motionChangedAt = timelineNow();
+    if (document.getAnimations) document.getAnimations().forEach(function (a) { a.__canvasAdopted = true; });
     if (message.replay) clock.resync();
     clock.setRate(rate);
     if (message.replay) {
@@ -921,8 +945,10 @@
       managed.forEach(unmountTree);
       managed.forEach(function (dom) { if (dom.parentNode) dom.parentNode.removeChild(dom); });
       managed = [];
-      if (document.getAnimations) document.getAnimations().forEach(function (a) { try { a.currentTime = 0; a.play(); } catch (e) { /* skip */ } });
+      // Restarted from their start, they are adopted again on the next frame at the new rate.
+      if (document.getAnimations) document.getAnimations().forEach(function (a) { try { a.currentTime = 0; a.play(); a.__canvasPaused = false; a.__canvasAdopted = false; if (rate === 1) a.playbackRate = a.playbackRate < 0 ? -1 : 1; } catch (e) { /* skip */ } });
       scheduleRender();
+      startWatching();
       return;
     }
     if (document.getAnimations) document.getAnimations().forEach(function (animation) {
@@ -930,6 +956,7 @@
       else setRate(animation, rate);
     });
     applyMotion();
+    startWatching();
   }
 
   // ---------------------------------------------------------------- messages

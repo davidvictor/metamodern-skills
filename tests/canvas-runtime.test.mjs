@@ -433,6 +433,19 @@ test('RT-13 canvas:motion reaches pseudo-element motion that starts later: a ::b
   assert.equal(first.rate, 0.25);
   assert.ok(first.time <= first.real * 0.25 + 6, `${first.time} ms of animation in ${first.real} ms at a quarter`);
 
+  // An animation with a delay is announced only when its delay ends; its delay runs at the board's rate too.
+  const delayed = await frame.evaluate(async () => {
+    const style = document.createElement('style');
+    style.textContent = '.fx-late{width:8px;height:8px;animation:fx-fade 200ms linear 300ms both}@keyframes fx-fade{from{opacity:0}to{opacity:1}}';
+    document.head.append(style);
+    const el = document.createElement('div');
+    const started = Date.now();
+    await new Promise((r) => { el.addEventListener('animationend', r, { once: true }); el.className = 'fx-late'; document.body.append(el); });
+    el.remove();
+    return Date.now() - started;
+  });
+  assert.ok(delayed > 3 * 500 && delayed < 5.5 * 500, `a 300 ms delay and 200 ms fade took ${delayed} ms at a quarter`);
+
   // A parent's transition leaves its children's animations alone: a child at its own speed, and one reversed.
   const children = await frame.evaluate(async () => {
     const host = document.querySelector('[data-test="pseudo"]');
