@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.24.1 — 2026-10-20
+
+- `metamodern-work-on-canvases` 0.1.1 fixes the motion controls for pseudo-element motion. A CSS transition or animation on `::before`, `::after` or `::marker` that started after the rate was set ran at full speed: the runtime applied the rate to new animations with `getAnimations()` on the event's target, which leaves out the target's pseudo-elements, so at a quarter a switch's track slowed while its thumb's fade did not (a page-wide pause still caught them, since it lists the whole document). The runtime (0.0.4) now takes the element's animations with `{ subtree: true }`, falling back to the document's animations on that element, so new pseudo-element motion starts at the board's rate, slows to a quarter and stays still at 0. A runtime test times a `::before` transition at a quarter (about 4 times as long) and holds an `::after` animation at its start while paused.
+- The render check no longer fails boards that hold a script-free frame. It marked the runtime ready through a Playwright init script, which Playwright injects into every frame; in a sandboxed `srcdoc` frame without `allow-scripts` (an email preview) Chromium refused it and logged "Blocked script execution in 'about:srcdoc'", so every such board failed although it was clean. The check now reads the runtime's `ready` promise from the main frame after load and injects nothing into frames. Nothing is filtered: an error a frame's own script logs still fails the board, and a test covers both.
+
 ## 1.24.0 — 2026-10-20
 
 - `metamodern-work-on-canvases` 0.1.0, the first release of the shared canvas package. It brings together the work of MM-01 to MM-05:

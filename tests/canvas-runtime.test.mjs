@@ -359,3 +359,49 @@ test('RT-11 a board that imports itself still starts, says so, and keeps xlink a
   assert.ok(problems.some((p) => /Loop imports itself/.test(p)), problems.join('\n'));
   assert.ok(state.text.includes('Plain markup'));
 });
+
+test('RT-13 canvas:motion reaches pseudo-element motion that starts later: a ::before transition takes about 4 times as long at a quarter, and an ::after animation stays still at 0', { skip }, async () => {
+  // A board whose only motion runs on pseudo-elements, started after the rate is set (as a switch's thumb fades in).
+  const source = (await fs.readFile(path.join(root, 'canvases', 'fixture', 'project', 'plain.dc.html'), 'utf8')).replace(
+    '<h1>{{title}}</h1>',
+    '<h1>{{title}}</h1><style>.fx-pseudo{position:relative;width:40px;height:20px}.fx-pseudo::before{content:"";position:absolute;inset:0;background:#2457c5;opacity:0;transition:opacity 400ms linear}.fx-pseudo.on::before{opacity:1}.fx-after::after{content:"";display:block;width:8px;height:8px;background:#111}.fx-after.go::after{animation:fx-slide 400ms linear forwards}@keyframes fx-slide{to{transform:translateX(20px)}}</style><div class="fx-pseudo" data-test="pseudo"></div><div class="fx-after" data-test="after"></div>',
+  );
+  await fs.writeFile(path.join(root, 'canvases', 'fixture', 'project', 'pseudo.dc.html'), source);
+  const { page, frame, problems } = await harness('fixture/project/pseudo');
+  const fade = (on) => frame.evaluate((turnOn) => new Promise((resolve) => {
+    const el = document.querySelector('[data-test="pseudo"]');
+    // Date.now() stays real; performance.now() is the board's scaled clock.
+    const t0 = Date.now();
+    let rates = null;
+    el.addEventListener('transitionrun', (e) => {
+      if (e.pseudoElement !== '::before') return;
+      requestAnimationFrame(() => { rates = document.getAnimations().filter((a) => a.effect && a.effect.pseudoElement === '::before').map((a) => a.playbackRate); });
+    }, { once: true });
+    el.addEventListener('transitionend', (e) => { if (e.pseudoElement === '::before') resolve({ real: Date.now() - t0, rates }); }, { once: true });
+    el.classList.toggle('on', turnOn);
+  }), on);
+  const normal = await fade(true);
+  await fade(false);
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0.25 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0.25);
+  const quarter = await fade(true);
+  assert.deepEqual(quarter.rates, [0.25], 'the ::before transition runs at the board rate');
+  const ratio = quarter.real / normal.real;
+  assert.ok(ratio > 3 && ratio < 5.5, `the ::before fade took ${Math.round(quarter.real)} ms against ${Math.round(normal.real)} ms (${ratio.toFixed(2)} times)`);
+
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0);
+  const still = await frame.evaluate(async () => {
+    document.querySelector('[data-test="after"]').classList.add('go');
+    await new Promise((r) => setTimeout(r, 0));
+    const started = Date.now();
+    await new Promise((r) => { const tick = () => (Date.now() - started > 300 ? r() : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
+    const a = document.getAnimations().find((x) => x.effect && x.effect.pseudoElement === '::after');
+    return a ? { state: a.playState, time: Math.round(Number(a.currentTime)) } : null;
+  });
+  assert.ok(still, 'the ::after animation exists');
+  assert.equal(still.state, 'paused');
+  assert.ok(still.time < 50, `the ::after animation held near its start: ${still.time} ms`);
+  assert.deepEqual(problems, []);
+  await page.close();
+});

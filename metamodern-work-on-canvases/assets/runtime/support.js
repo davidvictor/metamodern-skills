@@ -14,7 +14,7 @@
   'use strict';
   if (window.__canvasRuntime) return;
 
-  var VERSION = '0.0.3';
+  var VERSION = '0.0.4';
   var SVG = 'http://www.w3.org/2000/svg';
   var XLINK = 'http://www.w3.org/1999/xlink';
   var XML = 'http://www.w3.org/XML/1998/namespace';
@@ -844,10 +844,19 @@
     } catch (error) { /* an animation that finished between listing and setting */ }
   }
 
+  // CSS animations and transitions start at the current rate. The event's target is the originating element even
+  // when the animation runs on a pseudo-element (::before, ::after, ::marker); getAnimations() leaves those out, so
+  // ask with subtree, which includes the element's pseudo-elements. Without the option, fall back to the document.
   function onAnimationStart(event) {
     var rate = runtime.motion.rate;
-    if (rate === 1 || !event.target || !event.target.getAnimations) return;
-    event.target.getAnimations().forEach(function (animation) { setRate(animation, rate); });
+    var target = event.target;
+    if (rate === 1 || !target) return;
+    var list;
+    try { list = target.getAnimations ? target.getAnimations({ subtree: true }) : null; } catch (error) { list = null; }
+    if (!list || (event.pseudoElement && !list.some(function (a) { return a.effect && a.effect.pseudoElement; }))) {
+      list = document.getAnimations ? document.getAnimations().filter(function (a) { return a.effect && a.effect.target === target; }) : [];
+    }
+    list.forEach(function (animation) { setRate(animation, rate); });
   }
 
   // Animations a script starts with element.animate() (motion libraries do) start at the current rate.
