@@ -53,6 +53,18 @@ A question with more than one plausible answer gets an exploration canvas: `canv
 - Copy in the boards the options start from; the copies are the exploration's own boards.
 - Respect rule 2: at most two open explorations per area.
 - Render-check the canvas before asking the decision-maker to compare.
+- Draw the canvas with a builder script in `tools/build.mjs` that builds through `explorationSpec` ([board-builder.md](board-builder.md)), so Start here, the Directions intro, Lead and Archive are the template's pages on every rebuild.
+
+### Rounds
+
+Directions holds the current round only. A round ends when the decision-maker has commented on it and the next one starts:
+
+1. work the comments through the comment loop;
+2. `canvas explore round <id> --said "<the decision-maker's words>" --learned "<one line>"` keeps the round as they saw it: each option on Directions as the picture from its last render, with its source, and the words in `tools/explore.json`. The render must be of the board's current source, so render-check before changing anything;
+3. draw the next round in the builder: the new options replace the old ones on Directions, and the Directions intro names the round and quotes the last round's words;
+4. rebuild, render-check and send links.
+
+Archive shows every round, newest first, with its words; Start here lists them. Never draw an earlier round's options again on Directions to keep them: they are on Archive.
 
 ## Choosing a lead
 
@@ -63,6 +75,12 @@ When the decision-maker chooses a direction:
 3. `canvas explore decide <id> --lead <text>` freezes the exploration;
 4. `canvas review status <id> ready` when the lead is ready to lock;
 5. rebuild and render-check the app canvas.
+
+## Cleaning up after a decision
+
+- Deciding freezes the exploration with every kept round on Archive and the last round on Directions, and moves it to the decided group on the home page. Keep the last round with `canvas explore round` first when the decision-maker's words about it should sit with the others, then rebuild, before `canvas explore decide`.
+- A decided exploration takes no more rounds and no rebuilds. A new question gets a new exploration.
+- After the lead goes live, `canvas review archive` keeps the boards it replaced as pictures (see Archiving), and the project's decision log entry names the exploration canvas, so the options and rounds behind the decision can be found.
 
 ## Locking
 

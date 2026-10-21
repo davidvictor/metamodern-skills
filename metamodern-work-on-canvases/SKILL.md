@@ -30,8 +30,8 @@ Each loop is described in [the method](references/method.md):
 1. **Foundations:** tokens and motion drawn from the pinned kit, rebuilt after each kit sync.
 2. **Component lab:** states, playground and in place, plus live mode on a project app worktree (`.canvas/live.json`, boards switched to `live:<name>`).
 3. **App canvas:** a page per area with Live, Deciding, Building, Next and Later rows from `review.json`.
-4. **Exploring:** `canvas explore create`, directions side by side.
-5. **Choosing a lead:** the lead moves to the app canvas, `canvas explore decide` freezes the exploration.
+4. **Exploring:** `canvas explore create`, directions side by side, drawn by a builder through `explorationSpec`; when the decision-maker has commented on a round, `canvas explore round --said` keeps it as pictures on Archive and the builder draws the next.
+5. **Choosing a lead:** the lead moves to the app canvas, `canvas explore decide` freezes the exploration with every round on Archive.
 6. **Locking:** `canvas review lock` with the words, then the build from `builds/<set>.md` in the product's repository.
 7. **Keeping Live current:** run the project's kit sync after a build merges and before rendering for a decision, then rebuild and render-check.
 8. **Archiving:** `canvas review archive` keeps replaced or set-aside boards as pictures.
@@ -46,7 +46,7 @@ In a project where the package is installed, run `npm run canvas -- <command>` f
 | `view` | Serve every canvas on `127.0.0.1`. Send viewer links (`/<canvas>/<page>/<board>`), never file paths. |
 | `render [--canvas <id>]` | The render check: every board in each theme, screenshots and heights. |
 | `review validate \| list \| create \| status \| lock \| archive` | Review sets and build briefs. |
-| `explore create \| decide` | Exploration canvases. |
+| `explore create \| round \| decide` | Exploration canvases and their rounds. |
 | `comments list \| wait \| take \| reply \| done` | The comment loop. |
 | `install \| update \| verify` | Install the package at a pinned version, update it, check it is unedited. |
 
