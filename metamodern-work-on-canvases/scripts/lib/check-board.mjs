@@ -3,9 +3,29 @@
 // that holds nothing, or one the runtime marked with data-canvas-error). Used by the package tests
 // and the compatibility check.
 
-/** Waits for the runtime's first commit and the kit's renders to settle. */
+/**
+ * Waits for the runtime's first commit and the kit's renders to settle. The runtime's `ready` promise is read
+ * from the main frame after load, never through an init script: Playwright runs init scripts in every frame,
+ * and a frame that may not run scripts (a sandboxed `srcdoc` email preview without allow-scripts) makes
+ * Chromium log "Blocked script execution" for an injection the board never asked for.
+ */
 async function settle(page, timeout) {
-  await page.waitForFunction(() => window.__canvasRuntime && window.__canvasRuntime.__readyFlag === true, null, { timeout }).catch(() => {});
+  const started = Date.now();
+  await page.waitForFunction(() => !!(window.__canvasRuntime && window.__canvasRuntime.ready), null, { timeout }).catch(() => {});
+  const left = Math.max(0, timeout - (Date.now() - started));
+  // The limit is a Node timer, in real time: the board's own timers run on its motion clock and its frames may
+  // pause, so neither can bound the wait. A result that arrives after the limit is ignored.
+  const ready = page
+    .evaluate(() => {
+      const runtime = window.__canvasRuntime;
+      if (!runtime || !runtime.ready) return null;
+      return runtime.ready.then(() => { runtime.__readyFlag = true; });
+    })
+    .catch(() => {});
+  let timer;
+  const limit = new Promise((resolve) => { timer = setTimeout(resolve, left); });
+  await Promise.race([ready, limit]);
+  clearTimeout(timer);
 }
 
 export async function openBoard(context, url, { timeout = 15000, viewport, screenshot, fullPage = false } = {}) {
@@ -19,14 +39,6 @@ export async function openBoard(context, url, { timeout = 15000, viewport, scree
   page.on('requestfailed', (request) => problems.push(`request failed: ${request.url()} (${request.failure()?.errorText ?? 'failed'})`));
   page.on('response', (response) => {
     if (response.status() >= 400) problems.push(`HTTP ${response.status()}: ${response.url()}`);
-  });
-  await page.addInitScript(() => {
-    const mark = () => {
-      const runtime = window.__canvasRuntime;
-      if (!runtime) return setTimeout(mark, 10);
-      runtime.ready.then(() => { runtime.__readyFlag = true; });
-    };
-    mark();
   });
   try {
     await page.goto(url, { waitUntil: 'load', timeout });

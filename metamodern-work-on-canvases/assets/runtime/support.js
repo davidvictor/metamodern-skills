@@ -14,7 +14,7 @@
   'use strict';
   if (window.__canvasRuntime) return;
 
-  var VERSION = '0.0.3';
+  var VERSION = '0.0.4';
   var SVG = 'http://www.w3.org/2000/svg';
   var XLINK = 'http://www.w3.org/1999/xlink';
   var XML = 'http://www.w3.org/XML/1998/namespace';
@@ -836,18 +836,90 @@
     document.getAnimations().forEach(function (animation) { setRate(animation, rate); });
   }
 
+  // An animation's direction: a script may reverse one, and a paused one holds rate 0.
+  function direction(animation) {
+    if (animation.playbackRate < 0) return -1;
+    if (animation.playbackRate > 0) return 1;
+    return animation.__canvasDirection || 1;
+  }
+
   function setRate(animation, rate) {
     try {
-      if (rate === 0) { if (animation.playState === 'running') { animation.pause(); animation.__canvasPaused = true; } return; }
+      if (rate === 0) {
+        if (animation.playState === 'running') {
+          // A pause commits only when the animation is next ready (an update later), and an animation whose start
+          // is still being resolved keeps running until then; hold it where it was when the board paused.
+          var held = animation.currentTime;
+          animation.__canvasDirection = direction(animation);
+          // Rate 0 holds the current time at once (setting the rate keeps it); the pause makes it paused.
+          animation.playbackRate = 0;
+          animation.pause();
+          animation.__canvasPaused = true;
+          if (animation.pending && held != null && animation.ready) {
+            animation.ready.then(function () {
+              if (animation.__canvasPaused && animation.playState === 'paused' && animation.currentTime !== held) animation.currentTime = held;
+            }, function () { /* cancelled */ });
+          }
+        }
+        return;
+      }
       if (animation.__canvasPaused && animation.playState === 'paused') { animation.__canvasPaused = false; animation.play(); }
-      animation.playbackRate = rate;
+      // The board's rate sets the speed and keeps the direction: an animation a script reversed stays reversed.
+      animation.playbackRate = direction(animation) * rate;
     } catch (error) { /* an animation that finished between listing and setting */ }
+  }
+
+  // New CSS animations and transitions take the board's rate. The browser announces one (transitionrun,
+  // animationstart) an update after creating it, and an animation with a delay only when its delay ends, so the
+  // runtime also looks for new animations on every frame while the rate is not 1. Each new one is adopted once:
+  // if it was created after the last rate change, the time it already ran at full speed is scaled to the rate (to
+  // its start while paused), then the rate is set. Animations that existed at a change are adopted by the change.
+  var motionChangedAt = null;
+  var watching = false;
+
+  function timelineNow() { return document.timeline && document.timeline.currentTime != null ? document.timeline.currentTime : null; }
+
+  function adopt(animation, rate) {
+    if (!animation.__canvasAdopted) {
+      animation.__canvasAdopted = true;
+      var now = timelineNow();
+      var since = motionChangedAt == null || now == null ? Infinity : now - motionChangedAt;
+      try {
+        var time = animation.currentTime;
+        if (time != null && time > 0 && time <= since + 1) animation.currentTime = time * rate;
+      } catch (error) { /* finished */ }
+    }
+    setRate(animation, rate);
+  }
+
+  function watchNew() {
+    if (runtime.motion.rate === 1 || !document.getAnimations) { watching = false; return; }
+    var rate = runtime.motion.rate;
+    document.getAnimations().forEach(function (animation) { if (!animation.__canvasAdopted) adopt(animation, rate); });
+    window.requestAnimationFrame(watchNew);
+  }
+
+  function startWatching() {
+    if (watching || runtime.motion.rate === 1) return;
+    watching = true;
+    window.requestAnimationFrame(watchNew);
+  }
+
+  // The event's target is the originating element even for a pseudo-element's animation (::before, ::after,
+  // ::marker), which getAnimations() leaves out: ask with subtree and keep the element's own animations and its
+  // pseudo-elements' (their effect's target is the element), never its descendants', which have their own events
+  // and may run at their own speed. Without the option, ask the document.
+  function ownAnimations(target) {
+    var own = function (a) { return a.effect && a.effect.target === target; };
+    try { if (target.getAnimations) return target.getAnimations({ subtree: true }).filter(own); } catch (error) { /* below */ }
+    return document.getAnimations ? document.getAnimations().filter(own) : [];
   }
 
   function onAnimationStart(event) {
     var rate = runtime.motion.rate;
-    if (rate === 1 || !event.target || !event.target.getAnimations) return;
-    event.target.getAnimations().forEach(function (animation) { setRate(animation, rate); });
+    var target = event.target;
+    if (rate === 1 || !target) return;
+    ownAnimations(target).forEach(function (animation) { if (!animation.__canvasAdopted) adopt(animation, rate); });
   }
 
   // Animations a script starts with element.animate() (motion libraries do) start at the current rate.
@@ -877,6 +949,8 @@
           },
         });
       }
+      // A script animation takes the rate as it starts, so it has no full-speed time to take back.
+      animation.__canvasAdopted = true;
       if (runtime.motion.rate !== 1) setRate(animation, runtime.motion.rate);
       return animation;
     };
@@ -886,6 +960,8 @@
     var rate = Number(message.rate);
     if (!(rate >= 0) || !isFinite(rate)) return;
     runtime.motion.rate = rate;
+    motionChangedAt = timelineNow();
+    if (document.getAnimations) document.getAnimations().forEach(function (a) { a.__canvasAdopted = true; });
     if (message.replay) clock.resync();
     clock.setRate(rate);
     if (message.replay) {
@@ -893,15 +969,18 @@
       managed.forEach(unmountTree);
       managed.forEach(function (dom) { if (dom.parentNode) dom.parentNode.removeChild(dom); });
       managed = [];
-      if (document.getAnimations) document.getAnimations().forEach(function (a) { try { a.currentTime = 0; a.play(); } catch (e) { /* skip */ } });
+      // Restarted from their start, they are adopted again on the next frame at the new rate.
+      if (document.getAnimations) document.getAnimations().forEach(function (a) { try { a.currentTime = 0; a.play(); a.__canvasPaused = false; a.__canvasAdopted = false; if (rate === 1 || a.playbackRate === 0) a.playbackRate = direction(a) * (rate || 1); } catch (e) { /* skip */ } });
       scheduleRender();
+      startWatching();
       return;
     }
     if (document.getAnimations) document.getAnimations().forEach(function (animation) {
-      if (rate === 1) { if (animation.__canvasPaused) { animation.__canvasPaused = false; animation.play(); } animation.playbackRate = 1; }
+      if (rate === 1) { if (animation.__canvasPaused) { animation.__canvasPaused = false; animation.play(); } animation.playbackRate = direction(animation); }
       else setRate(animation, rate);
     });
     applyMotion();
+    startWatching();
   }
 
   // ---------------------------------------------------------------- messages

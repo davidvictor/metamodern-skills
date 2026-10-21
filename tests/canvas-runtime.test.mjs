@@ -359,3 +359,137 @@ test('RT-11 a board that imports itself still starts, says so, and keeps xlink a
   assert.ok(problems.some((p) => /Loop imports itself/.test(p)), problems.join('\n'));
   assert.ok(state.text.includes('Plain markup'));
 });
+
+test('RT-13 canvas:motion reaches pseudo-element motion that starts later: a ::before transition takes about 4 times as long at a quarter, and an ::after animation stays still at 0', { skip }, async () => {
+  // A board whose only motion runs on pseudo-elements, started after the rate is set (as a switch's thumb fades in).
+  const source = (await fs.readFile(path.join(root, 'canvases', 'fixture', 'project', 'plain.dc.html'), 'utf8')).replace(
+    '<h1>{{title}}</h1>',
+    '<h1>{{title}}</h1><style>.fx-pseudo{position:relative;width:40px;height:20px}.fx-pseudo::before{content:"";position:absolute;inset:0;background:#2457c5;opacity:0;transition:opacity 400ms linear}.fx-pseudo.on::before{opacity:1}.fx-after::after{content:"";display:block;width:8px;height:8px;background:#111}.fx-after.go::after{animation:fx-slide 400ms linear forwards}@keyframes fx-slide{to{transform:translateX(20px)}}</style><div class="fx-pseudo" data-test="pseudo"></div><div class="fx-after" data-test="after"></div>',
+  );
+  await fs.writeFile(path.join(root, 'canvases', 'fixture', 'project', 'pseudo.dc.html'), source);
+  const { page, frame, problems } = await harness('fixture/project/pseudo');
+  const fade = (on) => frame.evaluate((turnOn) => new Promise((resolve) => {
+    const el = document.querySelector('[data-test="pseudo"]');
+    // Date.now() stays real; performance.now() is the board's scaled clock.
+    const t0 = Date.now();
+    let rates = null;
+    el.addEventListener('transitionrun', (e) => {
+      if (e.pseudoElement !== '::before') return;
+      requestAnimationFrame(() => { rates = document.getAnimations().filter((a) => a.effect && a.effect.pseudoElement === '::before').map((a) => a.playbackRate); });
+    }, { once: true });
+    el.addEventListener('transitionend', (e) => { if (e.pseudoElement === '::before') resolve({ real: Date.now() - t0, rates }); }, { once: true });
+    el.classList.toggle('on', turnOn);
+  }), on);
+  const normal = await fade(true);
+  await fade(false);
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0.25 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0.25);
+  const quarter = await fade(true);
+  assert.deepEqual(quarter.rates, [0.25], 'the ::before transition runs at the board rate');
+  const ratio = quarter.real / normal.real;
+  assert.ok(ratio > 3 && ratio < 5.5, `the ::before fade took ${Math.round(quarter.real)} ms against ${Math.round(normal.real)} ms (${ratio.toFixed(2)} times)`);
+
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0);
+  const still = await frame.evaluate(async () => {
+    document.querySelector('[data-test="after"]').classList.add('go');
+    await new Promise((r) => setTimeout(r, 0));
+    const started = Date.now();
+    await new Promise((r) => { const tick = () => (Date.now() - started > 300 ? r() : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
+    const a = document.getAnimations().find((x) => x.effect && x.effect.pseudoElement === '::after');
+    return a ? { state: a.playState, time: Math.round(Number(a.currentTime)) } : null;
+  });
+  assert.ok(still, 'the ::after animation exists');
+  assert.equal(still.state, 'paused');
+  assert.ok(still.time < 50, `the ::after animation held near its start: ${still.time} ms`);
+
+  // A transition announced while paused has not run at all: its first frame is taken back.
+  const held = await frame.evaluate(async () => {
+    const el = document.querySelector('[data-test="pseudo"]');
+    el.classList.toggle('on');
+    const started = Date.now();
+    await new Promise((r) => { const tick = () => (Date.now() - started > 300 ? r() : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
+    const a = document.getAnimations().find((x) => x.effect && x.effect.pseudoElement === '::before');
+    return a ? { state: a.playState, time: Number(a.currentTime) } : null;
+  });
+  assert.ok(held, 'the ::before transition exists');
+  assert.equal(held.state, 'paused');
+  assert.ok(held.time < 1, `a transition started while paused stays at its start: ${held.time} ms`);
+
+  // At a quarter, its first frame runs at a quarter too.
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1 && document.getAnimations().every((a) => a.playState !== 'running'));
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0.25 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0.25);
+  const first = await frame.evaluate(async () => {
+    const el = document.querySelector('[data-test="pseudo"]');
+    const started = Date.now();
+    el.classList.toggle('on');
+    await new Promise((r) => { const tick = () => (Date.now() - started > 120 ? r() : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
+    const real = Date.now() - started;
+    const a = document.getAnimations().find((x) => x.effect && x.effect.pseudoElement === '::before');
+    return { real, time: Number(a.currentTime), rate: a.playbackRate };
+  });
+  assert.equal(first.rate, 0.25);
+  assert.ok(first.time <= first.real * 0.25 + 6, `${first.time} ms of animation in ${first.real} ms at a quarter`);
+
+  // An animation with a delay is announced only when its delay ends; its delay runs at the board's rate too.
+  const delayed = await frame.evaluate(async () => {
+    const style = document.createElement('style');
+    style.textContent = '.fx-late{width:8px;height:8px;animation:fx-fade 200ms linear 300ms both}@keyframes fx-fade{from{opacity:0}to{opacity:1}}';
+    document.head.append(style);
+    const el = document.createElement('div');
+    const started = Date.now();
+    await new Promise((r) => { el.addEventListener('animationend', r, { once: true }); el.className = 'fx-late'; document.body.append(el); });
+    el.remove();
+    return Date.now() - started;
+  });
+  assert.ok(delayed > 3 * 500 && delayed < 5.5 * 500, `a 300 ms delay and 200 ms fade took ${delayed} ms at a quarter`);
+
+  // A transition paused just after it starts holds still: the board's pause takes effect at once, not an update later.
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1);
+  for (let i = 0; i < 5; i += 1) {
+    await frame.evaluate(() => new Promise((r) => { const el = document.querySelector('[data-test="pseudo"]'); el.classList.toggle('on'); requestAnimationFrame(() => r()); }));
+    await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0 }));
+    const drift = await frame.evaluate(async () => {
+      const a = document.getAnimations().find((x) => x.effect && x.effect.pseudoElement === '::before');
+      if (!a) return NaN;
+      const wait = (ms) => new Promise((r) => { const end = Date.now() + ms; const tick = () => (Date.now() >= end ? r() : requestAnimationFrame(tick)); tick(); });
+      while (a.playState === 'running') await wait(2);
+      await wait(20);
+      const c1 = Number(a.currentTime);
+      await wait(400);
+      return Number(a.currentTime) - c1;
+    });
+    assert.ok(Number.isFinite(drift), 'no ::before transition was found after the toggle');
+    assert.ok(Math.abs(drift) < 1, `a paused transition moved ${drift} ms`);
+    await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
+    await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1 && document.getAnimations().every((a) => a.playState !== 'running'));
+  }
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0.25 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0.25);
+
+  // A parent's transition leaves its children's animations alone: a child at its own speed, and one reversed.
+  const children = await frame.evaluate(async () => {
+    const host = document.querySelector('[data-test="pseudo"]');
+    const fast = document.createElement('i');
+    const back = document.createElement('i');
+    host.append(fast, back);
+    const a = fast.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 4000 });
+    a.playbackRate = 0.5;
+    const b = back.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 4000 });
+    // Reversed from mid-run, so it is still running backwards when the parent's transition starts.
+    b.currentTime = 2000;
+    b.reverse();
+    await Promise.all([a.ready, b.ready]);
+    const before = [a.playbackRate, b.playbackRate];
+    await new Promise((r) => { host.addEventListener('transitionrun', () => requestAnimationFrame(() => r()), { once: true }); host.classList.toggle('on'); });
+    return { before, after: [a.playbackRate, b.playbackRate], states: [a.playState, b.playState] };
+  });
+  assert.deepEqual(children.after, children.before, `children kept their rates: ${JSON.stringify(children)}`);
+  assert.deepEqual(children.states, ['running', 'running'], 'both children were still running when the parent moved');
+  assert.ok(children.before[1] < 0, 'the reversed child runs backwards');
+  assert.deepEqual(problems, []);
+  await page.close();
+});

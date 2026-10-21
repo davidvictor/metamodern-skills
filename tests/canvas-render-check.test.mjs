@@ -64,6 +64,17 @@ const THEMED = board('A theme kept in storage', {
   props: '{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":600,"height":300}}',
 });
 
+// Frames inside a board: a script-free email preview (a sandboxed srcdoc frame without allow-scripts) is clean, and
+// a frame whose own script logs an error still fails the board.
+const FRAMES = {
+  'sandboxed.dc.html': board('A script-free email frame', {
+    body: '<p>Email preview</p><iframe title="Email" sandbox="allow-same-origin" srcdoc="&lt;p&gt;Your contract renews on 17 December.&lt;/p&gt;" width="400" height="120"></iframe>',
+  }),
+  'scripted.dc.html': board('A frame with a broken script', {
+    body: '<p>Frame preview</p><iframe title="Frame" srcdoc="&lt;script&gt;console.error(\'Frame broken on purpose\')&lt;/script&gt;" width="400" height="120"></iframe>',
+  }),
+};
+
 let root;
 let renderCheck;
 
@@ -93,6 +104,16 @@ before(async () => {
     stored[`themed-${i}.dc.html`] = { x: (i - 1) * 680, y: 0, w: 600, h: 300, title: `Themed ${i}` };
   }
   await fs.writeFile(path.join(storage, 'canvas.json'), JSON.stringify({ v: 3, title: 'Storage', launch: { view: 'canvas' }, pages: [], boards: stored, order: Object.keys(stored) }));
+  const frames = path.join(root, 'canvases', 'frames', 'project');
+  await fs.mkdir(frames, { recursive: true });
+  const framed = {};
+  let fx = 0;
+  for (const [file, html] of Object.entries(FRAMES)) {
+    await fs.writeFile(path.join(frames, file), html);
+    framed[file] = { x: fx, y: 0, w: 600, h: 300, title: file };
+    fx += 680;
+  }
+  await fs.writeFile(path.join(frames, 'canvas.json'), JSON.stringify({ v: 3, title: 'Frames', launch: { view: 'canvas' }, pages: [], boards: framed, order: Object.keys(framed) }));
   await buildShowcase(root);
 });
 
@@ -169,4 +190,13 @@ test('RC-03 a lock and an archive work from a real render', { skip }, async () =
   const result = await renderCheck({ projectRoot: root, canvases: ['archive'], jobs: 2 });
   assert.equal(result.ok, true, 'the archive canvas renders its pictures');
   assert.ok(archived.entry.boards[0].w > 1000, 'the picture keeps the board\'s size');
+});
+
+test('RC-05 a script-free sandboxed frame passes, and a frame whose own script logs an error still fails', { skip }, async () => {
+  const result = await renderCheck({ projectRoot: root, canvases: ['frames'], heights: false, jobs: 2 });
+  const report = JSON.parse(await fs.readFile(result.canvases[0].report, 'utf8'));
+  assert.deepEqual(problemsOf(report, 'sandboxed.dc.html'), [], 'the render check injects nothing into a frame that may not run scripts');
+  const scripted = problemsOf(report, 'scripted.dc.html');
+  assert.ok(scripted.some((p) => /^console error: Frame broken on purpose/.test(p)), scripted.join(' | '));
+  assert.equal(result.ok, false);
 });
