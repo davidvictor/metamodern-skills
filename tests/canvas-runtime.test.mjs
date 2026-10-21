@@ -402,6 +402,54 @@ test('RT-13 canvas:motion reaches pseudo-element motion that starts later: a ::b
   assert.ok(still, 'the ::after animation exists');
   assert.equal(still.state, 'paused');
   assert.ok(still.time < 50, `the ::after animation held near its start: ${still.time} ms`);
+
+  // A transition announced while paused has not run at all: its first frame is taken back.
+  const held = await frame.evaluate(async () => {
+    const el = document.querySelector('[data-test="pseudo"]');
+    el.classList.toggle('on');
+    const started = Date.now();
+    await new Promise((r) => { const tick = () => (Date.now() - started > 300 ? r() : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
+    const a = document.getAnimations().find((x) => x.effect && x.effect.pseudoElement === '::before');
+    return a ? { state: a.playState, time: Number(a.currentTime) } : null;
+  });
+  assert.ok(held, 'the ::before transition exists');
+  assert.equal(held.state, 'paused');
+  assert.ok(held.time < 1, `a transition started while paused stays at its start: ${held.time} ms`);
+
+  // At a quarter, its first frame runs at a quarter too.
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1 && document.getAnimations().every((a) => a.playState !== 'running'));
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0.25 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0.25);
+  const first = await frame.evaluate(async () => {
+    const el = document.querySelector('[data-test="pseudo"]');
+    const started = Date.now();
+    el.classList.toggle('on');
+    await new Promise((r) => { const tick = () => (Date.now() - started > 120 ? r() : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
+    const real = Date.now() - started;
+    const a = document.getAnimations().find((x) => x.effect && x.effect.pseudoElement === '::before');
+    return { real, time: Number(a.currentTime), rate: a.playbackRate };
+  });
+  assert.equal(first.rate, 0.25);
+  assert.ok(first.time <= first.real * 0.25 + 6, `${first.time} ms of animation in ${first.real} ms at a quarter`);
+
+  // A parent's transition leaves its children's animations alone: a child at its own speed, and one reversed.
+  const children = await frame.evaluate(async () => {
+    const host = document.querySelector('[data-test="pseudo"]');
+    const fast = document.createElement('i');
+    const back = document.createElement('i');
+    host.append(fast, back);
+    const a = fast.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 4000 });
+    a.playbackRate = 0.5;
+    const b = back.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 4000 });
+    b.reverse();
+    await Promise.all([a.ready, b.ready]);
+    const before = [a.playbackRate, b.playbackRate];
+    await new Promise((r) => { host.addEventListener('transitionrun', () => requestAnimationFrame(() => r()), { once: true }); host.classList.toggle('on'); });
+    return { before, after: [a.playbackRate, b.playbackRate] };
+  });
+  assert.deepEqual(children.after, children.before, `children kept their rates: ${JSON.stringify(children)}`);
+  assert.ok(children.before[1] < 0, 'the reversed child runs backwards');
   assert.deepEqual(problems, []);
   await page.close();
 });

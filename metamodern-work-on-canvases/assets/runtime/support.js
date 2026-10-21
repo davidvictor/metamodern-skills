@@ -840,23 +840,42 @@
     try {
       if (rate === 0) { if (animation.playState === 'running') { animation.pause(); animation.__canvasPaused = true; } return; }
       if (animation.__canvasPaused && animation.playState === 'paused') { animation.__canvasPaused = false; animation.play(); }
-      animation.playbackRate = rate;
+      // The board's rate sets the speed and keeps the direction: an animation a script reversed stays reversed.
+      animation.playbackRate = animation.playbackRate < 0 ? -rate : rate;
     } catch (error) { /* an animation that finished between listing and setting */ }
   }
 
   // CSS animations and transitions start at the current rate. The event's target is the originating element even
   // when the animation runs on a pseudo-element (::before, ::after, ::marker); getAnimations() leaves those out, so
-  // ask with subtree, which includes the element's pseudo-elements. Without the option, fall back to the document.
+  // ask with subtree and keep the element's own animations and its pseudo-elements' (their effect's target is the
+  // element), never its descendants', which have their own events. Without the option, ask the document.
+  function ownAnimations(target) {
+    var own = function (a) { return a.effect && a.effect.target === target; };
+    try { if (target.getAnimations) return target.getAnimations({ subtree: true }).filter(own); } catch (error) { /* below */ }
+    return document.getAnimations ? document.getAnimations().filter(own) : [];
+  }
+
+  // The animation this event announces: its property or name, on the element or the event's pseudo-element.
+  function announced(event, animation) {
+    var pseudo = (animation.effect && animation.effect.pseudoElement) || '';
+    if (pseudo !== (event.pseudoElement || '')) return false;
+    if (event.type === 'transitionrun' || event.type === 'transitionstart') return animation.transitionProperty === event.propertyName;
+    return animation.animationName === event.animationName;
+  }
+
   function onAnimationStart(event) {
     var rate = runtime.motion.rate;
     var target = event.target;
     if (rate === 1 || !target) return;
-    var list;
-    try { list = target.getAnimations ? target.getAnimations({ subtree: true }) : null; } catch (error) { list = null; }
-    if (!list || (event.pseudoElement && !list.some(function (a) { return a.effect && a.effect.pseudoElement; }))) {
-      list = document.getAnimations ? document.getAnimations().filter(function (a) { return a.effect && a.effect.target === target; }) : [];
-    }
-    list.forEach(function (animation) { setRate(animation, rate); });
+    ownAnimations(target).forEach(function (animation) {
+      // The event comes at the update after the animation was created, which already ran at full speed: once, bring
+      // its time to what the board's clock allows (none while paused), then set the rate.
+      if (!animation.__canvasRebased && announced(event, animation)) {
+        animation.__canvasRebased = true;
+        try { if (animation.currentTime != null) animation.currentTime = animation.currentTime * rate; } catch (error) { /* finished */ }
+      }
+      setRate(animation, rate);
+    });
   }
 
   // Animations a script starts with element.animate() (motion libraries do) start at the current rate.
@@ -907,7 +926,7 @@
       return;
     }
     if (document.getAnimations) document.getAnimations().forEach(function (animation) {
-      if (rate === 1) { if (animation.__canvasPaused) { animation.__canvasPaused = false; animation.play(); } animation.playbackRate = 1; }
+      if (rate === 1) { if (animation.__canvasPaused) { animation.__canvasPaused = false; animation.play(); } animation.playbackRate = animation.playbackRate < 0 ? -1 : 1; }
       else setRate(animation, rate);
     });
     applyMotion();
