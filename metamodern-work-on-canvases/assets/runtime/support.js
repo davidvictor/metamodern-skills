@@ -836,12 +836,36 @@
     document.getAnimations().forEach(function (animation) { setRate(animation, rate); });
   }
 
+  // An animation's direction: a script may reverse one, and a paused one holds rate 0.
+  function direction(animation) {
+    if (animation.playbackRate < 0) return -1;
+    if (animation.playbackRate > 0) return 1;
+    return animation.__canvasDirection || 1;
+  }
+
   function setRate(animation, rate) {
     try {
-      if (rate === 0) { if (animation.playState === 'running') { animation.pause(); animation.__canvasPaused = true; } return; }
+      if (rate === 0) {
+        if (animation.playState === 'running') {
+          // A pause commits only when the animation is next ready (an update later), and an animation whose start
+          // is still being resolved keeps running until then; hold it where it was when the board paused.
+          var held = animation.currentTime;
+          animation.__canvasDirection = direction(animation);
+          // Rate 0 holds the current time at once (setting the rate keeps it); the pause makes it paused.
+          animation.playbackRate = 0;
+          animation.pause();
+          animation.__canvasPaused = true;
+          if (animation.pending && held != null && animation.ready) {
+            animation.ready.then(function () {
+              if (animation.__canvasPaused && animation.playState === 'paused' && animation.currentTime !== held) animation.currentTime = held;
+            }, function () { /* cancelled */ });
+          }
+        }
+        return;
+      }
       if (animation.__canvasPaused && animation.playState === 'paused') { animation.__canvasPaused = false; animation.play(); }
       // The board's rate sets the speed and keeps the direction: an animation a script reversed stays reversed.
-      animation.playbackRate = animation.playbackRate < 0 ? -rate : rate;
+      animation.playbackRate = direction(animation) * rate;
     } catch (error) { /* an animation that finished between listing and setting */ }
   }
 
@@ -946,13 +970,13 @@
       managed.forEach(function (dom) { if (dom.parentNode) dom.parentNode.removeChild(dom); });
       managed = [];
       // Restarted from their start, they are adopted again on the next frame at the new rate.
-      if (document.getAnimations) document.getAnimations().forEach(function (a) { try { a.currentTime = 0; a.play(); a.__canvasPaused = false; a.__canvasAdopted = false; if (rate === 1) a.playbackRate = a.playbackRate < 0 ? -1 : 1; } catch (e) { /* skip */ } });
+      if (document.getAnimations) document.getAnimations().forEach(function (a) { try { a.currentTime = 0; a.play(); a.__canvasPaused = false; a.__canvasAdopted = false; if (rate === 1 || a.playbackRate === 0) a.playbackRate = direction(a) * (rate || 1); } catch (e) { /* skip */ } });
       scheduleRender();
       startWatching();
       return;
     }
     if (document.getAnimations) document.getAnimations().forEach(function (animation) {
-      if (rate === 1) { if (animation.__canvasPaused) { animation.__canvasPaused = false; animation.play(); } animation.playbackRate = animation.playbackRate < 0 ? -1 : 1; }
+      if (rate === 1) { if (animation.__canvasPaused) { animation.__canvasPaused = false; animation.play(); } animation.playbackRate = direction(animation); }
       else setRate(animation, rate);
     });
     applyMotion();

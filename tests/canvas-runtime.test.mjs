@@ -446,6 +446,29 @@ test('RT-13 canvas:motion reaches pseudo-element motion that starts later: a ::b
   });
   assert.ok(delayed > 3 * 500 && delayed < 5.5 * 500, `a 300 ms delay and 200 ms fade took ${delayed} ms at a quarter`);
 
+  // A transition paused just after it starts holds still: the board's pause takes effect at once, not an update later.
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1);
+  for (let i = 0; i < 5; i += 1) {
+    await frame.evaluate(() => new Promise((r) => { const el = document.querySelector('[data-test="pseudo"]'); el.classList.toggle('on'); requestAnimationFrame(() => r()); }));
+    await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0 }));
+    const drift = await frame.evaluate(async () => {
+      const a = document.getAnimations().find((x) => x.effect && x.effect.pseudoElement === '::before');
+      if (!a) return 0;
+      const wait = (ms) => new Promise((r) => { const end = Date.now() + ms; const tick = () => (Date.now() >= end ? r() : requestAnimationFrame(tick)); tick(); });
+      while (a.playState === 'running') await wait(2);
+      await wait(20);
+      const c1 = Number(a.currentTime);
+      await wait(400);
+      return Number(a.currentTime) - c1;
+    });
+    assert.ok(Math.abs(drift) < 1, `a paused transition moved ${drift} ms`);
+    await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
+    await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1 && document.getAnimations().every((a) => a.playState !== 'running'));
+  }
+  await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0.25 }));
+  await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 0.25);
+
   // A parent's transition leaves its children's animations alone: a child at its own speed, and one reversed.
   const children = await frame.evaluate(async () => {
     const host = document.querySelector('[data-test="pseudo"]');
