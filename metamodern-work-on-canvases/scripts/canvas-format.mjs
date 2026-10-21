@@ -23,9 +23,17 @@ export function isIconPath(value) {
   return parts.every((part) => part && part !== '.' && part !== '..') && !['support', 'ds'].includes(parts[0]) && !/^[A-Za-z]:/.test(parts[0]);
 }
 
-/** Whether a board fact's href is one the viewer opens: http(s), or a path on the viewer (never `//` or a backslash, which browsers read as another host). */
+/** Whether a board fact's href is one the viewer opens: an http(s) URL with a host, or a path on the viewer (never `//` or a backslash, which browsers read as another host). */
 export function isFactHref(value) {
-  return typeof value === 'string' && (/^https?:\/\/[^\s\\]+$/i.test(value) || /^\/(?![/\\])[^\s\\]*$/.test(value));
+  if (typeof value !== 'string' || /[\s\\]/.test(value)) return false;
+  if (/^\/(?!\/)/.test(value)) return true;
+  if (!/^https?:\/\//i.test(value)) return false;
+  try {
+    const url = new URL(value);
+    return (url.protocol === 'http:' || url.protocol === 'https:') && url.hostname !== '';
+  } catch {
+    return false;
+  }
 }
 
 /** Issues with a canvas.json object; empty when valid. Unknown fields are allowed (older and newer writers add their own). */

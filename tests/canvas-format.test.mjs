@@ -142,6 +142,8 @@ test('CF-09 home and panel facts: ws.about, ws.icon, a board\'s ws.facts and the
     [[{ label: 'Source', text: 'x', href: 'javascript:alert(1)' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
     [[{ label: 'Source', text: 'x', href: '//elsewhere.example/x' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
     [[{ label: 'Source', text: 'x', href: '/\\elsewhere.example/x' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
+    [[{ label: 'Source', text: 'x', href: 'http://?' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
+    [[{ label: 'Source', text: 'x', href: 'https://#' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
   ]) {
     const bad = canvas();
     bad.boards['a.dc.html'].ws = { facts };
