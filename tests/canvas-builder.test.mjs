@@ -229,7 +229,7 @@ test('BB-08 a bare board is the screen alone: no header or footer, its stage fil
   for (const extra of [{ where: 'Sign-in · Phone' }, { summary: 'An error' }, { tags: ['Phone'] }, { foot: [['Scene', 'sign-in']] }]) {
     assert.throws(() => boardShell({ title: 'Sign in', kind: 'screen', width: 390, height: 844, bare: true, ...extra }), /a bare board has no (where|summary|tags|foot)/);
   }
-  assert.doesNotThrow(() => boardShell({ title: 'Sign in', kind: 'screen', width: 390, height: 844, bare: true, tags: [], foot: [] }));
+  assert.doesNotThrow(() => boardShell({ title: 'Sign in', kind: 'screen', width: 390, height: 844, bare: true, where: '', summary: '', tags: [], foot: [] }));
   const facts = [{ label: 'Scene', text: 'sign-in · error' }, { label: 'Source', text: 'src/sign-in.tsx', href: 'https://example.com/src/sign-in.tsx' }];
   const { canvas } = layoutCanvas({
     title: 'App',

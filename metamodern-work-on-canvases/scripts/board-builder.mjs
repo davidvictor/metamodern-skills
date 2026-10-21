@@ -96,7 +96,7 @@ export function boardShell(o) {
   for (const key of ['width', 'height']) if (!Number.isFinite(o[key]) || o[key] <= 0) throw new Error(`boardShell: ${key} must be a positive number`);
   if (o.row != null && !ROWS.includes(o.row) && !ID.test(o.row)) throw new Error(`boardShell: row ${o.row} must be link-safe`);
   if (o.bare) for (const key of ['where', 'summary', 'tags', 'foot']) {
-    if (o[key] != null && !(Array.isArray(o[key]) && !o[key].length)) throw new Error(`boardShell: a bare board has no ${key}; put its facts in the board's ws.facts`);
+    if (o[key] != null && o[key] !== '' && !(Array.isArray(o[key]) && !o[key].length)) throw new Error(`boardShell: a bare board has no ${key}; put its facts in the board's ws.facts`);
   }
   const ns = o.namespace ?? null;
   const themes = o.themes ?? null;

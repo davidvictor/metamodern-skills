@@ -130,6 +130,10 @@ test('CF-09 home and panel facts: ws.about, ws.icon, a board\'s ws.facts and the
     [{ group: 'lab', icon: '../icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
     [{ group: 'lab', icon: '/icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
     [{ group: 'lab', icon: 'icon.png' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: 'support/icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: 'ds/kit/icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: 'C:icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: 'icons\\a.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
   ]) assert.ok(validateCanvas({ ...canvas(), ws }).join('\n').includes(expected), JSON.stringify(ws));
   for (const [facts, expected] of [
     ['Scene', '.facts must be an array'],
@@ -137,6 +141,7 @@ test('CF-09 home and panel facts: ws.about, ws.icon, a board\'s ws.facts and the
     [[{ label: 'Scene' }], '.facts[0] must be {label, text, href?}'],
     [[{ label: 'Source', text: 'x', href: 'javascript:alert(1)' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
     [[{ label: 'Source', text: 'x', href: '//elsewhere.example/x' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
+    [[{ label: 'Source', text: 'x', href: '/\\elsewhere.example/x' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
   ]) {
     const bad = canvas();
     bad.boards['a.dc.html'].ws = { facts };

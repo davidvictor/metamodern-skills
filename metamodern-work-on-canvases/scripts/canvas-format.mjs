@@ -13,15 +13,19 @@ const LIVE_NAME = /^[a-z0-9][a-z0-9-]*$/;
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isNumber = (v) => typeof v === 'number' && Number.isFinite(v);
 
-/** Whether a canvas's ws.icon is an .svg path inside its project/ folder. */
+/**
+ * Whether a canvas's ws.icon is an .svg path inside its project/ folder: forward slashes only, no `.` or `..`, and not
+ * under the paths a board request answers from elsewhere (`support/`, `ds/`) or a drive letter.
+ */
 export function isIconPath(value) {
-  return typeof value === 'string' && /\.svg$/i.test(value) && !path.isAbsolute(value) && !/^[\\/]/.test(value)
-    && value.split(/[\\/]/).every((part) => part && part !== '.' && part !== '..');
+  if (typeof value !== 'string' || !/\.svg$/i.test(value) || value.includes('\\') || path.isAbsolute(value)) return false;
+  const parts = value.split('/');
+  return parts.every((part) => part && part !== '.' && part !== '..') && !['support', 'ds'].includes(parts[0]) && !/^[A-Za-z]:/.test(parts[0]);
 }
 
-/** Whether a board fact's href is one the viewer opens: http(s) or a path on the viewer. */
+/** Whether a board fact's href is one the viewer opens: http(s), or a path on the viewer (never `//` or a backslash, which browsers read as another host). */
 export function isFactHref(value) {
-  return typeof value === 'string' && (/^https?:\/\/[^\s]+$/i.test(value) || /^\/(?!\/)[^\s]*$/.test(value));
+  return typeof value === 'string' && (/^https?:\/\/[^\s\\]+$/i.test(value) || /^\/(?![/\\])[^\s\\]*$/.test(value));
 }
 
 /** Issues with a canvas.json object; empty when valid. Unknown fields are allowed (older and newer writers add their own). */

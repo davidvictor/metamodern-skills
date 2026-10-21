@@ -568,6 +568,9 @@ test('VW-17 the home page names groups the project\'s way, each card opens as a 
     assert.deepEqual(icon, [200, 'image/svg+xml']);
     assert.equal(await page.textContent('[data-canvas="pair"] .tile'), 'B', 'without an icon, the tile shows the first letter');
     assert.match(await page.getAttribute('[data-canvas="fixture"] .card-head', 'style'), /linear-gradient/);
+    // The card head takes keyboard focus and the whole card shows the ring.
+    for (let i = 0; i < 12 && !(await page.evaluate(() => document.activeElement?.matches('[data-canvas="fixture"] .card-head'))); i += 1) await page.keyboard.press('Tab');
+    assert.equal(await page.$eval('[data-canvas="fixture"]', (c) => getComputedStyle(c).outlineStyle), 'solid');
     // Anywhere on a card opens its canvas; its page links open their own page.
     const box = await (await page.$('[data-canvas="fixture"] .m')).boundingBox();
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);

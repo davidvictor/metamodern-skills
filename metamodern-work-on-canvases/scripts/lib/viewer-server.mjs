@@ -240,7 +240,8 @@ function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }
     const parts = String(name).split(path.sep);
     const [canvas, folder, ...rest] = parts;
     if (!canvas || !ID.test(canvas)) return;
-    if (parts.length === 1 || (parts.length === 2 && folder === 'README.md') || (folder === 'project' && rest.join('/') === 'canvas.json')) index = true;
+    // The index holds each canvas's README line and whether its icon file is there, so an .svg in project/ counts too.
+    if (parts.length === 1 || (parts.length === 2 && folder === 'README.md') || (folder === 'project' && (rest.join('/') === 'canvas.json' || /\.svg$/i.test(rest.join('/'))))) index = true;
     if (folder === 'project' && rest.length) {
       const file = rest.join('/');
       pending.set(`${canvas}/${file}`, { canvas, file });
