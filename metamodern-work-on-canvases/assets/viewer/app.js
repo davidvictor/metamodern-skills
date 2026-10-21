@@ -16,6 +16,8 @@ const store = {
 const slug = (f) => f.replace(/\.dc\.html$/, '');
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const GROUP_NAMES = { foundations: 'Foundations', lab: 'Labs', app: 'App', exploring: 'Exploring', decided: 'Decided', archive: 'Archive' };
+/** A group's heading: the project's name for it (canvas.config.json groupNames), else the package's. */
+const groupName = (g) => INDEX.groupNames?.[g] ?? GROUP_NAMES[g] ?? g;
 
 let INDEX = { name: 'Canvases', groups: [], canvases: [], problems: [] };
 let KITS = null;
@@ -98,7 +100,18 @@ function remember(c, p) {
 }
 
 /* ---------- home ---------- */
-const tile = (title) => el('span', { class: 'tile', 'aria-hidden': 'true', text: (title.trim()[0] ?? '?').toUpperCase() });
+// Soft neutral tones for the card heads, one per canvas (stable by its id), so its icon and name carry the card.
+const TONES = [['#f4f2ed', '#e2ddd2'], ['#eef2f0', '#d5e0da'], ['#f1f0f5', '#dcdae7'], ['#f4efeb', '#e6d9ce'],
+  ['#eef1f4', '#d4dde7'], ['#f2f1ea', '#e0ddc9'], ['#f2eef1', '#e3d7df'], ['#edf0ea', '#d7dfd0']];
+const toneOf = (id) => {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  const [a, b] = TONES[h % TONES.length];
+  return `radial-gradient(120% 100% at 0% 0%, rgba(255,255,255,.7), rgba(255,255,255,0) 60%), linear-gradient(135deg, ${a}, ${b})`;
+};
+/** A canvas's tile: its icon (ws.icon, drawn in the tile's ink) or the first letter of its title. */
+const tile = (c) => el('span', { class: 'tile', 'aria-hidden': 'true' },
+  c.icon ? el('span', { class: 'ic', style: `--icon: url("${c.icon}")` }) : (c.title.trim()[0] ?? '?').toUpperCase());
 const counts = (c) => `${c.pageless ? '' : `${c.pages.length} ${c.pages.length === 1 ? 'page' : 'pages'} · `}${c.boards.length} ${c.boards.length === 1 ? 'board' : 'boards'}`;
 function groupOrder() { return [...INDEX.groups, ...Object.keys(GROUP_NAMES).filter((g) => !INDEX.groups.includes(g))]; }
 function showHome() {
@@ -111,7 +124,7 @@ function showHome() {
     const body = g === 'app' ? list.map(banner)
       : g === 'decided' || g === 'archive' ? el('div', { class: 'list' }, list.map(rowCard))
       : el('div', { class: 'cards' }, list.map(card));
-    sections.push(el('section', { 'data-group': g, 'aria-label': GROUP_NAMES[g] ?? g }, el('h2', { text: GROUP_NAMES[g] ?? g }), body));
+    sections.push(el('section', { 'data-group': g, 'aria-label': groupName(g) }, el('h2', { text: groupName(g) }), body));
   }
   const home = el('div', { class: 'home' }, el('main', { class: 'home-in' },
     el('div', { class: 'home-head' },
@@ -125,17 +138,18 @@ function showHome() {
   app.replaceChildren(home);
 }
 function banner(c) {
-  return el('a', { class: 'banner', href: urlFor(c.id, c.launch), 'data-go': true, 'data-canvas': c.id },
+  return el('a', { class: 'banner', href: urlFor(c.id, c.launch), 'data-go': true, 'data-canvas': c.id, style: `background: ${toneOf(c.id)}` },
     el('div', {},
       el('div', { class: 'banner-title', text: c.title }),
       c.about ? el('p', { class: 'banner-about', text: c.about }) : null,
       el('div', { class: 'banner-meta', text: counts(c) })),
-    tile(c.title));
+    tile(c));
 }
+// The whole card opens the canvas (the head's link covers it); its page links sit above that and open their page.
 function card(c) {
   const shown = c.pageless ? [] : c.pages.slice(0, 6);
   return el('div', { class: 'card', 'data-canvas': c.id },
-    el('a', { class: 'card-head', href: urlFor(c.id, c.launch), 'data-go': true }, tile(c.title), el('span', { class: 'card-title', text: c.title })),
+    el('a', { class: 'card-head', href: urlFor(c.id, c.launch), 'data-go': true, style: `background: ${toneOf(c.id)}` }, tile(c), el('span', { class: 'card-title', text: c.title })),
     el('div', { class: 'body' },
       c.about ? el('p', { class: 'about', text: c.about }) : null,
       el('div', { class: 'm', text: counts(c) }),
@@ -143,7 +157,7 @@ function card(c) {
         c.pages.length > shown.length ? el('a', { href: urlFor(c.id, c.launch), 'data-go': true, text: `+${c.pages.length - shown.length}` }) : null) : null));
 }
 function rowCard(c) {
-  return el('a', { class: 'row-card', href: urlFor(c.id, c.launch), 'data-go': true, 'data-canvas': c.id }, tile(c.title),
+  return el('a', { class: 'row-card', href: urlFor(c.id, c.launch), 'data-go': true, 'data-canvas': c.id }, tile(c),
     el('span', { class: 'row-text' }, el('span', { class: 'row-title', text: c.title }),
       c.about ? el('span', { class: 'row-about', text: c.about }) : null, el('span', { class: 'm', text: counts(c) })));
 }
@@ -240,6 +254,12 @@ class CanvasView {
     rec.kitEl.classList.toggle('missing', !!entry && !entry.exists);
     rec.el.classList.toggle('live-kit', choice !== 'pinned');
     rec.el.dataset.kit = choice;
+    this.quietKits();
+  }
+  /** Kit banners show only when they tell boards apart: while every board on the page shows the pinned kit, they hide. */
+  quietKits() {
+    const quiet = [...this.els.values()].every((r) => r.el.dataset.kit === 'pinned' && !r.kitEl.classList.contains('missing'));
+    this.world.classList.toggle('kits-quiet', quiet);
   }
   /** A titled box stands in for a board until it's close enough to run live. */
   placeholder(rec) {
@@ -561,7 +581,7 @@ class CanvasView {
     const m = menu(anchor);
     for (const g of groupOrder()) {
       const list = INDEX.canvases.filter((c) => c.group === g); if (!list.length) continue;
-      m.append(el('div', { class: 'mh', text: GROUP_NAMES[g] ?? g }));
+      m.append(el('div', { class: 'mh', text: groupName(g) }));
       for (const c of list) m.append(el('a', { class: c.id === this.canvas.id ? 'cur' : '', href: urlFor(c.id, c.launch), 'data-go': true },
         el('span', { text: c.title }), el('span', { class: 'k', text: counts(c) })));
     }

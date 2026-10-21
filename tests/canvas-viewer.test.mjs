@@ -337,6 +337,52 @@ test('VW-07 a malformed canvas.json or an unreadable file never stops the server
 
 let browser;
 let page;
+/** A project whose home page has its own group names, a canvas with an about line and an icon, and a board with facts. */
+async function makeHomeProject() {
+  const dir = await makeProject();
+  const configFile = path.join(dir, 'canvas.config.json');
+  const config = JSON.parse(await fs.readFile(configFile, 'utf8'));
+  await writeJson(configFile, { ...config, groupNames: { lab: 'Components', exploring: 'Ideas' } });
+  const fixtureFile = path.join(dir, 'canvases', 'fixture', 'project', 'canvas.json');
+  const fixture = JSON.parse(await fs.readFile(fixtureFile, 'utf8'));
+  await writeJson(fixtureFile, { ...fixture, ws: { ...fixture.ws, about: 'Every piece of the fixture kit, in each of its states.', icon: 'icon.svg' } });
+  await fs.writeFile(path.join(dir, 'canvases', 'fixture', 'project', 'icon.svg'), '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3" fill="#000"/></svg>');
+  const pairFile = path.join(dir, 'canvases', 'pair', 'project', 'canvas.json');
+  const pair = JSON.parse(await fs.readFile(pairFile, 'utf8'));
+  pair.ws = { group: 'exploring', icon: 'missing.svg' };
+  pair.boards['button-pinned.dc.html'].ws = { facts: [
+    { label: 'Scene', text: 'button · rest' },
+    { label: 'Source', text: 'src/button.tsx', href: 'https://example.com/src/button.tsx' },
+    { label: 'Canvas', text: 'Fixture', href: '/fixture/' },
+  ] };
+  await writeJson(pairFile, pair);
+  return dir;
+}
+
+test('VW-08 the index takes a canvas\'s about line and icon from ws, a board\'s facts, and the config\'s group names', async () => {
+  const dir = await makeHomeProject();
+  try {
+    const config = JSON.parse(await fs.readFile(path.join(dir, 'canvas.config.json'), 'utf8'));
+    const index = buildIndex({ projectRoot: dir, config });
+    assert.deepEqual(index.groupNames, { lab: 'Components', exploring: 'Ideas' });
+    const fixture = index.canvases.find((c) => c.id === 'fixture');
+    assert.equal(fixture.about, 'Every piece of the fixture kit, in each of its states.', 'ws.about comes before the README');
+    assert.equal(fixture.icon, '/fixture/project/icon.svg');
+    const pair = index.canvases.find((c) => c.id === 'pair');
+    assert.equal(pair.icon, null, 'an icon file that is not there is left out');
+    assert.equal(pair.about, 'The same button on the pinned kit and on a live kit, side by side.', 'without ws.about, the README');
+    assert.deepEqual(pair.boards.find((b) => b.f === 'button-pinned.dc.html').facts, [
+      { label: 'Scene', text: 'button · rest' },
+      { label: 'Source', text: 'src/button.tsx', href: 'https://example.com/src/button.tsx' },
+      { label: 'Canvas', text: 'Fixture', href: '/fixture/' },
+    ]);
+    assert.equal('facts' in pair.boards.find((b) => b.f === 'button-live.dc.html'), false, 'a board without facts has none');
+    assert.deepEqual(index.problems, []);
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
 let viewer;
 let pinnedVersion;
 let broot;
@@ -504,4 +550,56 @@ test('VW-15 a live kit rebuild reloads the boards on that kit only, and a board 
   assert.ok(ms <= 2000, `reloaded in ${ms} ms`);
   assert.equal(await (await frameOf('button-pinned.dc.html')).evaluate(() => window.__mark), 1, 'a board that did not load the file stays');
   assert.deepEqual(pageErrors, [], 'no page or console errors in the viewer or its boards');
+});
+
+test('VW-17 the home page names groups the project\'s way, each card opens as a whole with its icon, kit banners show only beside a live kit, and the panel lists a board\'s facts', { skip }, async () => {
+  const { buildFixtureKit } = await import('../metamodern-work-on-canvases/scripts/build-fixture-kit.mjs');
+  const dir = await makeHomeProject();
+  await buildFixtureKit(path.join(dir, 'kit', 'current'));
+  const home = await startViewer({ projectRoot: dir, port: 0 });
+  try {
+    await page.goto(`${home.origin}/`);
+    await page.waitForSelector('section[data-group]');
+    const headings = await page.$$eval('section[data-group]', (s) => s.map((n) => [n.dataset.group, n.querySelector('h2').textContent]));
+    assert.deepEqual(headings, [['lab', 'Components'], ['exploring', 'Ideas'], ['decided', 'Decided'], ['archive', 'Archive']]);
+    assert.equal(await page.textContent('[data-canvas="fixture"] .about'), 'Every piece of the fixture kit, in each of its states.');
+    assert.match(await page.getAttribute('[data-canvas="fixture"] .tile .ic', 'style'), /--icon: url\("\/fixture\/project\/icon\.svg"\)/);
+    const icon = await page.evaluate(async (u) => { const r = await fetch(u); return [r.status, r.headers.get('content-type')]; }, '/fixture/project/icon.svg');
+    assert.deepEqual(icon, [200, 'image/svg+xml']);
+    assert.equal(await page.textContent('[data-canvas="pair"] .tile'), 'B', 'without an icon, the tile shows the first letter');
+    assert.match(await page.getAttribute('[data-canvas="fixture"] .card-head', 'style'), /linear-gradient/);
+    // The card head takes keyboard focus and the whole card shows the ring.
+    for (let i = 0; i < 12 && !(await page.evaluate(() => document.activeElement?.matches('[data-canvas="fixture"] .card-head'))); i += 1) await page.keyboard.press('Tab');
+    assert.equal(await page.$eval('[data-canvas="fixture"]', (c) => getComputedStyle(c).outlineStyle), 'solid');
+    // Anywhere on a card opens its canvas; its page links open their own page.
+    const box = await (await page.$('[data-canvas="fixture"] .m')).boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForURL(`${home.origin}/fixture/language/`);
+    await page.goto(`${home.origin}/`);
+    await page.click('[data-canvas="fixture"] .pages a:last-child');
+    assert.notEqual(new URL(page.url()).pathname, '/');
+    // Every board on the fixture's page shows the pinned kit: no banners.
+    await page.goto(`${home.origin}/fixture/language/`);
+    await page.waitForSelector('.world .board');
+    assert.equal(await page.$eval('.world', (w) => w.classList.contains('kits-quiet')), true);
+    assert.equal(await page.isVisible('.board [data-test="kit-banner"]'), false);
+    // Beside a live board, the pinned board's banner names its kit too.
+    await page.goto(`${home.origin}/pair/-/`);
+    await page.waitForSelector('.board[data-f="button-live.dc.html"]');
+    assert.equal(await page.$eval('.world', (w) => w.classList.contains('kits-quiet')), false);
+    assert.equal(await page.isVisible('.board[data-f="button-pinned.dc.html"] [data-test="kit-banner"]'), true);
+    await page.click('.board[data-f="button-pinned.dc.html"] .shield');
+    await page.waitForSelector('[data-test="board-facts"]');
+    const facts = await page.$$eval('[data-test="board-facts"] > *', (n) => n.map((e) => [e.tagName.toLowerCase(), e.textContent, e.querySelector('a')?.getAttribute('href') ?? null, e.querySelector('a')?.getAttribute('target') ?? null]));
+    assert.deepEqual(facts, [
+      ['dt', 'Scene', null, null], ['dd', 'button · rest', null, null],
+      ['dt', 'Source', null, null], ['dd', 'src/button.tsx', 'https://example.com/src/button.tsx', '_blank'],
+      ['dt', 'Canvas', null, null], ['dd', 'Fixture', '/fixture/', null],
+    ]);
+    await page.click('.board[data-f="button-live.dc.html"] .shield');
+    await page.waitForFunction(() => !document.querySelector('[data-test="board-facts"]'));
+  } finally {
+    await home.close();
+    await fs.rm(dir, { recursive: true, force: true });
+  }
 });

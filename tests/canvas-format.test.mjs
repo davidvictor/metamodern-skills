@@ -120,3 +120,42 @@ test('CF-08 viewer links follow the fixed scheme and read back', () => {
   assert.equal(parseViewerLink('/a/b/c/d'), null);
   assert.equal(parseViewerLink('relative'), null);
 });
+
+test('CF-09 home and panel facts: ws.about, ws.icon, a board\'s ws.facts and the config\'s groupNames', () => {
+  const good = { ...canvas(), ws: { group: 'lab', about: 'Buttons and toggles.', icon: 'icons/actions.svg' } };
+  good.boards['a.dc.html'].ws = { facts: [{ label: 'Scene', text: 'button · rest' }, { label: 'Source', text: 'src/button.tsx', href: 'https://example.com/src/button.tsx' }, { label: 'Page', text: 'Frame', href: '/app/frame/' }] };
+  assert.deepEqual(validateCanvas(good), []);
+  for (const [ws, expected] of [
+    [{ group: 'lab', about: ' ' }, 'ws.about must be a non-empty string'],
+    [{ group: 'lab', icon: '../icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: '/icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: 'icon.png' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: 'support/icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: 'ds/kit/icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: 'C:icon.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
+    [{ group: 'lab', icon: 'icons\\a.svg' }, 'ws.icon must be the path of an .svg file inside project/'],
+  ]) assert.ok(validateCanvas({ ...canvas(), ws }).join('\n').includes(expected), JSON.stringify(ws));
+  for (const [facts, expected] of [
+    ['Scene', '.facts must be an array'],
+    [[{ label: '', text: 'x' }], '.facts[0] must be {label, text, href?}'],
+    [[{ label: 'Scene' }], '.facts[0] must be {label, text, href?}'],
+    [[{ label: 'Source', text: 'x', href: 'javascript:alert(1)' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
+    [[{ label: 'Source', text: 'x', href: '//elsewhere.example/x' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
+    [[{ label: 'Source', text: 'x', href: '/\\elsewhere.example/x' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
+    [[{ label: 'Source', text: 'x', href: 'http://?' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
+    [[{ label: 'Source', text: 'x', href: 'https://#' }], '.facts[0].href must be an http(s) link or a path on the viewer'],
+  ]) {
+    const bad = canvas();
+    bad.boards['a.dc.html'].ws = { facts };
+    assert.ok(validateCanvas(bad).join('\n').includes(expected), JSON.stringify(facts));
+  }
+  const config = {
+    schema: 'canvas-config/1', name: 'Design', canvases: 'canvases', kit: { namespace: 'Kit', pinned: 'kit/current' },
+    skin: 'skin/board.css', port: 5410, groups: ['app', 'foundations', 'lab'],
+  };
+  assert.deepEqual(validateConfig({ ...config, groupNames: { lab: 'Components' } }), []);
+  const issues = validateConfig({ ...config, groupNames: { lab: '', other: 'Other' } }).join('\n');
+  assert.ok(issues.includes('groupNames.lab must be a non-empty string'));
+  assert.ok(issues.includes('groupNames names unknown group other'));
+  assert.ok(validateConfig({ ...config, groupNames: ['Components'] }).join('\n').includes('groupNames must be an object'));
+});

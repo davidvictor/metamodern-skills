@@ -142,6 +142,10 @@ export function renderBoardPanel(body, ctx) {
   const parts = [
     el('h3', { text: board.t }),
     el('div', { class: 'note', text: board.f }),
+    board.facts?.length ? el('dl', { class: 'facts', 'data-test': 'board-facts' }, board.facts.map((f) => [
+      el('dt', { text: f.label }),
+      el('dd', {}, f.href ? el('a', { href: f.href, ...(f.href.startsWith('/') ? {} : { target: '_blank', rel: 'noopener noreferrer' }), text: f.text }) : f.text),
+    ])) : null,
     el('h4', { text: 'Kit' }),
     el('div', { class: 'field' }, el('label', { for: 'board-kit', text: 'Shows' }), kitSelect),
     el('div', { class: 'kitinfo' + (choice === 'pinned' ? '' : ' live'), 'data-test': 'panel-kit', text: kitLabel(entry, namespace) }),
@@ -174,7 +178,7 @@ export function renderBoardPanel(body, ctx) {
     el('button', { type: 'button', class: 'btn', text: 'Reset', title: 'Back to the board’s defaults and its own kit', onclick: ctx.onReset }),
     el('button', { type: 'button', class: 'btn', text: 'Open alone', title: 'Open the board on its own (O)', onclick: ctx.onOpen })));
   parts.push(el('details', {}, el('summary', { text: 'Values as JSON' }), el('pre', { class: 'json', 'data-test': 'props-json', text: valuesJson(ctx.values) })));
-  body.replaceChildren(...parts);
+  body.replaceChildren(...parts.filter(Boolean));
 }
 
 /** Refreshes the editors and the JSON after canvas:props-changed, leaving the editor being typed in alone. */

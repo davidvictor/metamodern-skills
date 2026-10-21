@@ -214,3 +214,31 @@ test('BB-07 a build that fails writes nothing: every target is checked before th
     await fs.rm(root, { recursive: true, force: true });
   }
 });
+
+test('BB-08 a bare board is the screen alone: no header or footer, its stage fills the board, its facts live in canvas.json', () => {
+  const html = boardShell({
+    title: 'Sign in · Error', kind: 'screen', page: 'auth', row: 'live', source: 'src/sign-in.tsx', width: 390, height: 844,
+    namespace: 'Fixture', themes: ['light', 'dark'], bare: true, attrs: { scene: 'sign-in', state: 'error' },
+    body: '<x-import component-from-global-scope="Fixture.Scene" id="sign-in" state="error"></x-import>',
+  });
+  assert.ok(!html.includes('shell-head') && !html.includes('shell-foot') && !html.includes('<h1'), 'no header and no footer');
+  assert.match(html, /<div class="board-shell bare" data-canvas-id="board" data-kind="screen"/);
+  assert.match(html, /data-scene="sign-in" data-source="src\/sign-in.tsx"|data-source="src\/sign-in.tsx"[^>]*data-scene="sign-in"/);
+  assert.match(html, /\.board-shell\.bare\{padding:0;gap:0;border:0;border-radius:0;box-shadow:none\}/);
+  assert.match(html, /style="width: 390px; height: 844px;"/);
+  for (const extra of [{ where: 'Sign-in · Phone' }, { summary: 'An error' }, { tags: ['Phone'] }, { foot: [['Scene', 'sign-in']] }]) {
+    assert.throws(() => boardShell({ title: 'Sign in', kind: 'screen', width: 390, height: 844, bare: true, ...extra }), /a bare board has no (where|summary|tags|foot)/);
+  }
+  assert.doesNotThrow(() => boardShell({ title: 'Sign in', kind: 'screen', width: 390, height: 844, bare: true, where: '', summary: '', tags: [], foot: [] }));
+  const facts = [{ label: 'Scene', text: 'sign-in · error' }, { label: 'Source', text: 'src/sign-in.tsx', href: 'https://example.com/src/sign-in.tsx' }];
+  const { canvas } = layoutCanvas({
+    title: 'App',
+    pages: [{ id: 'auth', name: 'Sign-in', header: false, boards: [{ file: 'L_sign-in_error_phone.dc.html', title: 'Sign in · Error', w: 390, h: 844, fit: false, ws: { facts }, shell: { kind: 'screen', bare: true } }] }],
+  }, { heights: { 'L_sign-in_error_phone.dc.html': 2000 } });
+  assert.deepEqual(canvas.boards['L_sign-in_error_phone.dc.html'].ws, { facts });
+  assert.equal(canvas.boards['L_sign-in_error_phone.dc.html'].h, 844, 'fit: false keeps the screen at its viewport height');
+  assert.throws(() => layoutCanvas({
+    title: 'App',
+    pages: [{ id: 'auth', name: 'Sign-in', boards: [{ file: 'a.dc.html', title: 'A', w: 10, h: 10, ws: { facts: [{ label: 'Source', text: 'x', href: 'javascript:x' }] }, shell: { kind: 'screen', bare: true } }] }],
+  }), /facts\[0\]\.href must be/);
+});

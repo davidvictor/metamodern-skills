@@ -16,7 +16,7 @@ The project is the `--project` folder, or the nearest folder at or above the wor
 
 Links follow contract 1 and never change: `/`, `/<canvas>/`, `/<canvas>/<page>/` and `/<canvas>/<page>/<board>`, with `-` as the page of a canvas without pages. A board link may carry `?canvas-kit=pinned|live:<name>` and `?canvas-props=<json>`; opening it applies both to that board. A page id cannot be `project`, because `/<canvas>/project/<path>` is where boards load their files.
 
-**Home.** Canvases are grouped in the order of `config.groups`; groups the config leaves out follow in the standard order. A canvas's group is its `ws.group`, else `decided` when it is frozen (contract 1's rule), else `exploring`. The app group shows each canvas as a banner, decided and archive as compact rows, the rest as cards. A card shows the canvas title, its about line, its page and board counts and links to its first pages. The about line is the first paragraph of the canvas's own `README.md`. Canvases whose `canvas.json` has issues are still listed, with the issues named at the top of the page.
+**Home.** Canvases are grouped in the order of `config.groups`; groups the config leaves out follow in the standard order. A canvas's group is its `ws.group`, else `decided` when it is frozen (contract 1's rule), else `exploring`. Headings use `config.groupNames` when the project names a group its own way. The app group shows each canvas as a banner, decided and archive as compact rows, the rest as cards. A card has a soft tinted head (one tone per canvas, stable by its id) with the canvas's icon and title, then its about line, its page and board counts and links to its first pages; the whole card opens the canvas, and its page links open their page. The about line is the canvas's `ws.about`, else the first paragraph of its own `README.md`. The icon is the canvas's `ws.icon` (an `.svg` inside `project/`, drawn as a mask in the tile's ink), else the first letter of its title. Canvases whose `canvas.json` has issues are still listed, with the issues named at the top of the page.
 
 **A canvas.** One page at a time. The sidebar lists pages and boards (grouped under Live, Deciding, Building, Next and Later when boards carry `ws.row`), with a filter. The top bar has the breadcrumb (canvas and page menus), page steps, zoom, the page's motion controls, the tools slot and the panel toggle. Boards further than the screen show as titled boxes; boards on screen at 28% zoom or more run live, at most 14 at once, nearest first; the selected board always runs. A minimap shows the page.
 
@@ -24,13 +24,13 @@ Links follow contract 1 and never change: `/`, `/<canvas>/`, `/<canvas>/<page>/`
 
 Each board runs in its own frame, so each board can show its own kit. A board's kit is the viewer's choice for it (set in the panel or by a link, kept per browser), else its `ws.kit`, else `pinned`. The frame's link always carries the choice as `?canvas-kit=`, so the board reports its kit mode correctly in `canvas:ready`.
 
-Every board has a banner above it naming its kit: `Pinned` or `Live <name>`, the namespace and version, the branch for a live build (`detached` when the build's worktree has no branch, that is when `kit.json` names the branch `HEAD`), the commit (7 characters) and `uncommitted changes` when the build says so. Live boards are outlined in a second colour. A legacy kit (no `kit.json`), a kit folder not built yet and a live name missing from `.canvas/live.json` are named as such.
+A board's banner, above it, names its kit: `Pinned` or `Live <name>`, the namespace and version, the branch for a live build (`detached` when the build's worktree has no branch, that is when `kit.json` names the branch `HEAD`), the commit (7 characters) and `uncommitted changes` when the build says so. Live boards are outlined in a second colour. Banners show only when they tell boards apart: while every board on the page shows the pinned kit (and it is there), they are hidden, and the properties panel still names the kit; as soon as one board on the page shows a live kit, every board's banner shows. A legacy kit (no `kit.json`), a kit folder not built yet and a live name missing from `.canvas/live.json` are named as such.
 
 The server polls each kit's `kit.json` (written last, contract 3) every 250 ms; for a legacy kit it polls the bundle files instead. When a kit changes it tells the browser, which reloads every live board on that kit and refreshes the banners. Changes to `.canvas/live.json` are picked up the same way.
 
 ## Properties panel
 
-The side panel's Properties tab shows the selected board: its kit (with the switch), its motion controls and an editor for every value its `data-props` declares, grouped by `section`:
+The side panel's Properties tab shows the selected board: its facts (the board's `ws.facts`, such as a screen's scene, route, source file and kit, with their links), its kit (with the switch), its motion controls and an editor for every value its `data-props` declares, grouped by `section`:
 
 | Control shape | Editor |
 | --- | --- |
@@ -57,7 +57,7 @@ The server watches the canvases folder and batches changes for 60 ms. The browse
 | `/`, viewer links | the viewer app |
 | `/<canvas>/project/<path>` | what the board asked for, resolved per board (contract 1) |
 | `/_viewer/<file>` | the viewer app's own files |
-| `/_index` | `{name, groups, namespace, canvases: [{id, title, group, frozen, launch, pageless, pages, boards: [{f, t, p, x, y, w, h, kit, row, set}], about}], problems}` |
+| `/_index` | `{name, groups, groupNames, namespace, canvases: [{id, title, group, frozen, launch, pageless, pages, boards: [{f, t, p, x, y, w, h, kit, row, set, facts?}], about, icon}], problems}` |
 | `/_kits` | `{namespace, pinned, live: [...], issue}`: each kit's `choice`, `name`, `exists`, `legacy` and, from `kit.json`, `namespace`, `version`, `repo`, `commit`, `branch`, `dirty`, `builtAt` |
 | `/_events` | server-sent events: `{type: "files", changes: [{canvas, file}]}`, `{type: "index"}`, `{type: "skin"}`, `{type: "kit", kit}`, `{type: "kits"}`, `{type: "comments"}` |
 | `/_comments`, `/_comments/…` | comments and batches: read, create, reply, resolve, place, Send all to agent ([comments.md](comments.md#viewer-routes)) |
