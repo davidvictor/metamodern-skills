@@ -23,17 +23,32 @@ export const COMMENTS_USAGE = `Usage:
   canvas comments done <batchId>
 Options: --project <dir> (default: the folder with canvas.config.json at or above this one)`;
 
-/** Who is taking a batch: --by, else CANVAS_SESSION, else the harness and session the environment names. */
+/**
+ * Who is taking a batch: --by, else CANVAS_SESSION, else the harness and session the environment names. The
+ * innermost harness wins: a Codex session started from inside Claude Code inherits CLAUDECODE, so the Codex
+ * variables are checked first.
+ */
 export function sessionName(env = process.env) {
   if (env.CANVAS_SESSION) return env.CANVAS_SESSION;
-  const harness = env.CLAUDECODE || env.CLAUDE_CODE_ENTRYPOINT ? 'claude-code' : Object.keys(env).some((k) => k.startsWith('CODEX_')) ? 'codex' : 'agent';
-  const session = env.CLAUDE_CODE_SESSION_ID || env.CODEX_SESSION_ID || env.CODEX_THREAD_ID || `pid-${process.ppid}`;
-  return `${harness}/${session}`;
+  if (Object.keys(env).some((k) => k.startsWith('CODEX_'))) return `codex/${env.CODEX_SESSION_ID || env.CODEX_THREAD_ID || `pid-${process.ppid}`}`;
+  if (env.CLAUDECODE || env.CLAUDE_CODE_ENTRYPOINT) return `claude-code/${env.CLAUDE_CODE_SESSION_ID || `pid-${process.ppid}`}`;
+  return `agent/pid-${process.ppid}`;
+}
+
+/** The loopback origin of the viewer that recorded a comment (its `url`), or null. */
+function recordedOrigin(url) {
+  try {
+    const u = new URL(url);
+    return ['127.0.0.1', 'localhost', '[::1]'].includes(u.hostname) && /^https?:$/.test(u.protocol) ? u.origin : null;
+  } catch { return null; }
 }
 
 const print = (value) => process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 
-/** Adds each comment's viewer link, so an agent can name the board it changed. */
+/**
+ * Adds each comment's viewer link, so an agent can name the board it changed. The link points at the viewer that
+ * recorded the comment (the origin of its `url`, any port), and at the config's port only when it has none.
+ */
 async function withLinks(projectRoot, comments) {
   let port = null;
   try { port = (await readConfig(projectRoot)).port; } catch { /* links without an origin */ }
@@ -41,7 +56,8 @@ async function withLinks(projectRoot, comments) {
     if (!c?.canvas?.canvas) return c;
     let link = null;
     try { link = viewerLink({ canvas: c.canvas.canvas, page: c.canvas.page === '-' ? null : c.canvas.page, board: `${c.canvas.board}.dc.html` }); } catch { link = null; }
-    return link ? { ...c, link: port ? `http://127.0.0.1:${port}${link}` : link } : c;
+    const origin = recordedOrigin(c.url) ?? (port ? `http://127.0.0.1:${port}` : '');
+    return link ? { ...c, link: `${origin}${link}` } : c;
   });
 }
 

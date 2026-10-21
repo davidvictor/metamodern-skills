@@ -273,6 +273,22 @@ test('CM-07 the command line: list, wait (a batch written by another process arr
   assert.equal(sessionName({ CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'abc' }), 'claude-code/abc');
   assert.equal(sessionName({ CODEX_THREAD_ID: 't1' }), 'codex/t1');
   assert.equal(sessionName({ CANVAS_SESSION: 'me' }), 'me');
+  // A Codex session started from inside Claude Code inherits CLAUDECODE: the innermost harness, Codex, wins.
+  assert.equal(sessionName({ CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'abc', CODEX_THREAD_ID: 't2' }), 'codex/t2');
+});
+
+test('CM-07b a comment\'s link points at the viewer that recorded it, on its own port', async () => {
+  const root = await project();
+  const a = await createComment(root, { ...ELEMENT, url: 'http://127.0.0.1:5416/fixture/language/basics' });
+  const b = await createComment(root, ELEMENT);
+  const r = await cli(['comments', 'list', '--project', root]);
+  assert.equal(r.code, 0, r.stderr);
+  const links = Object.fromEntries(JSON.parse(r.stdout).map((c) => [c.id, c.link]));
+  assert.equal(links[a.id], 'http://127.0.0.1:5416/fixture/language/basics');
+  assert.equal(links[b.id], 'http://127.0.0.1:5410/fixture/language/basics', 'no recorded url: the config port');
+  const batch = await sendAll(root);
+  const taken = JSON.parse((await cli(['comments', 'take', batch.id, '--project', root])).stdout);
+  assert.equal(taken.annotations.find((c) => c.id === a.id).link, 'http://127.0.0.1:5416/fixture/language/basics');
 });
 
 const request = (origin, p, { method = 'GET', body, headers = {} } = {}) => new Promise((resolve, reject) => {
