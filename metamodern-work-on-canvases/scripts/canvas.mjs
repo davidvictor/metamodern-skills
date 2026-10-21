@@ -12,6 +12,8 @@
 //   canvas review   archive <id> [--board <file> ...] [--why text] [--date YYYY-MM-DD] [--canvas id] [--archive id]
 //                   [--renders <dir>]
 //   canvas explore  create <id> --title t --question q [--set <set id>] [--copy <canvas>/<board> ...]
+//   canvas explore  round <id> --said "<the decision-maker's words>" [--learned text] [--board <file> ...] [--renders <dir>]
+//                   [--date YYYY-MM-DD]
 //   canvas explore  decide <id> [--lead text]
 //   canvas comments list [--open] [--batch <id>] | wait [--timeout <s>] | take <batchId> | reply <id> "<text>" [--addressed]
 //                   | done <batchId>   (scripts/comments.mjs)
@@ -25,7 +27,7 @@ import { readConfig } from './canvas-format.mjs';
 import { findProject, startViewer } from './lib/viewer-server.mjs';
 import { renderCheck } from './render-check.mjs';
 import { archiveSet, createSet, lockSet, readReview, setStatus, statusRow, validateReview, writeReview } from './review-sets.mjs';
-import { createExploration, decideExploration } from './explore.mjs';
+import { createExploration, decideExploration, roundExploration } from './explore.mjs';
 
 const OPTIONS = {
   project: { type: 'string' },
@@ -54,6 +56,8 @@ const OPTIONS = {
   archive: { type: 'string' },
   set: { type: 'string' },
   copy: { type: 'string', multiple: true },
+  said: { type: 'string' },
+  learned: { type: 'string' },
   help: { type: 'boolean', short: 'h' },
 };
 
@@ -190,6 +194,12 @@ export async function main(argv) {
       const result = await createExploration(project, { id, title: o.title, question: o.question, set: o.set ?? null, copies: o.copy ?? [], date: o.date });
       console.log(`Created ${path.relative(project, result.canvasDir)} with ${result.copied.length} copied files.`);
       for (const link of result.links) console.log(link);
+      return 0;
+    }
+    if (sub === 'round') {
+      const { round } = await roundExploration(project, { id, said: o.said, learned: o.learned ?? '', boards: o.board, date: o.date, renderOut: o.renders });
+      console.log(`Kept round ${round.n} of ${id} as ${round.boards.length} ${round.boards.length === 1 ? 'picture' : 'pictures'} in assets/round-${round.n}/, with the words.`);
+      console.log(`Directions is now round ${round.n + 1}: draw it in the canvas's builder with explorationSpec, rebuild and render-check before sending links.`);
       return 0;
     }
     if (sub === 'decide') {
