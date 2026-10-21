@@ -454,7 +454,7 @@ test('RT-13 canvas:motion reaches pseudo-element motion that starts later: a ::b
     await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 0 }));
     const drift = await frame.evaluate(async () => {
       const a = document.getAnimations().find((x) => x.effect && x.effect.pseudoElement === '::before');
-      if (!a) return 0;
+      if (!a) return NaN;
       const wait = (ms) => new Promise((r) => { const end = Date.now() + ms; const tick = () => (Date.now() >= end ? r() : requestAnimationFrame(tick)); tick(); });
       while (a.playState === 'running') await wait(2);
       await wait(20);
@@ -462,6 +462,7 @@ test('RT-13 canvas:motion reaches pseudo-element motion that starts later: a ::b
       await wait(400);
       return Number(a.currentTime) - c1;
     });
+    assert.ok(Number.isFinite(drift), 'no ::before transition was found after the toggle');
     assert.ok(Math.abs(drift) < 1, `a paused transition moved ${drift} ms`);
     await page.evaluate(() => window.send({ type: 'canvas:motion', rate: 1 }));
     await frame.waitForFunction(() => window.__canvasRuntime.motion.rate === 1 && document.getAnimations().every((a) => a.playState !== 'running'));

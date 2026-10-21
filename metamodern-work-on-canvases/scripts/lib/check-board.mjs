@@ -13,15 +13,19 @@ async function settle(page, timeout) {
   const started = Date.now();
   await page.waitForFunction(() => !!(window.__canvasRuntime && window.__canvasRuntime.ready), null, { timeout }).catch(() => {});
   const left = Math.max(0, timeout - (Date.now() - started));
-  await page
-    .evaluate((ms) => {
+  // The limit is a Node timer, in real time: the board's own timers run on its motion clock and its frames may
+  // pause, so neither can bound the wait. A result that arrives after the limit is ignored.
+  const ready = page
+    .evaluate(() => {
       const runtime = window.__canvasRuntime;
       if (!runtime || !runtime.ready) return null;
-      // A real-time limit: the board's own timers run on its motion clock.
-      const limit = new Promise((resolve) => { const end = Date.now() + ms; const tick = () => (Date.now() >= end ? resolve() : requestAnimationFrame(tick)); tick(); });
-      return Promise.race([runtime.ready.then(() => { runtime.__readyFlag = true; }), limit]);
-    }, left)
+      return runtime.ready.then(() => { runtime.__readyFlag = true; });
+    })
     .catch(() => {});
+  let timer;
+  const limit = new Promise((resolve) => { timer = setTimeout(resolve, left); });
+  await Promise.race([ready, limit]);
+  clearTimeout(timer);
 }
 
 export async function openBoard(context, url, { timeout = 15000, viewport, screenshot, fullPage = false } = {}) {
