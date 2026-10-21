@@ -25,12 +25,15 @@ Options: --project <dir> (default: the folder with canvas.config.json at or abov
 
 /**
  * Who is taking a batch: --by, else CANVAS_SESSION, else the harness and session the environment names. The
- * innermost harness wins: a Codex session started from inside Claude Code inherits CLAUDECODE, so the Codex
- * variables are checked first.
+ * innermost harness wins: a Codex session started from inside Claude Code inherits CLAUDECODE, so Codex's own
+ * session variables (CODEX_THREAD_ID, CODEX_SESSION_ID, which Codex sets for the commands of a session) are
+ * checked first. Other CODEX_* variables (CODEX_HOME, a Claude Code plugin's CODEX_COMPANION_SESSION_ID) do
+ * not make a session a Codex one.
  */
 export function sessionName(env = process.env) {
   if (env.CANVAS_SESSION) return env.CANVAS_SESSION;
-  if (Object.keys(env).some((k) => k.startsWith('CODEX_'))) return `codex/${env.CODEX_SESSION_ID || env.CODEX_THREAD_ID || `pid-${process.ppid}`}`;
+  const codex = env.CODEX_THREAD_ID || env.CODEX_SESSION_ID;
+  if (codex) return `codex/${codex}`;
   if (env.CLAUDECODE || env.CLAUDE_CODE_ENTRYPOINT) return `claude-code/${env.CLAUDE_CODE_SESSION_ID || `pid-${process.ppid}`}`;
   return `agent/pid-${process.ppid}`;
 }

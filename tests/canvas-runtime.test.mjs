@@ -478,13 +478,16 @@ test('RT-13 canvas:motion reaches pseudo-element motion that starts later: a ::b
     const a = fast.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 4000 });
     a.playbackRate = 0.5;
     const b = back.animate([{ opacity: 1 }, { opacity: 0.5 }], { duration: 4000 });
+    // Reversed from mid-run, so it is still running backwards when the parent's transition starts.
+    b.currentTime = 2000;
     b.reverse();
     await Promise.all([a.ready, b.ready]);
     const before = [a.playbackRate, b.playbackRate];
     await new Promise((r) => { host.addEventListener('transitionrun', () => requestAnimationFrame(() => r()), { once: true }); host.classList.toggle('on'); });
-    return { before, after: [a.playbackRate, b.playbackRate] };
+    return { before, after: [a.playbackRate, b.playbackRate], states: [a.playState, b.playState] };
   });
   assert.deepEqual(children.after, children.before, `children kept their rates: ${JSON.stringify(children)}`);
+  assert.deepEqual(children.states, ['running', 'running'], 'both children were still running when the parent moved');
   assert.ok(children.before[1] < 0, 'the reversed child runs backwards');
   assert.deepEqual(problems, []);
   await page.close();

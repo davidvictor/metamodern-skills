@@ -275,6 +275,10 @@ test('CM-07 the command line: list, wait (a batch written by another process arr
   assert.equal(sessionName({ CANVAS_SESSION: 'me' }), 'me');
   // A Codex session started from inside Claude Code inherits CLAUDECODE: the innermost harness, Codex, wins.
   assert.equal(sessionName({ CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'abc', CODEX_THREAD_ID: 't2' }), 'codex/t2');
+  assert.equal(sessionName({ CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'abc', CODEX_SESSION_ID: 's3' }), 'codex/s3');
+  // Other CODEX_* variables do not make a Claude Code session a Codex one.
+  assert.equal(sessionName({ CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'abc', CODEX_COMPANION_SESSION_ID: 'x' }), 'claude-code/abc');
+  assert.equal(sessionName({ CLAUDECODE: '1', CLAUDE_CODE_SESSION_ID: 'abc', CODEX_HOME: '/tmp/codex' }), 'claude-code/abc');
 });
 
 test('CM-07b a comment\'s link points at the viewer that recorded it, on its own port', async () => {
