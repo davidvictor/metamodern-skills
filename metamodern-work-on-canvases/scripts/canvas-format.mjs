@@ -13,6 +13,17 @@ const LIVE_NAME = /^[a-z0-9][a-z0-9-]*$/;
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isNumber = (v) => typeof v === 'number' && Number.isFinite(v);
 
+/** Whether a canvas's ws.icon is an .svg path inside its project/ folder. */
+export function isIconPath(value) {
+  return typeof value === 'string' && /\.svg$/i.test(value) && !path.isAbsolute(value) && !/^[\\/]/.test(value)
+    && value.split(/[\\/]/).every((part) => part && part !== '.' && part !== '..');
+}
+
+/** Whether a board fact's href is one the viewer opens: http(s) or a path on the viewer. */
+export function isFactHref(value) {
+  return typeof value === 'string' && (/^https?:\/\/[^\s]+$/i.test(value) || /^\/(?!\/)[^\s]*$/.test(value));
+}
+
 /** Issues with a canvas.json object; empty when valid. Unknown fields are allowed (older and newer writers add their own). */
 export function validateCanvas(canvas) {
   const issues = [];
@@ -54,6 +65,8 @@ export function validateCanvas(canvas) {
     else {
       if (!GROUPS.includes(canvas.ws.group)) issues.push(`canvas.json: ws.group must be one of ${GROUPS.join(', ')}`);
       if (canvas.ws.frozen != null && typeof canvas.ws.frozen !== 'boolean') issues.push('canvas.json: ws.frozen must be a boolean');
+      if (canvas.ws.about != null && (typeof canvas.ws.about !== 'string' || !canvas.ws.about.trim())) issues.push('canvas.json: ws.about must be a non-empty string');
+      if (canvas.ws.icon != null && !isIconPath(canvas.ws.icon)) issues.push('canvas.json: ws.icon must be the path of an .svg file inside project/');
     }
   }
   return issues;
@@ -65,6 +78,13 @@ function validateBoardWs(ws) {
   if (ws.set != null && (typeof ws.set !== 'string' || !ws.set)) issues.push('.set must be a non-empty string');
   if (ws.row != null && !ROWS.includes(ws.row)) issues.push(`.row must be one of ${ROWS.join(', ')}`);
   if (ws.kit != null && !(ws.kit === 'pinned' || (typeof ws.kit === 'string' && /^live:/.test(ws.kit) && LIVE_NAME.test(ws.kit.slice(5))))) issues.push('.kit must be "pinned" or "live:<name>"');
+  if (ws.facts != null) {
+    if (!Array.isArray(ws.facts)) issues.push('.facts must be an array');
+    else for (const [i, fact] of ws.facts.entries()) {
+      if (!isObject(fact) || typeof fact.label !== 'string' || !fact.label.trim() || typeof fact.text !== 'string') issues.push(`.facts[${i}] must be {label, text, href?}`);
+      else if (fact.href != null && !isFactHref(fact.href)) issues.push(`.facts[${i}].href must be an http(s) link or a path on the viewer`);
+    }
+  }
   return issues;
 }
 
@@ -98,6 +118,13 @@ export function validateConfig(config) {
   if (!Number.isInteger(config.port) || config.port < 1 || config.port > 65535) issues.push('canvas.config.json: port must be an integer from 1 to 65535');
   if (!Array.isArray(config.groups) || !config.groups.length) issues.push('canvas.config.json: groups must be a non-empty array');
   else for (const group of config.groups) if (!GROUPS.includes(group)) issues.push(`canvas.config.json: unknown group ${group}`);
+  if (config.groupNames != null) {
+    if (!isObject(config.groupNames)) issues.push('canvas.config.json: groupNames must be an object');
+    else for (const [group, name] of Object.entries(config.groupNames)) {
+      if (!GROUPS.includes(group)) issues.push(`canvas.config.json: groupNames names unknown group ${group}`);
+      else if (typeof name !== 'string' || !name.trim()) issues.push(`canvas.config.json: groupNames.${group} must be a non-empty string`);
+    }
+  }
   return issues;
 }
 

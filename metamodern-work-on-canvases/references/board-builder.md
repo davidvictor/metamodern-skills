@@ -48,6 +48,7 @@ board  {file, title, w, h, fit?, ws?, expand?, is_interactive?, shell | html(hei
 - **Header** (`data-canvas-id="board-head"`): `where`, the title, `summary` and `tags`.
 - **Stage** (`data-canvas-id="board-stage"`): `body`, wrapped in the kit's `Root` with the theme and contrast values when the board has a kit and those controls (`root: false` leaves it out, for a scene that takes the theme itself).
 - **Footer** (`data-canvas-id="board-foot"`): `foot` facts, `[label, html]`.
+- **Bare** (`bare: true`): a screen board. It has no header and no footer, and its stage is the whole board, so the board is the screen at its real size (pass `fit: false` on the board so the height cache keeps it at the viewport's height). `where`, `summary`, `tags` and `foot` are refused. Put the screen's facts (scene, route, source, kit) in the board's `ws.facts`, `[{label, text, href?}]`, which the viewer's side panel lists.
 - **Controls:** `themes` (such as `["light", "dark"]`) adds a `theme` enum control, `contrast: true` adds a `contrast` control (`standard`, `high`), and `controls` adds any other `data-props` control. `$preview` is always the board's size.
 - **Logic:** by default `renderVals()` returns every control's value; `logic` replaces the class body.
 

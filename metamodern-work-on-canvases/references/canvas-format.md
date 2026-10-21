@@ -27,8 +27,8 @@ It stays compatible with existing files, and readers keep fields they do not kno
 
 - **Fields:** `v` (3), `title`, `launch` (`{view, page?}`), `pages` (`[{id, name}]`), `boards` (`{"<file>.dc.html": {x, y, w, h, title?, page?, expand?, is_interactive?}}`) and `order`.
 - **Additions:**
-  - **On the canvas:** an optional `ws` object, `{group, frozen?}`. `group` is one of `foundations`, `lab`, `app`, `exploring`, `decided` or `archive`.
-  - **On a board:** `ws: {set?, row?, kit?}`. `row` is one of `live`, `deciding`, `building`, `next` or `later`, and `kit` is `"pinned"` (the default) or `"live:<name>"`.
+  - **On the canvas:** an optional `ws` object, `{group, frozen?, about?, icon?}`. `group` is one of `foundations`, `lab`, `app`, `exploring`, `decided` or `archive`. `about` is the one line the home page shows for the canvas (else the first paragraph of its `README.md`). `icon` is the path of an `.svg` file inside `project/`, drawn on the canvas's card in the card's ink (its shape is used as a mask, so its own colours do not matter).
+  - **On a board:** `ws: {set?, row?, kit?, facts?}`. `row` is one of `live`, `deciding`, `building`, `next` or `later`, and `kit` is `"pinned"` (the default) or `"live:<name>"`. `facts` is `[{label, text, href?}]`, the board's facts for the side panel (such as a screen's scene, route, source file and kit); `href` is an `http(s)` link or a path on the viewer.
 - **Older readers** ignore `ws`.
 - **Frozen canvases:** a canvas is frozen when `ws.frozen` is true or its title starts with `History:` or `Decided:`. The second rule keeps older canvases compatible.
 
@@ -44,11 +44,12 @@ Validation (`validateCanvas`) checks the fields above, that board files are `<na
   "kit": { "namespace": "Example", "pinned": "kit/current" },
   "skin": "skin/board.css",
   "port": 5410,
-  "groups": ["foundations", "lab", "app", "exploring", "decided", "archive"]
+  "groups": ["foundations", "lab", "app", "exploring", "decided", "archive"],
+  "groupNames": { "lab": "Components" }
 }
 ```
 
-`canvases`, `kit.pinned` and `skin` are paths inside the project. `kit.namespace` is the kit's JavaScript global (`window.Example`).
+`canvases`, `kit.pinned` and `skin` are paths inside the project. `kit.namespace` is the kit's JavaScript global (`window.Example`). `groupNames` (optional) names a group the project's way on the home page and in the canvas menu; groups it leaves out keep the package's names (Foundations, Labs, App, Exploring, Decided, Archive).
 
 ## Live kits
 

@@ -29,7 +29,7 @@ One lab canvas or page per component, with rows such as States, Playground, In p
 
 - **States** shows every variant and state the component supports, from the pinned kit.
 - **Playground** exposes the component's properties as board controls, so the properties panel can try values.
-- **In place** shows the component inside the screens that use it.
+- **In place** shows the component inside the screens that use it, each as a bare screen board.
 - **Live mode** follows a change being made in a project app worktree:
   1. register the worktree's watch build in `.canvas/live.json` under a short name;
   2. switch only the boards being worked on to `live:<name>`, in the properties panel or with a `?canvas-kit=live:<name>` link; keep a pinned board of the same component beside it;
@@ -40,7 +40,7 @@ One lab canvas or page per component, with rows such as States, Playground, In p
 
 One canvas, one page per app area, and on every page the rows Live, Deciding, Building, Next and Later. The project's builder script makes the rows from `review.json` with `appPageRows` ([review-sets.md](review-sets.md)).
 
-- **Live** shows the real screens in every state they support, mounted from the pinned kit. It changes only through a kit sync.
+- **Live** shows the real screens in every state they support, mounted from the pinned kit. It changes only through a kit sync. A screen board is the screen alone at its viewport's size (a bare board), with its scene, route, source and kit in its facts, not drawn around it.
 - **Deciding** holds sets that are exploring, ready or waiting, one lead each.
 - **Building** holds locked sets with their pull request.
 - **Next** holds decided designs that need something the product does not do yet; **Later** holds decided designs held for a later milestone.

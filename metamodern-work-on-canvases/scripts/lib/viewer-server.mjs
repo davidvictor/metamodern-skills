@@ -16,7 +16,7 @@ import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GROUPS, isFrozen, parseViewerLink, readConfig, readLiveKits, validateCanvas } from '../canvas-format.mjs';
+import { GROUPS, isFactHref, isFrozen, isIconPath, parseViewerLink, readConfig, readLiveKits, validateCanvas } from '../canvas-format.mjs';
 import { kitDirFor } from '../board-resolve.mjs';
 import { localHost, sendFile, sendText, serveBoardRequest, TYPES } from './board-server.mjs';
 import { COMMENT_ID, commentsRoot, createComment, placeComment, readBatchReport, readComments, replyToComment, resolveComment, sendAll } from './comment-store.mjs';
@@ -51,6 +51,14 @@ export function canvasFolders(projectRoot, config) {
     if (isDir(dir) && fs.existsSync(path.join(dir, 'project', 'canvas.json'))) out.set(name, dir);
   }
   return out;
+}
+
+/** A board's facts for the side panel, from its ws.facts: [{label, text, href?}], each checked. */
+function boardFacts(ws) {
+  if (!Array.isArray(ws?.facts)) return [];
+  return ws.facts
+    .filter((f) => f && typeof f.label === 'string' && f.label.trim() && typeof f.text === 'string')
+    .map((f) => ({ label: f.label, text: f.text, ...(isFactHref(f.href) ? { href: f.href } : {}) }));
 }
 
 /** A canvas's about line: the first paragraph of its README.md, after any heading. */
@@ -101,6 +109,7 @@ export function buildIndex({ projectRoot, config }) {
           kit: typeof b.ws?.kit === 'string' ? b.ws.kit : 'pinned',
           row: b.ws?.row ?? null,
           set: b.ws?.set ?? null,
+          ...(boardFacts(b.ws).length ? { facts: boardFacts(b.ws) } : {}),
         }))
         .sort((a, b) => (rank.get(a.f) ?? 1e9) - (rank.get(b.f) ?? 1e9) || a.y - b.y || a.x - b.x);
       const launch = pages.some((p) => p.id === canvas.launch?.page) ? canvas.launch.page : first;
@@ -113,7 +122,9 @@ export function buildIndex({ projectRoot, config }) {
         pageless: !declared.length,
         pages,
         boards,
-        about: readAbout(dir),
+        about: typeof canvas.ws?.about === 'string' && canvas.ws.about.trim() ? canvas.ws.about.trim() : readAbout(dir),
+        icon: isIconPath(canvas.ws?.icon) && fs.existsSync(path.join(dir, 'project', canvas.ws.icon))
+          ? `/${encodeURIComponent(id)}/project/${canvas.ws.icon.split(/[\\/]/).map(encodeURIComponent).join('/')}` : null,
       });
     } catch (error) {
       problems.push({ canvas: id, issues: [`canvas.json: ${error.message}`] });
@@ -121,7 +132,7 @@ export function buildIndex({ projectRoot, config }) {
   }
   const order = [...config.groups, ...GROUPS.filter((g) => !config.groups.includes(g))];
   canvases.sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group) || a.title.localeCompare(b.title));
-  return { name: config.name, groups: config.groups, namespace: config.kit.namespace, canvases, problems };
+  return { name: config.name, groups: config.groups, groupNames: config.groupNames ?? {}, namespace: config.kit.namespace, canvases, problems };
 }
 
 /** What a kit folder holds: its kit.json facts, a legacy kit (no kit.json), or nothing. */

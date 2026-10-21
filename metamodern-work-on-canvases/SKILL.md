@@ -59,7 +59,7 @@ Install the browser tooling once per machine, outside the repository: `node scri
 - [Canvas format and project config](references/canvas-format.md): `canvas.json`, `canvas.config.json`, live kits, frozen canvases, viewer links, what a board can load.
 - [Board language and messages](references/board-language.md): the constructs boards use and the messages between a board and the viewer.
 - [Kit contract](references/kit-contract.md): what a project's kit provides, including legacy kits.
-- [The viewer](references/viewer.md): home, links, the kit switch and banner, properties, motion, live reload and keys.
+- [The viewer](references/viewer.md): home, links, the kit switch and banner, properties and board facts, motion, live reload and keys.
 - [Board builder](references/board-builder.md): the library every builder script uses, and exploration canvases.
 - [Render check](references/render-check.md): what fails a board, theme variants, screenshots and heights.
 - [Review sets and build briefs](references/review-sets.md): `review.json`, rows, lock briefs and the archive canvas.

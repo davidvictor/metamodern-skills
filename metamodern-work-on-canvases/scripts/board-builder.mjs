@@ -87,11 +87,17 @@ const jsonAttr = (value) => JSON.stringify(value).replace(/&/g, '&amp;').replace
  * @param {string} [o.logic]          the DCLogic class body; default returns theme, contrast and every control
  * @param {string} [o.css]            extra board CSS in the helmet
  * @param {object} [o.attrs]          extra data-* facts on the root: {name: value}
+ * @param {boolean} [o.bare]          a screen board: the stage is the whole board, with no header or footer (where,
+ *                                    summary, tags and foot are refused; put a screen's facts in the board's ws.facts,
+ *                                    which the viewer's side panel shows)
  */
 export function boardShell(o) {
   for (const key of ['title', 'kind']) if (typeof o[key] !== 'string' || !o[key]) throw new Error(`boardShell: ${key} is required`);
   for (const key of ['width', 'height']) if (!Number.isFinite(o[key]) || o[key] <= 0) throw new Error(`boardShell: ${key} must be a positive number`);
   if (o.row != null && !ROWS.includes(o.row) && !ID.test(o.row)) throw new Error(`boardShell: row ${o.row} must be link-safe`);
+  if (o.bare) for (const key of ['where', 'summary', 'tags', 'foot']) {
+    if (o[key] != null && !(Array.isArray(o[key]) && !o[key].length)) throw new Error(`boardShell: a bare board has no ${key}; put its facts in the board's ws.facts`);
+  }
   const ns = o.namespace ?? null;
   const themes = o.themes ?? null;
   const controls = {};
@@ -120,7 +126,7 @@ export function boardShell(o) {
     controls.theme ? ' data-theme="{{theme}}"' : '', controls.contrast ? ' data-contrast="{{contrast}}"' : '',
   ].join('');
   const tags = (o.tags ?? []).filter(Boolean);
-  const header = [
+  const header = o.bare ? '' : [
     `<header class="shell-head" data-canvas-id="board-head">`,
     `<div class="shell-head-text">`,
     o.where ? `<p class="shell-where">${escapeHtml(o.where)}</p>` : '',
@@ -146,9 +152,9 @@ export function boardShell(o) {
     '<body>',
     '<x-dc>',
     '<helmet>',
-    `<style>body{margin:0}.board-shell{box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}.shell-stage{flex:1 1 auto;min-height:0}${o.css ?? ''}</style>`,
+    `<style>body{margin:0}.board-shell{box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}.shell-stage{flex:1 1 auto;min-height:0}${o.bare ? '.board-shell.bare{padding:0;gap:0;border:0;border-radius:0;box-shadow:none}.board-shell.bare>.shell-stage{padding:0;border:0;border-radius:0}' : ''}${o.css ?? ''}</style>`,
     '</helmet>',
-    `<div class="board-shell" data-canvas-id="board"${facts} style="width: ${o.width}px; height: ${o.height}px;">`,
+    `<div class="board-shell${o.bare ? ' bare' : ''}" data-canvas-id="board"${facts} style="width: ${o.width}px; height: ${o.height}px;">`,
     header,
     `<div class="shell-stage" data-canvas-id="board-stage">`,
     stageInner,
