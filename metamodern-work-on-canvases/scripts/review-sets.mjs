@@ -192,7 +192,7 @@ export function pngSize(buffer) {
  * The render of each board: the render report entry, checked against the board's current source. Throws when a board
  * has no render, changed since it, or (with requireOk) failed it: run the render check first.
  */
-async function renders({ projectRoot, canvasId, files, renderOut, requireOk }) {
+export async function renders({ projectRoot, canvasId, files, renderOut, requireOk }) {
   const config = await readConfig(projectRoot);
   const canvasDir = (await projectCanvases(projectRoot, config))[canvasId];
   if (!canvasDir) throw new Error(`No canvas ${canvasId}`);
@@ -224,7 +224,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 // Pictures in reading order: the light (or only) theme first, then dark, then the rest.
 const rank = (name) => (name === 'light' || name === 'default' ? 0 : name.startsWith('light') ? 1 : name === 'dark' ? 2 : 3);
-const byTheme = (variants) => [...variants].sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
+export const byTheme = (variants) => [...variants].sort((a, b) => rank(a.name) - rank(b.name) || a.name.localeCompare(b.name));
 const stem = (file) => file.replace(/\.dc\.html$/, '');
 
 /** The build brief's Markdown (contract 5 sections, in order). */
@@ -329,6 +329,25 @@ async function readArchive(archiveDir) {
   }
 }
 
+/**
+ * A picture board: a board kept as its rendered picture, with where its source is kept. `b` is {file, title, image, w, h,
+ * source}, as archive entries and exploration rounds record them. Used by the archive canvas and exploration canvases.
+ */
+export function pictureBoard(b, { file, where, set, row }) {
+  return {
+    file,
+    title: b.title,
+    w: Math.max(480, b.w + 64),
+    h: b.h + 200,
+    shell: {
+      kind: 'archived', set, row, where, attrs: { was: b.file },
+      css: '.archive-picture{display:block;max-width:100%;height:auto}',
+      body: `<img class="archive-picture" src="${escapeHtml(b.image)}" width="${b.w}" height="${b.h}" alt="${escapeHtml(b.title)}, as it was">`,
+      foot: [['Source', `<code>${escapeHtml(b.source)}</code>`]],
+    },
+  };
+}
+
 /** The archive canvas's spec, from its record: a page per app page, each entry a row of picture boards. */
 export function archiveSpec(record, pageNames = {}) {
   const pages = [];
@@ -353,17 +372,8 @@ export function archiveSpec(record, pageNames = {}) {
         name: `${e.title} · ${e.date}`,
         summary: [e.why, e.question ? `Question: ${e.question}` : '', e.lead ? `Lead: ${e.lead}` : ''].filter(Boolean).join(' '),
         boards: e.boards.map((b) => ({
-          file: `X_${e.id}_${stem(b.file)}.dc.html`.replace(/[^A-Za-z0-9._-]/g, '-'),
-          title: b.title,
-          w: Math.max(480, b.w + 64),
-          h: b.h + 200,
+          ...pictureBoard(b, { file: `X_${e.id}_${stem(b.file)}.dc.html`.replace(/[^A-Za-z0-9._-]/g, '-'), where: `${e.title} · archived ${e.date}`, set: e.set }),
           ws: { set: e.set },
-          shell: {
-            kind: 'archived', set: e.set, where: `${e.title} · archived ${e.date}`, attrs: { was: b.file },
-            css: '.archive-picture{display:block;max-width:100%;height:auto}',
-            body: `<img class="archive-picture" src="${escapeHtml(b.image)}" width="${b.w}" height="${b.h}" alt="${escapeHtml(b.title)}, as it was">`,
-            foot: [['Source', `<code>${escapeHtml(b.source)}</code>`]],
-          },
         })),
       })),
     });

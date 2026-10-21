@@ -11,7 +11,8 @@ import { hashOf } from '../metamodern-work-on-canvases/scripts/render-check.mjs'
 import {
   STATUSES, archiveSet, builtWith, createSet, lockSet, newSet, pngSize, readReview, setStatus, statusRow, validateReview,
 } from '../metamodern-work-on-canvases/scripts/review-sets.mjs';
-import { createExploration, decideExploration } from '../metamodern-work-on-canvases/scripts/explore.mjs';
+import { createExploration, decideExploration, explorationSpec, roundExploration } from '../metamodern-work-on-canvases/scripts/explore.mjs';
+import { buildCanvas } from '../metamodern-work-on-canvases/scripts/board-builder.mjs';
 import { main } from '../metamodern-work-on-canvases/scripts/canvas.mjs';
 import { PACKAGE, PNG, fixtureProject } from './canvas-fixture.mjs';
 
@@ -303,6 +304,164 @@ test('RS-11 exploration copies follow references in any quoting, and what styles
     await fs.writeFile(path.join(showcase, 'canvas.json'), JSON.stringify(index));
     const made = await createExploration(root, { id: 'quotes', title: 'Quotes', question: 'Does every reference come along?', copies: ['showcase/Quoted'], date: '2026-10-20' });
     assert.deepEqual(made.copied, ['Pill.dc.html', 'Quoted.dc.html', 'assets/bare.svg', 'assets/from-css.svg', 'assets/inline.svg', 'assets/single.svg', 'quoted.css']);
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+/** Every file under a folder, with its content, for checking that a refusal wrote nothing. */
+async function snapshot(dir) {
+  const out = {};
+  for (const entry of await fs.readdir(dir, { recursive: true, withFileTypes: true })) {
+    if (!entry.isFile()) continue;
+    const file = path.join(entry.parentPath, entry.name);
+    out[path.relative(dir, file)] = (await fs.readFile(file)).toString('base64');
+  }
+  return out;
+}
+
+const QUESTION = 'How does a task show when it is due?';
+const SAID = 'Keep the card, drop the bar';
+
+/** An exploration with two copies on Directions, rendered. */
+async function exploration(root) {
+  await createExploration(root, { id: 'due-dates', title: 'Due dates', question: QUESTION, copies: ['fixture/imports', 'showcase/D_due_badges'], date: '2026-10-20' });
+  await fakeRender(root, 'due-dates', ['imports.dc.html', 'D_due_badges.dc.html']);
+  return path.join(root, 'canvases', 'due-dates');
+}
+
+const readFacts = async (dir) => JSON.parse(await fs.readFile(path.join(dir, 'tools', 'explore.json'), 'utf8'));
+
+test('RS-12 a round keeps the Directions boards as pictures with the words, and refuses stale renders and decided canvases', async () => {
+  const root = await project();
+  try {
+    const dir = await exploration(root);
+    assert.deepEqual(await readFacts(dir).then((f) => [f.round, f.rounds]), [1, []], 'a new exploration is on round 1');
+    const before = await snapshot(dir);
+    await assert.rejects(roundExploration(root, { id: 'due-dates', said: '  ' }), /needs the decision-maker's words/);
+    await assert.rejects(roundExploration(root, { id: 'due-dates', said: SAID, boards: ['Start'] }), /Start.dc.html is not an option on Directions/);
+    assert.deepEqual(await snapshot(dir), before, 'a refused round writes nothing');
+
+    const { round } = await roundExploration(root, { id: 'due-dates', said: SAID, learned: 'The bar hides the due date.', date: '2026-10-21' });
+    const facts = await readFacts(dir);
+    assert.equal(facts.round, 2);
+    assert.equal(facts.rounds[0].n, 1);
+    assert.equal(facts.rounds[0].said, SAID, 'the words are kept verbatim');
+    assert.equal(facts.rounds[0].learned, 'The bar hides the due date.');
+    assert.equal(facts.rounds[0].date, '2026-10-21');
+    assert.deepEqual(round, facts.rounds[0]);
+    assert.deepEqual(facts.rounds[0].boards.map((b) => b.file), ['imports.dc.html', 'D_due_badges.dc.html'], 'every option on Directions, in canvas order, without the intro');
+    for (const b of facts.rounds[0].boards) {
+      assert.equal(b.image, `assets/round-1/${b.file.replace('.dc.html', '.png')}`);
+      assert.deepEqual(pngSize(await fs.readFile(path.join(dir, 'project', b.image))), { w: b.w, h: b.h });
+      assert.equal(b.source, `source/round-1/${b.file}`);
+      assert.deepEqual(await fs.readFile(path.join(dir, b.source)), await fs.readFile(path.join(dir, 'project', b.file)), 'the source byte for byte');
+      assert.equal(typeof b.title, 'string');
+    }
+
+    // A board edited since its render: the picture would not be what the decision-maker saw.
+    await fs.appendFile(path.join(dir, 'project', 'D_due_badges.dc.html'), '\n');
+    const edited = await snapshot(dir);
+    await assert.rejects(roundExploration(root, { id: 'due-dates', said: 'Again', date: '2026-10-22' }), /changed since its render/);
+    assert.deepEqual(await snapshot(dir), edited, 'a stale render writes nothing');
+
+    // The command line, with a subset of the boards.
+    await fakeRender(root, 'due-dates', ['imports.dc.html', 'D_due_badges.dc.html']);
+    const log = console.log;
+    console.log = () => {};
+    try {
+      assert.equal(await main(['explore', 'round', 'due-dates', '--project', root, '--said', 'Wider, please', '--board', 'D_due_badges', '--date', '2026-10-22']), 0);
+    } finally {
+      console.log = log;
+    }
+    const second = await readFacts(dir);
+    assert.equal(second.round, 3);
+    assert.deepEqual(second.rounds.map((r) => [r.n, r.said, r.learned, r.boards.map((b) => b.file)]), [[1, SAID, 'The bar hides the due date.', ['imports.dc.html', 'D_due_badges.dc.html']], [2, 'Wider, please', '', ['D_due_badges.dc.html']]]);
+    await assert.rejects(roundExploration(root, { id: 'due-dates', said: 'Once more', boards: ['D_due_badges.dc.html'] }), /nothing on Directions changed since round 2/, 'the same boards twice is not a new round');
+
+    await decideExploration(root, { id: 'due-dates', lead: 'Badges.', date: '2026-10-23' });
+    assert.deepEqual((await readFacts(dir)).rounds, second.rounds, 'deciding keeps the rounds');
+    const start = await fs.readFile(path.join(dir, 'project', 'Start.dc.html'), 'utf8');
+    assert.match(start, /Decided on 2026-10-23\./);
+    assert.match(start, /Round 1 · 2026-10-21: “Keep the card, drop the bar”/);
+    assert.match(start, /Round 2 · 2026-10-22: “Wider, please”/);
+    const decided = await snapshot(dir);
+    await assert.rejects(roundExploration(root, { id: 'due-dates', said: SAID }), /is decided/);
+    assert.deepEqual(await snapshot(dir), decided, 'a round on a decided canvas writes nothing');
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('RS-13 exploration builders draw the template\'s pages and the rounds survive rebuilds', async () => {
+  const root = await project();
+  try {
+    const dir = await exploration(root);
+    await roundExploration(root, { id: 'due-dates', said: SAID, learned: 'The bar hides the due date.', date: '2026-10-21' });
+    const option = { file: 'O_card.dc.html', title: 'A card', w: 800, h: 400, shell: { kind: 'component', body: '<p>A card</p>' } };
+    const precedent = [{ title: 'Linear sidebar', href: 'https://mobbin.com/screens/1', note: 'The switcher as a card' }, { title: 'Our lab', href: '/fixture/start/imports' }];
+    const build = async () => buildCanvas({ canvasDir: dir, spec: await explorationSpec(dir, { directions: [{ id: 'options', name: 'Options', boards: [option] }], precedent }) });
+    const first = await build();
+    assert.ok(first.written.length);
+    const again = await build();
+    assert.deepEqual([again.written, again.removed], [[], []], 'a second build writes nothing');
+
+    const canvas = await readCanvas(dir);
+    assert.deepEqual(validateCanvas(canvas), []);
+    assert.deepEqual(canvas.pages.map((p) => p.name), ['Start here', 'Directions', 'Lead', 'Archive']);
+    assert.deepEqual(canvas.ws, { group: 'exploring' });
+    const read = (file) => fs.readFile(path.join(dir, 'project', file), 'utf8');
+    // Archive: a row per round, its pictures drawn from explore.json.
+    assert.equal(canvas.boards['R_archive_round-1.dc.html']?.page, 'archive');
+    assert.match(await read('R_archive_round-1.dc.html'), /Keep the card, drop the bar · The bar hides the due date\./);
+    for (const stem of ['imports', 'D_due_badges']) {
+      const file = `R1_${stem}.dc.html`;
+      assert.equal(canvas.boards[file]?.page, 'archive', `${file} on Archive`);
+      const html = await read(file);
+      assert.match(html, new RegExp(`<img class="archive-picture" src="assets/round-1/${stem}.png"`));
+      assert.match(html, /data-row="round-1"/);
+      assert.match(html, new RegExp(`<code>source/round-1/${stem}.dc.html</code>`));
+    }
+    // The old options left Directions; their round's pictures stay on Archive.
+    assert.equal(canvas.boards['imports.dc.html'], undefined);
+    assert.equal(canvas.boards['D_due_badges.dc.html'], undefined);
+    assert.equal(canvas.boards['O_card.dc.html'].page, 'directions');
+    // Directions: the current round and the last round's words.
+    const intro = await read('P_directions.dc.html');
+    assert.match(intro, /Round 2/);
+    assert.match(intro, /“Keep the card, drop the bar”/);
+    assert.match(intro, /The bar hides the due date\./);
+    // Start here: the question, the rounds and the precedent links.
+    const start = await read('Start.dc.html');
+    assert.ok(start.includes(QUESTION));
+    assert.match(start, /Round 1 · 2026-10-21: “Keep the card, drop the bar”/);
+    const links = await read('Precedent.dc.html');
+    assert.equal(canvas.boards['Precedent.dc.html'].page, 'start');
+    assert.match(links, /<a href="https:\/\/mobbin.com\/screens\/1" target="_blank" rel="noopener noreferrer">Linear sidebar<\/a>/);
+    assert.match(links, /The switcher as a card/);
+    assert.match(links, /<a href="\/fixture\/start\/imports" target="_top">Our lab<\/a>/);
+    for (const href of ['javascript:alert(1)', 'http://?', '//elsewhere.example/x', 'mobbin.com/screens/1']) {
+      await assert.rejects(explorationSpec(dir, { precedent: [{ title: 'Bad', href }] }), /http\(s\) link or a path on the viewer/, href);
+    }
+    await assert.rejects(explorationSpec(dir, { precedent: [{ title: '', href: 'https://mobbin.com' }] }), /\{title, href, note\?\}/);
+
+    // A second round: rows newest first.
+    await fakeRender(root, 'due-dates', ['O_card.dc.html']);
+    await roundExploration(root, { id: 'due-dates', said: 'The card, but quieter', date: '2026-10-22' });
+    await build();
+    const later = await readCanvas(dir);
+    const order = (file) => later.order.indexOf(file);
+    assert.ok(order('R_archive_round-2.dc.html') < order('R_archive_round-1.dc.html'), 'the newest round comes first');
+    assert.ok(later.boards['R2_O_card.dc.html'] && later.boards['R1_D_due_badges.dc.html'], 'every round keeps its pictures');
+    assert.match(await read('P_directions.dc.html'), /Round 3/);
+    assert.deepEqual((await build()).written, []);
+
+    // Deciding shows every round on Start here and keeps the precedent board.
+    await decideExploration(root, { id: 'due-dates', lead: 'The quiet card.', date: '2026-10-23' });
+    const decided = await read('Start.dc.html');
+    assert.match(decided, /Round 2 · 2026-10-22: “The card, but quieter”/);
+    assert.ok((await readCanvas(dir)).boards['Precedent.dc.html']);
+    await assert.rejects(build(), /frozen/);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }
