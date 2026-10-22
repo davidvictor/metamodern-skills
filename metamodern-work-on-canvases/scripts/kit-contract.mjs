@@ -9,6 +9,7 @@ export const KIT_FILES = ['components/bundle.js', 'components/bundle.css', 'comp
 const TOKEN_GROUPS = ['type', 'space', 'radius', 'shadow', 'motion', 'density'];
 const THEMES = ['light', 'dark', 'light-contrast', 'dark-contrast'];
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+const KIT_PATH = /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/;
 
 /** Issues with a kit.json object; empty when valid. */
 export function validateKitManifest(kit) {
@@ -39,7 +40,17 @@ export function validateKitManifest(kit) {
       if (!isObject(parts.components)) issues.push('kit.json: parts.components must map kit paths to hash strings');
       else {
         for (const [name, hash] of Object.entries(parts.components)) {
-          if (!/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(name) || typeof hash !== 'string' || !hash) issues.push(`kit.json: parts.components.${name} must be a dotted kit path with a non-empty hash string`);
+          const [kitPath, one] = name.split(/#(.*)/s);
+          if (!KIT_PATH.test(kitPath) || one === '' || typeof hash !== 'string' || !hash) issues.push(`kit.json: parts.components.${name} must be a dotted kit path (or <path>#<id>) with a non-empty hash string`);
+          else if (one !== undefined && !Object.hasOwn(isObject(parts.selectors) ? parts.selectors : {}, kitPath)) issues.push(`kit.json: parts.components.${name} needs parts.selectors.${kitPath}, the prop that picks what ${kitPath} shows`);
+        }
+      }
+      if (parts.selectors !== undefined) {
+        if (!isObject(parts.selectors)) issues.push('kit.json: parts.selectors must map kit paths to prop names');
+        else {
+          for (const [name, prop] of Object.entries(parts.selectors)) {
+            if (!KIT_PATH.test(name) || typeof prop !== 'string' || !/^[A-Za-z_$][\w$]*$/.test(prop)) issues.push(`kit.json: parts.selectors.${name} must map a dotted kit path to a prop name`);
+          }
         }
       }
     }

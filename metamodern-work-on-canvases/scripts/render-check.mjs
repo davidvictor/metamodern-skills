@@ -329,8 +329,8 @@ export function fileHasher() {
 const isHash = (v) => typeof v === 'string' && v.length > 0;
 
 /**
- * A kit folder's part hashes from its kit.json (contract 3, `parts`): {shared, components: {<path>: hash}}, or null
- * when it declares none or they are malformed.
+ * A kit folder's part hashes from its kit.json (contract 3, `parts`): {shared, components: {<path>: hash}, selectors?},
+ * or null when it declares none or they are malformed.
  */
 export async function readKitParts(kitDir) {
   let kit;
@@ -338,21 +338,59 @@ export async function readKitParts(kitDir) {
   const parts = kit?.parts;
   if (!parts || !isHash(parts.shared) || !parts.components || typeof parts.components !== 'object') return null;
   if (Object.values(parts.components).some((h) => !isHash(h))) return null;
+  if (parts.selectors !== undefined && (!parts.selectors || typeof parts.selectors !== 'object' || Object.values(parts.selectors).some((p) => typeof p !== 'string' || !/^[A-Za-z_$][\w$]*$/.test(p)))) return null;
   return parts;
+}
+
+/** A plain element's tag, which names no kit path: a lower-case name with no dot (`img`, `a`, `my-chip`). */
+const TAG = /^[a-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*$/;
+/** A string literal with nothing computed in it: 'Badge', "Badge" or `Badge`. */
+const LITERAL = /^\s*(?:'([^'\\]*)'|"([^"\\]*)"|`([^`\\$]*)`)\s*$/;
+
+/**
+ * The source of the first `count` arguments of the call whose arguments start at `start` (just after its opening
+ * parenthesis), split at top-level commas; fewer when the call has fewer, null when the text ends first.
+ */
+function callArguments(text, start, count) {
+  const args = [];
+  let depth = 0;
+  let quote = null;
+  let from = start;
+  for (let i = start; i < text.length; i += 1) {
+    const c = text[i];
+    if (quote) {
+      if (c === '\\') i += 1;
+      else if (c === quote) quote = null;
+    } else if (c === '"' || c === "'" || c === '`') quote = c;
+    else if ('([{'.includes(c)) depth += 1;
+    else if (')]}'.includes(c) && depth > 0) depth -= 1;
+    else if ((c === ',' || c === ')') && depth === 0) {
+      args.push(text.slice(from, i));
+      if (c === ')' || args.length === count) return args;
+      from = i + 1;
+    }
+  }
+  return null;
 }
 
 /**
  * The kit paths a board names, from the text of every board it loaded (itself and the boards it imports): each
- * `<Ns>.Path.To.Thing`, such as Ns.Button from an <x-import> or Ns.sample.contracts from its logic, and each
- * `<alias>.Path` after `const <alias> = window.<Ns>;`. null when a board reaches the kit any other way (the bare
- * global, a computed name, or an alias passed on whole), so only the whole kit can key it.
+ * `<Ns>.Path.To.Thing`, such as Ns.Button from an <x-import> or Ns.sample.contracts from its logic; each
+ * `<alias>.Path` after `const <alias> = window.<Ns>;`, and `sample.contracts` from `S.contracts` after
+ * `const S = <alias>.sample;`; the name given to `element('Badge', …)` or `mount(el, 'Button', …)` as a literal; and
+ * `Example#<id>` for `<x-import component-from-global-scope="<Ns>.Example" example="<id>">` when `selectors` says
+ * Example shows one of many things by its `example` prop. null when a board reaches the kit any other way (the bare
+ * global, a computed name, or an alias of the whole kit passed on whole), so only the whole kit can key it.
  */
-export async function kitReferences(inputs, namespace) {
+export async function kitReferences(inputs, namespace, { selectors = {} } = {}) {
   const refs = new Set();
-  const ns = namespace.replace(/[$]/g, '\\$');
+  const escape = (name) => name.replace(/[$]/g, '\\$');
+  const ns = escape(namespace);
   const id = '[A-Za-z_$][\\w$]*';
+  const tidy = (dotted) => dotted.replace(/\s+/g, '').slice(1);
+  const within = (at, sub) => [at, sub].filter(Boolean).join('.');
   const member = (name, before = '\\w$') => new RegExp(`(?<![${before}])${name}((?:\\s*\\.\\s*${id})+)`, 'g');
-  const aliases = new RegExp(`\\b(?:const|let|var)\\s+(${id})\\s*=\\s*(?:window\\s*\\.\\s*)?${ns}\\s*;`, 'g');
+  const declarations = new RegExp(`\\b(?:const|let|var)\\s+(${id})\\s*=\\s*(window\\s*\\.\\s*)?(${id})((?:\\s*\\.\\s*${id})*)\\s*;`, 'g');
   // The global used whole in code: window.<Ns> not followed by a member, <Ns>[...], or <Ns> passed as a value. The
   // name in copy ("<Ns> AI") is not a use.
   const bare = new RegExp(`(?<![\\w$])window\\s*\\.\\s*${ns}(?![\\w$])(?!\\s*\\.)|(?<![\\w$.])${ns}\\s*\\[|[(,=:]\\s*${ns}\\s*[,)\\];}]`);
@@ -360,25 +398,75 @@ export async function kitReferences(inputs, namespace) {
     if (!input.file?.endsWith('.dc.html')) continue;
     let text;
     try { text = await fs.readFile(input.file, 'utf8'); } catch { continue; }
-    const names = [...text.matchAll(aliases)].map((m) => m[1]);
-    text = text.replace(aliases, '');
+    // Aliases, in order: '' for the whole kit (`const A = window.<Ns>;`), a path for a part of it (`const S = A.sample;`).
+    const aliases = new Map();
+    // An alias of element or mount stays a use of them, read below.
+    text = text.replace(declarations, (all, name, win, base, rest) => {
+      let at;
+      if (base === namespace) at = tidy(rest);
+      else if (!win && aliases.has(base)) at = within(aliases.get(base), tidy(rest));
+      if (at === undefined || /^(?:element|mount)(?:\.|$)/.test(at)) return all;
+      aliases.set(name, at);
+      return '';
+    });
+    // element(<name>, …) and mount(<el>, <name>, …) reach a member by a name: a literal names its path (a plain tag
+    // names none), a computed name cannot be read here. element and mount themselves belong in the kit's shared part.
+    const wholeKit = [`(?:window\\s*\\.\\s*)?${ns}`, ...[...aliases].filter(([, at]) => !at).map(([name]) => escape(name))];
+    const byName = new RegExp(`(?<![\\w$.])(?:${wholeKit.join('|')})\\s*\\.\\s*(element|mount)(?![\\w$])`, 'g');
+    // A kit member given as the component itself (element(A.List, …)) is named like any other member.
+    const kitMember = new RegExp(`^\\s*(?:(?:window\\s*\\.\\s*)?${ns}|${[...aliases.keys()].map(escape).join('|') || '(?!)'})(?:\\s*\\.\\s*${id})+\\s*$`);
+    let unreadable = false;
+    text = text.replace(byName, (all, fn, offset, whole) => {
+      const open = /^\s*\(/.exec(whole.slice(offset + all.length));
+      const position = fn === 'mount' ? 1 : 0;
+      const args = open && callArguments(whole, offset + all.length + open[0].length, position + 1);
+      if (args && kitMember.test(args[position] ?? '')) return '';
+      const literal = args && LITERAL.exec(args[position] ?? '');
+      if (!literal) { unreadable = true; return all; }
+      const name = literal[1] ?? literal[2] ?? literal[3];
+      const at = name.startsWith(`${namespace}.`) ? name.slice(namespace.length + 1) : name;
+      if (!(fn === 'element' && TAG.test(at))) refs.add(at);
+      return '';
+    });
+    if (unreadable) return null;
+    // A component that shows one of many things by a prop (selectors: {Example: 'example'}) names the one it shows,
+    // when the prop is written as a literal.
+    text = text.replace(/<x-import\b[^>]*>/g, (tag) => {
+      const from = /\bcomponent-from-global-scope\s*=\s*"([^"]*)"/.exec(tag);
+      const at = from?.[1].startsWith(`${namespace}.`) ? from[1].slice(namespace.length + 1) : null;
+      if (!at || !Object.hasOwn(selectors, at)) return tag;
+      const attribute = escape(selectors[at].replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`));
+      const value = new RegExp(`\\s${attribute}\\s*=\\s*(?:"([^"{}]*)"|'([^'{}]*)')`).exec(tag);
+      if (!value) return tag;
+      refs.add(`${at}#${value[1] ?? value[2]}`);
+      return tag.replace(from[0], '');
+    });
     if (bare.test(text)) return null;
-    for (const match of text.matchAll(member(ns))) refs.add(match[1].replace(/\s+/g, '').slice(1));
-    for (const name of names) {
-      const alias = name.replace(/[$]/g, '\\$');
-      // An alias used as a value (an argument, an element, a reassignment) may reach any part.
-      if (new RegExp(`(?<![\\w$.])${alias}\\s*[,)\\][;}]|[(,=:]\\s*${alias}(?![\\w$])(?!\\s*\\.)`).test(text)) return null;
-      for (const match of text.matchAll(member(alias, '\\w$.'))) refs.add(match[1].replace(/\s+/g, '').slice(1));
+    for (const match of text.matchAll(member(ns))) refs.add(tidy(match[1]));
+    for (const [name, at] of aliases) {
+      const alias = escape(name);
+      // An alias used as a value (an argument, an element, a reassignment) may reach anything under its path.
+      if (new RegExp(`(?<![\\w$.])${alias}\\s*[,)\\][;}]|[(,=:]\\s*${alias}(?![\\w$])(?!\\s*\\.)`).test(text)) {
+        if (!at) return null;
+        refs.add(at);
+      }
+      for (const match of text.matchAll(member(alias, '\\w$.'))) refs.add(within(at, tidy(match[1])));
     }
   }
   return refs;
 }
 
-/** The hash of the part that holds a kit path: the part named by the path's longest prefix, or null. */
+/**
+ * The hash of the part that holds a kit path: the part named by the path's longest prefix, or null. `<path>#<id>`, the
+ * one thing a selector component shows, has a part of its own when the kit declares one, and is held by the path's
+ * part otherwise.
+ */
 export function partFor(parts, ref) {
-  const segments = ref.split('.');
+  const part = (name) => (Object.hasOwn(parts.components, name) ? parts.components[name] : null);
+  if (ref.includes('#') && part(ref)) return part(ref);
+  const segments = ref.split('#')[0].split('.');
   for (let n = segments.length; n > 0; n -= 1) {
-    const hash = parts.components[segments.slice(0, n).join('.')];
+    const hash = part(segments.slice(0, n).join('.'));
     if (hash) return hash;
   }
   return null;
@@ -403,7 +491,10 @@ export async function boardKey({ engine, board, variants, inputs, hashFile, kits
   }
   let refs;
   for (const kit of partKits) {
-    if (refs === undefined) refs = namespace ? await kitReferences(inputs, namespace) : null;
+    if (refs === undefined) {
+      const selectors = Object.assign({}, ...[...partKits].map((k) => k.parts.selectors));
+      refs = namespace ? await kitReferences(inputs, namespace, { selectors }) : null;
+    }
     const named = refs ? [...refs].map((ref) => partFor(kit.parts, ref)) : null;
     if (!named || named.some((h) => !h)) {
       for (const input of inputs) if (input.file && inside(kit.dir, input.file)) parts.push([input.file, await hashFile(input.file)]);

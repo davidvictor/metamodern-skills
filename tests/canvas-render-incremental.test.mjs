@@ -78,7 +78,7 @@ test('RF-02 the kit paths a board names come from its own text and the boards it
     assert.deepEqual([...(await kitReferences([{ file: a }, { file: b }, { file: path.join(dir, 'x.css') }], 'Fixture'))].sort(), ['Card', 'Screens.Work', 'sample.tasks']);
     const aliased = path.join(dir, 'aliased.dc.html');
     await fs.writeFile(aliased, '<script>\n    // A screen inside a board: plain words are not the alias.\n    const A = window.Fixture;\n    const S = A.sample;\n    return { list: A.element(A.List, {}), rows: S.tasks };\n</script>');
-    assert.deepEqual([...(await kitReferences([{ file: aliased }], 'Fixture'))].sort(), ['List', 'element', 'sample'], 'an alias of the global names what it reaches');
+    assert.deepEqual([...(await kitReferences([{ file: aliased }], 'Fixture'))].sort(), ['List', 'sample.tasks'], 'an alias of the global names what it reaches');
     const passed = path.join(dir, 'passed.dc.html');
     await fs.writeFile(passed, '<script>const A = window.Fixture; const S = A.sample; return draw(A, S);</script>');
     assert.equal(await kitReferences([{ file: passed }], 'Fixture'), null, 'an alias passed on whole names the whole kit');
@@ -156,6 +156,75 @@ test('RF-05 kit.json may declare part hashes, and they must be well formed', () 
   assert.deepEqual(validateKitManifest({ ...kit, parts: { shared: 'sha256:1', components: { Button: 'sha256:2', 'Screens.Work': 'sha256:3' } } }), []);
   assert.ok(validateKitManifest({ ...kit, parts: { components: { Button: 'x' } } }).some((i) => /parts\.shared/.test(i)));
   assert.ok(validateKitManifest({ ...kit, parts: { shared: 'x', components: { 'not a path': 'x' } } }).some((i) => /parts\.components/.test(i)));
+  assert.deepEqual(validateKitManifest({ ...kit, parts: { shared: 's', components: { Example: 'e', 'Example#button:styles': 'e1', 'Scene#ai.home': 'h' }, selectors: { Example: 'example', Scene: 'id' } } }), [], 'a part per thing a selector component shows');
+  assert.ok(validateKitManifest({ ...kit, parts: { shared: 's', components: { 'Example#a': 'x' } } }).some((i) => /needs parts\.selectors\.Example/.test(i)));
+  assert.ok(validateKitManifest({ ...kit, parts: { shared: 's', components: {}, selectors: { Example: 'not a prop' } } }).some((i) => /parts\.selectors\.Example/.test(i)));
+});
+
+async function referencesOf(files, options) {
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'canvas-refs-'));
+  try {
+    const inputs = [];
+    for (const [i, text] of files.entries()) {
+      const file = path.join(dir, `${i}.dc.html`);
+      await fs.writeFile(file, text);
+      inputs.push({ file });
+    }
+    const refs = await kitReferences(inputs, 'Fixture', options);
+    return refs && [...refs].sort();
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+}
+
+test('RF-13 element and mount with a literal name name that path; a computed name names the whole kit', async () => {
+  assert.deepEqual(await referencesOf(['<script>const Kit = window.Fixture; return { badge: Kit.element(\'Badge\', { tone: f(1, 2) }), pill: Kit.element("Marketing.Pill"), icon: window.Fixture.element(`Fixture.Icon`, {}), img: Kit.element(\'img\', { src: \'a.png\' }), list: Kit.element(Kit.List, {}) };</script>']), ['Badge', 'Icon', 'List', 'Marketing.Pill'], 'element names its literal path (a plain tag names none), and element itself needs no part');
+  assert.deepEqual(await referencesOf(['<script>const A = window.Fixture; A.mount(document.querySelector(\'#x\'), \'Fixture.Button\', { label: \'Save\' }); Fixture.mount(el, "Screens.Work");</script>']), ['Button', 'Screens.Work'], 'mount names the path it is given second');
+  for (const computed of [
+    "const A = window.Fixture; A.element('Marketing.' + n, {});",
+    'const A = window.Fixture; A.element(n, {});',
+    'const A = window.Fixture; A.mount(el, name);',
+    "const Kit = window.Fixture; const K = ((n, p) => Kit.element(n, p || {})); K('Badge', {});",
+    "const Kit = window.Fixture; return ((n, p) => Kit.element(n, p || {}))('Badge', {});",
+    'const A = window.Fixture; const make = A.element; make(x);',
+  ]) assert.equal(await referencesOf([`<script>${computed}</script>`]), null, computed);
+});
+
+test('RF-14 a selector component names the one thing its prop picks, by a part of its own when the kit declares one', async () => {
+  const selectors = { Example: 'example', Scene: 'id' };
+  const boards = [
+    '<x-import component-from-global-scope="Fixture.Example" example="button:styles"></x-import>',
+    '<x-import component-from-global-scope="Fixture.Scene" id="ai.home" state="current" theme="{{theme}}"></x-import>',
+  ];
+  assert.deepEqual(await referencesOf(boards, { selectors }), ['Example#button:styles', 'Scene#ai.home']);
+  assert.deepEqual(await referencesOf(boards), ['Example', 'Scene'], 'without selectors from the kit, the component as a whole');
+  assert.deepEqual(await referencesOf(['<x-import component-from-global-scope="Fixture.Scene" id="{{scene}}"></x-import>'], { selectors }), ['Scene'], 'a computed pick names the component as a whole');
+  const parts = { shared: 's', components: { Example: 'all-examples', 'Example#button:styles': 'button-styles' }, selectors: { Example: 'example' } };
+  assert.equal(partFor(parts, 'Example#button:styles'), 'button-styles');
+  assert.equal(partFor(parts, 'Example#card:default'), 'all-examples', 'a thing with no part of its own is held by the component\'s part');
+  assert.equal(partFor({ shared: 's', components: { Button: 'b' } }, 'Example#card:default'), null);
+
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'canvas-key-'));
+  try {
+    const kitDir = path.join(dir, 'kit');
+    await fs.mkdir(kitDir);
+    const boardFile = path.join(dir, 'board.dc.html');
+    await fs.writeFile(boardFile, boards[0]);
+    const inputs = [{ file: boardFile }, { file: path.join(kitDir, 'bundle.js') }];
+    const key = (components) => boardKey({ engine: {}, board: {}, variants: [], inputs, hashFile: fileHasher(), namespace: 'Fixture', kits: [{ dir: kitDir, parts: { ...parts, components: { ...parts.components, ...components } } }] });
+    const first = await key({});
+    assert.equal(await key({ Example: 'all-examples-2', 'Example#card:default': 'card-2' }), first, 'another example changing keeps the key');
+    assert.notEqual(await key({ 'Example#button:styles': 'button-styles-2' }), first, 'its own example changing changes it');
+  } finally {
+    await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('RF-15 an alias of a path in the kit names the paths under it', async () => {
+  assert.deepEqual(await referencesOf(['<script>const Kit = window.Fixture;\nconst S = Kit.sample;\nconst C = S.contracts;\nreturn { rows: S.tasks.slice(0, 3), first: C.first };</script>']), ['sample.contracts.first', 'sample.tasks.slice']);
+  assert.deepEqual(await referencesOf(['<script>const S = Fixture.sample; return { all: draw(S) };</script>']), ['sample'], 'passed on whole, it names its path, not the whole kit');
+  assert.deepEqual(await referencesOf(['<script>const Kit = window.Fixture; const S = Kit.sample; return {};</script><x-import component-from-global-scope="Fixture.Card"></x-import>']), ['Card'], 'an alias never used names nothing');
+  assert.deepEqual(await referencesOf(['<script>const Kit = window.Fixture; const B = Kit.Button; return { el: Kit.element(B, {}) };</script>']), null, 'an alias given to element as a value is a name it cannot read');
 });
 
 // ---------- the check, in a browser ----------
