@@ -423,13 +423,20 @@ const WHOAMI = 'metamodern-canvas';
 /** Who answers on host:port: null when nothing does, else its /_whoami ({} for a server that isn't a canvas viewer). */
 function whoIs(host, port) {
   return new Promise((done) => {
-    const req = http.get({ host, port, path: '/_whoami', timeout: 800, headers: { host: `127.0.0.1:${port}` } }, (res) => {
+    // One answer, within a second in all, read up to 4 KB: an unrelated server can't stall or stop the scan.
+    let settled = false;
+    const finish = (value) => { if (settled) return; settled = true; clearTimeout(deadline); req.destroy(); done(value); };
+    const deadline = setTimeout(() => finish({}), 1000);
+    const req = http.get({ host, port, path: '/_whoami', headers: { host: `127.0.0.1:${port}` } }, (res) => {
       let body = '';
-      res.on('data', (chunk) => { body += chunk; });
-      res.on('end', () => { try { done(JSON.parse(body)); } catch { done({}); } });
+      res.on('error', () => finish({}));
+      res.on('data', (chunk) => {
+        body += chunk;
+        if (body.length > 4096) finish({});
+      });
+      res.on('end', () => { try { finish(JSON.parse(body)); } catch { finish({}); } });
     });
-    req.on('timeout', () => { req.destroy(); done({}); });
-    req.on('error', (error) => done(['ECONNREFUSED', 'EADDRNOTAVAIL', 'EAFNOSUPPORT'].includes(error.code) ? null : {}));
+    req.on('error', (error) => finish(['ECONNREFUSED', 'EADDRNOTAVAIL', 'EAFNOSUPPORT'].includes(error.code) ? null : {}));
   });
 }
 

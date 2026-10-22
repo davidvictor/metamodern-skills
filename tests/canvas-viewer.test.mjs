@@ -630,6 +630,22 @@ test('VW-09 a viewer knows itself on a port: it steps past another server and fi
     if (other.listening) other.close();
   }
 
+  // Servers that misbehave on the probe are passed over within a second, never stalling or stopping the scan:
+  // one streams without end, one drops the connection after its headers.
+  const stream = http.createServer((req, res) => { res.writeHead(200); const tick = setInterval(() => res.write('x'), 50); res.on('close', () => clearInterval(tick)); });
+  const drop = http.createServer((req, res) => { res.writeHead(200); res.flushHeaders(); setTimeout(() => res.socket.destroy(), 20); });
+  await Promise.all([stream, drop].map((srv) => new Promise((resolve) => srv.listen(0, '127.0.0.1', resolve))));
+  try {
+    for (const srv of [stream, drop]) {
+      const started = Date.now();
+      await assert.rejects(findPort({ projectRoot: root, from: srv.address().port, tries: 1 }), { code: 'EADDRINUSE' }, 'the port counts as held');
+      assert.ok(Date.now() - started < 3000, 'the probe has a deadline');
+    }
+  } finally {
+    stream.closeAllConnections?.(); stream.close();
+    drop.close();
+  }
+
   // A port held on ::1 alone stops the start rather than leaving localhost to the other server; the IPv4 side is freed.
   const six = http.createServer((req, res) => res.end('another project on ::1'));
   const onSix = await new Promise((resolve) => { six.once('error', () => resolve(false)); six.listen(0, '::1', () => resolve(true)); });
