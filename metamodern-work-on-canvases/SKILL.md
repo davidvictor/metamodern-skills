@@ -16,7 +16,7 @@ The package is the runner, the file format and the method. The project owns its 
 - One lead per set on the app canvas.
 - Options only on exploration canvases, at most two open per area.
 - Components are decided before the flows that use them.
-- Run the builder, then the render check, before showing anything.
+- Build and render-check before showing anything: `canvas build` runs the builder, checks what changed and applies heights in one step.
 - Boards that are recorded, rendered for the decision-maker, or used as a lead or a Live row use the pinned kit. A live worktree kit is only for boards switched to it during a lab session, and the banner shows it.
 - Lock only with the decision-maker's own words. A lock that needs a database, API or permission change stops and goes back as product work.
 - Generated boards are never edited by hand, and no canvas gets its own copy of the tooling. The installed package is never edited in the project.
@@ -44,7 +44,8 @@ In a project where the package is installed, run `npm run canvas -- <command>` f
 | Command | Use |
 | --- | --- |
 | `view` | Serve every canvas on `127.0.0.1`. Send viewer links (`/<canvas>/<page>/<board>`), never file paths. |
-| `render [--canvas <id>]` | The render check: every board in each theme, screenshots and heights. |
+| `build [--canvas <id>]` | Runs the canvas builders, render-checks what changed and applies measured heights, in one step. |
+| `render [--canvas <id>] [--watch] [--force]` | The render check: every board in each theme, screenshots and heights. Boards whose inputs are unchanged since they passed are skipped; `--watch` re-checks as files change; `--force` checks everything. |
 | `review validate \| list \| create \| status \| lock \| archive` | Review sets and build briefs. |
 | `explore create \| round \| decide` | Exploration canvases and their rounds. |
 | `comments list \| wait \| take \| reply \| done` | The comment loop. |
@@ -61,7 +62,7 @@ Install the browser tooling once per machine, outside the repository: `node scri
 - [Kit contract](references/kit-contract.md): what a project's kit provides, including legacy kits.
 - [The viewer](references/viewer.md): home, links, the kit switch and banner, properties and board facts, motion, live reload and keys.
 - [Board builder](references/board-builder.md): the library every builder script uses, and exploration canvases.
-- [Render check](references/render-check.md): what fails a board, theme variants, screenshots and heights.
+- [Render check](references/render-check.md): what fails a board, theme variants, screenshots and heights, checking only what changed, `build` and `--watch`.
 - [Review sets and build briefs](references/review-sets.md): `review.json`, rows, lock briefs and the archive canvas.
 - [Comments](references/comments.md): click-to-comment in the viewer, comment files in Agentation's format, threads and states, Send all to agent, re-attachment, and the agent's command line.
 

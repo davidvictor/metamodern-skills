@@ -73,6 +73,8 @@ The same input gives byte-identical files, and a second run writes nothing, so t
 
 `tools/heights.json` is `{"<board>.dc.html": <natural height in px>}`, sorted. The render check writes it after measuring each board (its `board-shell` root with height auto, or the whole document for other boards). The next build applies it. A board whose content runs past its height fails the render check until the canvas is rebuilt.
 
+`canvas build [--canvas <id> ...]` does both passes in one command: it runs `canvases/<id>/tools/build.mjs`, render-checks the boards that changed, and when the heights changed, builds and checks again, so a new or grown board passes without a second command ([render check](render-check.md#build-check-and-heights-in-one-step)). Keep each canvas's builder script at `tools/build.mjs`, runnable as `node canvases/<id>/tools/build.mjs` from the project root, for this to find it.
+
 ## Exploration canvases
 
 `canvas explore create <id> --title <title> --question <question> [--set <set id>] [--copy <canvas>/<board> ...]` makes a canvas from the template:
