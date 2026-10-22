@@ -2,7 +2,9 @@
 // The package's command line, the same for every harness. Run it from the project root, or pass --project.
 //
 //   canvas view     [--project <dir>] [--port <n>]
-//   canvas render   [--canvas <id> ...] [--board <file> ...] [--out <dir>] [--jobs <n>] [--no-heights]
+//   canvas render   [--canvas <id> ...] [--board <file> ...] [--out <dir>] [--jobs <n>] [--no-heights] [--force]
+//                   [--reload-variants] [--watch]
+//   canvas build    [--canvas <id> ...] [--out <dir>] [--jobs <n>] [--force] [--reload-variants]
 //   canvas review   validate | list
 //   canvas review   create <id> --page <page> [--title t] [--question q] [--lead l] [--status s] [--waits-on id ...]
 //                   [--replaces id ...] [--canvas id] [--board <file> ...]
@@ -25,7 +27,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs as parseOptions } from 'node:util';
 import { readConfig } from './canvas-format.mjs';
 import { findProject, startViewer } from './lib/viewer-server.mjs';
-import { renderCheck } from './render-check.mjs';
+import { buildAndCheck, renderCheck, summary, watchRender } from './render-check.mjs';
 import { archiveSet, createSet, lockSet, readReview, setStatus, statusRow, validateReview, writeReview } from './review-sets.mjs';
 import { createExploration, decideExploration, roundExploration } from './explore.mjs';
 
@@ -36,6 +38,9 @@ const OPTIONS = {
   out: { type: 'string' },
   jobs: { type: 'string' },
   'no-heights': { type: 'boolean' },
+  force: { type: 'boolean' },
+  'reload-variants': { type: 'boolean' },
+  watch: { type: 'boolean' },
   page: { type: 'string' },
   title: { type: 'string' },
   question: { type: 'string' },
@@ -61,7 +66,7 @@ const OPTIONS = {
   help: { type: 'boolean', short: 'h' },
 };
 
-const USAGE = `Usage: canvas <view | render | review | explore | comments | install | update | verify> ...  (see the header of scripts/canvas.mjs)`;
+const USAGE = `Usage: canvas <view | render | build | review | explore | comments | install | update | verify> ...  (see the header of scripts/canvas.mjs)`;
 const VIEW_USAGE = 'Usage: canvas view [--project <dir>] [--port <n>]';
 
 /** The options of `canvas view`. */
@@ -125,14 +130,29 @@ export async function main(argv) {
     return value;
   };
 
+  const jobs = o.jobs === undefined ? undefined : /^\d+$/.test(o.jobs) ? Number(o.jobs) : o.jobs;
   if (command === 'render') {
     if (sub) throw new Error(`render takes options only, not ${sub}`);
-    const result = await renderCheck({
-      projectRoot: project, canvases: o.canvas, boards: o.board, out: o.out, jobs: o.jobs === undefined ? undefined : /^\d+$/.test(o.jobs) ? Number(o.jobs) : o.jobs,
-      heights: !o['no-heights'], log: (line) => console.log(line),
-    });
-    for (const c of result.canvases) console.log(`${c.canvas}: ${c.boards - c.failed} of ${c.boards} boards passed, ${c.msPerBoard} ms per board. Report: ${c.report}`);
-    console.log(`${result.ok ? 'Passed' : 'Failed'} in ${result.seconds} s with ${result.jobs} pages in parallel.`);
+    const options = { projectRoot: project, canvases: o.canvas, out: o.out, jobs, heights: !o['no-heights'], reloadVariants: o['reload-variants'] === true };
+    if (o.watch) {
+      if (o.board || o.force) throw new Error('--watch checks what changes: it takes no --board or --force');
+      const watcher = await watchRender({ ...options, log: (line) => console.log(line), onResult: (result) => console.log(`${summary(result)} Watching for changes (Ctrl-C to stop).`) });
+      const stop = () => watcher.close().then(() => process.exit(0));
+      process.on('SIGINT', stop);
+      process.on('SIGTERM', stop);
+      return null;
+    }
+    const result = await renderCheck({ ...options, boards: o.board, force: o.force === true, log: (line) => console.log(line) });
+    for (const c of result.canvases) console.log(`${c.canvas}: ${c.boards - c.failed} of ${c.boards} boards passed (${c.checked} checked, ${c.reused} unchanged), ${c.msPerBoard} ms per board. Report: ${c.report}`);
+    console.log(summary(result));
+    return result.ok ? 0 : 1;
+  }
+
+  if (command === 'build') {
+    if (sub) throw new Error(`build takes options only, not ${sub}`);
+    const result = await buildAndCheck({ projectRoot: project, canvases: o.canvas, out: o.out, jobs, force: o.force === true, reloadVariants: o['reload-variants'] === true, log: (line) => console.log(line) });
+    for (const c of result.canvases) console.log(`${c.canvas}: ${c.boards - c.failed} of ${c.boards} boards passed. Report: ${c.report}`);
+    console.log(summary(result));
     return result.ok ? 0 : 1;
   }
 

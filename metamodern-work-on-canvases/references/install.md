@@ -24,7 +24,7 @@ Install writes:
 - `canvas.lock.json`;
 - the project's starting files, each only when absent: `canvas.config.json` (the name, kit namespace `Kit` unless `--namespace`, the pinned kit at `kit/current`, the skin, port 5410 and the six groups), `skin/board.css` (a plain skin for the builder's board shells), a `start` canvas with its builder script in `canvases/start/tools/build.mjs`, which install runs once (only when the project has no `canvases/start/` folder at all, so a builder never runs over existing files), a `.gitignore` holding `.canvas/`, and a `package.json` with a `canvas` script. An existing `package.json` gets the `canvas` script when it has none; an existing `.gitignore` is left alone with a note when it does not ignore `.canvas/`.
 
-The command line is then `npm run canvas -- <view | render | review | explore | comments | update | verify> ...` from the project root.
+The command line is then `npm run canvas -- <view | render | build | review | explore | comments | update | verify> ...` from the project root.
 
 ## The lock file
 

@@ -57,11 +57,12 @@ const FAULTS = {
 };
 
 // A board whose kit keeps its theme in localStorage: once stored, the stored theme wins over the board's own value.
-// Run in a shared browser context, a dark variant would show the light theme a neighbour stored, and say so.
-const THEMED = board('A theme kept in storage', {
+// Run in a context shared with other boards, it would load in the theme a neighbour stored, and say so.
+// Half the boards load dark first and half light, so a shared context would always clash.
+const THEMED = (first) => board('A theme kept in storage', {
   body: '<p>Theme kept in storage</p>',
   logic: "componentDidMount() {\n    const asked = this.props.theme ?? 'light';\n    const shown = localStorage.getItem('kit-theme') ?? asked;\n    localStorage.setItem('kit-theme', shown);\n    document.body.style.background = shown === 'dark' ? '#000' : '#fff';\n    if (shown !== asked) console.error(`showed the ${shown} theme for ${asked}`);\n  }\n  renderVals() { return { theme: this.props.theme ?? 'light' }; }",
-  props: '{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":600,"height":300}}',
+  props: `{"theme":{"editor":"enum","options":${JSON.stringify(first === 'dark' ? ['dark', 'light'] : ['light', 'dark'])},"default":"${first}"},"$preview":{"width":600,"height":300}}`,
 });
 
 // Frames inside a board: a script-free email preview (a sandboxed srcdoc frame without allow-scripts) is clean, and
@@ -100,7 +101,7 @@ before(async () => {
   await fs.mkdir(storage, { recursive: true });
   const stored = {};
   for (let i = 1; i <= 4; i += 1) {
-    await fs.writeFile(path.join(storage, `themed-${i}.dc.html`), THEMED);
+    await fs.writeFile(path.join(storage, `themed-${i}.dc.html`), THEMED(i % 2 ? 'light' : 'dark'));
     stored[`themed-${i}.dc.html`] = { x: (i - 1) * 680, y: 0, w: 600, h: 300, title: `Themed ${i}` };
   }
   await fs.writeFile(path.join(storage, 'canvas.json'), JSON.stringify({ v: 3, title: 'Storage', launch: { view: 'canvas' }, pages: [], boards: stored, order: Object.keys(stored) }));
@@ -169,7 +170,7 @@ test('RC-02 the builder\'s showcase passes in light, dark and high contrast, and
   assert.equal(partial.boards, report.boards, 'a run over some boards keeps the others\' results');
 });
 
-test('RC-04 each board and variant renders in its own browser context, so stored state never crosses pages', { skip }, async () => {
+test('RC-04 each board renders in its own browser context, so stored state never crosses boards', { skip }, async () => {
   const result = await renderCheck({ projectRoot: root, canvases: ['storage'], heights: false, jobs: 4 });
   const report = JSON.parse(await fs.readFile(result.canvases[0].report, 'utf8'));
   assert.equal(report.renders, 8);

@@ -1,6 +1,7 @@
 // Kit contract (contract 3): validators for kit.json (canvas-kit/1), tokens.json (canvas-tokens/1),
-// the kit global's shape and a kit folder, plus the writer that puts kit.json last.
+// the kit global's shape and a kit folder, plus the writer that puts kit.json last and the part hashes a kit may declare.
 // Node built-ins only. The global check is a pure function, so a browser test can run it on window.<namespace>.
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -30,6 +31,19 @@ export function validateKitManifest(kit) {
   }
   if (typeof kit.builtAt !== 'string' || Number.isNaN(Date.parse(kit.builtAt)) || !/^\d{4}-\d{2}-\d{2}T/.test(kit.builtAt)) issues.push('kit.json: builtAt must be an ISO date-time');
   if (typeof kit.react !== 'string' || !/^19\./.test(kit.react)) issues.push('kit.json: react must be a 19.x version');
+  if (kit.parts !== undefined) {
+    const parts = kit.parts;
+    if (!isObject(parts)) issues.push('kit.json: parts must be {shared, components}');
+    else {
+      if (typeof parts.shared !== 'string' || !parts.shared) issues.push('kit.json: parts.shared must be a non-empty hash string');
+      if (!isObject(parts.components)) issues.push('kit.json: parts.components must map kit paths to hash strings');
+      else {
+        for (const [name, hash] of Object.entries(parts.components)) {
+          if (!/^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/.test(name) || typeof hash !== 'string' || !hash) issues.push(`kit.json: parts.components.${name} must be a dotted kit path with a non-empty hash string`);
+        }
+      }
+    }
+  }
   return issues;
 }
 
@@ -160,4 +174,38 @@ export async function writeKitManifest(dir, kit) {
   const temp = path.join(dir, `.kit.json.${process.pid}.${Date.now()}`);
   await fs.writeFile(temp, `${JSON.stringify(kit, null, 2)}\n`);
   await fs.rename(temp, path.join(dir, 'kit.json'));
+}
+
+/**
+ * Part hashes for kit.json (`parts`) from the bundler's module graph, such as esbuild's metafile: each part's hash
+ * covers the content of every module its roots reach through imports, so it changes whenever anything the part runs
+ * changes. `shared` lists the roots every board depends on (the kit's entry and mount code, its Root) and output files
+ * hashed by content (the CSS bundle, tokens.json, fonts); `components` maps each kit path a board can name
+ * (`Button`, `Screens.Work`, `sample`) to its roots. Paths are relative to `root`, as the metafile writes them.
+ * @param {{metafile: {inputs: Record<string, {imports?: {path: string}[]}>}, root: string, shared: string[],
+ *          components: Record<string, string[]>}} o
+ * @returns {Promise<{shared: string, components: Record<string, string>}>}
+ */
+export async function partHashes({ metafile, root, shared, components }) {
+  const graph = metafile?.inputs ?? {};
+  const contents = new Map();
+  const content = async (file) => {
+    if (!contents.has(file)) contents.set(file, fs.readFile(path.resolve(root, file)).then((b) => crypto.createHash('sha256').update(b).digest('hex'), () => 'missing'));
+    return contents.get(file);
+  };
+  const hash = async (roots) => {
+    const seen = new Set();
+    const stack = [...roots];
+    while (stack.length) {
+      const file = stack.pop();
+      if (seen.has(file)) continue;
+      seen.add(file);
+      for (const next of graph[file]?.imports ?? []) if (next.path && Object.hasOwn(graph, next.path)) stack.push(next.path);
+    }
+    const lines = await Promise.all([...seen].sort().map(async (file) => `${file} ${await content(file)}`));
+    return `sha256:${crypto.createHash('sha256').update(lines.join('\n')).digest('hex')}`;
+  };
+  const out = { shared: await hash(shared), components: {} };
+  for (const name of Object.keys(components).sort()) out.components[name] = await hash(components[name]);
+  return out;
 }

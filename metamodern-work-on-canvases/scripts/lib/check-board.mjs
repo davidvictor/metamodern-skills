@@ -1,7 +1,8 @@
 // Opens one board in a Playwright page and reports what went wrong: page errors, console errors,
 // failed requests, a runtime that never became ready, and empty mounts (a mounted component host
-// that holds nothing, or one the runtime marked with data-canvas-error). Used by the package tests
-// and the compatibility check.
+// that holds nothing, or one the runtime marked with data-canvas-error). Used by the render check,
+// the package tests and the compatibility check. switchProps changes an open board's props in place,
+// as the viewer's controls do, and waits until the change has drawn.
 
 /**
  * Waits for the runtime's first commit and the kit's renders to settle. The runtime's `ready` promise is read
@@ -49,6 +50,17 @@ export async function openBoard(context, url, { timeout = 15000, viewport, scree
   // Mounted components render on the kit's own schedule (React may spread many roots over several frames):
   // wait until every host holds something, then one more frame pair for effects. A host that stays empty is
   // reported below.
+  await mounted(page, timeout);
+  const state = await mountState(page);
+  if (!state.ready) problems.push('the runtime never became ready');
+  for (const name of state.empty) problems.push(`empty mount: ${name}`);
+  if (state.ready && state.elements < 2 && !state.text) problems.push('the board rendered nothing');
+  if (screenshot) await page.screenshot({ path: screenshot, fullPage });
+  return { page, problems, state };
+}
+
+// Waits until every mounted host holds something, then one more frame pair for effects.
+async function mounted(page, timeout) {
   await page
     .waitForFunction(
       () => [...document.querySelectorAll('[data-canvas-import]')].every((h) => h.hasAttribute('data-canvas-error') || h.querySelector('*') || h.textContent.trim()),
@@ -57,7 +69,10 @@ export async function openBoard(context, url, { timeout = 15000, viewport, scree
     )
     .catch(() => {});
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-  const state = await page.evaluate(() => {
+}
+
+function mountState(page) {
+  return page.evaluate(() => {
     const runtime = window.__canvasRuntime;
     const hosts = [...document.querySelectorAll('[data-canvas-import]')];
     const empty = hosts
@@ -71,9 +86,37 @@ export async function openBoard(context, url, { timeout = 15000, viewport, scree
       text: (document.body.innerText || '').replace(/\s+/g, ' ').trim(),
     };
   });
-  if (!state.ready) problems.push('the runtime never became ready');
-  for (const name of state.empty) problems.push(`empty mount: ${name}`);
-  if (state.ready && state.elements < 2 && !state.text) problems.push('the board rendered nothing');
-  if (screenshot) await page.screenshot({ path: screenshot, fullPage });
-  return { page, problems, state };
+}
+
+/**
+ * Gives an open, ready board new props in place: every prop goes back to its default, then takes `values`, so the
+ * board shows what a fresh load with those values as its canvas-props link value shows. Waits for the render, every
+ * mount and two frames, then finishes the CSS transitions the change started (a theme's colours easing in), so the
+ * board is seen in its settled state. Returns the problems found in the mounts afterwards. `mounts: false` skips the
+ * wait for every mount, for a board whose load already left one empty (it would wait out the limit on each switch).
+ */
+export async function switchProps(page, values, { timeout = 15000, mounts = true } = {}) {
+  await page.evaluate((next) => {
+    const runtime = window.__canvasRuntime;
+    for (const [key, spec] of Object.entries(runtime.schema || {})) {
+      if (key.charAt(0) !== '$' && spec && typeof spec === 'object' && 'default' in spec) runtime.props[key] = spec.default;
+    }
+    for (const [key, value] of Object.entries(next)) if (key.charAt(0) !== '$') runtime.props[key] = value;
+    runtime.render();
+  }, values);
+  if (mounts) await mounted(page, timeout);
+  else await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  await page.evaluate(async () => {
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    // A kit may draw a change over a few frames: finish what has started until a frame pair starts nothing new.
+    for (let i = 0; i < 6; i += 1) {
+      const running = document.getAnimations().filter((a) => a instanceof CSSTransition && a.playState !== 'finished');
+      for (const transition of running) transition.finish();
+      if (!running.length && i > 0) break;
+      await frame();
+      await frame();
+    }
+  });
+  const state = await mountState(page);
+  return state.empty.map((name) => `empty mount: ${name}`);
 }

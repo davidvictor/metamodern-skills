@@ -29,11 +29,21 @@ Other files a kit's boards load from `ds/<namespace>/` (such as a second script 
   "source": { "repo": "owner/name", "commit": "<40 hex>", "dirty": false, "branch": "<name, for a live build>" },
   "inputs": ["<repository path or glob>"],
   "builtAt": "<ISO date-time>",
-  "react": "19.x"
+  "react": "19.x",
+  "parts": { "shared": "sha256:...", "components": { "Button": "sha256:...", "Screens.Work": "sha256:...", "sample": "sha256:..." } }
 }
 ```
 
-`inputs` lists every repository path the kit and its inventory are built from, so a design repository can tell when the source has moved past its pinned kit. A live build sets `dirty` and `branch`. Write it with `writeKitManifest(dir, kit)`, which checks it, writes a temporary file and renames it into place after everything else. `validateKitFolder(dir)` fails when any file in the folder is newer than `kit.json`.
+`parts` is optional (below). `inputs` lists every repository path the kit and its inventory are built from, so a design repository can tell when the source has moved past its pinned kit. A live build sets `dirty` and `branch`. Write it with `writeKitManifest(dir, kit)`, which checks it, writes a temporary file and renames it into place after everything else. `validateKitFolder(dir)` fails when any file in the folder is newer than `kit.json`.
+
+### Part hashes
+
+A kit's bundle is one file, so without help a render check cannot tell which boards a kit change can affect, and checks every board that mounts the kit after each sync. A kit may say it in `parts`:
+
+- `components` maps each kit path a board can name (`Button`, `Screens.Work`, `sample`, `element`) to a hash that changes whenever anything that path runs changes: its module and every module it imports.
+- `shared` is a hash that changes whenever anything every board depends on changes: the entry and `mount` code, `Root`, the CSS bundle, tokens and fonts, and anything no part covers.
+
+The render check then keys a board that mounts the kit by `shared` and the parts of the paths it names, so a sync that changes one component re-checks the boards that name it or a part that imports it ([render check](render-check.md#only-what-changed)). A path a board names that has no part keys that board by the whole kit, so a kit may list only the paths it can hash well. `partHashes({metafile, root, shared, components})` in [`scripts/kit-contract.mjs`](../scripts/kit-contract.mjs) computes them from a bundler's module graph (esbuild's `metafile`): each part's roots, followed through their imports, hashed by content; output files listed in `shared` (such as `components/bundle.css`) are hashed as they are. When a CSS bundle is one file for every component, any style change moves `shared`, which is correct: every board loads it.
 
 ## The global (`window.<namespace>`)
 
@@ -105,5 +115,7 @@ A kit folder without `kit.json` is a legacy kit: an older build that externalize
 Watch mode writes the same layout into its output folder, replacing files atomically, with `kit.json` last. The viewer watches each kit's `kit.json` and reloads every open board using that kit.
 
 ## Change log
+
+- 2026-10-21: optional `parts` in `kit.json` (package 0.4.0), so a render check after a kit sync re-checks only the boards that use what changed. Kits without it work as before.
 
 - 2026-10-20: first pinned version. MM-01 adds markup nodes in `mount` props, update in place on a second `mount`, the legacy kit rule and the theme map shape of `tokens.json`.
