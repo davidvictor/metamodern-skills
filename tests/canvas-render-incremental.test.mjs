@@ -88,6 +88,9 @@ test('RF-02 the kit paths a board names come from its own text and the boards it
     const computed = path.join(dir, 'computed.dc.html');
     await fs.writeFile(computed, '<script>window.Fixture[name]</script>');
     assert.equal(await kitReferences([{ file: computed }], 'Fixture'), null);
+    const copy = path.join(dir, 'copy.dc.html');
+    await fs.writeFile(copy, '<p>Fixture AI keeps your contracts</p><x-import component-from-global-scope="Fixture.Card"></x-import>');
+    assert.deepEqual([...(await kitReferences([{ file: copy }], 'Fixture'))], ['Card'], 'the name in copy is not a use of the global');
   } finally {
     await fs.rm(dir, { recursive: true, force: true });
   }

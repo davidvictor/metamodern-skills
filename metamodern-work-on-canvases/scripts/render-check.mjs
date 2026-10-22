@@ -353,7 +353,9 @@ export async function kitReferences(inputs, namespace) {
   const id = '[A-Za-z_$][\\w$]*';
   const member = (name, before = '\\w$') => new RegExp(`(?<![${before}])${name}((?:\\s*\\.\\s*${id})+)`, 'g');
   const aliases = new RegExp(`\\b(?:const|let|var)\\s+(${id})\\s*=\\s*(?:window\\s*\\.\\s*)?${ns}\\s*;`, 'g');
-  const bare = new RegExp(`(?<![\\w$/-])${ns}(?![\\w$])(?!\\s*\\.)`);
+  // The global used whole in code: window.<Ns> not followed by a member, <Ns>[...], or <Ns> passed as a value. The
+  // name in copy ("<Ns> AI") is not a use.
+  const bare = new RegExp(`(?<![\\w$])window\\s*\\.\\s*${ns}(?![\\w$])(?!\\s*\\.)|(?<![\\w$.])${ns}\\s*\\[|[(,=:]\\s*${ns}\\s*[,)\\];}]`);
   for (const input of inputs) {
     if (!input.file?.endsWith('.dc.html')) continue;
     let text;
