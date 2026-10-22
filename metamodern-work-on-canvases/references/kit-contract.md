@@ -40,8 +40,9 @@ Other files a kit's boards load from `ds/<namespace>/` (such as a second script 
 
 A kit's bundle is one file, so without help a render check cannot tell which boards a kit change can affect, and checks every board that mounts the kit after each sync. A kit may say it in `parts`:
 
-- `components` maps each kit path a board can name (`Button`, `Screens.Work`, `sample`, `element`) to a hash that changes whenever anything that path runs changes: its module and every module it imports.
-- `shared` is a hash that changes whenever anything every board depends on changes: the entry and `mount` code, `Root`, the CSS bundle, tokens and fonts, and anything no part covers.
+- `components` maps each kit path a board can name (`Button`, `Screens.Work`, `sample`) to a hash that changes whenever anything that path runs changes: its module and every module it imports.
+- `shared` is a hash that changes whenever anything every board depends on changes: the entry, `mount` and `element` code, `Root`, the CSS bundle, tokens and fonts, and anything no part covers. `mount` and `element` need no part of their own: a board that calls them with a literal name (`A.element('Badge', …)`) names that path.
+- `selectors` (optional) maps a component that shows one of many things by a prop to that prop: `{"Example": "example", "Scene": "id"}`. A board that gives the prop a literal value names `<path>#<value>` (`Example#button:styles`), and `components` may hash each such thing on its own: `"Example#button:styles"` changes whenever anything that one example shows changes, the component's own code included. A value with no part of its own is held by the component's part, so a kit may list only the values it can hash well.
 
 The render check then keys a board that mounts the kit by `shared` and the parts of the paths it names, so a sync that changes one component re-checks the boards that name it or a part that imports it ([render check](render-check.md#only-what-changed)). A path a board names that has no part keys that board by the whole kit, so a kit may list only the paths it can hash well. `partHashes({metafile, root, shared, components})` in [`scripts/kit-contract.mjs`](../scripts/kit-contract.mjs) computes them from a bundler's module graph (esbuild's `metafile`): each part's roots, followed through their imports, hashed by content; output files listed in `shared` (such as `components/bundle.css`) are hashed as they are. When a CSS bundle is one file for every component, any style change moves `shared`, which is correct: every board loads it.
 
@@ -115,6 +116,8 @@ A kit folder without `kit.json` is a legacy kit: an older build that externalize
 Watch mode writes the same layout into its output folder, replacing files atomically, with `kit.json` last. The viewer watches each kit's `kit.json` and reloads every open board using that kit.
 
 ## Change log
+
+- 2026-10-22: optional `parts.selectors` and `<path>#<value>` parts, so a board showing one example or scene is keyed by that one; `mount` and `element` belong in `shared`, and a literal name given to them names its path.
 
 - 2026-10-21: optional `parts` in `kit.json` (package 0.4.0), so a render check after a kit sync re-checks only the boards that use what changed. Kits without it work as before.
 
