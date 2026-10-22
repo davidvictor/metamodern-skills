@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Export PDF"
+  short_description: "Export Figma frames to a linked, client-ready PDF"
+  default_prompt: "Use $metamodern-export-pdf to export the requested Figma frames to one client-ready PDF with working links, and verify it in Apple, Chrome and Poppler renderers before delivery."
