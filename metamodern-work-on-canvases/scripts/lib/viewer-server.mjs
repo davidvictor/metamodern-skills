@@ -440,11 +440,15 @@ function whoIs(host, port) {
  */
 export async function findPort({ projectRoot, from, tries = 50 }) {
   projectRoot = path.resolve(projectRoot);
+  // Every candidate is probed: this project's viewer may be running higher up, on a port it took while an earlier
+  // one was held, and a port freed since must not start a second viewer.
+  let free = null;
   for (let port = from; port < from + tries && port <= 65535; port++) {
     const answers = await Promise.all([whoIs('127.0.0.1', port), whoIs('::1', port)]);
     if (answers.some((a) => a?.viewer === WHOAMI && a.root === projectRoot)) return { port, running: true };
-    if (answers.every((a) => a === null)) return { port, running: false };
+    if (free === null && answers.every((a) => a === null)) free = port;
   }
+  if (free !== null) return { port: free, running: false };
   throw Object.assign(new Error(`No free port from ${from} to ${from + tries - 1}`), { code: 'EADDRINUSE' });
 }
 
@@ -513,14 +517,29 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
     return sendText(res, 404, 'Not found');
   });
 
-  await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(port ?? config.port, '127.0.0.1', resolve);
-  });
-  // localhost can resolve to ::1 first: answer there too, so a link to localhost never reaches another project's server.
+  // localhost can resolve to ::1 first: the viewer answers there too, at the same port, so a link to localhost never
+  // reaches another project's server. A system without IPv6 loopback serves IPv4 alone; any other failure on ::1 stops
+  // the start, except with port 0, where the system's pick is retried on a port free on both.
   const six = http.createServer((req, res) => server.emit('request', req, res));
-  six.on('error', () => {});
-  six.listen(server.address().port, '::1');
+  const listen = (srv, p, host) => new Promise((resolve, reject) => {
+    const fail = (error) => { srv.off('listening', done); reject(error); };
+    const done = () => { srv.off('error', fail); resolve(); };
+    srv.once('error', fail);
+    srv.once('listening', done);
+    srv.listen(p, host);
+  });
+  const wanted = port ?? config.port;
+  for (let attempt = 1; ; attempt++) {
+    await listen(server, wanted, '127.0.0.1');
+    try {
+      await listen(six, server.address().port, '::1');
+      break;
+    } catch (error) {
+      if (error.code === 'EAFNOSUPPORT' || error.code === 'EADDRNOTAVAIL') break;
+      await new Promise((resolve) => server.close(resolve));
+      if (wanted !== 0 || error.code !== 'EADDRINUSE' || attempt === 5) throw error;
+    }
+  }
   const stopWatching = watch
     ? watchProject({
       projectRoot, config, getLiveKits: () => liveKits, reloadLiveKits,
@@ -551,7 +570,7 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
       clearInterval(ping);
       stopWatching();
       hub.close();
-      six.close();
+      if (six.listening) six.close();
       six.closeAllConnections?.();
       server.close(resolve);
       server.closeAllConnections?.();

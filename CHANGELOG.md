@@ -4,10 +4,10 @@
 
 - `metamodern-work-on-canvases` 0.4.1 lets several projects' viewers run side by side. Before, `canvas view` took the config's port and failed with "Port … is in use" when anything held it, and a browser that resolved `localhost` to `::1` could reach another project's server on that address while this one listened on `127.0.0.1` only. Now:
   - The viewer answers **`/_whoami`** with `{viewer: "metamodern-canvas", root, name}`.
-  - **`findPort({projectRoot, from, tries})`** (exported from `lib/viewer-server.mjs`) probes `127.0.0.1` and `::1` from the config's port on and returns the first port nothing holds, or the port where this project's viewer is already running (`{running: true}`).
+  - **`findPort({projectRoot, from, tries})`** (exported from `lib/viewer-server.mjs`) probes `127.0.0.1` and `::1` on every candidate from the config's port on and returns the port where this project's viewer is already running (`{running: true}`), else the first port nothing holds, so a viewer pushed to a higher port is still found after the lower one frees.
   - **`canvas view`** says where this project's viewer already runs and exits 0 instead of starting a second; when another server holds the config's port it takes the next free one and says so. An explicit `--port` that is taken is still an error, and `--port 0` still asks the system for any port.
-  - The viewer also listens on `::1` at the same port, so `localhost` reaches it whichever address the browser tries first; `close()` closes both.
-  - Test: VW-09 (a port another server holds is passed over, `/_whoami`, finding a running viewer, and another project's root never taking it for its own).
+  - The viewer also listens on `::1` at the same port, so `localhost` reaches it whichever address the browser tries first; `close()` closes both. A failed bind on `::1` stops the start (the IPv4 side is closed) unless the system has no IPv6 loopback; with `--port 0` a port held on `::1` is retried.
+  - Test: VW-09 (a port another server holds is passed over, `/_whoami`, finding a running viewer, another project's root never taking it for its own, a viewer above a freed port still found, and a port held on `::1` alone refused with the IPv4 side freed).
 
 ## 1.27.0 — 2026-10-21
 

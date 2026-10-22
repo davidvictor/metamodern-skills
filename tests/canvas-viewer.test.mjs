@@ -620,10 +620,28 @@ test('VW-09 a viewer knows itself on a port: it steps past another server and fi
       assert.deepEqual(await findPort({ projectRoot: root, from: taken, tries: 5 }), { port: next.port, running: true });
       const elsewhere = await findPort({ projectRoot: path.join(root, 'another-project'), from: next.port, tries: 5 });
       assert.notEqual(elsewhere.port, next.port, "another project's viewer doesn't take this one for itself");
+      // The port it was pushed off is free again: the running viewer above it is still found, not a second started.
+      await new Promise((resolve) => other.close(resolve));
+      assert.deepEqual(await findPort({ projectRoot: root, from: taken, tries: 5 }), { port: next.port, running: true });
     } finally {
       await viewer.close();
     }
   } finally {
-    other.close();
+    if (other.listening) other.close();
+  }
+
+  // A port held on ::1 alone stops the start rather than leaving localhost to the other server; the IPv4 side is freed.
+  const six = http.createServer((req, res) => res.end('another project on ::1'));
+  const onSix = await new Promise((resolve) => { six.once('error', () => resolve(false)); six.listen(0, '::1', () => resolve(true)); });
+  if (onSix) {
+    const held = six.address().port;
+    try {
+      await assert.rejects(startViewer({ projectRoot: root, port: held, watch: false }), { code: 'EADDRINUSE' });
+      const probe = http.createServer();
+      await new Promise((resolve, reject) => { probe.once('error', reject); probe.listen(held, '127.0.0.1', resolve); });
+      await new Promise((resolve) => probe.close(resolve));
+    } finally {
+      six.close();
+    }
   }
 });
