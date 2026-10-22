@@ -53,6 +53,8 @@ When creating a new Project, start with `00 · Overview`, foundations, component
 
 Load and follow `figma:figma-use` before using `use_figma`, plus the applicable official prerequisite for the requested operation. Reuse guidance already read in the active context unless it changed or a new operation needs another reference.
 
+For a PDF of frames or slides, including client delivery and clickable logos or buttons, use `$metamodern-export-pdf`. It exports from the live frames, adds links Figma cannot export, and checks the file in Apple, Chrome, and Poppler renderers before delivery.
+
 Do not create a universal library, componentize a complete composition, flatten editable content, use an unapproved style source, publish a breaking contract, or claim an unverified result.
 
 At closeout, keep Project-specific decisions with the Project. Follow [guidance promotion](references/promotion-model.md) when a reusable correction is supported by evidence; ordinary task completion does not require a skill edit.

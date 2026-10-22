@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.28.0 — 2026-10-22
+
+- New skill, PDF export 0.1.0 (`$metamodern-export-pdf`): exports Figma frames or slides to one PDF from the live frames, resizes pages, keeps Figma text links, and adds links Figma cannot export (logos, buttons) from a manifest. `check_pdf.py` blocks delivery until the file passes: page sizes, links, live text, a lint for soft masks with transfer functions (Figma inner shadows, and drop shadows with show-behind off), and page by page comparison with the source in pdfium, Poppler, and Apple PDFKit drawn whole and in zoomed tiles. A page can waive the lint only with a recorded director approval. `compare_renders.py` proves a temporary export copy still looks the same as the original frame before its PDF is used. It comes from a client delivery where pages looked right in Chrome but showed white areas and solid boxes in Preview; both causes and their fixes are in its renderer pitfalls reference. Tested on a 14-page Design file report and a Figma Slides deck.
+- `metamodern-work-in-figma` 0.1.3 routes PDF delivery of frames, decks, and editorial work to PDF export.
+
 ## 1.27.0 — 2026-10-21
 
 - `metamodern-work-on-canvases` 0.4.0 makes the render check fast enough to run after every change. Before, `canvas render` loaded every board afresh in every theme variant, each in a new browser context, checked every board on every run, and then waited about 30 s for Chromium to shut down; a builder change took two builds and two renders before new heights applied. On AUTOSTAK's design project (2,049 boards, 5,934 renders), a check with nothing changed now takes about 2 s instead of a full run (31 min under load), rebuilding one canvas with a changed board takes 11 s instead of 84 s, a cold canvas renders 1.8 to 2.6 times faster, and a kit sync that changes one component re-checks about 109 boards in about 1 min when the kit declares part hashes (1,245 boards without them).
