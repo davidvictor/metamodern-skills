@@ -432,6 +432,9 @@ async function exists(file) {
 const stemOf = (file) => file.replace(/\.dc\.html$/, '');
 // Problems that mean a render never ran: its height is not measured.
 const DID_NOT_RUN = /^(page error|navigation failed|check failed|the runtime never became ready)/;
+// Problems that can go away by themselves (a limit reached on a busy machine, a request or navigation that failed):
+// a board with one is checked again even when its inputs are unchanged.
+const TRANSIENT = /^(navigation failed|check failed|the runtime never became ready|request failed)/;
 
 // ---------- the check ----------
 
@@ -520,11 +523,12 @@ export async function createRenderSession({ projectRoot, jobs, timeout = 15000, 
         }
         const kit = boardKit(canvas, file);
         const facts = { w: board.w, h: board.h, interactive: board.is_interactive === true, kit, kitDir: kitDirFor({ projectRoot: root, config, kit, liveKits }).dir ?? null, variants: reload ? 'reload' : 'in-place' };
-        // A board that passed and whose inputs are all unchanged keeps its result and pictures. Named boards, a forced
-        // run and boards that failed are always checked.
+        // A board whose inputs are all unchanged keeps its result and pictures, failures included: the same inputs fail
+        // the same way. Named boards, a forced run and boards whose failure can pass by itself are always checked.
         const last = before.get(file);
         const stored = cache?.boards?.[file];
-        if (!force && !wanted && last?.ok && stored?.key && Array.isArray(stored.inputs)
+        const transient = !last || last.variants.some((v) => v.problems.some((p) => TRANSIENT.test(p)));
+        if (!force && !wanted && !transient && stored?.key && Array.isArray(stored.inputs)
           && (await Promise.all(last.variants.map((v) => exists(path.join(outDir, id, v.screenshot))))).every(Boolean)
           && (await boardKey({ engine, board: facts, variants, inputs: stored.inputs, hashFile, kits, namespace: config.kit.namespace })) === stored.key) {
           info.boards.push({ ...last, page: board.page ?? null, title: board.title ?? null, reused: true });
@@ -609,7 +613,7 @@ export async function createRenderSession({ projectRoot, jobs, timeout = 15000, 
           const own = [];
           let natural = null;
           try {
-            if (variant !== first) own.push(...(await switchProps(page, variant.props, { timeout })));
+            if (variant !== first) own.push(...(await switchProps(page, variant.props, { timeout, mounts: !state.empty.length })));
             const found = await inspect(page, task.entry);
             own.push(...found.problems);
             natural = found.natural;

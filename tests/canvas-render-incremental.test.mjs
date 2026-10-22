@@ -315,3 +315,18 @@ test('RF-11 part hashes from a module graph change only for the parts whose modu
     await fs.rm(dir, { recursive: true, force: true });
   }
 });
+
+test('RF-12 a failing board is reused while its inputs are unchanged, unless its failure can pass by itself', { skip }, async () => {
+  const broken = board('Broken', { body: '<p>Broken</p>', logic: "componentDidMount() { console.error('broken on purpose'); }\n  renderVals() { return {}; }" });
+  // No runtime: it never becomes ready, which a busy machine can also cause.
+  const unready = board('No runtime', { body: '<p>No runtime</p>' }).replace('<script src="./support.js"></script>\n', '');
+  await writeCanvas(root, 'failing', { 'broken.dc.html': broken, 'unready.dc.html': unready });
+  const run = () => renderCheck({ projectRoot: root, canvases: ['failing'], heights: false, jobs: 2, timeout: 2000 });
+  const first = await run();
+  assert.deepEqual([first.ok, first.checked], [false, 2]);
+  const again = await run();
+  assert.equal(again.ok, false, 'a reused failure still fails the run');
+  const report = await reportOf(again);
+  assert.deepEqual(report.results.filter((r) => !r.reused).map((r) => r.file), ['unready.dc.html']);
+  assert.match(report.results.find((r) => r.file === 'broken.dc.html').variants[0].problems[0], /broken on purpose/);
+});

@@ -92,9 +92,10 @@ function mountState(page) {
  * Gives an open, ready board new props in place: every prop goes back to its default, then takes `values`, so the
  * board shows what a fresh load with those values as its canvas-props link value shows. Waits for the render, every
  * mount and two frames, then finishes the CSS transitions the change started (a theme's colours easing in), so the
- * board is seen in its settled state. Returns the problems found in the mounts afterwards.
+ * board is seen in its settled state. Returns the problems found in the mounts afterwards. `mounts: false` skips the
+ * wait for every mount, for a board whose load already left one empty (it would wait out the limit on each switch).
  */
-export async function switchProps(page, values, { timeout = 15000 } = {}) {
+export async function switchProps(page, values, { timeout = 15000, mounts = true } = {}) {
   await page.evaluate((next) => {
     const runtime = window.__canvasRuntime;
     for (const [key, spec] of Object.entries(runtime.schema || {})) {
@@ -103,7 +104,8 @@ export async function switchProps(page, values, { timeout = 15000 } = {}) {
     for (const [key, value] of Object.entries(next)) if (key.charAt(0) !== '$') runtime.props[key] = value;
     runtime.render();
   }, values);
-  await mounted(page, timeout);
+  if (mounts) await mounted(page, timeout);
+  else await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   await page.evaluate(async () => {
     const frame = () => new Promise((r) => requestAnimationFrame(r));
     // A kit may draw a change over a few frames: finish what has started until a frame pair starts nothing new.
