@@ -469,7 +469,8 @@ export async function createRenderSession({ projectRoot, jobs, timeout = 15000, 
     await server.close();
     throw error;
   }
-  const parallel = Math.max(1, jobs ?? Math.min(8, Math.max(2, Math.floor((os.availableParallelism?.() ?? os.cpus().length) / 2))));
+  // All processors but two, from 2 to 8: each board is one page load and its variants, mostly CPU in the browser.
+  const parallel = Math.max(1, jobs ?? Math.min(8, Math.max(2, (os.availableParallelism?.() ?? os.cpus().length) - 2)));
   const hashFile = fileHasher();
   // Each board gets its own browser context, so storage a board keeps (localStorage, cookies, IndexedDB) never
   // reaches another board running beside it or after it.
