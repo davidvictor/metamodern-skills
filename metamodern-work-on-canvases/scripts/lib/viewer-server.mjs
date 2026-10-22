@@ -215,7 +215,7 @@ const mtime = (file) => { try { return fs.statSync(file).mtimeMs; } catch { retu
  *   {type: 'kits'}                                .canvas/live.json changed
  *   {type: 'comments'}                            a comment or batch file changed
  */
-function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }) {
+export function watchProject({ projectRoot, config, getLiveKits, reloadLiveKits, emit }) {
   const closers = [];
   let pending = new Map();
   let index = false;
