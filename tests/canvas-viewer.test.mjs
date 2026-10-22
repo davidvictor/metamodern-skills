@@ -10,7 +10,7 @@ import path from 'node:path';
 import test, { after, before } from 'node:test';
 import { chromium, toolingInstalled } from '../metamodern-work-on-canvases/scripts/tooling.mjs';
 import { parseViewerLink, viewerLink } from '../metamodern-work-on-canvases/scripts/canvas-format.mjs';
-import { buildIndex, canvasGroup, findProject, kitInfo, kitsReport, readAbout, startViewer } from '../metamodern-work-on-canvases/scripts/lib/viewer-server.mjs';
+import { buildIndex, canvasGroup, findPort, findProject, kitInfo, kitsReport, readAbout, startViewer } from '../metamodern-work-on-canvases/scripts/lib/viewer-server.mjs';
 import { parseArgs } from '../metamodern-work-on-canvases/scripts/canvas.mjs';
 import { kitLabel } from '../metamodern-work-on-canvases/assets/viewer/panel.js';
 
@@ -601,5 +601,29 @@ test('VW-17 the home page names groups the project\'s way, each card opens as a 
   } finally {
     await home.close();
     await fs.rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('VW-09 a viewer knows itself on a port: it steps past another server and finds itself when it is running', async () => {
+  const other = http.createServer((req, res) => res.end('another project'));
+  await new Promise((resolve) => other.listen(0, '127.0.0.1', resolve));
+  const taken = other.address().port;
+  try {
+    const next = await findPort({ projectRoot: root, from: taken, tries: 5 });
+    assert.equal(next.running, false);
+    assert.ok(next.port > taken, 'a port another server holds is passed over');
+    const viewer = await startViewer({ projectRoot: root, port: next.port, watch: false });
+    try {
+      const who = JSON.parse((await get(viewer.origin, '/_whoami')).body);
+      assert.equal(who.viewer, 'metamodern-canvas');
+      assert.equal(who.root, path.resolve(root));
+      assert.deepEqual(await findPort({ projectRoot: root, from: taken, tries: 5 }), { port: next.port, running: true });
+      const elsewhere = await findPort({ projectRoot: path.join(root, 'another-project'), from: next.port, tries: 5 });
+      assert.notEqual(elsewhere.port, next.port, "another project's viewer doesn't take this one for itself");
+    } finally {
+      await viewer.close();
+    }
+  } finally {
+    other.close();
   }
 });

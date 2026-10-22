@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.27.1 — 2026-10-22
+
+- `metamodern-work-on-canvases` 0.4.1 lets several projects' viewers run side by side. Before, `canvas view` took the config's port and failed with "Port … is in use" when anything held it, and a browser that resolved `localhost` to `::1` could reach another project's server on that address while this one listened on `127.0.0.1` only. Now:
+  - The viewer answers **`/_whoami`** with `{viewer: "metamodern-canvas", root, name}`.
+  - **`findPort({projectRoot, from, tries})`** (exported from `lib/viewer-server.mjs`) probes `127.0.0.1` and `::1` from the config's port on and returns the first port nothing holds, or the port where this project's viewer is already running (`{running: true}`).
+  - **`canvas view`** says where this project's viewer already runs and exits 0 instead of starting a second; when another server holds the config's port it takes the next free one and says so. An explicit `--port` that is taken is still an error, and `--port 0` still asks the system for any port.
+  - The viewer also listens on `::1` at the same port, so `localhost` reaches it whichever address the browser tries first; `close()` closes both.
+  - Test: VW-09 (a port another server holds is passed over, `/_whoami`, finding a running viewer, and another project's root never taking it for its own).
+
 ## 1.27.0 — 2026-10-21
 
 - `metamodern-work-on-canvases` 0.4.0 makes the render check fast enough to run after every change. Before, `canvas render` loaded every board afresh in every theme variant, each in a new browser context, checked every board on every run, and then waited about 30 s for Chromium to shut down; a builder change took two builds and two renders before new heights applied. On AUTOSTAK's design project (2,049 boards, 5,934 renders), a check with nothing changed now takes about 2 s instead of a full run (31 min under load), rebuilding one canvas with a changed board takes 11 s instead of 84 s, a cold canvas renders 1.8 to 2.6 times faster, and a kit sync that changes one component re-checks about 109 boards in about 1 min when the kit declares part hashes (1,245 boards without them).

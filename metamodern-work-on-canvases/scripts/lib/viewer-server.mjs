@@ -417,6 +417,37 @@ async function serveComments({ req, res, parts, projectRoot, canvases }) {
   }
 }
 
+// What /_whoami answers, so a viewer can tell itself from another project's viewer or any other server on a port.
+const WHOAMI = 'metamodern-canvas';
+
+/** Who answers on host:port: null when nothing does, else its /_whoami ({} for a server that isn't a canvas viewer). */
+function whoIs(host, port) {
+  return new Promise((done) => {
+    const req = http.get({ host, port, path: '/_whoami', timeout: 800, headers: { host: `127.0.0.1:${port}` } }, (res) => {
+      let body = '';
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => { try { done(JSON.parse(body)); } catch { done({}); } });
+    });
+    req.on('timeout', () => { req.destroy(); done({}); });
+    req.on('error', (error) => done(['ECONNREFUSED', 'EADDRNOTAVAIL', 'EAFNOSUPPORT'].includes(error.code) ? null : {}));
+  });
+}
+
+/**
+ * The port a project's viewer should use, from `from` on: the first that nothing holds on 127.0.0.1 or ::1, or the one
+ * where this project's viewer is already running ({running: true}). Several projects' viewers can run side by side.
+ * @returns {Promise<{port: number, running: boolean}>}
+ */
+export async function findPort({ projectRoot, from, tries = 50 }) {
+  projectRoot = path.resolve(projectRoot);
+  for (let port = from; port < from + tries && port <= 65535; port++) {
+    const answers = await Promise.all([whoIs('127.0.0.1', port), whoIs('::1', port)]);
+    if (answers.some((a) => a?.viewer === WHOAMI && a.root === projectRoot)) return { port, running: true };
+    if (answers.every((a) => a === null)) return { port, running: false };
+  }
+  throw Object.assign(new Error(`No free port from ${from} to ${from + tries - 1}`), { code: 'EADDRINUSE' });
+}
+
 /**
  * Starts the viewer for a project.
  * @param {{projectRoot: string, config?: object, port?: number, watch?: boolean, quiet?: boolean}} options
@@ -453,6 +484,7 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
       const name = parts.length === 2 ? parts[1] : '';
       return viewerFiles.has(name) ? sendFile(res, path.join(VIEWER_DIR, name)) : sendText(res, 404, 'Not found');
     }
+    if (head === '_whoami' && parts.length === 1) return sendText(res, 200, JSON.stringify({ viewer: WHOAMI, root: projectRoot, name: config.name }), TYPES['.json']);
     if (head === '_index' && parts.length === 1) return sendText(res, 200, JSON.stringify(buildIndex({ projectRoot, config })), TYPES['.json']);
     if (head === '_kits' && parts.length === 1) {
       return sendText(res, 200, JSON.stringify({ ...kitsReport({ projectRoot, config, liveKits }), issue: liveIssue }), TYPES['.json']);
@@ -485,6 +517,10 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
     server.once('error', reject);
     server.listen(port ?? config.port, '127.0.0.1', resolve);
   });
+  // localhost can resolve to ::1 first: answer there too, so a link to localhost never reaches another project's server.
+  const six = http.createServer((req, res) => server.emit('request', req, res));
+  six.on('error', () => {});
+  six.listen(server.address().port, '::1');
   const stopWatching = watch
     ? watchProject({
       projectRoot, config, getLiveKits: () => liveKits, reloadLiveKits,
@@ -515,6 +551,8 @@ export async function startViewer({ projectRoot, config, port, watch = true, qui
       clearInterval(ping);
       stopWatching();
       hub.close();
+      six.close();
+      six.closeAllConnections?.();
       server.close(resolve);
       server.closeAllConnections?.();
     }),
