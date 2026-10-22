@@ -8,4 +8,4 @@ Declare the authoritative copy source in `00 · Overview`. Preserve approved cop
 
 Every digital destination has a visible descriptive text link; an image hotspot can supplement but never replace it. Put source media and logos in independently selectable children inside clipped frames. For full-bleed photo work, use no frame padding and preserve crop control for each tile.
 
-For a digital PDF, inspect the exported PDF for frame order, font rendering, links, and crops. For production requirements such as CMYK, bleed, PDF/X, or tagged accessibility, state the required external finishing. A Figma export is not automatically an accessible PDF.
+For a digital PDF, export and verify it with `$metamodern-export-pdf`, which checks frame order, links, live text, and rendering across viewers; still look at crops and font rendering yourself. For production requirements such as CMYK, bleed, PDF/X, or tagged accessibility, state the required external finishing. A Figma export is not automatically an accessible PDF.

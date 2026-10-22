@@ -8,4 +8,4 @@ Use a dedicated Slides starter or team template only when one theme will support
 
 Keep approved narrative copy and claims tied to their authoritative sources. Comments hold review, questions, and approvals, not hidden system instructions. Use slide groups for narrative sections or presenter ownership rather than temporary work status.
 
-Library publication, subscription, template administration, and some Slides configuration can require UI work. Record the exact action and verify the consumer afterward. Do not assume a PDF or PPTX preserves motion, notes, links, gradients, fonts, or editability.
+Library publication, subscription, template administration, and some Slides configuration can require UI work. Record the exact action and verify the consumer afterward. Do not assume a PDF or PPTX preserves motion, notes, links, gradients, fonts, or editability. Make deck PDFs with `$metamodern-export-pdf`.

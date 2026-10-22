@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.27.1",
+  "collectionVersion": "1.28.1",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -43,6 +43,13 @@
       "version": "0.3.1",
       "category": "brand-and-design",
       "summary": "Vary, refine, expand, and lock a brand's visual expression from a fixed identity on Higgsfield."
+    },
+    {
+      "name": "metamodern-export-pdf",
+      "path": "metamodern-export-pdf",
+      "version": "0.1.0",
+      "category": "brand-and-design",
+      "summary": "Export Figma frames to a linked PDF checked in Apple, Chrome, and Poppler renderers before delivery."
     },
     {
       "name": "metamodern-fix-development",
@@ -138,7 +145,7 @@
     {
       "name": "metamodern-work-in-figma",
       "path": "metamodern-work-in-figma",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "category": "brand-and-design",
       "summary": "Inspect, build, revise, verify, and hand off editable Figma work."
     },

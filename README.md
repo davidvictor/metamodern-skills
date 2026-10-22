@@ -205,6 +205,7 @@ Install puts the package in `.agents/skills/metamodern-work-on-canvases/` (with 
 | [Brand world](./metamodern-build-brand-world/SKILL.md) · `$metamodern-build-brand-world` | Develop a visual world through explicit creative direction and approval gates. |
 | [Midjourney](./metamodern-midjourney/SKILL.md) · `$metamodern-midjourney` | Build look kits, complete recipes, calibration runs, and screened sets. |
 | [Figma](./metamodern-work-in-figma/SKILL.md) · `$metamodern-work-in-figma` | Inspect, construct, revise, verify, and hand off editable design work. |
+| [PDF export](./metamodern-export-pdf/SKILL.md) · `$metamodern-export-pdf` | Export Figma frames to a linked, client-ready PDF and check it in Apple, Chrome, and Poppler renderers. |
 | [Canvases](./metamodern-work-on-canvases/SKILL.md) · `$metamodern-work-on-canvases` | Run design canvases that mount your real component kit, view them locally with a per-board kit switch, properties and motion controls, and build, render-check and review them with one board builder, one render check, review sets with build briefs, exploration canvases, and click-to-comment with Send all to agent. |
 | [App bootstrap](./metamodern-bootstrap-app/SKILL.md) · `$metamodern-bootstrap-app` | Prepare a MakerKit application and verify its local setup. |
 | [Engineering initiation](./metamodern-initiate-engineering/SKILL.md) · `$metamodern-initiate-engineering` | Establish proportional engineering preparation and a first-task handoff. |
@@ -215,7 +216,7 @@ Install puts the package in `.agents/skills/metamodern-work-on-canvases/` (with 
 
 **Prompt and Writing** work with your supplied text. Project preparation and Engineering initiation inspect the actual project and available tools.
 
-**Brand and design** workflows need your brand evidence and a designated approver. Brand World uses Higgsfield MCP for generation. Brand Expression documents its provider routes and fallback. Figma work needs a Figma connection and the applicable official Figma instructions. Midjourney recipes are intended for your own account; the skill checks your plan and privacy constraints and does not operate your session without your request.
+**Brand and design** workflows need your brand evidence and a designated approver. Brand World uses Higgsfield MCP for generation. Brand Expression documents its provider routes and fallback. Figma work needs a Figma connection and the applicable official Figma instructions. PDF export also needs Python with PyMuPDF, pypdfium2, Pillow, and NumPy, and a Mac with Swift for the Apple renderer check. Midjourney recipes are intended for your own account; the skill checks your plan and privacy constraints and does not operate your session without your request.
 
 **Commercial and meeting** workflows need your own authoritative policy, approved terms, templates, source records, and any connectors needed for live work. Agency OS filenames in the methods are conditional integration conventions. Private Metamodern policies, pricing, client evidence, and account access are not bundled. Missing authority stays an explicit gap.
 
