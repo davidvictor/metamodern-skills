@@ -14,18 +14,20 @@ account is ever changed, and nothing already in the destination is overwritten.
   sessions.py undo <to> [--force]
 
 <from> and <to> are an account folder ("<account>/<org>") or the start of one, as
-`accounts` prints them. `current` means the account Claude Code is signed in to now.
+`accounts` prints them. `current` means the account the desktop app is signed in to now.
 
 Environment overrides, for tests: METAMODERN_SESSIONS_ROOT (the claude-code-sessions
-folder), METAMODERN_CLAUDE_DIR (~/.claude), METAMODERN_CLAUDE_JSON (~/.claude.json) and
-METAMODERN_STATE_DIR (where undo lists are kept).
+folder), METAMODERN_DESKTOP_CONFIG (the app's config.json), METAMODERN_CLAUDE_DIR
+(~/.claude), METAMODERN_CLAUDE_JSON (~/.claude.json) and METAMODERN_STATE_DIR (where undo
+lists are kept).
 """
 import glob, hashlib, json, os, re, shutil, sys, time
 from datetime import datetime
 
 HOME = os.path.expanduser("~")
-ROOT = os.environ.get("METAMODERN_SESSIONS_ROOT") or os.path.join(
-    HOME, "Library", "Application Support", "Claude", "claude-code-sessions")
+APP_DIR = os.path.join(HOME, "Library", "Application Support", "Claude")
+ROOT = os.environ.get("METAMODERN_SESSIONS_ROOT") or os.path.join(APP_DIR, "claude-code-sessions")
+DESKTOP_CONFIG = os.environ.get("METAMODERN_DESKTOP_CONFIG") or os.path.join(APP_DIR, "config.json")
 CLAUDE_DIR = os.environ.get("METAMODERN_CLAUDE_DIR") or os.path.join(HOME, ".claude")
 CLAUDE_JSON = os.environ.get("METAMODERN_CLAUDE_JSON") or os.path.join(HOME, ".claude.json")
 STATE_DIR = os.environ.get("METAMODERN_STATE_DIR") or os.path.join(
@@ -40,13 +42,28 @@ def tilde(path):
     return path.replace(HOME, "~", 1) if path.startswith(HOME) else path
 
 
-def signed_in():
+def read_json(path):
     try:
-        o = json.load(open(CLAUDE_JSON)).get("oauthAccount") or {}
+        return json.load(open(path))
     except (OSError, ValueError):
+        return {}
+
+
+def signed_in():
+    """The account folder the desktop app shows now, and its email when known. The app
+    records its account but not its organization; Claude Code's own sign-in in
+    ~/.claude.json supplies the organization (and email) when it is the same account,
+    which it is unless the two were signed in separately."""
+    cli = read_json(CLAUDE_JSON).get("oauthAccount") or {}
+    acct = read_json(DESKTOP_CONFIG).get("lastKnownAccountUuid") or cli.get("accountUuid")
+    if not acct:
         return None, None
-    acct, org = o.get("accountUuid"), o.get("organizationUuid")
-    return (f"{acct}/{org}" if acct and org else None), o.get("emailAddress")
+    same = acct == cli.get("accountUuid")
+    if same and cli.get("organizationUuid") and os.path.isdir(os.path.join(ROOT, acct, cli["organizationUuid"])):
+        return f"{acct}/{cli['organizationUuid']}", cli.get("emailAddress")
+    orgs = [f for f in folders() if f.startswith(acct + "/")]
+    orgs.sort(key=lambda f: max((activity(s) for _, s in read_sessions(os.path.join(ROOT, f))), default=0), reverse=True)
+    return (orgs[0] if orgs else None), (cli.get("emailAddress") if same else None)
 
 
 def read_sessions(folder):
@@ -129,6 +146,23 @@ def undo_path(dst):
     return os.path.join(STATE_DIR, os.path.relpath(dst, ROOT).replace("/", "_") + ".tsv")
 
 
+def read_undo(dst):
+    """Newest record per copied file name: {name: (stamp, sha256)}."""
+    records = {}
+    if os.path.exists(undo_path(dst)):
+        for line in open(undo_path(dst)):
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) == 3:
+                records[parts[1]] = (parts[0], parts[2])
+    return records
+
+
+def write_undo(dst, records):
+    os.makedirs(STATE_DIR, exist_ok=True)
+    with open(undo_path(dst), "w") as log:
+        log.writelines(f"{stamp}\t{name}\t{h}\n" for name, (stamp, h) in records.items())
+
+
 def digest(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()
 
@@ -139,7 +173,7 @@ def cmd_accounts():
     for rel in folders():
         rows = read_sessions(os.path.join(ROOT, rel))
         rows.sort(key=lambda r: activity(r[1]), reverse=True)
-        tag = f"  <- signed in now ({email})" if rel == cur else ""
+        tag = (f"  <- signed in now ({email})" if email else "  <- signed in now") if rel == cur else ""
         print(f"\n{rel}{tag}")
         if not rows:
             print("  no sessions")
@@ -213,36 +247,47 @@ def cmd_copy(args):
 
     os.makedirs(STATE_DIR, exist_ok=True)
     stamp = time.strftime("%Y-%m-%d %H:%M")
-    with open(undo_path(dst), "a") as log:
-        for f, target, s in picked:
-            shutil.copy2(f, target)
-            log.write(f"{stamp}\t{os.path.basename(target)}\t{digest(target)}\n")
-    print(f"\nCopied {len(picked)}. Undo list: {tilde(undo_path(dst))}")
+    records = read_undo(dst)
+    copied = 0
+    for f, target, s in picked:
+        # Remote Control handles belong to the old account's server sessions; the new
+        # account starts its own. The transcript id (cliSessionId) is what must carry.
+        s = dict(s, bridgeSessionIds=[])
+        tmp = os.path.join(dst, f".copying-{os.path.basename(target)}")
+        with open(tmp, "w") as out:
+            json.dump(s, out)
+        try:
+            os.link(tmp, target)  # fails if the app created the entry meanwhile: never clobber
+        except FileExistsError:
+            continue
+        finally:
+            os.remove(tmp)
+        shutil.copystat(f, target)
+        records[os.path.basename(target)] = (stamp, digest(target))
+        copied += 1
+    write_undo(dst, records)
+    print(f"\nCopied {copied}. Undo list: {tilde(undo_path(dst))}")
     print("Quit the Claude app completely and reopen it to see them; it reads the list only when it starts.")
 
 
 def cmd_undo(args):
     dst = resolve(args[0])
     force = "--force" in args[1:]
-    log = undo_path(dst)
-    if not os.path.exists(log):
+    records = read_undo(dst)
+    if not records:
         sys.exit(f"No copies recorded into {os.path.relpath(dst, ROOT)}.")
-    removed, kept, keep = 0, 0, []
-    for line in open(log):
-        parts = line.rstrip("\n").split("\t")
-        if len(parts) != 3:
-            continue
-        _, name, h = parts
+    removed, kept, keep = 0, 0, {}
+    for name, (stamp, h) in records.items():
         p = os.path.join(dst, name)
         if not os.path.exists(p):
             continue
         if digest(p) != h and not force:
             kept += 1  # used in this account since the copy
-            keep.append(line)
+            keep[name] = (stamp, h)
             continue
         os.remove(p)
         removed += 1
-    open(log, "w").writelines(keep)
+    write_undo(dst, keep)
     print(f"Removed {removed} copied sessions."
           + (f" Kept {kept} used since the copy (--force removes them too)." if kept else "")
           + " Restart the app to see the change.")
