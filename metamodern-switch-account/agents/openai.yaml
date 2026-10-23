@@ -1,0 +1,4 @@
+interface:
+  display_name: "Metamodern: Switch Account"
+  short_description: "Bring Code sessions over after switching Claude accounts"
+  default_prompt: "Use $metamodern-switch-account to bring my Code sessions from my other Claude account into this one."
