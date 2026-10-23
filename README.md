@@ -197,6 +197,7 @@ Install puts the package in `.agents/skills/metamodern-work-on-canvases/` (with 
 | [Prompt](./metamodern-shape-prompt/SKILL.md) · `$metamodern-shape-prompt` | Shape prompts and save reusable local domain knowledge. |
 | [Writing](./metamodern-refine-writing/SKILL.md) · `$metamodern-refine-writing` | Improve existing prose while preserving meaning and voice. |
 | [Project preparation](./metamodern-prepare-project/SKILL.md) · `$metamodern-prepare-project` | Start or adopt a project with usable context, references, and instructions. |
+| [Account switch](./metamodern-switch-account/SKILL.md) · `$metamodern-switch-account` | Bring Code sessions from another Claude account on the same Mac into the one you are signed in to, so the work continues there. |
 | [Meeting naming](./metamodern-name-meeting/SKILL.md) · `$metamodern-name-meeting` | Name meetings with candid premises and funny video style parentheticals. |
 | [Meeting processing](./metamodern-process-meeting/SKILL.md) · `$metamodern-process-meeting` | Reconcile meeting evidence with current project facts and requested actions. |
 | [Proposal preparation](./metamodern-prepare-proposal/SKILL.md) · `$metamodern-prepare-proposal` | Scope work and prepare proposals from your approved terms and evidence. |
