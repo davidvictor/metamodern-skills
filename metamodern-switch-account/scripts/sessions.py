@@ -21,7 +21,7 @@ folder), METAMODERN_DESKTOP_CONFIG (the app's config.json), METAMODERN_CLAUDE_DI
 (~/.claude), METAMODERN_CLAUDE_JSON (~/.claude.json) and METAMODERN_STATE_DIR (where undo
 lists are kept).
 """
-import glob, hashlib, json, os, re, shutil, sys, time
+import glob, hashlib, json, os, re, shutil, sys, tempfile, time
 from datetime import datetime
 
 HOME = os.path.expanduser("~")
@@ -159,8 +159,10 @@ def read_undo(dst):
 
 def write_undo(dst, records):
     os.makedirs(STATE_DIR, exist_ok=True)
-    with open(undo_path(dst), "w") as log:
+    fd, tmp = tempfile.mkstemp(dir=STATE_DIR, prefix=".undo-")
+    with os.fdopen(fd, "w") as log:
         log.writelines(f"{stamp}\t{name}\t{h}\n" for name, (stamp, h) in records.items())
+    os.replace(tmp, undo_path(dst))  # an interrupted run leaves the old list whole
 
 
 def digest(path):
@@ -253,8 +255,8 @@ def cmd_copy(args):
         # Remote Control handles belong to the old account's server sessions; the new
         # account starts its own. The transcript id (cliSessionId) is what must carry.
         s = dict(s, bridgeSessionIds=[])
-        tmp = os.path.join(dst, f".copying-{os.path.basename(target)}")
-        with open(tmp, "w") as out:
+        fd, tmp = tempfile.mkstemp(dir=dst, prefix=".copying-")
+        with os.fdopen(fd, "w") as out:
             json.dump(s, out)
         try:
             os.link(tmp, target)  # fails if the app created the entry meanwhile: never clobber
