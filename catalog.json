@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.28.1",
+  "collectionVersion": "1.29.1",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -141,6 +141,13 @@
       "version": "1.2.0",
       "category": "communication",
       "summary": "Shape faithful prompts and learn reusable local domain knowledge."
+    },
+    {
+      "name": "metamodern-switch-account",
+      "path": "metamodern-switch-account",
+      "version": "0.1.0",
+      "category": "project-and-evidence",
+      "summary": "Bring Code sessions from another Claude account on the same Mac into the signed-in one, with an undo list."
     },
     {
       "name": "metamodern-work-in-figma",
