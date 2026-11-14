@@ -8,7 +8,7 @@ Start with primitives, semantic aliases, layout variables, readable text styles,
 
 ## Components and compositions
 
-Componentize repeated, bounded elements only. Complete pages, slides, screens, and flows are native frames composed from components and ordinary layers. A component needs a concise description, useful defaults, and a stable editing contract. Use variants only for one semantic object; use properties for deliberate choices and slots for an open content region. Improve existing families instead of fragmenting replacements.
+Componentize repeated, bounded elements only. Complete pages, slides, screens, and flows are native frames composed from components and ordinary layers, built with nested auto layout throughout. A component needs a concise description, useful defaults, and a stable editing contract. Use variants only for one semantic object; use properties for deliberate choices and slots for an open content region. Improve existing families instead of fragmenting replacements.
 
 ## Editable media
 

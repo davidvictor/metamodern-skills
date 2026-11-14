@@ -6,6 +6,6 @@ Keep the working system, assets, canonical document, and review area in one file
 
 Declare the authoritative copy source in `00 · Overview`. Preserve approved copy verbatim unless editing is requested. If copy does not fit, recompose, split it, or add pages.
 
-Every digital destination has a visible descriptive text link; an image hotspot can supplement but never replace it. Put source media and logos in independently selectable children inside clipped frames. For full-bleed photo work, use no frame padding and preserve crop control for each tile.
+Every digital destination has a visible descriptive text link; an image hotspot can supplement but never replace it. Put source media and logos in independently selectable children inside clipped frames. For full-bleed photo work, use no frame padding and preserve crop control for each tile. Build pages, collage grids, and text stacks with auto layout, with gaps between tiles rather than hand-placed positions.
 
 For a digital PDF, export and verify it with `$metamodern-export-pdf`, which checks frame order, links, live text, and rendering across viewers; still look at crops and font rendering yourself. For production requirements such as CMYK, bleed, PDF/X, or tagged accessibility, state the required external finishing. A Figma export is not automatically an accessible PDF.
