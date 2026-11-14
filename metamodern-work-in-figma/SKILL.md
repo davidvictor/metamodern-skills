@@ -36,6 +36,8 @@ Return the requested findings or verified result, relevant system impact, and an
 
 Every Project owns its design system. Publish it only for a real consumer. Components are repeated bounded pieces; complete compositions remain native. Repositionable media remains a selectable child inside its container.
 
+Build every page, slide, screen, section, photo grid, and text stack with auto layout, including editorial and deck compositions. Space with gaps and padding, size with fill and hug, and nest auto layouts where gaps differ. Never place layouts by hand-set x and y, and never use empty spacer frames. Each photo stays a selectable image child inside a clipped frame, so its crop remains adjustable. Use absolute positioning only for deliberate overlap, such as a tilted card or a fade over a photo, inside an auto layout parent. Read back the layout mode of every container before reporting the work.
+
 When creating a new Project, start with `00 · Overview`, foundations, components, assets, and relevant recipes. An existing file review or local revision does not require rebuilding that structure. Add depth only as work repeats.
 
 ## Read the relevant guidance

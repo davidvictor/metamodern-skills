@@ -6,11 +6,11 @@ Resolve the exact target from the request and current context, and load the appl
 
 ## During construction
 
-Create native frames for pages, slides, and screens. Use auto layout where it improves a repeatable module or product behavior, not to make editorial art direction inflexible. Keep artwork as selectable unlocked children. Name the canonical section and any exploration or review section clearly.
+Create native frames for pages, slides, and screens, and build each one with auto layout: the frame itself, its regions, photo grids as rows and columns, and text stacks. Use gaps and padding for spacing, fill and hug for sizing, and nested auto layouts where gaps differ. Do not position layouts by hand-set x and y or with empty spacer frames. Put deliberate overlaps, such as tilted cards or fades over photos, as absolutely positioned children inside an auto layout parent. Keep artwork as selectable unlocked children. Name the canonical section and any exploration or review section clearly.
 
 ## Verification
 
-Structural verification checks page and node identity, properties, variables, instances, clipping, text, and fonts. Visual verification checks a fresh rendering for cropping, overflow, overlap, hierarchy, readable type, and unintended style drift. Check every known accessible consumer after a shared-library change.
+Structural verification checks page and node identity, properties, variables, instances, clipping, text, and fonts, and confirms auto layout on every container, with no spacer frames and absolute positioning only where overlap is intended. Visual verification checks a fresh rendering for cropping, overflow, overlap, hierarchy, readable type, and unintended style drift. Check every known accessible consumer after a shared-library change.
 
 ## UI handoff protocol
 
