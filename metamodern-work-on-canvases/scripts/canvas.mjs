@@ -26,7 +26,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs as parseOptions } from 'node:util';
 import { readConfig } from './canvas-format.mjs';
-import { findProject, startViewer } from './lib/viewer-server.mjs';
+import { findPort, findProject, startViewer } from './lib/viewer-server.mjs';
 import { buildAndCheck, renderCheck, summary, watchRender } from './render-check.mjs';
 import { archiveSet, createSet, lockSet, readReview, setStatus, statusRow, validateReview, writeReview } from './review-sets.mjs';
 import { createExploration, decideExploration, roundExploration } from './explore.mjs';
@@ -93,8 +93,9 @@ export function parseArgs(argv) {
 }
 
 // `view` starts the viewer for the project that holds canvas.config.json (the --project folder, or the nearest one
-// at or above the working directory) on 127.0.0.1, at the config's port unless --port is given. It keeps running and
-// returns null.
+// at or above the working directory) on 127.0.0.1, at the config's port unless --port is given. When this project's
+// viewer is already running it says where and returns 0. When another server holds the config's port, it takes the
+// next free one and says so; a --port that's taken is an error. It keeps running and returns null.
 async function view(argv) {
   let options;
   try { options = parseArgs(argv); } catch (error) { console.error(`${error.message}\n${VIEW_USAGE}`); return 1; }
@@ -103,7 +104,12 @@ async function view(argv) {
   let config;
   try { config = await readConfig(projectRoot); } catch (error) { console.error(`canvas.config.json: ${error.message}`); return 1; }
   try {
-    const viewer = await startViewer({ projectRoot, config, port: options.port, quiet: false });
+    // --port 0 asks the system for any free port.
+    const found = options.port === 0 ? { port: 0, running: false }
+      : await findPort({ projectRoot, from: options.port ?? config.port, tries: options.port === undefined ? 50 : 1 });
+    if (found.running) { console.log(`${config.name}: already running at http://127.0.0.1:${found.port}`); return 0; }
+    if (found.port !== config.port && options.port === undefined) console.log(`Port ${config.port} is held by another server, so this viewer is on ${found.port}.`);
+    const viewer = await startViewer({ projectRoot, config, port: found.port, quiet: false });
     const stop = () => viewer.close().then(() => process.exit(0));
     process.on('SIGINT', stop);
     process.on('SIGTERM', stop);

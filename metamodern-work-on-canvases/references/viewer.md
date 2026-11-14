@@ -10,7 +10,7 @@ Code: [`scripts/canvas.mjs`](../scripts/canvas.mjs) (the command), [`scripts/lib
 node <package>/scripts/canvas.mjs view [--project <dir>] [--port <n>]
 ```
 
-The project is the `--project` folder, or the nearest folder at or above the working directory that holds `canvas.config.json`. The viewer listens on `127.0.0.1` only, at the config's `port` unless `--port` is given, and answers only requests addressed to `127.0.0.1`, `localhost` or `[::1]`. It needs Node 22.13 or later and nothing else.
+The project is the `--project` folder, or the nearest folder at or above the working directory that holds `canvas.config.json`. The viewer listens on loopback only (`127.0.0.1`, and `::1` at the same port), at the config's `port` unless `--port` is given, and answers only requests addressed to `127.0.0.1`, `localhost` or `[::1]`. Several projects' viewers can run at once: each answers `/_whoami` with its project's root, `canvas view` says where this project's viewer already runs instead of starting a second, and when another server holds the config's port it takes the next free one and prints it. A `--port` that is taken is an error. It needs Node 22.13 or later and nothing else.
 
 ## Pages and links
 
