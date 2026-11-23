@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "collectionVersion": "1.30.0",
+  "collectionVersion": "1.31.0",
   "skills": [
     {
       "name": "metamodern-bootstrap-app",
@@ -145,9 +145,9 @@
     {
       "name": "metamodern-switch-account",
       "path": "metamodern-switch-account",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "category": "project-and-evidence",
-      "summary": "Bring Code sessions from another Claude account on the same Mac into the signed-in one, with an undo list."
+      "summary": "Sync Code sessions across every Claude account on the same Mac, so any account shows all the work, with an undo list per account."
     },
     {
       "name": "metamodern-work-in-figma",
