@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-"""Bring Claude desktop Code sessions from one account to another on this Mac.
+"""Keep Claude desktop Code sessions the same across every account on this Mac.
 
 The desktop app lists Code sessions per account and organization, in
 ~/Library/Application Support/Claude/claude-code-sessions/<account>/<org>/local_*.json.
 Each file is a small pointer (title, folder, transcript id). The transcript itself is in
 ~/.claude/projects, which every account on the Mac shares, so copying the pointer is
-enough for the session to open and continue in the other account. Nothing in the source
-account is ever changed, and nothing already in the destination is overwritten.
+enough for the session to open and continue in the other account. Nothing in a source
+list is ever changed, and nothing already in a destination is overwritten.
 
   sessions.py accounts
-  sessions.py copy <from> <to> [--since DAYS|YYYY-MM-DD] [--folder PATH ...]
-                   [--filter FILE] [--include-empty] [--dry-run]
+  sessions.py sync [--since DAYS|YYYY-MM-DD] [--folder PATH ...] [--filter FILE]
+                   [--include-empty] [--dry-run]
+  sessions.py copy <from> <to> [same options as sync]
   sessions.py undo <to> [--force]
+
+`sync` fills every session list from all the others: each list with sessions, and the
+signed-in one, gets every session it lacks, copied from the list where that session was
+used last. `copy` goes one way only.
 
 <from> and <to> are an account folder ("<account>/<org>") or the start of one, as
 `accounts` prints them. `current` means the account the desktop app is signed in to now.
@@ -185,68 +190,42 @@ def cmd_accounts():
             print(f"    {when(activity(s))}  {s.get('title') or '(untitled)'}  [{tilde(folder_of(s))}]")
 
 
-def cmd_copy(args):
-    src, dst = resolve(args[0]), resolve(args[1])
-    if src == dst:
-        sys.exit("From and to are the same account folder.")
-    opts = args[2:]
-    dry, include_empty = "--dry-run" in opts, "--include-empty" in opts
-    paths, titles = [], []
-    after = 0
+def parse_scope(opts):
+    """The options copy and sync share: {dry, include_empty, after, paths, titles}."""
+    scope = {"dry": "--dry-run" in opts, "include_empty": "--include-empty" in opts,
+             "after": 0, "paths": [], "titles": []}
     i = 0
     while i < len(opts):
         o = opts[i]
         if o in ("--since", "--folder", "--filter") and i + 1 >= len(opts):
             sys.exit(f"{o} needs a value.")
         if o == "--since":
-            after = since_ms(opts[i + 1]); i += 1
+            scope["after"] = since_ms(opts[i + 1]); i += 1
         elif o == "--folder":
-            paths.append(os.path.expanduser(opts[i + 1]).rstrip("/")); i += 1
+            scope["paths"].append(os.path.expanduser(opts[i + 1]).rstrip("/")); i += 1
         elif o == "--filter":
-            p, t = load_filter(opts[i + 1]); paths += p; titles += t; i += 1
+            p, t = load_filter(opts[i + 1]); scope["paths"] += p; scope["titles"] += t; i += 1
         elif o not in ("--dry-run", "--include-empty"):
             sys.exit(f"Unknown option {o}.")
         i += 1
+    return scope
 
-    picked, present, continued, empty, outside = [], 0, [], 0, 0
-    for f, s in read_sessions(src):
-        if activity(s) < after or not matches(s, paths, titles):
-            outside += 1
-            continue
-        target = os.path.join(dst, os.path.basename(f))
-        if os.path.exists(target):
-            present += 1
-            try:
-                mine = json.load(open(target))
-                if activity(s) > activity(mine):
-                    continued.append((s, mine))
-            except (OSError, ValueError):
-                pass
-            continue
-        if not transcript_ok(s):
-            empty += 1
-            if not include_empty:
-                continue
-        picked.append((f, target, s))
 
+def in_scope(s, scope):
+    return activity(s) >= scope["after"] and matches(s, scope["paths"], scope["titles"])
+
+
+def print_folders(picked):
     by_folder = {}
     for _, _, s in picked:
         k = tilde(folder_of(s) or "?")
         by_folder[k] = by_folder.get(k, 0) + 1
-    print(f"From {os.path.relpath(src, ROOT)}")
-    print(f"To   {os.path.relpath(dst, ROOT)}\n")
     for k, v in sorted(by_folder.items()):
         print(f"  {v:>4}  {k}")
-    print(f"\n  {len(picked)} to copy; {present} already there; {outside} outside the date or folders asked for;"
-          f" {empty} with no transcript on this Mac" + (" (copied anyway)" if include_empty else " (left out)"))
-    for s, mine in continued:
-        print(f"  Continued in the other account since: \"{s.get('title')}\" (there {when(activity(s))},"
-              f" here {when(activity(mine))}). It opens with every turn; only its date in the list is older.")
-    if dry or not picked:
-        if dry:
-            print("\nDry run: nothing copied.")
-        return
 
+
+def write_copies(dst, picked):
+    """Write each (source file, target path, entry) into dst and record it for undo."""
     os.makedirs(STATE_DIR, exist_ok=True)
     stamp = time.strftime("%Y-%m-%d %H:%M")
     records = read_undo(dst)
@@ -268,8 +247,124 @@ def cmd_copy(args):
         records[os.path.basename(target)] = (stamp, digest(target))
         copied += 1
     write_undo(dst, records)
+    return copied
+
+
+RESTART = "Quit the Claude app completely and reopen it to see them; it reads the list only when it starts."
+
+
+def cmd_sync(args):
+    scope = parse_scope(args)
+    cur, _ = signed_in()
+    entries, unused = {}, 0
+    for rel in folders():
+        rows = {os.path.basename(f): (f, s) for f, s in read_sessions(os.path.join(ROOT, rel))}
+        if rows or rel == cur:
+            entries[rel] = rows
+        else:
+            unused += 1  # an account and organization pair the app made but never used
+    if len(entries) < 2:
+        sys.exit("Only one session list on this Mac has sessions; there is nothing to sync.")
+
+    # Each session's freshest entry, wherever it is: the list it was used in last.
+    newest = {}
+    for rel, rows in entries.items():
+        for name, (f, s) in rows.items():
+            if name not in newest or activity(s) > activity(newest[name][1]):
+                newest[name] = (f, s, rel)
+
+    print(f"Syncing {len(entries)} session lists ({len(newest)} sessions in all)."
+          + (f" Left out {unused} empty lists the app made for organizations never used." if unused else ""))
+    total, into_current = 0, 0
+    for rel, rows in entries.items():
+        dst = os.path.join(ROOT, rel)
+        picked, empty, outside, stale = [], 0, 0, []
+        for name, (f, s, src) in sorted(newest.items()):
+            if name in rows:
+                if activity(s) > activity(rows[name][1]):
+                    stale.append((s, rows[name][1], src))
+                continue
+            if not in_scope(s, scope):
+                outside += 1
+                continue
+            if not transcript_ok(s):
+                empty += 1
+                if not scope["include_empty"]:
+                    continue
+            picked.append((f, os.path.join(dst, name), s))
+
+        print(f"\nInto {rel}" + ("  <- signed in now" if rel == cur else ""))
+        print_folders(picked)
+        print(f"  {len(picked)} to copy; {len(rows)} already there; {outside} outside the date or folders asked for;"
+              f" {empty} with no transcript on this Mac" + (" (copied anyway)" if scope["include_empty"] else " (left out)"))
+        if stale and rel == cur:
+            for s, mine, src in stale:
+                print(f"  Used later in {src.split('-')[0]}: \"{s.get('title')}\" (there {when(activity(s))},"
+                      f" here {when(activity(mine))}). It opens with every turn; only its date in the list is older.")
+        elif stale:
+            print(f"  {len(stale)} already there were used later in another account; they open with every turn.")
+        if scope["dry"] or not picked:
+            continue
+        copied = write_copies(dst, picked)
+        total += copied
+        if rel == cur:
+            into_current = copied
+        print(f"  Copied {copied}. Undo: sessions.py undo {rel}")
+
+    if scope["dry"]:
+        print("\nDry run: nothing copied.")
+    elif into_current:
+        print("\n" + RESTART)
+    elif total:
+        print("\nThe signed-in account already had every session; the others show theirs when next signed in.")
+    else:
+        print("\nEvery list already has every session.")
+
+
+def cmd_copy(args):
+    src, dst = resolve(args[0]), resolve(args[1])
+    if src == dst:
+        sys.exit("From and to are the same account folder.")
+    scope = parse_scope(args[2:])
+    dry, include_empty = scope["dry"], scope["include_empty"]
+
+    picked, present, continued, empty, outside = [], 0, [], 0, 0
+    for f, s in read_sessions(src):
+        if not in_scope(s, scope):
+            outside += 1
+            continue
+        target = os.path.join(dst, os.path.basename(f))
+        if os.path.exists(target):
+            present += 1
+            try:
+                mine = json.load(open(target))
+                if activity(s) > activity(mine):
+                    continued.append((s, mine))
+            except (OSError, ValueError):
+                pass
+            continue
+        if not transcript_ok(s):
+            empty += 1
+            if not include_empty:
+                continue
+        picked.append((f, target, s))
+
+    print(f"From {os.path.relpath(src, ROOT)}")
+    print(f"To   {os.path.relpath(dst, ROOT)}\n")
+    print_folders(picked)
+    print(f"\n  {len(picked)} to copy; {present} already there; {outside} outside the date or folders asked for;"
+          f" {empty} with no transcript on this Mac" + (" (copied anyway)" if include_empty else " (left out)"))
+    for s, mine in continued:
+        print(f"  Continued in the other account since: \"{s.get('title')}\" (there {when(activity(s))},"
+              f" here {when(activity(mine))}). It opens with every turn; only its date in the list is older.")
+    if dry or not picked:
+        if dry:
+            print("\nDry run: nothing copied.")
+        return
+
+    copied = write_copies(dst, picked)
     print(f"\nCopied {copied}. Undo list: {tilde(undo_path(dst))}")
-    print("Quit the Claude app completely and reopen it to see them; it reads the list only when it starts.")
+    print(RESTART)
 
 
 def cmd_undo(args):
@@ -299,6 +394,8 @@ if __name__ == "__main__":
     a = sys.argv[1:]
     if a[:1] == ["accounts"]:
         cmd_accounts()
+    elif a[:1] == ["sync"]:
+        cmd_sync(a[1:])
     elif a[:1] == ["copy"] and len(a) >= 3:
         cmd_copy(a[1:])
     elif a[:1] == ["undo"] and len(a) >= 2:
