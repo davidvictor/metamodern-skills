@@ -1,4 +1,4 @@
 interface:
   display_name: "Metamodern: Switch Account"
-  short_description: "Bring Code sessions over after switching Claude accounts"
-  default_prompt: "Use $metamodern-switch-account to bring my Code sessions from my other Claude account into this one."
+  short_description: "Sync Code sessions across every Claude account on this Mac"
+  default_prompt: "Use $metamodern-switch-account to sync my Code sessions across all my Claude accounts."
